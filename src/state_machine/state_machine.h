@@ -28,13 +28,23 @@ typedef enum sm_state
 } sm_state_t;
 
 /**
- * Holds the info for a single task. A single can belong to multiple states.
+ * Holds the info for a single task. A single task can belong to multiple states.
  */
 typedef struct sm_task
 {
+    /**
+     * Friendly name for the task.
+     */
     const char *name;
+
+    /**
+     * Minimum number of milliseconds between dispatches of this task.
+     */
     const uint32_t dispatch_period_ms;
 
+    /**
+     * Earliest time this task can be dispatched.
+     */
     absolute_time_t next_dispatch;
 
     /**
@@ -56,6 +66,9 @@ typedef struct sm_task
  */
 typedef struct sm_state_info
 {
+    /**
+     * Friendly name for the state.
+     */
     const char *name;
 
     size_t num_tasks;
