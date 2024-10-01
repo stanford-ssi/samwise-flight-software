@@ -18,4 +18,7 @@ jobs:
           format-review: true
           passive-reviews: true
       - name: Fail if there are linter errors
-        if: ${{!steps.linter.outputs.clang-format-checks-failed}}
+        if: ${!steps.linter.outputs.clang-format-checks-failed}}
+        run: |
+           echo "Linter errors occurred, failing the job."
+           exit 1 # This will cause the step to fail
