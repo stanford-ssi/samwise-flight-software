@@ -9,7 +9,7 @@
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "slate.h"
-#include "state_machine/state_machine.h"
+#include "scheduler/scheduler.h"
 
 /**
  * Statically allocate the slate.
@@ -50,7 +50,7 @@ int main()
     LOG_INFO("main: Dispatching the state machine...");
     while (true)
     {
-        sm_dispatch(&slate);
+        sched_dispatch(&slate);
     }
 
     /*

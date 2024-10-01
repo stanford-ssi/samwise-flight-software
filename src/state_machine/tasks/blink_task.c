@@ -1,5 +1,3 @@
-
-
 /**
  * @author  Niklas Vainio
  * @date    2024-08-27
@@ -7,11 +5,9 @@
  * Task to blink the onboard LED.
  */
 
-#pragma once
-
-#include "blink_task.h"
-#include "../macros.h"
-#include "../slate.h"
+#include "state_machine/tasks/blink_task.h"
+#include "macros.h"
+#include "slate.h"
 #include "pico/stdlib.h"
 
 void blink_task_init(slate_t *slate)
@@ -25,7 +21,7 @@ void blink_task_dispatch(slate_t *slate)
     gpio_put(PICO_DEFAULT_LED_PIN, slate->led_state);
 }
 
-sm_task_t blink_task = {.name = "blink",
+sched_task_t blink_task = {.name = "blink",
                         .dispatch_period_ms = 1000,
                         .task_init = &blink_task_init,
                         .task_dispatch = &blink_task_dispatch,

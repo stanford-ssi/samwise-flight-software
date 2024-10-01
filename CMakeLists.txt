@@ -37,7 +37,8 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 file(GLOB sources CONFIGURE_DEPENDS "src/*.c")
 file(GLOB tasks CONFIGURE_DEPENDS "src/tasks/*.c")
-file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/*.c")
+file(GLOB tasks CONFIGURE_DEPENDS "src/scheduler/*.c")
+file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
 add_executable(samwise ${sources} ${tasks} ${state_machine})
 
 pico_set_program_name(samwise "samwise")
@@ -56,6 +57,8 @@ target_include_directories(samwise PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts or any other standard includes, if required
 )
+
+target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
 pico_add_extra_outputs(samwise)
 

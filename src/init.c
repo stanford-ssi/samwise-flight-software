@@ -10,7 +10,7 @@
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
-#include "state_machine/state_machine.h"
+#include "scheduler/scheduler.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -41,7 +41,7 @@ bool init(slate_t *slate)
     /*
      * Initialize the state machine
      */
-    sm_init(slate);
+    sched_init(slate);
     
     return true;
 }
