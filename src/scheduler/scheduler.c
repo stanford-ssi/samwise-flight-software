@@ -32,14 +32,14 @@ void sched_init(slate_t *slate)
      */
     for (size_t i = 0; i < num_states; i++)
     {
-        ASSERT(all_states[i].num_tasks <= MAX_TASKS_PER_STATE);
-        for (size_t j = 0; j < all_states[i].num_tasks; j++) {
+        ASSERT(all_states[i]->num_tasks <= MAX_TASKS_PER_STATE);
+        for (size_t j = 0; j < all_states[i]->num_tasks; j++) {
           bool is_duplicate = 0;
           for (size_t k = 0; k < n_tasks; k++) {
-            if (all_tasks[k] == all_states[i].task_list[j]) is_duplicate = 1;
+            if (all_tasks[k] == all_states[i]->task_list[j]) is_duplicate = 1;
           }
           if(!is_duplicate) {
-            all_tasks[n_tasks] = all_states[i].task_list[j];
+            all_tasks[n_tasks] = all_states[i]->task_list[j];
             n_tasks++;
           }
         }
@@ -81,7 +81,7 @@ void sched_init(slate_t *slate)
 void sched_dispatch(slate_t *slate)
 {
     sm_state_t current_state = slate->current_state;
-    sched_state_info_t *current_state_info = all_states + slate->current_state;
+    sched_state_info_t *current_state_info = all_states[(size_t)slate->current_state];
 
     /*
      * Loop through all of this state's tasks
@@ -114,7 +114,7 @@ void sched_dispatch(slate_t *slate)
     const sm_state_t next_state = current_state_info->get_next_state(slate);
     if (next_state != current_state)
     {
-        LOG_INFO("sched: Transitioning to state %s", all_states[next_state].name);
+        LOG_INFO("sched: Transitioning to state %s", all_states[next_state]->name);
 
         slate->current_state = next_state;
         slate->entered_current_state_time = get_absolute_time();

@@ -30,18 +30,11 @@ enum sm_state
  */
 static sched_state_info_t* all_states[] = {
     /* state_init */
-    {.name = "init",
-     .num_tasks = 0,
-     .task_list = {},
-     .get_next_state = &init_get_next_state},
-
+    &init_state_info,
     /* state_running */
-    {.name = "running",
-     .num_tasks = 2,
-     .task_list = {&print_task, &blink_task},
-     .get_next_state = &running_get_next_state}};
+    &running_state_info};
 
 /*
  * Static sanity check.
  */
-static_assert(sizeof(all_states) == sizeof(sched_state_info_t) * num_states);
+static_assert(sizeof(all_states) == sizeof(sched_state_info_t*) * num_states);

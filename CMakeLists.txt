@@ -39,6 +39,7 @@ file(GLOB sources CONFIGURE_DEPENDS "src/*.c")
 file(GLOB tasks CONFIGURE_DEPENDS "src/tasks/*.c")
 file(GLOB tasks CONFIGURE_DEPENDS "src/scheduler/*.c")
 file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
+file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/states/*.c")
 add_executable(samwise ${sources} ${tasks} ${state_machine})
 
 pico_set_program_name(samwise "samwise")
