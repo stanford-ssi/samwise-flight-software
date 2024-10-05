@@ -15,6 +15,7 @@
  * Include the actual state machine
  */
 #include "state_machine/states/states.h"
+#include "state_machine/tasks/tasks.h"
 
 static size_t n_tasks = 0;
 static sched_task_t* all_tasks[num_states * MAX_TASKS_PER_STATE];

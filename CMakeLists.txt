@@ -35,12 +35,12 @@ project(samwise C CXX ASM)
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
-file(GLOB sources CONFIGURE_DEPENDS "src/*.c")
-file(GLOB tasks CONFIGURE_DEPENDS "src/tasks/*.c")
-file(GLOB tasks CONFIGURE_DEPENDS "src/scheduler/*.c")
-file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
-file(GLOB state_machine CONFIGURE_DEPENDS "src/state_machine/states/*.c")
-add_executable(samwise ${sources} ${tasks} ${state_machine})
+file(GLOB top CONFIGURE_DEPENDS "src/*.c")
+file(GLOB scheduler CONFIGURE_DEPENDS "src/scheduler/*.c")
+file(GLOB state_machine_tasks CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
+file(GLOB state_machine_states CONFIGURE_DEPENDS "src/state_machine/states/*.c")
+add_executable(samwise ${top} ${scheduler} ${state_machine_tasks}
+  ${state_machine_states})
 
 pico_set_program_name(samwise "samwise")
 pico_set_program_version(samwise "0.1")

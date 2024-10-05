@@ -2,13 +2,13 @@
  * @author  Joseph Shetaye
  * @date    2024-09-30
  *
- * This file lists all states of the satellite state machine.
+ * This file lists all states of the satellite state machine. It should only be
+ * included in scheduler.c
  */
 
 #pragma once
 
 #include "scheduler/scheduler.h"
-#include "state_machine/tasks/tasks.h"
 
 enum sm_state
 {
@@ -19,8 +19,11 @@ enum sm_state
     num_states
 };
 
-#include "state_machine/states/init.h"
-#include "state_machine/states/running.h"
+/*
+ * Declare all states as extern.
+ */
+extern sched_state_info_t init_state_info;
+extern sched_state_info_t running_state_info;
 
 /**
  * List of all states, in the same order as the sm_state_t enum.
