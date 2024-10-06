@@ -12,13 +12,14 @@
 #pragma once
 
 #include "pico/types.h"
+#include "scheduler/scheduler.h"
 
 typedef struct samwise_slate
 {
     /*
      * State machine info.
      */
-    uint32_t current_state;
+    sched_state_info_t* current_state;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
 

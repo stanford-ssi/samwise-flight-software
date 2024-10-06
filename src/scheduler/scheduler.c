@@ -66,7 +66,7 @@ void sched_init(slate_t *slate)
     /*
      * Enter the init state by default
      */
-    slate->current_state = state_init;
+    slate->current_state = initial_state;
     slate->entered_current_state_time = get_absolute_time();
     slate->time_in_current_state_ms = 0;
 
@@ -81,8 +81,7 @@ void sched_init(slate_t *slate)
  */
 void sched_dispatch(slate_t *slate)
 {
-    sm_state_t current_state = slate->current_state;
-    sched_state_info_t *current_state_info = all_states[(size_t)slate->current_state];
+    sched_state_info_t *current_state_info = slate->current_state;
 
     /*
      * Loop through all of this state's tasks
@@ -112,10 +111,10 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    const sm_state_t next_state = current_state_info->get_next_state(slate);
-    if (next_state != current_state)
+    const sched_state_info_t* next_state = current_state_info->get_next_state(slate);
+    if (next_state != current_state_info)
     {
-        LOG_INFO("sched: Transitioning to state %s", all_states[next_state]->name);
+        LOG_INFO("sched: Transitioning to state %s", next_state->name);
 
         slate->current_state = next_state;
         slate->entered_current_state_time = get_absolute_time();

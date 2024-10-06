@@ -8,13 +8,12 @@
 
 #pragma once
 
-#include "slate.h"
 #include "pico/types.h"
 
 #define MAX_TASKS_PER_STATE 10
 
-enum sm_state;
-typedef enum sm_state sm_state_t;
+struct samwise_slate;
+typedef struct samwise_slate slate_t;
 
 /**
  * Holds the info for a single task. A single task can belong to multiple states.
@@ -68,7 +67,7 @@ typedef struct sched_state_info
      * @param slate     Pointer to the current satellite slate
      * @return The next state to transition to
      */
-    sm_state_t (*get_next_state)(slate_t *slate);
+    struct sched_state_info* (*get_next_state)(slate_t *slate);
 } sched_state_info_t;
 
 void sched_init(slate_t *slate);
