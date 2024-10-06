@@ -8,8 +8,8 @@
 
 #include "scheduler.h"
 #include "macros.h"
-#include "slate.h"
 #include "pico/time.h"
+#include "slate.h"
 
 /*
  * Include the actual state machine
@@ -18,7 +18,7 @@
 #include "state_machine/tasks/tasks.h"
 
 static size_t n_tasks = 0;
-static sched_task_t* all_tasks[num_states * MAX_TASKS_PER_STATE];
+static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];
 
 /**
  * Initialize the state machine.
@@ -34,15 +34,19 @@ void sched_init(slate_t *slate)
     for (size_t i = 0; i < num_states; i++)
     {
         ASSERT(all_states[i]->num_tasks <= MAX_TASKS_PER_STATE);
-        for (size_t j = 0; j < all_states[i]->num_tasks; j++) {
-          bool is_duplicate = 0;
-          for (size_t k = 0; k < n_tasks; k++) {
-            if (all_tasks[k] == all_states[i]->task_list[j]) is_duplicate = 1;
-          }
-          if(!is_duplicate) {
-            all_tasks[n_tasks] = all_states[i]->task_list[j];
-            n_tasks++;
-          }
+        for (size_t j = 0; j < all_states[i]->num_tasks; j++)
+        {
+            bool is_duplicate = 0;
+            for (size_t k = 0; k < n_tasks; k++)
+            {
+                if (all_tasks[k] == all_states[i]->task_list[j])
+                    is_duplicate = 1;
+            }
+            if (!is_duplicate)
+            {
+                all_tasks[n_tasks] = all_states[i]->task_list[j];
+                n_tasks++;
+            }
         }
     }
 
@@ -111,7 +115,8 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    const sched_state_info_t* next_state = current_state_info->get_next_state(slate);
+    const sched_state_info_t *next_state =
+        current_state_info->get_next_state(slate);
     if (next_state != current_state_info)
     {
         LOG_INFO("sched: Transitioning to state %s", next_state->name);

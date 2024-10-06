@@ -23,14 +23,14 @@ extern sched_state_info_t running_state_info;
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
-static const sched_state_info_t* all_states[] = {
+static const sched_state_info_t *all_states[] = {
     /* state_init */
     &init_state_info,
     /* state_running */
     &running_state_info};
-static const sched_state_info_t* initial_state = &init_state_info;
+static const sched_state_info_t *initial_state = &init_state_info;
 
 /*
  * Must be a macro because it is used to initialize an array
  */
-#define num_states (sizeof(all_states) / sizeof(sched_state_info_t*))
+#define num_states (sizeof(all_states) / sizeof(sched_state_info_t *))

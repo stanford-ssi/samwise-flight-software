@@ -19,9 +19,9 @@ void print_task_dispatch(slate_t *slate)
 }
 
 sched_task_t print_task = {.name = "print",
-                        .dispatch_period_ms = 1000,
-                        .task_init = &print_task_init,
-                        .task_dispatch = &print_task_dispatch,
+                           .dispatch_period_ms = 1000,
+                           .task_init = &print_task_init,
+                           .task_dispatch = &print_task_dispatch,
 
-                        /* Set to an actual value on init */
-                        .next_dispatch = 0};
+                           /* Set to an actual value on init */
+                           .next_dispatch = 0};

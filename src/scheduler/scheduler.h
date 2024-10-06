@@ -16,7 +16,8 @@ struct samwise_slate;
 typedef struct samwise_slate slate_t;
 
 /**
- * Holds the info for a single task. A single task can belong to multiple states.
+ * Holds the info for a single task. A single task can belong to multiple
+ * states.
  */
 typedef struct sched_task
 {
@@ -67,7 +68,7 @@ typedef struct sched_state_info
      * @param slate     Pointer to the current satellite slate
      * @return The next state to transition to
      */
-    struct sched_state_info* (*get_next_state)(slate_t *slate);
+    struct sched_state_info *(*get_next_state)(slate_t *slate);
 } sched_state_info_t;
 
 void sched_init(slate_t *slate);

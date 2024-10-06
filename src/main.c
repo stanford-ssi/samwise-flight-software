@@ -8,8 +8,8 @@
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
-#include "slate.h"
 #include "scheduler/scheduler.h"
+#include "slate.h"
 
 /**
  * Statically allocate the slate.

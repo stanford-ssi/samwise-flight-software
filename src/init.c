@@ -42,6 +42,6 @@ bool init(slate_t *slate)
      * Initialize the state machine
      */
     sched_init(slate);
-    
+
     return true;
 }
