@@ -115,8 +115,7 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    const sched_state_t *next_state =
-        current_state_info->get_next_state(slate);
+    const sched_state_t *next_state = current_state_info->get_next_state(slate);
     if (next_state != current_state_info)
     {
         LOG_INFO("sched: Transitioning to state %s", next_state->name);

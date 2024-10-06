@@ -23,9 +23,7 @@ extern sched_state_t running_state;
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
-static const sched_state_t *all_states[] = {
-    &init_state,
-    &running_state};
+static const sched_state_t *all_states[] = {&init_state, &running_state};
 static const sched_state_t *initial_state = &init_state;
 
 /*
