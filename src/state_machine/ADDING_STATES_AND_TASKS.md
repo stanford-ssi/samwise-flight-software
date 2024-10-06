@@ -24,23 +24,7 @@ include the top level list headers `state_machine/tasks.h` and
 
 ## Add your state to `states.h`
 
-First, add your state to the enum:
-
-```c
-enum sm_state
-{
-    state_init, /* Entered by default at boot */
-    state_running,
-
-    /* My new state! */
-    my_state,
-
-    /* Auto-updates to the number of sates */
-    num_states
-};
-```
-
-Next add your state to the extern list:
+First add your state to the extern list:
 
 ```c
 extern sched_state_info_t init_state_info;
