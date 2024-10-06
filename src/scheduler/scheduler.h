@@ -53,7 +53,7 @@ typedef struct sched_task
 /**
  * Holds the info for defining a state.
  */
-typedef struct sched_state_info
+typedef struct sched_state
 {
     /**
      * Friendly name for the state.
@@ -68,8 +68,8 @@ typedef struct sched_state_info
      * @param slate     Pointer to the current satellite slate
      * @return The next state to transition to
      */
-    struct sched_state_info *(*get_next_state)(slate_t *slate);
-} sched_state_info_t;
+    struct sched_state *(*get_next_state)(slate_t *slate);
+} sched_state_t;
 
 void sched_init(slate_t *slate);
 void sched_dispatch(slate_t *slate);

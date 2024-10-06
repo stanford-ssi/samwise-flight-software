@@ -85,7 +85,7 @@ void sched_init(slate_t *slate)
  */
 void sched_dispatch(slate_t *slate)
 {
-    sched_state_info_t *current_state_info = slate->current_state;
+    sched_state_t *current_state_info = slate->current_state;
 
     /*
      * Loop through all of this state's tasks
@@ -115,7 +115,7 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    const sched_state_info_t *next_state =
+    const sched_state_t *next_state =
         current_state_info->get_next_state(slate);
     if (next_state != current_state_info)
     {

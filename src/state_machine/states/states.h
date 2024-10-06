@@ -13,8 +13,8 @@
 /*
  * Declare all states as extern.
  */
-extern sched_state_info_t init_state_info;
-extern sched_state_info_t running_state_info;
+extern sched_state_t init_state;
+extern sched_state_t running_state;
 
 /**
  * List of all states. We need this because we cannot enumerate all states at
@@ -23,14 +23,12 @@ extern sched_state_info_t running_state_info;
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
-static const sched_state_info_t *all_states[] = {
-    /* state_init */
-    &init_state_info,
-    /* state_running */
-    &running_state_info};
-static const sched_state_info_t *initial_state = &init_state_info;
+static const sched_state_t *all_states[] = {
+    &init_state,
+    &running_state};
+static const sched_state_t *initial_state = &init_state;
 
 /*
  * Must be a macro because it is used to initialize an array
  */
-#define num_states (sizeof(all_states) / sizeof(sched_state_info_t *))
+#define num_states (sizeof(all_states) / sizeof(sched_state_t *))
