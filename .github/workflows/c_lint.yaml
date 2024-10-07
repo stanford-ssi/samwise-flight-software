@@ -1,0 +1,24 @@
+name: C/C++ Lint Check
+on: [push]
+jobs:
+  Lint-Check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checking for linter errors
+        uses: cpp-linter/cpp-linter-action@v2
+        id: linter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          style: 'file'  # Use .clang-format config file
+          tidy-checks: '-*' # Disable clang-tidy
+          # only 'update' a single comment in a pull request's thread.
+          thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
+          format-review: true
+          passive-reviews: true
+      - name: Fail if there are linter errors
+        if: ${{steps.linter.outputs.clang-format-checks-failed}}
+        run: |
+           echo "Linter errors occurred, failing the job."
+           exit 1 # This will cause the step to fail
