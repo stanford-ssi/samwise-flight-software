@@ -8,8 +8,8 @@
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
+#include "scheduler/scheduler.h"
 #include "slate.h"
-#include "state_machine/state_machine.h"
 
 /**
  * Statically allocate the slate.
@@ -45,15 +45,13 @@ int main()
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
-    sleep_ms(5000);
-
     /*
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
     while (true)
     {
-        sm_dispatch(&slate);
+        sched_dispatch(&slate);
     }
 
     /*
