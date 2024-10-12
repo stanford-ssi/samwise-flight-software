@@ -24,7 +24,7 @@ extern sched_state_t running_state;
  * nearer the top have higher priority.
  */
 static const sched_state_t *all_states[] = {&init_state, &running_state};
-static const sched_state_t *initial_state = &init_state;
+static sched_state_t * const initial_state = &init_state;
 
 /*
  * Must be a macro because it is used to initialize an array
