@@ -42,8 +42,6 @@ int main()
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
-    sleep_ms(5000);
-
     /*
      * Go state machine!
      */
