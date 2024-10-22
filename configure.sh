@@ -5,3 +5,5 @@ git submodule update --init
 mkdir -p $HOME/.pico-sdk/cmake/
 touch $HOME/.pico-sdk/cmake/pico-vscode.cmake
 
+# Add directory for build outputs
+mkdir ./build
