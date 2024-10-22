@@ -1,0 +1,23 @@
+name: C/C++ Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: configure
+      run: ./configure.sh
+    - name: CMake - Generate Build Files
+      run: cmake ..
+      working-directory: build
+    - name: make - Build Project
+      run: make
+      working-directory: build
