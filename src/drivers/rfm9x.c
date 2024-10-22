@@ -82,10 +82,10 @@ uint8_t rfm9x_get8(rfm9x_t* r, rfm9x_reg_t reg) {
 void rfm9x_reset(rfm9x_t* r) {
   // Reset the chip as per RFM9X.pdf 7.2.2 p109
   set_port_dir(r->reset.group, r->reset.pin, out); // switch to output
-  wait(100); // 100us
+  sleep_us(100); // 100us
   set_port_dir(r->reset.group, r->reset.pin, in);
   set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
-  wait(MILLISECONDS(5)); // 5ms
+  sleep_ms(5); // 5ms
 }
 
 /*
@@ -504,15 +504,15 @@ void rfm9x_init(rfm9x_t* r) {
    * Calibrate the oscillator
    */
   rfm9x_set_mode(r, STANDBY_MODE);
-  wait(MILLISECONDS(10));
+  sleep_ms(10);
   rfm9x_trigger_osc_calibration(r);
-  wait(SECONDS(1));
+  sleep_ms(1000); // 1 second
 
   /*
    * Configure LoRa
    */
   rfm9x_set_mode(r, SLEEP_MODE);
-  wait(MILLISECONDS(10));
+  sleep_ms(10);
   rfm9x_set_lora(r, 1);
 
   /*
@@ -703,7 +703,7 @@ uint8_t rfm9x_receive(
         (packet[0] != _RH_BROADCAST_ADDRESS)
     ) {
       // delay before sending Ack to give receiver a chance to get ready
-      wait(MILLISECONDS(100));
+      sleep_ms(100);
 
       if(r->debug) printf("[rfm9x] Sender requested ACK\r\n");
 
@@ -847,7 +847,7 @@ uint8_t rfm9x_send_ack(
 
     // If we didn't receive an ACK, wait to retransmit
     if(!acked) {
-      wait(SECONDS(1));
+      sleep_ms(1000); // 1 second
     }
 
     flags |= _RH_FLAGS_RETRY;
