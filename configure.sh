@@ -10,7 +10,7 @@ touch $HOME/.pico-sdk/cmake/pico-vscode.cmake
 mkdir ./build
 
 # pre-commit hook for formatting
-ln -vsf ../../format_all.sh ./.git/hooks/pre-commit
+ln -sf ../../scripts/pre-commit-hook.sh ./.git/hooks/pre-commit
 
 # NOTE: YOU MUST ALSO ADD THE: Arm GNU Toolchain (arm-none-eabi-gcc)
 #
