@@ -21,4 +21,5 @@ jobs:
         if: ${{steps.linter.outputs.clang-format-checks-failed}}
         run: |
            echo "Linter errors occurred, failing the job."
+           echo "${{steps.linter.outputs.*}}"
            exit 1 # This will cause the step to fail
