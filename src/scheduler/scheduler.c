@@ -6,37 +6,62 @@
  * scheduling and dispatching tasks on the satellite.
  */
 
-#include "state_machine.h"
-#include "../macros.h"
-#include "../slate.h"
+#include "scheduler.h"
+#include "macros.h"
 #include "pico/time.h"
-#include "state_machine_states.h"
+#include "slate.h"
+
+/*
+ * Include the actual state machine
+ */
+#include "state_machine/states/states.h"
+#include "state_machine/tasks/tasks.h"
+
+static size_t n_tasks = 0;
+static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];
 
 /**
  * Initialize the state machine.
  *
  * @param slate     Pointer to the slate.
  */
-void sm_init(slate_t *slate)
+void sched_init(slate_t *slate)
 {
     /*
-     * Check that each state has a valid number of tasks.
+     * Check that each state has a valid number of tasks, and enumerate all
+     * tasks.
      */
     for (size_t i = 0; i < num_states; i++)
     {
-        ASSERT(all_states[i].num_tasks <= MAX_TASKS_PER_STATE);
+        ASSERT(all_states[i]->num_tasks <= MAX_TASKS_PER_STATE);
+        for (size_t j = 0; j < all_states[i]->num_tasks; j++)
+        {
+            bool is_duplicate = 0;
+            for (size_t k = 0; k < n_tasks; k++)
+            {
+                if (all_tasks[k] == all_states[i]->task_list[j])
+                    is_duplicate = 1;
+            }
+            if (!is_duplicate)
+            {
+                all_tasks[n_tasks] = all_states[i]->task_list[j];
+                n_tasks++;
+            }
+        }
     }
+
+    LOG_INFO("sched: Enumerated %d tasks", n_tasks);
 
     /*
      * Initialize all tasks.
      */
-    for (size_t i = 0; i < NUM_TASKS; i++)
+    for (size_t i = 0; i < n_tasks; i++)
     {
-        LOG_INFO("sm: Initializing task %s", all_tasks[i]->name);
+        LOG_INFO("sched: Initializing task %s", all_tasks[i]->name);
         all_tasks[i]->task_init(slate);
     }
 
-    for (size_t i = 0; i < NUM_TASKS; i++)
+    for (size_t i = 0; i < n_tasks; i++)
     {
         all_tasks[i]->next_dispatch =
             make_timeout_time_ms(all_tasks[i]->dispatch_period_ms);
@@ -45,11 +70,11 @@ void sm_init(slate_t *slate)
     /*
      * Enter the init state by default
      */
-    slate->current_state = state_init;
+    slate->current_state = initial_state;
     slate->entered_current_state_time = get_absolute_time();
     slate->time_in_current_state_ms = 0;
 
-    LOG_DEBUG("sm: Done initializing!");
+    LOG_DEBUG("sched: Done initializing!");
 }
 
 /**
@@ -58,17 +83,16 @@ void sm_init(slate_t *slate)
  *
  * @param slate     Pointer to the slate.
  */
-void sm_dispatch(slate_t *slate)
+void sched_dispatch(slate_t *slate)
 {
-    sm_state_t current_state = slate->current_state;
-    sm_state_info_t *current_state_info = all_states + slate->current_state;
+    sched_state_t *current_state_info = slate->current_state;
 
     /*
      * Loop through all of this state's tasks
      */
     for (size_t i = 0; i < current_state_info->num_tasks; i++)
     {
-        sm_task_t *task = current_state_info->task_list[i];
+        sched_task_t *task = current_state_info->task_list[i];
 
         /*
          * Check if this task is due and if so, dispatch it
@@ -78,7 +102,7 @@ void sm_dispatch(slate_t *slate)
             task->next_dispatch =
                 make_timeout_time_ms(task->dispatch_period_ms);
 
-            LOG_DEBUG("sm: Dispatching task %s", task->name);
+            LOG_DEBUG("sched: Dispatching task %s", task->name);
             task->task_dispatch(slate);
         }
     }
@@ -91,10 +115,10 @@ void sm_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    const sm_state_t next_state = current_state_info->get_next_state(slate);
-    if (next_state != current_state)
+    sched_state_t * const next_state = current_state_info->get_next_state(slate);
+    if (next_state != current_state_info)
     {
-        LOG_INFO("sm: Transitioning to state %s", all_states[next_state].name);
+        LOG_INFO("sched: Transitioning to state %s", next_state->name);
 
         slate->current_state = next_state;
         slate->entered_current_state_time = get_absolute_time();
