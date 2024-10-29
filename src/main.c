@@ -22,6 +22,7 @@ int send();
 
 int receive();
 
+int check_version();
 /**
  * Main code entry point.
  *
@@ -69,9 +70,10 @@ int main()
         sched_dispatch(&slate);
     }
     */
-   send();
-   receive();
+   //send();
+   //receive();
 
+    check_version();
     /*
      * We should NEVER be here so something bad has happened.
      * @todo reboot!
@@ -80,6 +82,16 @@ int main()
     ERROR("We reached the end of the code - this is REALLY BAD!");
 }
 
+int check_version(){
+    // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
+    rfm9x_t radio_module = rfm9x_mk(15);
+
+    // Initialize the radio module
+    // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
+    rfm9x_init(&radio_module);
+
+    printf("%d\n", rfm9x_version(&radio_module));
+}
 int send(){
 
     // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
@@ -98,7 +110,7 @@ int send(){
     data[2] = 'o';
     data[3] = 'w';
 
-    rfm9x_send(&radio_module, &data[0], 4, 1,1,1,1,1);
+    rfm9x_send(&radio_module, &data[0], 4, 0,255,0,0,0);
 
     printf("sending:");
     printf(data);
@@ -107,7 +119,7 @@ int send(){
 int receive(){
 
     // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(16);
+    rfm9x_t radio_module = rfm9x_mk(15);
 
     // Initialize the radio module
     // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
@@ -116,7 +128,7 @@ int receive(){
     // Receive a transmission
 
     char data[4];
-    rfm9x_receive(&radio_module, &data[0], 4, 1,1);
+    //rfm9x_receive(&radio_module, &data[0], 1, 4, 1, 0);
 
     printf(data);
 }
