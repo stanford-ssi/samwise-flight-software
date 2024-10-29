@@ -17,8 +17,7 @@ typedef enum
 
 typedef struct _rfm9x
 {
-    port_pin_t cs;
-    port_pin_t reset;
+    uint reset_pin;
     uint8_t seq; /* current sequence number */
     uint32_t high_power : 1, max_power : 1, debug : 1;
 } rfm9x_t;
