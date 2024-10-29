@@ -2,11 +2,14 @@
 #include "bit-support.h"
 #include "libssi.h"
 #include <string.h>
+#include "hardware/spi.h"
+#include "hardware/resets.h"
+#include "pico/time.h"
 
-rfm9x_t rfm9x_mk(port_pin_t cs, port_pin_t reset)
+rfm9x_t rfm9x_mk(uint reset_pin)
 {
-    rfm9x_t r = {.cs = cs,
-                 .reset = reset,
+    rfm9x_t r = {
+                 .reset_pin = reset_pin,
                  /*
                   * Default values
                   */
@@ -32,17 +35,15 @@ rfm9x_t rfm9x_mk(port_pin_t cs, port_pin_t reset)
 static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
-    write_port(r->cs.group, r->cs.pin, 0);
+    // First, configure that we will be GETTING from the Radio Module.
+    uint8_t value = reg & 0x7F;
 
-    spi_put8(reg & 0x7F);
-    spi_get8(); // discard
-    for (int i = 0; i < n; i++)
-    {
-        spi_put8(0);
-        buf[i] = spi_get8();
-    }
+    // WRITES to the radio module the value, of length 1 byte, that says that we are GETTING
+    spi_write_blocking(spi0, &value, 1);
 
-    write_port(r->cs.group, r->cs.pin, 1);
+    // GETS from the radio module the buffer.
+    // The 0 represents the arbitrary byte that should be passed IN as part of the master/slave interaction.
+    spi_read_blocking(spi0, 0, buf, n);
 }
 
 /*
@@ -51,17 +52,14 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
 static inline void rfm9x_put_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
-    write_port(r->cs.group, r->cs.pin, 0);
+    // this value will be passed in to tell the radio that we will be writing data
+    uint8_t value = (reg | 0x80) & 0xFF;
 
-    spi_put8((reg | 0x80) & 0xFF);
-    spi_get8(); // discard
-    for (int i = 0; i < n; i++)
-    {
-        spi_put8(buf[i]);
-        spi_get8(); // discard
-    }
+    // spi0 is bus 0.
+    spi_write_blocking(spi0, &value, 1);
 
-    write_port(r->cs.group, r->cs.pin, 1);
+    // Write to the radio that 
+    spi_write_blocking(spi0, buf, n);
 }
 
 /*
@@ -85,11 +83,17 @@ static inline uint8_t rfm9x_get8(rfm9x_t *r, rfm9x_reg_t reg)
 void rfm9x_reset(rfm9x_t *r)
 {
     // Reset the chip as per RFM9X.pdf 7.2.2 p109
-    set_port_dir(r->reset.group, r->reset.pin, out); // switch to output
+    
+    //set_port_dir(r->reset.group, r->reset.pin, out); // switch to output
+    gpio_set_dir(r.reset_pin, 1);
     sleep_us(100);                                   // 100us
-    set_port_dir(r->reset.group, r->reset.pin, in);
-    set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
-    sleep_ms(5); // 5ms
+    //set_port_dir(r->reset.group, r->reset.pin, in);
+    gpio_set_dir(r.reset_pin, 0);
+
+    //set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
+    //gpio_pull_up(r.reset_pin);
+    sleep_ms(5); // 5msjset
+
 }
 
 /*
@@ -553,18 +557,23 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
 void rfm9x_init(rfm9x_t *r)
 {
     // Setup CS line
-    set_port_dir(r->cs.group, r->cs.pin, out);
-    write_port(r->cs.group, r->cs.pin, 1);
+    //set_port_dir(r->cs.group, r->cs.pin, out);
+    //write_port(r->cs.group, r->cs.pin, 1);
 
     // Set up reset line
-    set_port_dir(r->reset.group, r->reset.pin, in);
+    // OLD
+    //set_port_dir(r->reset.group, r->reset.pin, in);
+
+    // NEW
+    gpio_set_dir(r.reset_pin, 0);
 
     // Initialize SPI for the RFM9X
 
     // RFM9X.pdf 4.3 p75:
     // CPOL = 0, CPHA = 0 (mode 0)
     // MSB first
-    spi_init(SPI_MODE_0, SPI_MSB_FIRST);
+    spi_init(spi0, 25000000);
+
 
     // Reset the chip
     rfm9x_reset(r);
