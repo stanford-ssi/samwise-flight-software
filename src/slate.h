@@ -11,7 +11,12 @@
 
 #pragma once
 
+#ifdef TEST
+#include "../mock_pico/types.h"
+#else
 #include "pico/types.h"
+#endif
+
 #include "scheduler/scheduler.h"
 
 typedef struct samwise_slate

@@ -7,9 +7,16 @@
 
 #include "init.h"
 #include "macros.h"
+
+#ifdef TEST
+#include "mock_pico/stdlib.h" // Use mock version for local testing
+#else
 #include "pico/stdlib.h"
+#endif
+
 #include "scheduler/scheduler.h"
 #include "slate.h"
+#include "testbase.h"
 
 /**
  * Statically allocate the slate.
@@ -23,9 +30,15 @@ slate_t slate;
  */
 int main()
 {
-    // Some ugly code with linter errors
-    int x = 10 + 5;
     stdio_init_all();
+
+    /*
+     * If we are in test mode, run the tests and exit.
+     */
+    if (IS_TEST)
+    {
+        return test_main();
+    }
 
     /*
      * In debug builds, delay to allow the user to connect to open the serial

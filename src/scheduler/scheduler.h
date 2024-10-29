@@ -8,7 +8,11 @@
 
 #pragma once
 
+#ifdef TEST
+#include "../mock_pico/types.h"
+#else
 #include "pico/types.h"
+#endif
 
 #define MAX_TASKS_PER_STATE 10
 

@@ -12,8 +12,11 @@
 
 #include "error.h"
 #include "macros.h"
+#ifdef TEST
+#include "mock_pico/stdlib.h"
+#else
 #include "pico/stdlib.h"
-
+#endif
 /**
  * This function should be called if we encounter an unrecoverable error. In
  * non-flight builds, enter a panic state.

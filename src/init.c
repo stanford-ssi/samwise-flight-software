@@ -9,7 +9,11 @@
 
 #include "init.h"
 #include "macros.h"
+#ifdef TEST
+#include "mock_pico/stdlib.h"
+#else
 #include "pico/stdlib.h"
+#endif
 #include "scheduler/scheduler.h"
 
 /**
