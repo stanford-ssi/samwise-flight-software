@@ -1,26 +1,26 @@
 #pragma once
 // some simple bit manipulation functions: helps make code clearer.
 
-#include "libc/demand.h"
+#include "macros.h"
 #include <inttypes.h>
 
 // set x[bit]=0 (leave the rest unaltered) and return the value
 static inline uint32_t bit_clr(uint32_t x, uint32_t bit)
 {
-    assert(bit < 32);
+    ASSERT(bit < 32);
     return x & ~(1 << bit);
 }
 
 // set x[bit]=1 (leave the rest unaltered) and return the value
 static inline uint32_t bit_set(uint32_t x, uint32_t bit)
 {
-    assert(bit < 32);
+    ASSERT(bit < 32);
     return x | (1 << bit);
 }
 
 static inline uint32_t bit_not(uint32_t x, uint32_t bit)
 {
-    assert(bit < 32);
+    ASSERT(bit < 32);
     return x ^ (1 << bit);
 }
 
@@ -30,7 +30,7 @@ static inline uint32_t bit_not(uint32_t x, uint32_t bit)
 // is x[bit] == 1?
 static inline uint32_t bit_is_on(uint32_t x, uint32_t bit)
 {
-    assert(bit < 32);
+    ASSERT(bit < 32);
     return (x >> bit) & 1;
 }
 static inline uint32_t bit_is_off(uint32_t x, uint32_t bit)
@@ -51,23 +51,23 @@ static inline uint32_t bits_mask(uint32_t nbits)
     // all bits on.
     if (nbits == 32)
         return ~0;
-    assert(nbits >= 0 && nbits < 32);
+    ASSERT(nbits >= 0 && nbits < 32);
     return (1 << nbits) - 1;
 }
 
 // extract bits [lb:ub]  (inclusive)
 static inline uint32_t bits_get(uint32_t x, uint32_t lb, uint32_t ub)
 {
-    assert(lb <= ub);
-    assert(ub < 32);
+    ASSERT(lb <= ub);
+    ASSERT(ub < 32);
     return (x >> lb) & bits_mask(ub - lb + 1);
 }
 
 // set bits[off:n]=0, leave the rest unchanged.
 static inline uint32_t bits_clr(uint32_t x, uint32_t lb, uint32_t ub)
 {
-    assert(lb <= ub);
-    assert(ub < 32);
+    ASSERT(lb <= ub);
+    ASSERT(ub < 32);
 
     uint32_t mask = bits_mask(ub - lb + 1);
 
@@ -79,8 +79,8 @@ static inline uint32_t bits_clr(uint32_t x, uint32_t lb, uint32_t ub)
 static inline uint32_t bits_set(uint32_t x, uint32_t lb, uint32_t ub,
                                 uint32_t v)
 {
-    assert(lb <= ub);
-    assert(ub < 32);
+    ASSERT(lb <= ub);
+    ASSERT(ub < 32);
 
 #if 0
     // XXX: not sure if special casing is clearer, or if we just keep the
@@ -88,8 +88,8 @@ static inline uint32_t bits_set(uint32_t x, uint32_t lb, uint32_t ub,
         return v;
 #endif
     uint32_t n = ub - lb + 1;
-    assert(n <= 32);
-    assert((bits_mask(n) & v) == v);
+    ASSERT(n <= 32);
+    ASSERT((bits_mask(n) & v) == v);
 
     return bits_clr(x, lb, ub) | (v << lb);
 }
@@ -98,8 +98,8 @@ static inline uint32_t bits_set(uint32_t x, uint32_t lb, uint32_t ub,
 static inline uint32_t bits_eq(uint32_t x, uint32_t lb, uint32_t ub,
                                uint32_t val)
 {
-    assert(lb <= ub);
-    assert(ub < 32);
+    ASSERT(lb <= ub);
+    ASSERT(ub < 32);
     return bits_get(x, lb, ub) == val;
 }
 

@@ -1,6 +1,6 @@
 #include "rfm9x.h"
 #include "bit-support.h"
-#include "libssi.h"
+#include "src/macros.h"
 #include <string.h>
 #include "hardware/spi.h"
 #include "hardware/resets.h"
@@ -85,10 +85,10 @@ void rfm9x_reset(rfm9x_t *r)
     // Reset the chip as per RFM9X.pdf 7.2.2 p109
     
     //set_port_dir(r->reset.group, r->reset.pin, out); // switch to output
-    gpio_set_dir(r.reset_pin, 1);
+    gpio_set_dir(r->reset_pin, 1);
     sleep_us(100);                                   // 100us
     //set_port_dir(r->reset.group, r->reset.pin, in);
-    gpio_set_dir(r.reset_pin, 0);
+    gpio_set_dir(r->reset_pin, 0);
 
     //set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
     //gpio_pull_up(r.reset_pin);
@@ -564,7 +564,7 @@ void rfm9x_init(rfm9x_t *r)
     //set_port_dir(r->reset.group, r->reset.pin, in);
 
     // NEW
-    gpio_set_dir(r.reset_pin, 0);
+    gpio_set_dir(r->reset_pin, 0);
 
     // Initialize SPI for the RFM9X
 
@@ -612,31 +612,31 @@ void rfm9x_init(rfm9x_t *r)
     rfm9x_set_frequency(r, 438100000); /* Always */
 
     rfm9x_set_preamble_length(r, 8); /* 8 bytes matches Radiohead library */
-    assert(rfm9x_get_preamble_length(r) == 8);
+    ASSERT(rfm9x_get_preamble_length(r) == 8);
 
     rfm9x_set_bandwidth(r, 125000); /* Configure 125000 to match Radiohead, see
                                        SX1276 errata note 2.3 */
-    assert(rfm9x_get_bandwidth(r) == 125000);
+    ASSERT(rfm9x_get_bandwidth(r) == 125000);
 
     rfm9x_set_coding_rate(r, 5); /* Configure 4/5 to match Radiohead library */
-    assert(rfm9x_get_coding_rate(r) == 5);
+    ASSERT(rfm9x_get_coding_rate(r) == 5);
 
     rfm9x_set_spreading_factor(
         r, 7); /* Configure to 7 to match Radiohead library */
-    assert(rfm9x_get_spreading_factor(r) == 7);
+    ASSERT(rfm9x_get_spreading_factor(r) == 7);
 
     rfm9x_set_crc(r, 0); /* Disable CRC checking */
-    assert(rfm9x_is_crc_enabled(r) == 0);
+    ASSERT(rfm9x_is_crc_enabled(r) == 0);
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
     rfm9x_set_tx_power(r, 15);                          /* Known good value */
-    assert(rfm9x_get_tx_power(r) == 15);
+    ASSERT(rfm9x_get_tx_power(r) == 15);
 
     rfm9x_set_pa_ramp(r, 0);
-    assert(rfm9x_get_pa_ramp(r) == 0);
+    ASSERT(rfm9x_get_pa_ramp(r) == 0);
 
     rfm9x_set_lna_boost(r, 0b11);
-    assert(rfm9x_get_lna_boost(r) == 0b11);
+    ASSERT(rfm9x_get_lna_boost(r) == 0b11);
 }
 
 /*
