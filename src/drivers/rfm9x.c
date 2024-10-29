@@ -92,8 +92,7 @@ void rfm9x_reset(rfm9x_t *r)
 
     //set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
     //gpio_pull_up(r.reset_pin);
-    sleep_ms(5); // 5msjset
-
+    sleep_ms(5); // 
 }
 
 /*
