@@ -25,7 +25,7 @@ typedef struct _rfm9x
 /*
  * Creates an RFM9X helper struct. Uninitialized.
  */
-rfm9x_t rfm9x_mk(port_pin_t cs, port_pin_t reset);
+rfm9x_t rfm9x_mk(uint reset);
 
 /*
  * Initializes an RFM9X radio.
@@ -130,5 +130,3 @@ typedef enum
     _RH_FLAGS_ACK = 0x80,
     _RH_FLAGS_RETRY = 0x40,
 } rfm9x_reg_t;
-
-#endif
