@@ -571,7 +571,7 @@ void rfm9x_init(rfm9x_t *r)
     // RFM9X.pdf 4.3 p75:
     // CPOL = 0, CPHA = 0 (mode 0)
     // MSB first
-    spi_init(r->spi, 25000000);
+    spi_init(r->spi, RFM9X_SPI_BAUDRATE);
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     // Reset the chip
@@ -609,14 +609,14 @@ void rfm9x_init(rfm9x_t *r)
     /*
      * Configure tranceiver properties
      */
-    rfm9x_set_frequency(r, 438100000); /* Always */
+    rfm9x_set_frequency(r, RFM9X_FREQUENCY); /* Always */
 
     rfm9x_set_preamble_length(r, 8); /* 8 bytes matches Radiohead library */
     ASSERT(rfm9x_get_preamble_length(r) == 8);
 
-    rfm9x_set_bandwidth(r, 125000); /* Configure 125000 to match Radiohead, see
+    rfm9x_set_bandwidth(r, RFM9X_BANDWIDTH); /* Configure 125000 to match Radiohead, see
                                        SX1276 errata note 2.3 */
-    ASSERT(rfm9x_get_bandwidth(r) == 125000);
+    ASSERT(rfm9x_get_bandwidth(r) == RFM9X_BANDWIDTH);
 
     rfm9x_set_coding_rate(r, 5); /* Configure 4/5 to match Radiohead library */
     ASSERT(rfm9x_get_coding_rate(r) == 5);
