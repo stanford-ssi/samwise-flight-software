@@ -74,7 +74,7 @@ int main()
 
 int check_version(){
     // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(15);
+    rfm9x_t radio_module = rfm9x_mk(spi0, 15);
 
     // Initialize the radio module
     // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
@@ -85,7 +85,7 @@ int check_version(){
 int send(){
 
     // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(16);
+    rfm9x_t radio_module = rfm9x_mk(spi0, 16);
 
     // Initialize the radio module
     // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
@@ -109,7 +109,7 @@ int send(){
 int receive(){
 
     // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(15);
+    rfm9x_t radio_module = rfm9x_mk(spi0, 15);
 
     // Initialize the radio module
     // The & returns the address of the radio module, so the funciton receives a "pointer" to the object

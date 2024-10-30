@@ -6,10 +6,11 @@
 #include "hardware/resets.h"
 #include "pico/time.h"
 
-rfm9x_t rfm9x_mk(uint reset_pin)
+rfm9x_t rfm9x_mk(spi_inst_t* spi, uint reset_pin)
 {
     rfm9x_t r = {
                  .reset_pin = reset_pin,
+                 .spi = spi,
                  /*
                   * Default values
                   */
@@ -39,11 +40,11 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
     uint8_t value = reg & 0x7F;
 
     // WRITES to the radio module the value, of length 1 byte, that says that we are GETTING
-    spi_write_blocking(spi0, &value, 1);
+    spi_write_blocking(r->spi, &value, 1);
 
     // GETS from the radio module the buffer.
     // The 0 represents the arbitrary byte that should be passed IN as part of the master/slave interaction.
-    spi_read_blocking(spi0, 0, buf, n);
+    spi_read_blocking(r->spi, 0, buf, n);
 }
 
 /*
@@ -55,11 +56,10 @@ static inline void rfm9x_put_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
     // this value will be passed in to tell the radio that we will be writing data
     uint8_t value = (reg | 0x80) & 0xFF;
 
-    // spi0 is bus 0.
-    spi_write_blocking(spi0, &value, 1);
+    spi_write_blocking(r->spi, &value, 1);
 
     // Write to the radio that 
-    spi_write_blocking(spi0, buf, n);
+    spi_write_blocking(r->spi, buf, n);
 }
 
 /*
@@ -571,8 +571,7 @@ void rfm9x_init(rfm9x_t *r)
     // RFM9X.pdf 4.3 p75:
     // CPOL = 0, CPHA = 0 (mode 0)
     // MSB first
-    spi_init(spi0, 25000000);
-
+    spi_init(r->spi, 25000000);
 
     // Reset the chip
     rfm9x_reset(r);
