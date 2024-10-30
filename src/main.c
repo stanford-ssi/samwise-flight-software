@@ -10,6 +10,7 @@
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 #include "slate.h"
+#include "flash/flash.h"
 
 /**
  * Statically allocate the slate.
@@ -36,6 +37,13 @@ int main()
     {
         sleep_ms(5000);
     }
+
+    /*
+     * Initialize persistent data or load existing data if already in flash.
+     * The reboot counter is incremented each time this code runs.
+     */
+    persistent_data_t *data = init_persistent_data();
+    printf("Current reboot count: %d\n", data->reboot_counter);
 
     /*
      * Initialize everything.
