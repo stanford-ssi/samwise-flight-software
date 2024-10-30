@@ -572,6 +572,7 @@ void rfm9x_init(rfm9x_t *r)
     // CPOL = 0, CPHA = 0 (mode 0)
     // MSB first
     spi_init(r->spi, 25000000);
+    spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     // Reset the chip
     rfm9x_reset(r);
