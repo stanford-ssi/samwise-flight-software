@@ -36,6 +36,7 @@ rfm9x_t rfm9x_mk(spi_inst_t* spi, uint reset_pin)
 static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
+    gpio_put(21, 0);
     // First, configure that we will be GETTING from the Radio Module.
     uint8_t value = reg & 0x7F;
 
@@ -45,6 +46,7 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
     // GETS from the radio module the buffer.
     // The 0 represents the arbitrary byte that should be passed IN as part of the master/slave interaction.
     spi_read_blocking(r->spi, 0, buf, n);
+    gpio_put(21, 1);
 }
 
 /*
@@ -53,13 +55,17 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
 static inline void rfm9x_put_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
-    // this value will be passed in to tell the radio that we will be writing data
+    gpio_put(21, 0);
+    
+    // this value will be passed in to tell the radio that we will be writing
+    // data
     uint8_t value = (reg | 0x80) & 0xFF;
 
     spi_write_blocking(r->spi, &value, 1);
 
     // Write to the radio that 
     spi_write_blocking(r->spi, buf, n);
+    gpio_put(21, 1);
 }
 
 /*
@@ -562,9 +568,19 @@ void rfm9x_init(rfm9x_t *r)
     // Set up reset line
     // OLD
     //set_port_dir(r->reset.group, r->reset.pin, in);
+    gpio_init(r->reset_pin);
+    gpio_init(21);
+
+    gpio_set_function(16, GPIO_FUNC_SPI);
+    gpio_set_function(18, GPIO_FUNC_SPI);
+    gpio_set_function(19, GPIO_FUNC_SPI);
 
     // NEW
     gpio_set_dir(r->reset_pin, 0);
+    gpio_put(r->reset_pin, 0);
+
+    gpio_set_dir(21, 1);
+    gpio_put(21, 1);
 
     // Initialize SPI for the RFM9X
 
@@ -610,17 +626,22 @@ void rfm9x_init(rfm9x_t *r)
      * Configure tranceiver properties
      */
     rfm9x_set_frequency(r, RFM9X_FREQUENCY); /* Always */
+    ASSERT(rfm9x_get_frequency(r) == RFM9X_FREQUENCY);
 
     rfm9x_set_preamble_length(r, 8); /* 8 bytes matches Radiohead library */
+    printf("Preamble length: %d\r\n", rfm9x_get_preamble_length(r));
     ASSERT(rfm9x_get_preamble_length(r) == 8);
 
     rfm9x_set_bandwidth(r, RFM9X_BANDWIDTH); /* Configure 125000 to match Radiohead, see
                                        SX1276 errata note 2.3 */
+    printf("Bandwith: %d\r\n", rfm9x_get_bandwidth(r));
     ASSERT(rfm9x_get_bandwidth(r) == RFM9X_BANDWIDTH);
 
     rfm9x_set_coding_rate(r, 5); /* Configure 4/5 to match Radiohead library */
+    printf("Coding rate: %d\r\n", rfm9x_get_coding_rate(r));
     ASSERT(rfm9x_get_coding_rate(r) == 5);
 
+    printf("Spreading factor: %d\r\n", rfm9x_get_spreading_factor(r));
     rfm9x_set_spreading_factor(
         r, 7); /* Configure to 7 to match Radiohead library */
     ASSERT(rfm9x_get_spreading_factor(r) == 7);
