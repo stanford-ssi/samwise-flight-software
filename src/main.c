@@ -88,9 +88,10 @@ int check_version(){
 
     // Initialize the radio module
     // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
+    LOG_INFO("Initializing radio module");
     rfm9x_init(&radio_module);
 
-    printf("%d\n", rfm9x_version(&radio_module));
+    LOG_INFO("%d\n", rfm9x_version(&radio_module));
 }
 int send(){
 
