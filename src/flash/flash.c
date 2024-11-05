@@ -14,6 +14,7 @@
 #include "flash.h"
 
 #define FLASH_TARGET_OFFSET (256 * 1024)
+#define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
 
 // Read the persistent data from flash
 const persistent_data_t *read_persistent_data() {
@@ -37,10 +38,14 @@ persistent_data_t *init_persistent_data() {
     static persistent_data_t data;
     const persistent_data_t *flash_data = read_persistent_data();
 
-    if (flash_data->reboot_counter == 0xFFFFFFFF) {
+    // Check if the data has been initialized by looking at the marker
+    if (flash_data->marker != INIT_MARKER) {
+        // If uninitialized, set initial values
+        data.marker = INIT_MARKER;
         data.reboot_counter = 1;
-        printf("Initializing reboot counter to 1\n");
+        printf("First boot detected, initializing reboot counter to 1\n");
     } else {
+        // If initialized, increment the counter
         data = *flash_data;
         data.reboot_counter += 1;
         printf("Loaded reboot counter from flash: %d\n", data.reboot_counter);
