@@ -63,3 +63,4 @@ target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
 pico_add_extra_outputs(samwise)
 
+add_definitions(-DTEST)

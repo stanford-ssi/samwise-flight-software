@@ -8,8 +8,16 @@
 
 #pragma once
 
+#define PICO_DEFAULT_LED_PIN 1
+
+
 #include "error.h"
+
+#ifdef TEST
+#include <stdio.h>
+#else
 #include "pico/printf.h"
+#endif
 
 /**
  * If this symbol is defined, we are configured to run a flight build.
@@ -40,6 +48,28 @@
 #else
 #define LOG_DEBUG(fmt, ...) (void)0
 #endif
+
+
+/**
+ * Convenience macros to get whether we are in test mode in a runtime build.
+ */
+#ifdef TEST
+#define IS_TEST true
+#else
+#define IS_TEST false
+#endif
+
+/**
+ * Log a formatted message at the debug level. Will only do anything in a
+ * test build.
+ */
+#ifndef TEST
+#define LOG_TEST(fmt, ...)                                                    \
+    printf("[TEST]   " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+#else
+#define LOG_TEST(fmt, ...) (void)0
+#endif
+
 
 /**
  * Log a printf-style formatted message at the info level. Will log in both
