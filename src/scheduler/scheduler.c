@@ -8,7 +8,11 @@
 
 #include "scheduler.h"
 #include "macros.h"
+#ifdef TEST
+#include "mock_pico/stdlib.h"
+#else
 #include "pico/time.h"
+#endif
 #include "slate.h"
 
 /*

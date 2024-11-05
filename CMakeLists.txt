@@ -8,8 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
-
-# == DO NEVER EDIT THE NEXT LINES for Raspberry Pi Pico VS Code Extension to work ==
+  # == DO NEVER EDIT THE NEXT LINES for Raspberry Pi Pico VS Code Extension to work ==
 if(WIN32)
     set(USERHOME $ENV{USERPROFILE})
 else()
@@ -17,22 +16,25 @@ else()
 endif()
 set(sdkVersion 2.0.0)
 set(toolchainVersion 13_2_Rel1)
-set(picotoolVersion 2.0.0)
-include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
-# ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+if(NOT TEST)
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
-include(pico-sdk/pico_sdk_init.cmake)
+  set(picotoolVersion 2.0.0)
+  include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+  # ====================================================================================
+  set(PICO_BOARD pico CACHE STRING "Board type")
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+  # Pull in Raspberry Pi Pico SDK (must be before project)
+  include(pico-sdk/pico_sdk_init.cmake)
+
+  if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+  endif()
 endif()
-
 project(samwise C CXX ASM)
-
-# Initialise the Raspberry Pi Pico SDK
-pico_sdk_init()
+if(NOT TEST)
+  # Initialise the Raspberry Pi Pico SDK
+  pico_sdk_init()
+endif()
 
 # Add executable. Default name is the project name, version 0.1
 file(GLOB top CONFIGURE_DEPENDS "src/*.c")
@@ -42,16 +44,18 @@ file(GLOB state_machine_states CONFIGURE_DEPENDS "src/state_machine/states/*.c")
 add_executable(samwise ${top} ${scheduler} ${state_machine_tasks}
   ${state_machine_states})
 
-pico_set_program_name(samwise "samwise")
-pico_set_program_version(samwise "0.1")
+if(NOT TEST)
+  pico_set_program_name(samwise "samwise")
+  pico_set_program_version(samwise "0.1")
 
-# Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(samwise 0)
-pico_enable_stdio_usb(samwise 1)
+  # Modify the below lines to enable/disable output over UART/USB
+  pico_enable_stdio_uart(samwise 0)
+  pico_enable_stdio_usb(samwise 1)
 
-# Add the standard library to the build
-target_link_libraries(samwise
-        pico_stdlib)
+  # Add the standard library to the build
+  target_link_libraries(samwise
+          pico_stdlib)
+endif()
 
 # Add the standard include files to the build
 target_include_directories(samwise PRIVATE
@@ -61,5 +65,26 @@ target_include_directories(samwise PRIVATE
 
 target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-pico_add_extra_outputs(samwise)
+if(NOT TEST)
+  pico_add_extra_outputs(samwise)
+endif()
 
+add_definitions(-DTEST)
+
+if(TEST)
+    # Remove any ARM-specific compiler settings
+    set(CMAKE_C_COMPILER gcc)  # or clang for Mac
+    set(CMAKE_CXX_COMPILER g++)  # or clang++ for Mac
+    
+    # Clear any ARM-specific flags
+    set(CMAKE_C_FLAGS "")
+    set(CMAKE_CXX_FLAGS "")
+    
+    # Add mock implementations
+    file(GLOB mock_pico CONFIGURE_DEPENDS "mock_pico/*.c")
+    target_sources(samwise PRIVATE ${mock_pico})
+    target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mock_pico)
+    
+    # Add test-specific compiler definitions
+    add_definitions(-DTEST)
+endif()

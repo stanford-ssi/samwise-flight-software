@@ -12,6 +12,7 @@
 
 #include "error.h"
 #include "macros.h"
+
 #ifdef TEST
 #include "mock_pico/stdlib.h"
 #else

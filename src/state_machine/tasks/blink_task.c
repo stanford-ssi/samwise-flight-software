@@ -7,7 +7,13 @@
 
 #include "state_machine/tasks/blink_task.h"
 #include "macros.h"
+
+#ifdef TEST
+#include "mock_pico/stdlib.h"
+#else
 #include "pico/stdlib.h"
+#endif
+
 #include "slate.h"
 
 void blink_task_init(slate_t *slate)

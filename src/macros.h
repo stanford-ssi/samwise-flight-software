@@ -9,10 +9,15 @@
 #pragma once
 
 #include "error.h"
+// #include "pico/time.h"
+
 
 #ifdef TEST
-#include "mock_pico/printf.h"
+
+#include "../mock_pico/printf.h"
+#include "../mock_pico/time.h"
 #else
+#include "pico/time.h"
 #include "pico/printf.h"
 #endif
 

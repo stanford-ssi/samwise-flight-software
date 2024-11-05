@@ -1,6 +1,7 @@
 #ifndef MOCK_PICO_TYPES_H
 #define MOCK_PICO_TYPES_H
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 // Add any basic types or stubs needed for your code here

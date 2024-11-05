@@ -1,42 +1,32 @@
 #ifndef MOCK_PICO_STDLIB_H
 #define MOCK_PICO_STDLIB_H
-
-#include "mock_pico/printf.h"
-#include <stdint.h>
+#define GPIO_OUT 1
+#define PICO_DEFAULT_LED_PIN 1
+#include <stdint.h> 
+#include <stdio.h>
 #include <stdbool.h>
-#include "mock_pico/types.h"
 
-// Mock for GPIO pin initialization
-void gpio_init(uint pin) {
-    printf("Mock: GPIO pin %d initialized\n", pin);
-}
+typedef struct stdio_driver stdio_driver_t;
 
-// Mock for setting GPIO direction
-void gpio_set_dir(uint pin, bool out) {
-    printf("Mock: GPIO pin %d set to direction %s\n", pin, out ? "OUTPUT" : "INPUT");
-}
+#define STDIO_ERROR -1
+#define STDIO_NO_INPUT -2
 
-// Mock for setting GPIO state
-void gpio_put(uint pin, bool value) {
-    printf("Mock: GPIO pin %d set to %s\n", pin, value ? "HIGH" : "LOW");
-}
+static inline void stdio_usb_init() {}
+void stdio_uart_init();
+static inline void stdio_init_all() { stdio_uart_init(); }
+static inline void stdio_filter_driver(stdio_driver_t *driver) {}
+static inline void stdio_set_translate_crlf(stdio_driver_t *driver, bool enabled) {}
+static inline bool stdio_usb_connected(void) { return true; }
+int getchar_timeout_us(uint32_t timeout_us);
+#define puts_raw puts
+#define putchar_raw putchar
 
-// Mock for reading GPIO state
-bool gpio_get(uint pin) {
-    printf("Mock: GPIO pin %d read\n", pin);
-    return true; // Simulate high signal
-}
+void gpio_init(int gpio);
+void gpio_set_dir(int gpio, int out);
+void gpio_put(int gpio, int value);
+int gpio_get(int gpio);
+void sleep_ms(int ms);
+void uart_init(int uart, int baud);
 
-// Mock for sleep/delay function
-void sleep_ms(uint32_t ms) {
-    printf("Mock: Sleep for %d ms\n", ms);
-}
 
-// Mock for UART initialization (if used)
-void uart_init(void) {
-    printf("Mock: UART initialized\n");
-}
-
-// You can add more mocked functions based on what you use in your code
-
-#endif // MOCK_PICO_STDLIB_H
+#endif

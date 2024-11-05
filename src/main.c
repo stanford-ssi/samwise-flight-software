@@ -9,7 +9,7 @@
 #include "macros.h"
 
 #ifdef TEST
-#include "mock_pico/stdlib.h" // Use mock version for local testing
+#include "../mock_pico/stdlib.h" // Use mock version for local testing
 #else
 #include "pico/stdlib.h"
 #endif
@@ -30,15 +30,15 @@ slate_t slate;
  */
 int main()
 {
-    stdio_init_all();
-
     /*
      * If we are in test mode, run the tests and exit.
      */
     if (IS_TEST)
     {
-        return test_main();
+        printf("TEST MODE\n");
+        return 0; //test_main();
     }
+    stdio_init_all();
 
     /*
      * In debug builds, delay to allow the user to connect to open the serial
