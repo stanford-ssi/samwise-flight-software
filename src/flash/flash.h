@@ -10,18 +10,21 @@
 
 #include <stdint.h>
 
+#define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
+
 /**
- * @brief Structure to persistently store reboot count.
+ * @brief Structure to persistently store reboot count and initialization marker.
  */
 typedef struct {
-    uint32_t reboot_counter;
+    uint32_t marker;         // Marker to verify initialization
+    uint32_t reboot_counter; // Actual counter
 } persistent_data_t;
 
 /**
  * @brief Initialize persistent data structure, setting reboot counter to 1 if uninitialized.
  * @return Pointer to the persistent data.
  */
-persistent_data_t *init_persistent_data();
+persistent_data_t *init_persistent_data(void);
 
 /**
  * @brief Write the persistent data to flash memory.
@@ -33,6 +36,6 @@ void write_persistent_data(persistent_data_t *data);
  * @brief Read the persistent data from flash memory.
  * @return Pointer to the persistent data in flash.
  */
-const persistent_data_t *read_persistent_data();
+const persistent_data_t *read_persistent_data(void);
 
-#endif
+#endif // FLASH_H
