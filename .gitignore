@@ -2,4 +2,4 @@
 **/.DS_Store
 .vscode
 build
-host-build
+test-build

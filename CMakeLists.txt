@@ -20,7 +20,15 @@ set(toolchainVersion 13_2_Rel1)
 set(picotoolVersion 2.0.0)
 include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+
+add_definitions(-DTEST)
+if("${TEST}" STREQUAL "" OR "${TEST}" STREQUAL "off")
+    set(PICO_BOARD host CACHE STRING "Board type")
+else()
+    message(STATUS "In test mode")
+    message(PICO_BOARD ${PICO_BOARD})
+    message(PLATFORM ${PICO_PLATFORM})
+endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico-sdk/pico_sdk_init.cmake)
@@ -63,4 +71,3 @@ target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
 pico_add_extra_outputs(samwise)
 
-add_definitions(-DTEST)

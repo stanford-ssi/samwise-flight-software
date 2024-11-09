@@ -23,9 +23,10 @@ slate_t slate;
  */
 int main()
 {
-    // Some ugly code with linter errors
-    int x = 10 + 5;
     stdio_init_all();
+
+    
+
 
     /*
      * In debug builds, delay to allow the user to connect to open the serial

@@ -8,6 +8,7 @@
 
 #pragma once
 
+// this may not be correct
 #define PICO_DEFAULT_LED_PIN 1
 
 
