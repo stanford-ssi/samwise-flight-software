@@ -16,3 +16,4 @@
  */
 extern sched_task_t print_task;
 extern sched_task_t blink_task;
+extern sched_task_t command_switch_task;
