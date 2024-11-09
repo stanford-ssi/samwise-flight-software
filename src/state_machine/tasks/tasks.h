@@ -14,10 +14,6 @@
  * Tasks are built from the tasks folder, which we cannot depend on to avoid
  * circularity.
  */
-
-// Extern -> assumes that these variables exist in another file, and accesses them.
-
-// Each of these variables will be covered 
 extern sched_task_t print_task;
 extern sched_task_t blink_task;
-extern sched_task_t radio_task; 
+extern sched_task_t command_switch_task;

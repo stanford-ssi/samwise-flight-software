@@ -14,7 +14,6 @@
 #include "pico/types.h"
 #include "pico/util/queue.h"
 #include "scheduler/scheduler.h"
-#include "drivers/rfm9x.h"
 
 typedef struct samwise_slate
 {
@@ -27,10 +26,10 @@ typedef struct samwise_slate
 
     bool led_state;
 
-    /*
-     * Radio
-     */
-    rfm9x_t radio;
-    queue_t tx_queue;
-    queue_t rx_queue;
+    // command_switch_task data below
+    queue_t
+        radio_packets_out; // My guess at what input data queue will look like
+    queue_t task1_data; // queues of this kind will exist for each task called
+                        // from radio com
+
 } slate_t;
