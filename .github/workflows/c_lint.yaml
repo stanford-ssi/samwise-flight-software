@@ -1,5 +1,11 @@
 name: C/C++ Lint Check
-on: [push]
+on:
+  push:
+    paths:
+      # only when a .c, .cpp, or .h file is changed
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
 jobs:
   Lint-Check:
     runs-on: ubuntu-latest
