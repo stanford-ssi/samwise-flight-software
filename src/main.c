@@ -24,48 +24,12 @@ rfm9x_t radio_module;
  *
  * This should never return (unless something really bad happens!)
  */
-#pragma pack(1)
-struct s
-{
-    int a; // aaaa bxxx cccc + 3 chars?
-    char b;
-    int c;
-};
 int main()
-{
-    struct s s1;
-    s1.a = 15;
-    s1.b = 55;
-    s1.c = 12;
-    stdio_init_all();
-    sleep_ms(5000);
-    LOG_INFO("size: ");
-    printf("%zu", sizeof(s1)); // should be 9
-    printf("\n");
-    const char *mem[12];
-    // = (char *)s1.a;
-    memcpy(mem, (char *)s1, 50);
-    mem[9] = 123;
-    mem[10] = 13;
-    printf("%i", (int){mem[0], mem[1], mem[2], mem[3]});
-    printf("%c", (char){mem[9]});
-
-    // s1.a = 15;
-    // s1.b = 55;
-    // s1.c = 12;
-
-    // // testing misaligned memory access
-    // const char *mem = (char *)s1.a;
-
-    // int i = 15;
-    // char test[8];
-    // test[1] = (char)(i & 0xFF);
-    // test[2] = (char)((i >> 8) & 0xFF);
-
-    // end
+{   
     // Some ugly code with linter errors
     int x = 10 + 5;
-
+    stdio_init_all();
+    
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
