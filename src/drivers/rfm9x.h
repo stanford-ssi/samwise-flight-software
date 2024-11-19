@@ -52,6 +52,16 @@ uint32_t rfm9x_version(rfm9x_t *r);
 
 /*
  * Send a raw transmission from the RFM9X.
+ *
+ * r: the radio
+ * data: the data to send
+ * l: the length of the data. Must be less than `PAYLOAD_SIZE`
+ * keep_listening: 0 to stop listening after sending, 1 to keep blocking
+ * destination: radio to send it to. 255 is broadcast.
+ * node: our address
+ * identifier: Sequence number — if sending multiple packets, increment by one
+ * per packet.
+ * flags:
  */
 uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
                    uint8_t destination, uint8_t node, uint8_t identifier,
@@ -71,7 +81,7 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
  * Receive a transmission.
  */
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack);
+                      uint8_t keep_listening, uint8_t with_ack, bool blocking_wait_for_packet);
 
 typedef enum
 {
@@ -111,6 +121,15 @@ typedef enum
     _RH_RF95_REG_25_FIFO_RX_BYTE_ADDR = 0x25,
     _RH_RF95_REG_26_MODEM_CONFIG3 = 0x26,
 
+    /**
+     * In this register:
+     * Bits 7-6: Dio0Mapping
+     * Bits 5-4: Dio1Mapping
+     * Bits 3-2: Dio2Mapping
+     * Bits 1-0: Dio3Mapping
+     *
+     * (p. 100 of documentation)
+     */
     _RH_RF95_REG_40_DIO_MAPPING1 = 0x40,
     _RH_RF95_REG_41_DIO_MAPPING2 = 0x41,
     _RH_RF95_REG_42_VERSION = 0x42,

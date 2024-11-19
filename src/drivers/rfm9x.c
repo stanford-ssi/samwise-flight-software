@@ -715,7 +715,7 @@ void rfm9x_transmit(rfm9x_t *r)
     // we do not have an LNA
     rfm9x_set_mode(r, TX_MODE);
     uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    dioValue = bits_set(dioValue, 6, 7, 0b01);
+    dioValue = bits_set(dioValue, 6, 7, 0b00);
     rfm9x_put8(r, _RH_RF95_REG_40_DIO_MAPPING1, dioValue);
 }
 
@@ -764,7 +764,7 @@ uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
             printf("FIFO length: %d\r\n", fifo_length);
 
         // keep listening, no ack, yes debug, no view
-        rfm9x_receive(r, buf, node, 1, 0);
+        rfm9x_receive(r, buf, node, 1, 0, 1);
 
         if (fifo_length > 0)
         {
@@ -782,13 +782,15 @@ uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
 
 // my pointer stuff with packet is almost definitely wrong!
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack)
+                      uint8_t keep_listening, uint8_t with_ack, bool blocking_wait_for_packet)
 {
     uint8_t n_bytes = 0;
 
     // Spin until we have a packet
     // while(!rfm9x_rx_done(r));
-    rfm9x_await_rx(r);
+    if (blocking_wait_for_packet) {
+        rfm9x_await_rx(r);
+    }
 
     // enter idle mode so that we don't receive other packets
     rfm9x_set_mode(r, STANDBY_MODE);
@@ -982,7 +984,7 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
         else
         {
             // Wait for ack
-            uint16_t l = rfm9x_receive(r, ack_buffer, node, 0, 0);
+            uint16_t l = rfm9x_receive(r, ack_buffer, node, 0, 0, 1);
             if (l > 0)
             { /* Received something */
                 if (ack_buffer[3] & _RH_FLAGS_ACK)

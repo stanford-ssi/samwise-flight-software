@@ -25,8 +25,12 @@ void radio_task_init(slate_t *slate)
   printf("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
 }
 
+// When it sees something in the transmit queue, switches into recieve mode and
+// send a packet. Otherwise, be in recieve mode. When it recieves a packet, it
+// inturrupts the CPU to immediately recieve.
 void radio_task_dispatch(slate_t *slate)
 {
+  
 }
 
 sched_task_t radio_task = {.name = "radio",

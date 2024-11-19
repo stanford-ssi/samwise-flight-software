@@ -20,9 +20,15 @@ slate_t slate;
 
 int send();
 
+void interrupt_recieved(uint gpio, uint32_t events);
+
 int receive();
 
 int check_version();
+
+const uint RADIO_INTERRUPT_PIN = 28;
+
+rfm9x_t radio_module;
 /**
  * Main code entry point.
  *
@@ -63,6 +69,17 @@ int main()
      */
     LOG_INFO("main: Dispatching the state machine...");
 
+    gpio_init(RADIO_INTERRUPT_PIN);
+    gpio_set_dir(RADIO_INTERRUPT_PIN, GPIO_IN);
+    gpio_pull_down(RADIO_INTERRUPT_PIN);
+
+    // Set interrupt handler for the radio
+    gpio_set_irq_enabled_with_callback(RADIO_INTERRUPT_PIN, GPIO_IRQ_EDGE_RISE,
+                                       true, &interrupt_recieved);
+
+    bool interruptPin = gpio_get(RADIO_INTERRUPT_PIN);
+    printf("Interrupt pin (before): %d\n", interruptPin);
+
     /*
     while (true)
     {
@@ -79,7 +96,7 @@ int main()
     uint tx = 19;
     uint rx = 16;
     uint clk = 18;
-    rfm9x_t radio_module = rfm9x_mk(spi0, reset, cs, tx, rx, clk);
+    radio_module = rfm9x_mk(spi0, reset, cs, tx, rx, clk);
 
     radio_module.debug = 1;
 
@@ -88,9 +105,9 @@ int main()
     printf("Version: %d\r\n", rfm9x_version(&radio_module));
 
     while(1) {
-      //send(radio_module);
-      receive(radio_module);
-      sleep_ms(1000);
+        // send(radio_module);
+        receive(radio_module);
+        sleep_ms(1000);
     }
 
     // rfm9x_init(&radio_module);
@@ -107,6 +124,7 @@ int check_version(rfm9x_t radio_module)
 {
     LOG_INFO("%d\n", rfm9x_version(&radio_module));
 }
+
 int send(rfm9x_t radio_module)
 {
     char data[4];
@@ -119,11 +137,24 @@ int send(rfm9x_t radio_module)
     rfm9x_send(&radio_module, &data[0], 4, 0, 255, 0, 0, 0);
 }
 
+void interrupt_recieved(uint gpio, uint32_t events)
+{
+    printf("Interrupt received on pin %d\n", gpio);
+    if (gpio == RADIO_INTERRUPT_PIN)
+    {
+        printf("Radio interrupt received\n");
+        receive(radio_module);
+    }
+}
+
 int receive(rfm9x_t radio_module)
 {
     char data[256];
-    uint8_t n = rfm9x_receive(&radio_module, &data[0], 1, 0, 0);
+    uint8_t n = rfm9x_receive(&radio_module, &data[0], 1, 0, 0, 1);
     printf("Received %d\n", n);
+
+    bool interruptPin = gpio_get(RADIO_INTERRUPT_PIN);
+    printf("Interrupt pin: %d\n", interruptPin);
 }
 
 /*
