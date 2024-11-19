@@ -2,9 +2,13 @@ name: C/C++ Build
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "CMakeLists.txt"
 
 jobs:
   Build:
