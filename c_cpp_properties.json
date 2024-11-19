@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/state_machine/tasks",
+                "${workspaceFolder}/src/include"
+            ]
+        }
+    ]
+} 

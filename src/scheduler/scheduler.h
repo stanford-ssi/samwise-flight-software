@@ -47,7 +47,7 @@ typedef struct sched_task
      * @param slate     Pointer to the current satellite slate
      */
     void (*task_dispatch)(slate_t *slate);
-
+    
 } sched_task_t;
 
 /**

@@ -58,7 +58,7 @@ pico_enable_stdio_uart(samwise 0)
 pico_enable_stdio_usb(samwise 1)
 
 # Add the standard library to the build
-target_link_libraries(samwise
+target_link_libraries(samwise PRIVATE
         pico_stdlib)
 
 # Add the standard include files to the build
@@ -71,3 +71,19 @@ target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
 pico_add_extra_outputs(samwise)
 
+# Replace the CUnit section with these lines
+if(TEST)
+    # Create cmake directory if it doesn't exist
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+    
+    # Make sure the module path is set before finding CUnit
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+    find_package(CUnit REQUIRED)
+    
+    if(CUNIT_FOUND)
+        include_directories(${CUNIT_INCLUDE_DIRS})
+        target_link_libraries(samwise PRIVATE ${CUNIT_LIBRARIES})
+    else()
+        message(FATAL_ERROR "CUnit is required for testing but was not found")
+    endif()
+endif()

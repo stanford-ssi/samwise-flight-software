@@ -10,6 +10,7 @@
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 #include "slate.h"
+#include "testbase.h"
 
 /**
  * Statically allocate the slate.
@@ -25,8 +26,12 @@ int main()
 {
     stdio_init_all();
 
-    
-
+    if (IS_TEST)
+    {
+        printf("main: Going to testbase\n");
+        testbase();
+        return 0;
+    }
 
     /*
      * In debug builds, delay to allow the user to connect to open the serial

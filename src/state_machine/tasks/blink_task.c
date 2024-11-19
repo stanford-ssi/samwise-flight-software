@@ -5,7 +5,7 @@
  * Task to blink the onboard LED.
  */
 
-#include "state_machine/tasks/blink_task.h"
+#include "blink_task.h"
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "slate.h"
@@ -25,6 +25,5 @@ sched_task_t blink_task = {.name = "blink",
                            .dispatch_period_ms = 1000,
                            .task_init = &blink_task_init,
                            .task_dispatch = &blink_task_dispatch,
-
                            /* Set to an actual value on init */
                            .next_dispatch = 0};

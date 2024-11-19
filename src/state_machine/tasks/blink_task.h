@@ -7,6 +7,7 @@
 
 #include "scheduler/scheduler.h"
 #include "slate.h"
+#include "test_blink_task.c"
 
 void blink_task_init(slate_t *slate);
 void blink_task_dispatch(slate_t *slate);

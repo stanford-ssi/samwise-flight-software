@@ -8,12 +8,12 @@
 
 #pragma once
 
-// this may not be correct
-#define PICO_DEFAULT_LED_PIN 1
+
 
 
 #include "error.h"
-
+// this may not be correct
+#define PICO_DEFAULT_LED_PIN 1
 #ifdef TEST
 #include <stdio.h>
 #else
