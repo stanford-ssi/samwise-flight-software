@@ -10,7 +10,7 @@
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 #include "slate.h"
-#include "flash/flash.h"
+#include "drivers/flash.h"
 
 /**
  * Statically allocate the slate.
@@ -24,9 +24,6 @@ slate_t slate;
  */
 int main()
 {
-    // Some ugly code with linter errors
-    int x = 10
-    + 5;
     stdio_init_all();
 
     /*
