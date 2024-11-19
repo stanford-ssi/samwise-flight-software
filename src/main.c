@@ -11,7 +11,7 @@
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "flash/flash.h"
+#include "drivers/flash.h"
 
 /**
  * Main code entry point.
@@ -24,6 +24,7 @@ int main()
 #ifndef TEST
     stdio_usb_init();
 #endif
+
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
