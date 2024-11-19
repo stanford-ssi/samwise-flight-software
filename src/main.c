@@ -5,13 +5,13 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "drivers/rfm9x.h"
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "drivers/rfm9x.h"
 
 /**
  * Statically allocate the slate.
@@ -70,10 +70,31 @@ int main()
         sched_dispatch(&slate);
     }
     */
-   //send();
-   //receive();
+    // send();
+    // receive();
+    uint reset = 21;
+    //uint reset = 15;
+    uint cs = 20;
+    //uint cs = 17;
+    uint tx = 19;
+    uint rx = 16;
+    uint clk = 18;
+    rfm9x_t radio_module = rfm9x_mk(spi0, reset, cs, tx, rx, clk);
 
-    check_version();
+    radio_module.debug = 1;
+
+    rfm9x_init(&radio_module);
+
+    printf("Version: %d\r\n", rfm9x_version(&radio_module));
+
+    while(1) {
+      //send(radio_module);
+      receive(radio_module);
+      sleep_ms(1000);
+    }
+
+    // rfm9x_init(&radio_module);
+    // check_version();
     /*
      * We should NEVER be here so something bad has happened.
      * @todo reboot!
@@ -82,28 +103,12 @@ int main()
     ERROR("We reached the end of the code - this is REALLY BAD!");
 }
 
-int check_version(){
-    // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(spi0, 15);
-
-    // Initialize the radio module
-    // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
-    LOG_INFO("Initializing radio module");
-    rfm9x_init(&radio_module);
-
+int check_version(rfm9x_t radio_module)
+{
     LOG_INFO("%d\n", rfm9x_version(&radio_module));
 }
-int send(){
-
-    // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(spi0, 16);
-
-    // Initialize the radio module
-    // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
-    rfm9x_init(&radio_module);
-
-    // Send a transmission
-
+int send(rfm9x_t radio_module)
+{
     char data[4];
 
     data[0] = 'm';
@@ -111,27 +116,14 @@ int send(){
     data[2] = 'o';
     data[3] = 'w';
 
-    rfm9x_send(&radio_module, &data[0], 4, 0,255,0,0,0);
-
-    printf("sending:");
-    printf(data);
+    rfm9x_send(&radio_module, &data[0], 4, 0, 255, 0, 0, 0);
 }
 
-int receive(){
-
-    // MAKE SURE THE RESET UINT IS ACTUALLY GOOD
-    rfm9x_t radio_module = rfm9x_mk(spi0, 15);
-
-    // Initialize the radio module
-    // The & returns the address of the radio module, so the funciton receives a "pointer" to the object
-    rfm9x_init(&radio_module);
-
-    // Receive a transmission
-
-    char data[4];
-    //rfm9x_receive(&radio_module, &data[0], 1, 4, 1, 0);
-
-    printf(data);
+int receive(rfm9x_t radio_module)
+{
+    char data[256];
+    uint8_t n = rfm9x_receive(&radio_module, &data[0], 1, 0, 0);
+    printf("Received %d\n", n);
 }
 
 /*

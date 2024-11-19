@@ -1,15 +1,19 @@
 #include "rfm9x.h"
 #include "bit-support.h"
+#include "hardware/resets.h"
+#include "hardware/spi.h"
+#include "pico/time.h"
 #include "src/macros.h"
 #include <string.h>
-#include "hardware/spi.h"
-#include "hardware/resets.h"
-#include "pico/time.h"
 
-rfm9x_t rfm9x_mk(spi_inst_t* spi, uint reset_pin)
+rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
+                 uint spi_rx_pin, uint spi_clk_pin)
 {
-    rfm9x_t r = {
-                 .reset_pin = reset_pin,
+    rfm9x_t r = {.reset_pin = reset_pin,
+                 .spi_cs_pin = cs_pin,
+                 .spi_tx_pin = spi_tx_pin,
+                 .spi_rx_pin = spi_rx_pin,
+                 .spi_clk_pin = spi_clk_pin,
                  .spi = spi,
                  /*
                   * Default values
@@ -30,23 +34,41 @@ rfm9x_t rfm9x_mk(spi_inst_t* spi, uint reset_pin)
  * a 0x00 written for every data byte read.
  */
 
+static inline void cs_select(rfm9x_t *r)
+{
+    busy_wait_us(5);
+    gpio_put(r->spi_cs_pin, 0);
+    busy_wait_us(5);
+}
+
+static inline void cs_deselect(rfm9x_t *r)
+{
+    busy_wait_us(5);
+    gpio_put(r->spi_cs_pin, 1);
+    busy_wait_us(5);
+}
+
 /*
  * Read a buffer from a register address.
  */
 static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
-    gpio_put(21, 0);
+    cs_select(r);
+
     // First, configure that we will be GETTING from the Radio Module.
     uint8_t value = reg & 0x7F;
 
-    // WRITES to the radio module the value, of length 1 byte, that says that we are GETTING
+    // WRITES to the radio module the value, of length 1 byte, that says that we
+    // are GETTING
     spi_write_blocking(r->spi, &value, 1);
 
     // GETS from the radio module the buffer.
-    // The 0 represents the arbitrary byte that should be passed IN as part of the master/slave interaction.
+    // The 0 represents the arbitrary byte that should be passed IN as part of
+    // the master/slave interaction.
     spi_read_blocking(r->spi, 0, buf, n);
-    gpio_put(21, 1);
+
+    cs_deselect(r);
 }
 
 /*
@@ -55,17 +77,18 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
 static inline void rfm9x_put_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
                                  uint32_t n)
 {
-    gpio_put(21, 0);
-    
+    cs_select(r);
+
     // this value will be passed in to tell the radio that we will be writing
     // data
-    uint8_t value = (reg | 0x80) & 0xFF;
+    uint8_t value = reg | 0x80;
 
     spi_write_blocking(r->spi, &value, 1);
 
-    // Write to the radio that 
+    // Write to the radio that
     spi_write_blocking(r->spi, buf, n);
-    gpio_put(21, 1);
+
+    cs_deselect(r);
 }
 
 /*
@@ -89,16 +112,17 @@ static inline uint8_t rfm9x_get8(rfm9x_t *r, rfm9x_reg_t reg)
 void rfm9x_reset(rfm9x_t *r)
 {
     // Reset the chip as per RFM9X.pdf 7.2.2 p109
-    
-    //set_port_dir(r->reset.group, r->reset.pin, out); // switch to output
-    gpio_set_dir(r->reset_pin, 1);
-    sleep_us(100);                                   // 100us
-    //set_port_dir(r->reset.group, r->reset.pin, in);
-    gpio_set_dir(r->reset_pin, 0);
 
-    //set_pull(r->reset.group, r->reset.pin, PULL_ENABLE);
-    //gpio_pull_up(r.reset_pin);
-    sleep_ms(5); // 
+    // set reset pin to output
+    gpio_set_dir(r->reset_pin, GPIO_OUT);
+    gpio_put(r->reset_pin, 0);
+
+    sleep_us(100);
+
+    // set reset pin to input
+    gpio_set_dir(r->reset_pin, GPIO_IN);
+
+    sleep_ms(5);
 }
 
 /*
@@ -561,28 +585,26 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
 
 void rfm9x_init(rfm9x_t *r)
 {
-    // Setup CS line
-    //set_port_dir(r->cs.group, r->cs.pin, out);
-    //write_port(r->cs.group, r->cs.pin, 1);
-
-    // Set up reset line
-    // OLD
-    //set_port_dir(r->reset.group, r->reset.pin, in);
+    // Setup reset line
     gpio_init(r->reset_pin);
-    gpio_init(21);
+    gpio_set_dir(r->reset_pin, GPIO_IN);
+    gpio_disable_pulls(r->reset_pin);
+    gpio_put(r->reset_pin, 1);
 
-    gpio_set_function(16, GPIO_FUNC_SPI);
-    gpio_set_function(18, GPIO_FUNC_SPI);
-    gpio_set_function(19, GPIO_FUNC_SPI);
+    // Setup cs line
+    gpio_init(r->spi_cs_pin);
+    gpio_set_dir(r->spi_cs_pin, GPIO_OUT);
+    gpio_disable_pulls(r->spi_cs_pin);
+    gpio_put(r->spi_cs_pin, 1);
 
-    // NEW
-    gpio_set_dir(r->reset_pin, 0);
-    gpio_put(r->reset_pin, 0);
-
-    gpio_set_dir(21, 1);
-    gpio_put(21, 1);
+    gpio_set_function(r->spi_clk_pin, GPIO_FUNC_SPI);
+    gpio_set_function(r->spi_tx_pin, GPIO_FUNC_SPI);
+    gpio_set_function(r->spi_rx_pin, GPIO_FUNC_SPI);
+    gpio_set_function(17, GPIO_FUNC_SPI);
 
     // Initialize SPI for the RFM9X
+
+    busy_wait_ms(10);
 
     // RFM9X.pdf 4.3 p75:
     // CPOL = 0, CPHA = 0 (mode 0)
@@ -591,7 +613,7 @@ void rfm9x_init(rfm9x_t *r)
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     // Reset the chip
-    rfm9x_reset(r);
+    // rfm9x_reset(r);
 
     /*
      * Calibrate the oscillator
@@ -626,22 +648,17 @@ void rfm9x_init(rfm9x_t *r)
      * Configure tranceiver properties
      */
     rfm9x_set_frequency(r, RFM9X_FREQUENCY); /* Always */
-    ASSERT(rfm9x_get_frequency(r) == RFM9X_FREQUENCY);
 
     rfm9x_set_preamble_length(r, 8); /* 8 bytes matches Radiohead library */
-    printf("Preamble length: %d\r\n", rfm9x_get_preamble_length(r));
     ASSERT(rfm9x_get_preamble_length(r) == 8);
 
-    rfm9x_set_bandwidth(r, RFM9X_BANDWIDTH); /* Configure 125000 to match Radiohead, see
-                                       SX1276 errata note 2.3 */
-    printf("Bandwith: %d\r\n", rfm9x_get_bandwidth(r));
+    rfm9x_set_bandwidth(r, RFM9X_BANDWIDTH); /* Configure 125000 to match
+                                       Radiohead, see SX1276 errata note 2.3 */
     ASSERT(rfm9x_get_bandwidth(r) == RFM9X_BANDWIDTH);
 
     rfm9x_set_coding_rate(r, 5); /* Configure 4/5 to match Radiohead library */
-    printf("Coding rate: %d\r\n", rfm9x_get_coding_rate(r));
     ASSERT(rfm9x_get_coding_rate(r) == 5);
 
-    printf("Spreading factor: %d\r\n", rfm9x_get_spreading_factor(r));
     rfm9x_set_spreading_factor(
         r, 7); /* Configure to 7 to match Radiohead library */
     ASSERT(rfm9x_get_spreading_factor(r) == 7);
