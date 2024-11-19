@@ -8,10 +8,10 @@
 
 // Function Mnemonics FuncName assignedNumber
 // assignedNumber < (2^(FUNC_MNEMONIC_BYTE_SIZE)*8) -1
-#define STOP_MNEM 0
+#define STOP_MNEM 255
 #define Func1_MNEM 1
 //.....
-#define Func127_MNEM 255
+#define Func254_MNEM 254
 
 //
 
@@ -20,7 +20,7 @@
 #include "pico/stdlib.h"
 #include "slate.h"
 
-#define PAYLOAD_SIZE 251                     // in bytes
+#define PAYLOAD_SIZE 251                     // in bytes TODO check?
 const int RADIO_PACKETS_OUT_MAX_LENGTH = 32; // max queue length
 const int FUNC_MNEMONIC_BYTE_SIZE = 1;
 // const int PACKET_DATA_LENGTH_VAR_MIN_LENGTH =
@@ -39,44 +39,6 @@ unsigned char payload[PAYLOAD_SIZE];
 unsigned char payload_head = 0;
 struct TASK1_DATA_STRUCT_FORMAT T1DS;
 
-// void byte_to_obj(const unsigned *byteArr, void *object,
-//                  size_t size) // change to function for eacch specfii
-// {
-//     for (int i = 0; i < size; i++)
-//     {
-//         object += byteArr[i];
-//     }
-// }
-// void read_bytes(char *byteArrIn, void *data, unsigned char len,
-//                 unsigned char start)
-// {
-//     for (int i = 0; i < len; i++)
-//     {
-//         data += byteArrIn[i];
-//     }
-// }
-
-void sereailize_struct(unsigned char Func_MNEM, char *byteArr,
-                       void *data_struct)
-{
-    switch (Func_MNEM)
-    {
-        case Func1_MNEM:
-            // read_bytes(&byteArr, &T1DS.data_int_1, sizeof(T1DS.data_int_1),
-            // 0);
-
-            // read_bytes(&byteArr, &T1DS.data_byteArr_1,
-            //            sizeof(T1DS.data_byteArr_1), sizeof(T1DS.data_int_1));
-
-            // T1DS.data_int_1 = byteArr[0] + byteArr[1] + byteArr[2] +
-            // byteArr[3]; T1DS.data_byteArr_1 =
-
-            break;
-
-        default:
-            break;
-    }
-}
 
 void command_switch_task_init(slate_t *slate)
 {
@@ -102,15 +64,19 @@ void command_switch_dispatch(slate_t *slate)
         while (payload[payload_head] <= 255 &&
                payload[payload_head] != STOP_MNEM) // if not end of packet data
         {
-            switch (payload[payload_head])
+            switch (payload[payload_head])   // this only works for FUNC_MNEMONIC_BYTE_SIZE = 1
             {
                 case Func1_MNEM: // TODO test this shit,
                                  // TODO add support for data of len more than
                                  // the space left in the packet
-                    // byte_to_obj(&payload[payload_head], &T1DS, sizeof(T1DS));
-                    // queue_try_add(&slate->task1_data, &T1DS);
-                    // payload_head += sizeof(T1DS);
-                    // break;
+
+                    // copy to struct for the first function sizeof(struct) bytes
+                    // from payload array starting at payload_head + 1
+                    memcpy(&T1DS, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS));
+                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
+                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
+                    payload_head += sizeof(T1DS);                   // move for data size 
+                    break;
 
                 default:
                     printf("Unknown command"); // should be logged somewhere
@@ -121,6 +87,8 @@ void command_switch_dispatch(slate_t *slate)
         }
     }
 
+
+    // OLD questions
     // go over each (one?) packet and handle accordingly
     // 1) determine function thats called
     // 2) determine input data length (if datalen==max possible num to
