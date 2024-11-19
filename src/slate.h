@@ -12,7 +12,9 @@
 #pragma once
 
 #include "pico/types.h"
+#include "pico/util/queue.h"
 #include "scheduler/scheduler.h"
+#include "drivers/rfm9x.h"
 
 typedef struct samwise_slate
 {
@@ -24,4 +26,11 @@ typedef struct samwise_slate
     uint64_t time_in_current_state_ms;
 
     bool led_state;
+
+    /*
+     * Radio
+     */
+    rfm9x_t radio;
+    queue_t tx_queue;
+    queue_t rx_queue;
 } slate_t;

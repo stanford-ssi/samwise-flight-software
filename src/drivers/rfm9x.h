@@ -1,7 +1,7 @@
 #pragma once
 
-#include "pico/stdlib.h"
 #include "hardware/spi.h"
+#include "pico/stdlib.h"
 
 #define PACKET_SIZE 256
 #define PAYLOAD_SIZE 251
@@ -23,7 +23,11 @@ typedef enum
 typedef struct _rfm9x
 {
     uint reset_pin;
-    spi_inst_t* spi;
+    uint spi_cs_pin;
+    uint spi_rx_pin;
+    uint spi_tx_pin;
+    uint spi_clk_pin;
+    spi_inst_t *spi;
     uint8_t seq; /* current sequence number */
     uint32_t high_power : 1, max_power : 1, debug : 1;
 } rfm9x_t;
@@ -31,7 +35,8 @@ typedef struct _rfm9x
 /*
  * Creates an RFM9X helper struct. Uninitialized.
  */
-rfm9x_t rfm9x_mk(spi_inst_t* spi, uint reset);
+rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
+                 uint spi_rx_pin, uint spi_clk_pin);
 
 /*
  * Initializes an RFM9X radio.
