@@ -6,37 +6,87 @@
  * This is a very rough sketch of how it should work, nothing works
  */
 
+/* How to add new function (using an example of some task1")
+1. add a mnemonic code for the function 
+eg: #define Func1_MNEM 1
+
+2. create or choose an existing data structure for this function 
+eg: struct TASK1_DATA_STRUCT_FORMAT
+
+3. create a queue in the slate.h file
+eg: queue_t task1_data;
+
+4. create a struct for a new function
+eg: struct TASK1_DATA_STRUCT_FORMAT T1DS;
+
+5. initialize queue in the command_switch_task_init
+eg: queue_init(&slate->task1_data, sizeof(T1DS), TASK1_QUEUE_LENGTH);
+
+6. add a case to the switch case in command_switch_dispatch
+eg (old): 
+case Func1_MNEM: 
+                    // copy to struct for the first function sizeof(struct) bytes
+                    // from payload array starting at payload_head + 1
+                    memcpy(&T1DS, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS));
+                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
+                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
+                    payload_head += sizeof(T1DS);                   // move for data size 
+                    break;
+
+eg (new, with wrapper): 
+case Func1_MNEM: // TODO test this shit,
+                                 // TODO evaluate the need of supporting data of len more than
+                                 // the space left in the packet
+
+                    struct TASK1_DATA_STRUCT_FORMAT* T1DS_count = &T1DS;
+                    // support for data longer than the space left in a packet (potentially useless?)
+                    while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
+                        // copy max length, modify payload head and try to dequeue a new payload
+                        memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
+                                     PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
+                        T1DS_count += PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE;    // move pointer of the DS
+                        queue_try_remove(&slate->radio_packets_out, &payload);   // get next packet
+                        payload_head = 0;                                       // start next packet from start
+                    }
+
+                    // copy to struct for the first function sizeof(struct) bytes
+                    // from payload array starting at payload_head + 1
+                    memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS) % PAYLOAD_SIZE);
+                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
+                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
+                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size 
+                    break;
+
+7. All set! (hopefully)
+
+*/
+
 // Function Mnemonics FuncName assignedNumber
 // assignedNumber < (2^(FUNC_MNEMONIC_BYTE_SIZE)*8) -1
 #define STOP_MNEM 255
 #define Func1_MNEM 1
 //.....
-#define Func254_MNEM 254
+//#define Func254_MNEM 254
 
-//
 
 #include "state_machine/tasks/command_switch_task.h"
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "slate.h"
 
-#define PAYLOAD_SIZE 251                     // in bytes TODO check?
+#define PAYLOAD_SIZE 251                     // in bytes TODO check?/ get from driver mod?
 const int RADIO_PACKETS_OUT_MAX_LENGTH = 32; // max queue length
 const int FUNC_MNEMONIC_BYTE_SIZE = 1;
-// const int PACKET_DATA_LENGTH_VAR_MIN_LENGTH =
-//     1; // minimum size of the part of data that shows the length of input
-//     data
-//        // to the previous function
 const int TASK1_QUEUE_LENGTH = 32; // max queue length for task 1
 struct TASK1_DATA_STRUCT_FORMAT
 {
     int data_int_1;
-    char data_byteArr_1[16];
+    uint8_t data_byteArr_1[16];
 };
 
-unsigned char payload[PAYLOAD_SIZE];
+uint8_t payload[PAYLOAD_SIZE];
 // unsigned char data_length = 0;
-unsigned char payload_head = 0;
+uint8_t payload_head = 0;
 struct TASK1_DATA_STRUCT_FORMAT T1DS;
 
 
@@ -51,60 +101,68 @@ void command_switch_task_init(slate_t *slate)
     queue_init(&slate->task1_data, sizeof(T1DS), TASK1_QUEUE_LENGTH);
 }
 
-/// struc (int a, char c, int b)
-/// aaaa cxxx bbbb
-///
-///
+struct TASK1_DATA_STRUCT_FORMAT* T1DS_count;  // TODO deal with this shit
 
 void command_switch_dispatch(slate_t *slate)
 {
+    LOG_INFO("dispatching called");
     if (queue_try_remove(&slate->radio_packets_out, &payload))
     { // if successfully dequeued
+    payload_head = 0;
+    LOG_INFO("dequeued payload successfully");
+    
 
-        while (payload[payload_head] <= 255 &&
-               payload[payload_head] != STOP_MNEM) // if not end of packet data
+        while (payload_head < PAYLOAD_SIZE &&
+               payload_head != STOP_MNEM && payload[payload_head] != STOP_MNEM) // clean up
         {
-            switch (payload[payload_head])   // this only works for FUNC_MNEMONIC_BYTE_SIZE = 1
+            LOG_INFO("payload decoding entered");
+            switch (payload[payload_head])   // this only works for FUNC_MNEMONIC_BYTE_SIZE = 1 (no need for more?)
             {
                 case Func1_MNEM: // TODO test this shit,
-                                 // TODO add support for data of len more than
+                                 // TODO evaluate the need of supporting data of len more than
                                  // the space left in the packet
+                    LOG_INFO("Func 1 mnemonic detected");
+                    T1DS_count = &T1DS;
+                    // support for data longer than the space left in a packet (potentially useless?)
+                    while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
+                        LOG_INFO("Oversize while loop called");
+                        // copy max length, modify payload head and try to dequeue a new payload
+                        memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
+                                     PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
+                        T1DS_count += PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE;    // move pointer of the DS
+                        if (!queue_try_remove(&slate->radio_packets_out, &payload)){    // get next packet
+                            // show message that there was a misalignment with the data?
+                            payload_head = STOP_MNEM;
+                            break;
+                        }
+                        payload_head = 0;                                       // start next packet from start
+                    }
 
                     // copy to struct for the first function sizeof(struct) bytes
                     // from payload array starting at payload_head + 1
-                    memcpy(&T1DS, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS));
+                    for(int i = 0; i < sizeof(payload); i++){
+                        LOG_DEBUG("Payload: %i", payload[i]);
+                    }
+                    LOG_DEBUG("T1DS size %i vs payload size %i ", sizeof(T1DS), sizeof(payload));
+
+                    memcpy(&T1DS, &payload[payload_head + FUNC_MNEMONIC_BYTE_SIZE], sizeof(T1DS)); //% PAYLOAD_SIZE);
                     queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
-                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
-                    payload_head += sizeof(T1DS);                   // move for data size 
+                    /// test            
+                    LOG_INFO("added to func 1 arr int: %i and by arr char 14 is: %i", T1DS.data_int_1, T1DS.data_byteArr_1[14]);
+                    /// test
+                    payload_head += FUNC_MNEMONIC_BYTE_SIZE + 1;        // move for func mnem and look next item
+                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size 
+                    LOG_INFO("next payload funcMnenm %i ", payload[payload_head]);
                     break;
 
                 default:
-                    printf("Unknown command"); // should be logged somewhere
+                    printf("Unknown command payload head was: %i", payload_head); // should be logged somewhere
                     payload_head = STOP_MNEM;  // skip this packet (notify that
                                                // packet was skipped?)
                     break;
             }
         }
     }
-
-
-    // OLD questions
-    // go over each (one?) packet and handle accordingly
-    // 1) determine function thats called
-    // 2) determine input data length (if datalen==max possible num to
-    // represent, check next PACKET_DATA_LENGTH_VAR_MIN_LENGTH of data until
-    // full data length obtained)
-    // 3) put the data into queue that correlates to the function we determined
-    // earlier (Another task will check if queue is empty, if not empty function
-    // for that task will be called)
-    // empty explored packets from queue
-
-    // TODO: / Questions to ask:
-    // Can the radio driver return variable sized packets or is it always
-    // constant?
-    // What datasize should be the queue initialized to?
-    // What length should the queue be initialized to?
-    // Should we work in Bytes or go down to bits?
 }
 
 sched_task_t command_switch_task = {.name = "command_switch",
