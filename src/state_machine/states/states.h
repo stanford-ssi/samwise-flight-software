@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "scheduler/scheduler.h"
 #include "macros.h"
+#include "scheduler/scheduler.h"
 
 /*
  * Declare all states as extern.
