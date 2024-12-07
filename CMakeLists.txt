@@ -52,6 +52,10 @@ pico_enable_stdio_usb(samwise 1)
 # Add the standard library to the build
 target_link_libraries(samwise
         pico_stdlib)
+        
+# Add SD card dependency 
+add_subdirectory(lib/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
+target_link_libraries(samwise FatFs_SPI)
 
 # Add the standard include files to the build
 target_include_directories(samwise PRIVATE
@@ -61,5 +65,5 @@ target_include_directories(samwise PRIVATE
 
 target_include_directories(samwise PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-pico_add_extra_outputs(samwise)
 
+pico_add_extra_outputs(samwise)

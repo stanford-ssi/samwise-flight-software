@@ -16,3 +16,5 @@
  */
 extern sched_task_t print_task;
 extern sched_task_t blink_task;
+extern sched_task_t read_sd_card_task;
+extern sched_task_t write_sd_card_task;
