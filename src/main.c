@@ -18,16 +18,6 @@
  */
 slate_t slate;
 
-int send();
-
-void interrupt_recieved(uint gpio, uint32_t events);
-
-int receive();
-
-int check_version();
-
-const uint RADIO_INTERRUPT_PIN = 28;
-
 rfm9x_t radio_module;
 /**
  * Main code entry point.
@@ -69,24 +59,26 @@ int main()
      */
     LOG_INFO("main: Dispatching the state machine...");
 
-    gpio_init(RADIO_INTERRUPT_PIN);
-    gpio_set_dir(RADIO_INTERRUPT_PIN, GPIO_IN);
-    gpio_pull_down(RADIO_INTERRUPT_PIN);
 
+    /*
     // Set interrupt handler for the radio
     gpio_set_irq_enabled_with_callback(RADIO_INTERRUPT_PIN, GPIO_IRQ_EDGE_RISE,
                                        true, &interrupt_recieved);
 
     bool interruptPin = gpio_get(RADIO_INTERRUPT_PIN);
     printf("Interrupt pin (before): %d\n", interruptPin);
+    */
 
-    /*
+    
     while (true)
     {
         sleep_ms(100);
         sched_dispatch(&slate);
     }
-    */
+    
+
+
+   /*
     // send();
     // receive();
     uint reset = 21;
@@ -109,6 +101,7 @@ int main()
         receive(radio_module);
         sleep_ms(1000);
     }
+    */
 
     // rfm9x_init(&radio_module);
     // check_version();
@@ -120,6 +113,7 @@ int main()
     ERROR("We reached the end of the code - this is REALLY BAD!");
 }
 
+/*
 int check_version(rfm9x_t radio_module)
 {
     LOG_INFO("%d\n", rfm9x_version(&radio_module));
@@ -147,6 +141,7 @@ void interrupt_recieved(uint gpio, uint32_t events)
     }
 }
 
+// screen /dev/tty.usbmodem1101
 int receive(rfm9x_t radio_module)
 {
     char data[256];
@@ -156,6 +151,7 @@ int receive(rfm9x_t radio_module)
     bool interruptPin = gpio_get(RADIO_INTERRUPT_PIN);
     printf("Interrupt pin: %d\n", interruptPin);
 }
+
 
 /*
 

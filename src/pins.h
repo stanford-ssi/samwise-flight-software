@@ -10,5 +10,5 @@
 #define RFM9X_CLK (SPI0_CLK)
 #define RFM9X_TX (SPI0_TX)
 #define RFM9X_RX (SPI0_RX)
-#define RFM9X_RESET (22)
-#define RFM9X_CS (21)
+#define RFM9X_RESET (21)
+#define RFM9X_CS (20)
