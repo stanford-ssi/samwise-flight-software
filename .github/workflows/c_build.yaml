@@ -42,7 +42,7 @@ jobs:
 
     - name: Build for RP2350
       # Build your program with the given configuration
-      run: cmake --build -DRP2350=ON ${{github.workspace}}/build
+      run: cmake --build ${{github.workspace}}/build -DRP2350=ON
 
     - name: Archive Build Products for RP2350
       uses: actions/upload-artifact@v4
