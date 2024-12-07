@@ -25,8 +25,6 @@ rfm9x_t radio_module;
  */
 int main()
 {
-    // Some ugly code with linter errors
-    int x = 10 + 5;
     stdio_init_all();
 
     /*

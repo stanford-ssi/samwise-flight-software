@@ -29,14 +29,25 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build
 
-    - name: Build
+    - name: Build for RP2040
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build
 
-    - name: Archive Build Products
+    - name: Archive Build Products for RP2040
       uses: actions/upload-artifact@v4
       with:
-        name: samwise-products
+        name: samwise-products-rp2040
+        path: |
+          build/samwise*.uf2
+
+    - name: Build for RP2350
+      # Build your program with the given configuration
+      run: cmake --build -DRP2350=ON ${{github.workspace}}/build
+
+    - name: Archive Build Products for RP2350
+      uses: actions/upload-artifact@v4
+      with:
+        name: samwise-products-rp2350
         path: |
           build/samwise*.uf2
 

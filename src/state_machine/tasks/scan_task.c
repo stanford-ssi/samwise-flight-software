@@ -7,12 +7,12 @@
 
 void scan_task_init(slate_t *slate)
 {
-    LOG_INFO("Test task is initializing...");
+    LOG_INFO("Scan task is initializing...");
 }
 
 void scan_task_dispatch(slate_t *slate)
 {
-    LOG_INFO("Test task is dispatching...");
+    LOG_INFO("(TODO) perform I2C scan");
 }
 
 sched_task_t scan_task = {.name = "scan",

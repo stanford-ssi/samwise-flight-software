@@ -1,6 +1,13 @@
 #pragma once
 #include "macros.h"
 
+<<<<<<< HEAD
+=======
+#ifdef PICO
+/*
+ * Pins on the pi pico, used for testing
+ */
+>>>>>>> 66f7b31 (Added build flag to build for RP2350)
 
 #define SPI0_CLK (18)
 #define SPI0_TX (19)
@@ -23,11 +30,9 @@
 #else
 
 /*
- * Pins on the pycubed here...
- * 
- * IMPORTANT: Must be updated if schematics change (talk to AV!)
+ * Pins on the PiCubed
+ * IMPORTANT: Must be updated to keep in sync with the schematic/avionics!
  */
-
 #define SAMWISE_NEOPIXEL_PIN (0)
 
 #define SAMWSIE_MPPT_SHDN_2_PIN (1)
