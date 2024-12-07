@@ -1,9 +1,16 @@
 #include "macros.h"
 
 #ifdef PICO
+/*
+ * Pins on the pi pico, used for testing
+ */
 
 #else
 
+/*
+ * Pins on the PiCubed
+ * IMPORTANT: Must be updated to keep in sync with the schematic/avionics!
+ */
 #define SAMWISE_NEOPIXEL_PIN (0)
 
 #define SAMWSIE_MPPT_SHDN_2_PIN (1)
