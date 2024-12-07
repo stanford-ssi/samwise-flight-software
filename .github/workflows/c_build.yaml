@@ -34,5 +34,5 @@ jobs:
       with:
         name: samwise-products
         path: |
-          build/samwise.*
+          build/samwise*.uf2
 

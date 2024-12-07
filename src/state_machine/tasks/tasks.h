@@ -16,3 +16,7 @@
  */
 extern sched_task_t print_task;
 extern sched_task_t blink_task;
+
+#ifdef BRINGUP
+extern sched_task_t scan_task;
+#endif
