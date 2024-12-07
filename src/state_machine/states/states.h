@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "macros.h"
 #include "scheduler/scheduler.h"
 
 /*
@@ -16,6 +17,10 @@
 extern sched_state_t init_state;
 extern sched_state_t running_state;
 
+#ifdef BRINGUP
+extern sched_state_t bringup_state;
+#endif
+
 /**
  * List of all states. We need this because we cannot enumerate all states at
  * runtime.
@@ -23,7 +28,13 @@ extern sched_state_t running_state;
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
-static const sched_state_t *all_states[] = {&init_state, &running_state};
+static const sched_state_t *all_states[] = {
+    &init_state,
+    &running_state,
+#ifdef BRINGUP
+    &bringup_state,
+#endif
+};
 static sched_state_t *const initial_state = &init_state;
 
 /*
