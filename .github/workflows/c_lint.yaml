@@ -1,5 +1,11 @@
 name: C/C++ Lint Check
-on: [push]
+on:
+  push:
+    paths:
+      # only when a .c, .cpp, or .h file is changed
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
 jobs:
   Lint-Check:
     runs-on: ubuntu-latest
@@ -18,7 +24,7 @@ jobs:
           format-review: true
           passive-reviews: true
       - name: Fail if there are linter errors
-        if: ${{steps.linter.outputs.clang-format-checks-failed}}
+        if: ${{steps.linter.outputs.clang-format-checks-failed > 0}}
         run: |
            echo "Linter errors occurred, failing the job."
            exit 1 # This will cause the step to fail
