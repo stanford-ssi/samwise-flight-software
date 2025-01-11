@@ -42,7 +42,8 @@ typedef struct _rfm9x
  * Creates an RFM9X helper struct. Uninitialized.
  */
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
-                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin, rfm9x_interrupt_func interrupt_func);
+                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin,
+                 rfm9x_interrupt_func interrupt_func);
 
 /*
  * Initializes an RFM9X radio.
@@ -87,8 +88,8 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
  * Receive a transmission.
  */
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack, bool blocking_wait_for_packet);
-
+                      uint8_t keep_listening, uint8_t with_ack,
+                      bool blocking_wait_for_packet);
 
 void rfm9x_listen(rfm9x_t *r);
 void rfm9x_transmit(rfm9x_t *r);

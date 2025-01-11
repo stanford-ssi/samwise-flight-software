@@ -51,7 +51,6 @@ int main()
      */
     LOG_INFO("main: Dispatching the state machine...");
 
-
     /*
     // Set interrupt handler for the radio
     gpio_set_irq_enabled_with_callback(RADIO_INTERRUPT_PIN, GPIO_IRQ_EDGE_RISE,
@@ -61,38 +60,35 @@ int main()
     printf("Interrupt pin (before): %d\n", interruptPin);
     */
 
-    
     while (true)
     {
         sched_dispatch(&slate);
     }
-    
 
+    /*
+     // send();
+     // receive();
+     uint reset = 21;
+     //uint reset = 15;
+     uint cs = 20;
+     //uint cs = 17;
+     uint tx = 19;
+     uint rx = 16;
+     uint clk = 18;
+     radio_module = rfm9x_mk(spi0, reset, cs, tx, rx, clk);
 
-   /*
-    // send();
-    // receive();
-    uint reset = 21;
-    //uint reset = 15;
-    uint cs = 20;
-    //uint cs = 17;
-    uint tx = 19;
-    uint rx = 16;
-    uint clk = 18;
-    radio_module = rfm9x_mk(spi0, reset, cs, tx, rx, clk);
+     radio_module.debug = 1;
 
-    radio_module.debug = 1;
+     rfm9x_init(&radio_module);
 
-    rfm9x_init(&radio_module);
+     printf("Version: %d\r\n", rfm9x_version(&radio_module));
 
-    printf("Version: %d\r\n", rfm9x_version(&radio_module));
-
-    while(1) {
-        // send(radio_module);
-        receive(radio_module);
-        sleep_ms(1000);
-    }
-    */
+     while(1) {
+         // send(radio_module);
+         receive(radio_module);
+         sleep_ms(1000);
+     }
+     */
 
     // rfm9x_init(&radio_module);
     // check_version();
