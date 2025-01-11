@@ -12,3 +12,4 @@
 #define RFM9X_RX (SPI0_RX)
 #define RFM9X_RESET (21)
 #define RFM9X_CS (20)
+#define RFM9X_D0 (28)

@@ -20,6 +20,8 @@ typedef enum
     RX_MODE = 5,
 } rfm9x_mode_t;
 
+typedef void (*rfm9x_interrupt_func)(uint, uint32_t);
+
 typedef struct _rfm9x
 {
     uint reset_pin;
@@ -27,6 +29,10 @@ typedef struct _rfm9x
     uint spi_rx_pin;
     uint spi_tx_pin;
     uint spi_clk_pin;
+    uint d0_pin;
+
+    rfm9x_interrupt_func interrupt_func;
+
     spi_inst_t *spi;
     uint8_t seq; /* current sequence number */
     uint32_t high_power : 1, max_power : 1, debug : 1;
@@ -36,7 +42,7 @@ typedef struct _rfm9x
  * Creates an RFM9X helper struct. Uninitialized.
  */
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
-                 uint spi_rx_pin, uint spi_clk_pin);
+                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin, rfm9x_interrupt_func interrupt_func);
 
 /*
  * Initializes an RFM9X radio.
@@ -82,6 +88,17 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
  */
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
                       uint8_t keep_listening, uint8_t with_ack, bool blocking_wait_for_packet);
+
+
+void rfm9x_listen(rfm9x_t *r);
+void rfm9x_transmit(rfm9x_t *r);
+
+uint8_t rfm9x_tx_done(rfm9x_t *r);
+uint8_t rfm9x_rx_done(rfm9x_t *r);
+
+uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n);
+uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf);
+void rfm9x_clear_interrupts(rfm9x_t *r);
 
 typedef enum
 {

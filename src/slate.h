@@ -31,6 +31,13 @@ typedef struct samwise_slate
      * Radio
      */
     rfm9x_t radio;
+    uint8_t radio_node;
     queue_t tx_queue;
     queue_t rx_queue;
+    uint32_t rx_bytes;
+    uint32_t rx_packets;
+    uint32_t rx_backpressure_drops;
+    uint32_t rx_bad_packet_drops;
+    uint32_t tx_bytes;
+    uint32_t tx_packets;
 } slate_t;

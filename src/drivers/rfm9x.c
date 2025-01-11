@@ -7,13 +7,15 @@
 #include <string.h>
 
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
-                 uint spi_rx_pin, uint spi_clk_pin)
+                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin, rfm9x_interrupt_func interrupt_func)
 {
     rfm9x_t r = {.reset_pin = reset_pin,
                  .spi_cs_pin = cs_pin,
                  .spi_tx_pin = spi_tx_pin,
                  .spi_rx_pin = spi_rx_pin,
                  .spi_clk_pin = spi_clk_pin,
+                 .d0_pin = d0_pin,
+                 .interrupt_func = interrupt_func,
                  .spi = spi,
                  /*
                   * Default values
@@ -583,6 +585,7 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
     return c;
 }
 
+
 void rfm9x_init(rfm9x_t *r)
 {
     // Setup reset line
@@ -600,7 +603,12 @@ void rfm9x_init(rfm9x_t *r)
     gpio_set_function(r->spi_clk_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_tx_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_rx_pin, GPIO_FUNC_SPI);
-    gpio_set_function(17, GPIO_FUNC_SPI);
+    gpio_set_function(17, GPIO_FUNC_SPI); // ???
+
+    // Setup interrupt line
+    gpio_init(r->d0_pin);
+    gpio_set_dir(r->d0_pin, GPIO_IN);
+    gpio_pull_down(r->d0_pin);
 
     // Initialize SPI for the RFM9X
 
@@ -675,6 +683,13 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_set_lna_boost(r, 0b11);
     ASSERT(rfm9x_get_lna_boost(r) == 0b11);
+    
+    // Setup interrupt
+    if(r->interrupt_func != NULL)
+    {
+      gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE,
+                                         true, r->interrupt_func);
+    }
 }
 
 /*
@@ -745,12 +760,55 @@ uint8_t rfm9x_rx_done(rfm9x_t *r)
     }
 }
 
-uint8_t rfm9x_await_rx(rfm9x_t *r)
+int rfm9x_await_rx(rfm9x_t *r)
 {
     rfm9x_listen(r);
     while (!rfm9x_rx_done(r))
         ; // spin until RX done
     return 1;
+}
+
+uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n) {
+  uint8_t old_mode = rfm9x_get_mode(r);
+  rfm9x_set_mode(r, STANDBY_MODE);
+
+  rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
+
+  rfm9x_put_buf(r, _RH_RF95_REG_00_FIFO, buf, n);
+  rfm9x_put8(r, _RH_RF95_REG_22_PAYLOAD_LENGTH, n);
+
+  rfm9x_set_mode(r, old_mode);
+  return 0;
+}
+
+
+uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf) {
+  uint8_t n_read = 0;
+  uint8_t old_mode = rfm9x_get_mode(r);
+  rfm9x_set_mode(r, STANDBY_MODE);
+
+  // Check for CRC error
+  if(rfm9x_is_crc_enabled(r) && rfm9x_crc_error(r)) {
+    // TODO report somehow
+  } else {
+    uint8_t fifo_length = rfm9x_get8(r, _RH_RF95_REG_13_RX_NB_BYTES);
+    if(fifo_length > 0) {
+      uint8_t current_addr =
+          rfm9x_get8(r, _RH_RF95_REG_10_FIFO_RX_CURRENT_ADDR);
+      rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, current_addr);
+
+      // read the packet
+      rfm9x_get_buf(r, _RH_RF95_REG_00_FIFO, buf,
+                    fifo_length);
+    }
+    n_read = fifo_length;
+  }
+  rfm9x_set_mode(r, old_mode);
+  return n_read;
+}
+
+void rfm9x_clear_interrupts(rfm9x_t *r) {
+    rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
 }
 
 uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
