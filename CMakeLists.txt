@@ -39,8 +39,10 @@ file(GLOB top CONFIGURE_DEPENDS "src/*.c")
 file(GLOB scheduler CONFIGURE_DEPENDS "src/scheduler/*.c")
 file(GLOB state_machine_tasks CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
 file(GLOB state_machine_states CONFIGURE_DEPENDS "src/state_machine/states/*.c")
+file(GLOB drivers CONFIGURE_DEPENDS "src/drivers/*.c")
+
 add_executable(samwise ${top} ${scheduler} ${state_machine_tasks}
-  ${state_machine_states})
+  ${state_machine_states} ${drivers})
 
 pico_set_program_name(samwise "samwise")
 pico_set_program_version(samwise "0.1")
@@ -51,7 +53,8 @@ pico_enable_stdio_usb(samwise 1)
 
 # Add the standard library to the build
 target_link_libraries(samwise
-        pico_stdlib)
+        pico_stdlib hardware_spi)
+
 
 # Add the standard include files to the build
 target_include_directories(samwise PRIVATE
