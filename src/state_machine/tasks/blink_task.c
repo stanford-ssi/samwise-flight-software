@@ -9,16 +9,25 @@
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "slate.h"
+#include "drivers/neopixel.h"
+
+const int NEOPIXEL_PIN = 0; 
 
 void blink_task_init(slate_t *slate)
 {
     slate->led_state = false;
+    neopixel_init(NEOPIXEL_PIN);
 }
 
 void blink_task_dispatch(slate_t *slate)
 {
     slate->led_state = !slate->led_state;
-    gpio_put(PICO_DEFAULT_LED_PIN, slate->led_state);
+    if (slate->led_state){
+        neopixel_set_color_rgb(0xff, 0xff, 0, NEOPIXEL_PIN); //yellow
+    }
+    else{
+        neopixel_set_color_rgb(0xff, 0, 0xff, NEOPIXEL_PIN); //purple
+    }
 }
 
 sched_task_t blink_task = {.name = "blink",
