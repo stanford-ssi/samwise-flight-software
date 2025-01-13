@@ -19,8 +19,10 @@
  */
 static bool init_gpio_pins()
 {
+#ifdef PICO
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+#endif
 
     return true;
 }

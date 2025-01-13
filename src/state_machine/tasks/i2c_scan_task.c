@@ -1,23 +1,22 @@
 #include "hardware/i2c.h"
 #include "macros.h"
-#include "pico/binary_info.h"
 #include "pico/stdlib.h"
 
 #ifdef BRINGUP
 
-#include "scan_task.h"
+#include "i2c_scan_task.h"
 #include "slate.h"
 
 /**
  * I2C reserves some addresses for special purposes. We exclude these from the
  * scan. These are any addresses of the form 000 0xxx or 111 1xxx
  */
-bool reserved_addr(uint8_t addr)
+static bool reserved_addr(uint8_t addr)
 {
     return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
 }
 
-void scan_task_init(slate_t *slate)
+void i2c_scan_task_init(slate_t *slate)
 {
     // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a
     // Pico)
@@ -30,7 +29,7 @@ void scan_task_init(slate_t *slate)
     LOG_INFO("Scan task initialized I2C...");
 }
 
-void scan_task_dispatch(slate_t *slate)
+void i2c_scan_task_dispatch(slate_t *slate)
 {
     // Sweep through all 7-bit I2C addresses, to see if any slaves are present
     // on the I2C bus. Print out a table that looks like this:
@@ -46,8 +45,8 @@ void scan_task_dispatch(slate_t *slate)
     // 60 . . . . . . . . . . . . . . . .
     // 70 . . . . . . . . . . . . . . . .
     // E.g. if addresses 0x12 and 0x34 were acknowledged.
-    LOG_INFO("\nI2C Bus Scan\n");
-    LOG_INFO("   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+    LOG_INFO("I2C Bus Scan");
+    LOG_INFO("\n0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 
     for (int addr = 0; addr < (1 << 7); ++addr)
     {
@@ -75,12 +74,12 @@ void scan_task_dispatch(slate_t *slate)
     printf("Done.\n");
 }
 
-sched_task_t scan_task = {.name = "scan",
-                          .dispatch_period_ms = 1000,
-                          .task_init = &scan_task_init,
-                          .task_dispatch = &scan_task_dispatch,
+sched_task_t i2c_scan_task = {.name = "i2c_scan",
+                              .dispatch_period_ms = 1000,
+                              .task_init = &i2c_scan_task_init,
+                              .task_dispatch = &i2c_scan_task_dispatch,
 
-                          /* Set to an actual value on init */
-                          .next_dispatch = 0};
+                              /* Set to an actual value on init */
+                              .next_dispatch = 0};
 
 #endif
