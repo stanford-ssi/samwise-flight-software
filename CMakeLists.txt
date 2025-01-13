@@ -59,7 +59,7 @@ function(configure_samwise_executable TARGET_NAME DEFINES)
     pico_enable_stdio_uart(${TARGET_NAME} 0)
     pico_enable_stdio_usb(${TARGET_NAME} 1)
     
-    target_link_libraries(${TARGET_NAME} hardware_spi pico_stdlib)
+    target_link_libraries(${TARGET_NAME} hardware_spi hardware_i2c pico_stdlib)
     
     target_include_directories(${TARGET_NAME} PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
