@@ -72,9 +72,11 @@ function(configure_samwise_executable TARGET_NAME DEFINES)
     pico_add_extra_outputs(${TARGET_NAME})
 endfunction()
 
-# samwise: pico exectuable
-# samwise_flight: picubed executable, flight
-# samwise_bringup: picubed executable, no fight
-configure_samwise_executable(samwise PICO)
-configure_samwise_executable(samwise_flight PICO FLIGHT)
-configure_samwise_executable(samwise_bringup BRINGUP)
+# samwise_pico_debug: pico exectuable
+# samwise_picubed_debug: picubed executable, for debugging
+# samwise_picubed_flight: picubed executable, for flight
+# samwise_picubed_bringup: picubed executable, for bringing up the board
+configure_samwise_executable(samwise_pico_debug PICO)
+configure_samwise_executable(samwise_picubed_debug "")
+configure_samwise_executable(samwise_picubed_flight FLIGHT)
+configure_samwise_executable(samwise_picubed_bringup BRINGUP)

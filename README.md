@@ -21,9 +21,10 @@ this project has a few additional goals:
 To build the code in this repo, enter the build folder with `cd build` (if you do not have one), and then run `cmake ..` followed by `make -j8`.
 
 The following targets will be built:
-* `samwise_bringup.uf2` - this is intended for debugging the pycubed, and has the `BRINGUP` symbol defined
-* `samwise_flight.uf2` - this is intended for flight, and has the `FLIGHT` symbol defined
-* `samwise.uf2` - this is intended for normal debugging, and has neither symbol defined
+* `samwise_pico_debug`: pico exectuable
+* `samwise_picubed_debug`: picubed executable, for debugging
+* `samwise_picubed_flight`: picubed executable, for flight
+* `samwise_picubed_bringup`: picubed executable, for bringing up the board
 (these can be configured in `CMakeLists.txt`)
 
 ### Build Archives
