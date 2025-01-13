@@ -47,7 +47,7 @@ file(GLOB state_machine_tasks CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
 file(GLOB state_machine_states CONFIGURE_DEPENDS "src/state_machine/states/*.c")
 file(GLOB drivers CONFIGURE_DEPENDS "src/drivers/*.c")
 
-add_executable(samwise_code ${top} ${scheduler} ${state_machine_tasks}
+set(samwise_code ${top} ${scheduler} ${state_machine_tasks}
   ${state_machine_states} ${drivers})
 
 function(configure_samwise_executable TARGET_NAME DEFINES)

@@ -1,14 +1,6 @@
 #pragma once
 #include "macros.h"
 
-<<<<<<< HEAD
-=======
-#ifdef PICO
-/*
- * Pins on the pi pico, used for testing
- */
->>>>>>> 66f7b31 (Added build flag to build for RP2350)
-
 #define SPI0_CLK (18)
 #define SPI0_TX (19)
 #define SPI0_RX (16)
