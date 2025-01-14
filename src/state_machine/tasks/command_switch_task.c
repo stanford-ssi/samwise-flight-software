@@ -105,11 +105,11 @@ struct TASK1_DATA_STRUCT_FORMAT* T1DS_count;  // TODO deal with this shit
 
 void command_switch_dispatch(slate_t *slate)
 {
-    LOG_INFO("dispatching called");
+    LOG_INFO("com_swtch_fl: dispatching called");
     if (queue_try_remove(&slate->radio_packets_out, &payload))
     { // if successfully dequeued
     payload_head = 0;
-    LOG_INFO("dequeued payload successfully");
+    LOG_INFO("com_swtch_fl: dequeued payload successfully");
     
 
         while (payload_head < PAYLOAD_SIZE &&
@@ -126,7 +126,7 @@ void command_switch_dispatch(slate_t *slate)
                     T1DS_count = &T1DS;
                     // support for data longer than the space left in a packet (potentially useless?)
                     while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
-                        LOG_INFO("Oversize while loop called");
+                        LOG_INFO("com_swtch_fl: Oversize while loop called");
                         // copy max length, modify payload head and try to dequeue a new payload
                         memcpy(T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
                                      PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
@@ -141,19 +141,19 @@ void command_switch_dispatch(slate_t *slate)
 
                     // copy to struct for the first function sizeof(struct) bytes
                     // from payload array starting at payload_head + 1
-                    for(int i = 0; i < sizeof(payload); i++){
-                        LOG_DEBUG("Payload: %i", payload[i]);
-                    }
-                    LOG_DEBUG("T1DS size %i vs payload size %i ", sizeof(T1DS), sizeof(payload));
+                    // for(int i = 0; i < sizeof(payload); i++){
+                    //     LOG_DEBUG("Payload: %i", payload[i]);
+                    // }
+                    LOG_DEBUG("com_swtch_fl: T1DS size %i vs payload size %i ", sizeof(T1DS), sizeof(payload));
 
                     memcpy(&T1DS, &payload[payload_head + FUNC_MNEMONIC_BYTE_SIZE], sizeof(T1DS)); //% PAYLOAD_SIZE);
                     queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
                     /// test            
-                    LOG_INFO("added to func 1 arr int: %i and by arr char 14 is: %i", T1DS.data_int_1, T1DS.data_byteArr_1[14]);
+                    LOG_INFO("com_swtch_fl: added to func 1 arr int: %i and by arr char 14 is: %i", T1DS.data_int_1, T1DS.data_byteArr_1[14]);
                     /// test
                     payload_head += FUNC_MNEMONIC_BYTE_SIZE + 1;        // move for func mnem and look next item
                     payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size
-                    LOG_INFO("next payload funcMnenm %i ", payload[payload_head]);
+                    LOG_INFO("com_swtch_fl: next payload funcMnenm %i ", payload[payload_head]);
                     break;
 
                 default:

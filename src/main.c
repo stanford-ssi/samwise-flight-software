@@ -143,9 +143,10 @@ int main()
                             LOG_DEBUG("packet 2 data at %i : %i", i, dataout[i]);
     }
     
-    LOG_DEBUG("Integer from packet 2 (303): %i and byte at 9 pos (222): %i", FULLOUT.data_int_1, FULLOUT.data_byteArr_1[14]);
+    LOG_DEBUG("Integer from packet 2 (303): %i and byte at 9 pos (222): %i", FULLOUT.data_int_1, FULLOUT.data_byteArr_1[9]);
 
     
+    sleep_ms(25000);
 
 
 
