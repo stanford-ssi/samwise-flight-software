@@ -268,57 +268,55 @@ void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
 // If it has the second part of a function, it will try to complete whatever was the previous function.
 void command_switch_dispatch(slate_t *slate)
 {
-    int number_of_commands_to_process = 1;
-    LOG_INFO("Beginning command dispatch");
-    for(int i = 0; i < number_of_commands_to_process; i++){
-        
-        // This payload will store what is currently up next in the radio receive queue
-        uint8_t payload[PAYLOAD_SIZE];
-        
-        // Peek at the upcoming item in the radio receive queue
-        bool successful_peek = queue_try_peek(&slate->radio_packets_out, payload);
-        
-        if(successful_peek){
-            
-            // Set the function id to whatever was uploading before...
-            uint8_t function_id = slate->uploading_function_number;
+    LOG_INFO("com_swtch_fl: dispatching called");
+    if (queue_try_remove(&slate->radio_packets_out, &payload))
+    { // if successfully dequeued
+    payload_head = 0;
+    LOG_INFO("com_swtch_fl: dequeued payload successfully");
+    
 
-            // ...unless there was nothing uploading.
-            if(slate->uploading_function_number == 0){
-                function_id = payload[slate->current_byte_index];
-                slate->current_byte_index += FUNC_MNEMONIC_BYTE_SIZE;
-                slate->current_task_byte_size = 0;
-            }
-
-            LOG_INFO("Received a packet indicating function %i", function_id);
-
-            switch(function_id){
-
-                // THESE NEED TO START FROM 1 BECAUSE 0 IS BEING USED AS THE "NOT UPLOADING" INDEX
-                case Func1_MNEM:
-                    // Create a temporary task1 to add things into the queue.
-                    struct TASK1_DATA_STRUCT_FORMAT task1;
-
-                    // How many bytes are in the struct we want? 
-                    uint16_t max_size_task1 = sizeof(task1);
-                    
-                    // Reads whatever was in the package into the slate->buffer
-                    read_function_into_memory(slate, max_size_task1);
-                    
-                    LOG_INFO("current task byte task: %i", slate->current_task_byte_size);
-                    LOG_INFO("max size of task 1: %i", max_size_task1);
-
-                    if(slate->current_task_byte_size == max_size_task1){
-                        slate->current_task_byte_size = 0;
-                        // memcopy the things in the buffer into a struct
-                        memcpy(&task1, slate->buffer, max_size_task1);
-                        for(int i =0; i < 20; i++){
-                            LOG_INFO("copying data structure.. at index: %i, the byte is: %i", i, slate->buffer[i]);
+        while (payload_head < PAYLOAD_SIZE &&
+               payload_head != STOP_MNEM &&  // <- this should be erased?
+                payload[payload_head] != STOP_MNEM) // clean up
+        {
+            LOG_INFO("payload decoding entered");
+            switch (payload[payload_head])   // this only works for FUNC_MNEMONIC_BYTE_SIZE = 1 (no need for more?)
+            {
+                case Func1_MNEM: // TODO test this shit,
+                                 // TODO evaluate the need of supporting data of len more than
+                                 // the space left in the packet
+                    LOG_INFO("Func 1 mnemonic detected");
+                    T1DS_count = &T1DS;
+                    // support for data longer than the space left in a packet (potentially useless?)
+                    while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
+                        LOG_INFO("com_swtch_fl: Oversize while loop called");
+                        // copy max length, modify payload head and try to dequeue a new payload
+                        memcpy(T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
+                                     PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
+                        T1DS_count += PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE;    // move pointer of the DS
+                        if (!queue_try_remove(&slate->radio_packets_out, &payload)){    // get next packet
+                            // show message that there was a misalignment with the data?
+                            payload_head = STOP_MNEM;
+                            break;
                         }
-
-                        // AT THIS POINT, AN ENTIRE STRUCT HAS BEEN READ, SO WE WILL ADD IT HERE !
-                        queue_try_add(&slate->task1_data, &task1);
+                        payload_head = 0;                                       // start next packet from start
                     }
+
+                    // copy to struct for the first function sizeof(struct) bytes
+                    // from payload array starting at payload_head + 1
+                    // for(int i = 0; i < sizeof(payload); i++){
+                    //     LOG_DEBUG("Payload: %i", payload[i]);
+                    // }
+                    LOG_DEBUG("com_swtch_fl: T1DS size %i vs payload size %i ", sizeof(T1DS), sizeof(payload));
+
+                    memcpy(&T1DS, &payload[payload_head + FUNC_MNEMONIC_BYTE_SIZE], sizeof(T1DS)); //% PAYLOAD_SIZE);
+                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
+                    /// test            
+                    LOG_INFO("com_swtch_fl: added to func 1 arr int: %i and by arr char 14 is: %i", T1DS.data_int_1, T1DS.data_byteArr_1[14]);
+                    /// test
+                    payload_head += FUNC_MNEMONIC_BYTE_SIZE + 1;        // move for func mnem and look next item
+                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size
+                    LOG_INFO("com_swtch_fl: next payload funcMnenm %i ", payload[payload_head]);
                     break;
                 //case Func2_MNEM:
                 //    break;

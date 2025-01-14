@@ -237,17 +237,127 @@ int main()
     struct test_t1DS first_out;
     queue_try_remove(&slate.task1_data, &first_out);
 
-    LOG_INFO("Expected integer 1: %i, received: %i", first.data_int_1, first_out.data_int_1);
+    LOG_DEBUG("second packet data");
+    for(int i = 0; i < sizeof(FULLOUT); i++){
+                            LOG_DEBUG("packet 2 data at %i : %i", i, dataout[i]);
+    }
+    
+    LOG_DEBUG("Integer from packet 2 (303): %i and byte at 9 pos (222): %i", FULLOUT.data_int_1, FULLOUT.data_byteArr_1[9]);
 
-    for(int i =0; i < 10; i++){
-        LOG_INFO("Struct 1, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
+    
+    sleep_ms(25000);
+
+
+
+
+    // memcpy(&data_t2[1], &long_ds_d, sizeof(long_ds_d));
+
+    
+    // LOG_DEBUG("Integer from 1st data: %i and byte at 14 pos: %i", FULLOUT.data_int_1, FULLOUT.data_byteArr_1[14]);
+
+    LOG_INFO("dequeued task data successfully");
+    sleep_ms(1000);
+
+
+    // for (int i = 0; i < sizeof(t1ds); i++){
+    //     if (data[i+1] == dataout[i])
+    //     {
+    //        LOG_INFO("Correct coppying at %i", i);
+    //         // correctly copied up until i
+    //     }else{
+    //         LOG_INFO("Incorrect coppying at %i", i);
+    //         // incorectly copied at i 
+    //         //break;
+    //     }
+    //     LOG_INFO("data: %hhx", data[i+1]);
+    //     LOG_INFO("dataout: %hhx", dataout[i]);
+
+    
+    // }
+    // queue_try_remove(&slate.task1_data,&data2out);
+    // memcpy(&FULLOUT2, &data2out, sizeof(FULLOUT2)); //% PAYLOAD_SIZE);
+
+    // LOG_INFO("dequeued task data2 successfully");
+    // LOG_DEBUG("Integer (303, 111) from 2nd data: %i and byte at 0 pos: %i", FULLOUT2.data_int_1, FULLOUT2.data_byteArr_1[0]);
+
+
+
+    /* TESTS 2. one long function call taking more than 1 packet 
+    (potentially useless if no long data intended to be sent, a simple check on the server
+     size to make sure data isnt cut in half would suffice) */
+
+
+
+
+
+    struct long_ds{
+        uint16_t data_int_1;
+        uint8_t data_byteArr_1[260];
+    };
+
+    struct long_ds long_ds_d;
+    long_ds_d.data_int_1 = 999;
+    long_ds_d.data_byteArr_1[257] = 44;
+    
+    struct long_ds long_ds_rec;  // future reconstructed
+    uint8_t long_out[sizeof(long_ds_rec)];
+
+    uint8_t data_t2p1[251];   // first packet  (this is just for testing, later on it will be automaticly split)
+    data_t2p1[0] = 1;      
+    uint8_t data_t2p2[251];  // second packet
+
+
+    int count = 0;
+
+
+    memcpy(&data_t2p1[1], &long_ds_d, 250);
+    memcpy(&data_t2p2[1], &long_ds_d, sizeof(long_ds_d) - 250);   // we know out ds will be only 2 packets here, again testing
+
+
+
+
+    // print both packets to see the whole thing # todo
+    LOG_DEBUG("whole packet data");
+    for(int i = 0; i < sizeof(SEC_t1ds)*2 + 1; i++){
+                            LOG_DEBUG("packet data at %i : %i", i, data2[i]);
     }
 
-/*
-    for(int i =250 ; i < 300; i++){
-        LOG_INFO("Packet 2, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
+    // add both to radio queue #todo
+    queue_try_add(&slate.radio_packets_out, &data[0]); // add to radio queue
+
+
+
+
+    LOG_INFO("radio payload added test2");
+    sleep_ms(1000);
+    command_switch_dispatch(&slate);    // dequeue radio packet and add to task queue (should dequeu both packets?)
+    LOG_INFO("dispatching done 1");
+    sleep_ms(1000);
+    queue_try_remove(&slate.task1_data,&long_out);  // should be read out in 2 packets maybe?
+    memcpy(&long_ds_rec, &long_out, sizeof(long_ds_rec)); //% PAYLOAD_SIZE);
+
+    LOG_DEBUG("test 2 packet data");
+    for(int i = 0; i < sizeof(long_ds_rec); i++){
+                            LOG_DEBUG("packet 1 data at %i : %i", i, long_out[i]);
     }
-    */
+    
+    LOG_DEBUG("Integer from packet 2 (999): %i and byte at 257 pos (44): %i", long_ds_rec.data_int_1, long_ds_rec.data_byteArr_1[14]);
+
+    
+    
+    // LOG_DEBUG("Integer from 1st data: %i and byte at 14 pos: %i", FULLOUT.data_int_1, FULLOUT.data_byteArr_1[14]);
+
+    LOG_INFO("dequeued task data successfully");
+    sleep_ms(1000);
+    
+
+
+
+
+
+
+
+
 
     /* End of TESTS */
 
