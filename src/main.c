@@ -12,6 +12,7 @@
 #include "scheduler/scheduler.h"
 #include "slate.h"
 
+
 /**
  * Statically allocate the slate.
  */

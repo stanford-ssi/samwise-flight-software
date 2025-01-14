@@ -10,6 +10,7 @@
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
+#include "pico/i2c.h"
 #include "scheduler/scheduler.h"
 
 /**
@@ -21,6 +22,32 @@ static bool init_gpio_pins()
 {
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+
+    return true;
+}
+
+/**
+ * Initialize the I2C interface.
+ *
+ * @return True on success, false otherwise.
+ */
+static bool init_i2c()
+{
+    // TODO: Replace SDA, SCL, baud rate
+    const uint i2c_sda_pin = 4;
+    const uint i2c_scl_pin = 5;
+    const uint i2c_baudrate = 100000;  // Standard I2C baud rate (100 kHz)
+
+    // Initialize the I2C hardware
+    i2c_init(i2c_default, i2c_baudrate);
+
+    // Configure the GPIO pins for I2C functionality
+    gpio_set_function(i2c_sda_pin, GPIO_FUNC_I2C);
+    gpio_set_function(i2c_scl_pin, GPIO_FUNC_I2C);
+    gpio_pull_up(i2c_sda_pin);
+    gpio_pull_up(i2c_scl_pin);
+
+    // TODO: add device specific checks
 
     return true;
 }
