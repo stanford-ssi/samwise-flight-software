@@ -63,7 +63,7 @@ case Func1_MNEM: // TODO test this shit,
 
 // Function Mnemonics FuncName assignedNumber
 // assignedNumber < (2^(FUNC_MNEMONIC_BYTE_SIZE)*8) -1
-#define STOP_MNEM 255
+#define STOP_MNEM 255       // stop byte is added on the last transmission of the packet
 #define Func1_MNEM 1
 //.....
 //#define Func254_MNEM 254
@@ -86,7 +86,7 @@ struct TASK1_DATA_STRUCT_FORMAT
 
 uint8_t payload[PAYLOAD_SIZE];
 // unsigned char data_length = 0;
-uint8_t payload_head = 0;
+uint8_t payload_head;
 struct TASK1_DATA_STRUCT_FORMAT T1DS;
 
 
@@ -113,7 +113,8 @@ void command_switch_dispatch(slate_t *slate)
     
 
         while (payload_head < PAYLOAD_SIZE &&
-               payload_head != STOP_MNEM && payload[payload_head] != STOP_MNEM) // clean up
+               payload_head != STOP_MNEM &&  // <- this should be erased?
+                payload[payload_head] != STOP_MNEM) // clean up
         {
             LOG_INFO("payload decoding entered");
             switch (payload[payload_head])   // this only works for FUNC_MNEMONIC_BYTE_SIZE = 1 (no need for more?)
@@ -127,7 +128,7 @@ void command_switch_dispatch(slate_t *slate)
                     while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
                         LOG_INFO("Oversize while loop called");
                         // copy max length, modify payload head and try to dequeue a new payload
-                        memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
+                        memcpy(T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
                                      PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
                         T1DS_count += PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE;    // move pointer of the DS
                         if (!queue_try_remove(&slate->radio_packets_out, &payload)){    // get next packet
@@ -151,7 +152,7 @@ void command_switch_dispatch(slate_t *slate)
                     LOG_INFO("added to func 1 arr int: %i and by arr char 14 is: %i", T1DS.data_int_1, T1DS.data_byteArr_1[14]);
                     /// test
                     payload_head += FUNC_MNEMONIC_BYTE_SIZE + 1;        // move for func mnem and look next item
-                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size 
+                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size
                     LOG_INFO("next payload funcMnenm %i ", payload[payload_head]);
                     break;
 
