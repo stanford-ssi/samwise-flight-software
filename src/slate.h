@@ -32,4 +32,11 @@ typedef struct samwise_slate
     queue_t task1_data; // queues of this kind will exist for each task called
                         // from radio com
 
+    uint8_t buffer[304];
+
+    uint16_t current_task_byte_size;
+    uint16_t current_byte_index;
+    uint16_t last_place_on_packet;
+    uint8_t uploading_function_number;
+
 } slate_t;
