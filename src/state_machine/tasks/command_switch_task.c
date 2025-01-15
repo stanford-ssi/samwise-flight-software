@@ -109,6 +109,7 @@ struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task2;
 uint8_t task1_current_byte_size = 0;
 uint8_t task2_current_byte_size = 0;
 
+uint8_t maximum_struct_allocation = 0;
 // What is the struct
 
 void command_switch_task_init(slate_t *slate)
@@ -124,13 +125,14 @@ void command_switch_task_init(slate_t *slate)
 
 const uint8_t number_of_commands = 1;
 
-void *ptr;
+//void *ptr;
+
+const uint8_t MAX = 10;
+
+uint8_t buffer[MAX];
+
 uint8_t current_task_byte_size = 0;
 uint8_t current_byte_index = 0;
-uint8_t last_place_on_packet = 0;
-
-
-// THIS MIGHT NEED TO BE MOVED TO THE SLATE ! RAHHHH !
 uint8_t last_place_on_packet = 0;
 
 void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
@@ -138,7 +140,7 @@ void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
     // If no bytes have been read yet
     if(current_task_byte_size == 0){
         // allocate some new space for the struct to be saved into
-        ptr = malloc(sizeof(current_data_holder_task1));
+        //ptr = malloc(sizeof(current_data_holder_task1));
     }
     
     // Tell the machine where to start reading bytes
@@ -169,7 +171,7 @@ void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
             if(estimated_end_byte_index >= PAYLOAD_SIZE){
                 
                 // Calculate where to read from the packet to place into the struct
-                uint8_t* where_to_place_into_struct = &ptr + current_task_byte_size;
+                uint8_t* where_to_place_into_struct = &buffer + current_task_byte_size;
                 uint8_t* where_to_read_from_payload = &payload + current_byte_index;
                 uint8_t length = PAYLOAD_SIZE - current_byte_index;
 
@@ -208,7 +210,7 @@ void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
             else{ // If the function is fully contained in the packet, then do the following:
                 
                 // COPY ALL OF THE PARTIAL DATA FROM THE PAYLOAD INTO THE STRUCT
-                uint8_t* where_to_place_into_struct = ptr + current_task_byte_size;
+                uint8_t* where_to_place_into_struct = &buffer + current_task_byte_size;
                 uint8_t* where_to_read_from_payload = &payload + current_byte_index;
                 uint8_t length = (sizeof(current_data_holder_task1) - current_task_byte_size);
 
@@ -261,7 +263,7 @@ void command_switch_dispatch(slate_t *slate)
     uint8_t current_byte_index = last_place_on_packet;
 
     for(int i = 0; i < number_of_commands; i++){
-
+        
         // This payload will store what is currently up next in the radio receive queue
         uint8_t payload[PAYLOAD_SIZE];
         
@@ -269,9 +271,14 @@ void command_switch_dispatch(slate_t *slate)
         bool successful_peek = queue_try_peek(&slate->radio_packets_out, &payload);
         
         if(successful_peek){
+            
+            // check if the current uploading function number is not  -1,
+            // then, set function_id to be whatever it is
+            
+            // otherwise, try to read the function_id from the payload.
 
-            // Get the function id from the first byte that we are reading from.
-            uint8_t function_id = payload[current_byte_index];
+                // Get the function id from the first byte that we are reading from.
+                uint8_t function_id = payload[current_byte_index];
 
             // Increment the byte index forward by the function mnemonic size
             // This means you can start reading data from the next byte
