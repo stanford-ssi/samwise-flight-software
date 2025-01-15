@@ -72,6 +72,7 @@ int main()
     first.data_byteArr_1[1] = 2;
     first.data_byteArr_1[2] = 3;
     first.data_byteArr_1[249] = 101;
+    first.data_byteArr_1[256] = 199;
 
     second.data_int_1 = 303;
     second.data_byteArr_1[0] = 111;
@@ -123,7 +124,7 @@ int main()
 
     LOG_INFO("Expected integer 1: %i, received: %i", first.data_int_1, first_out.data_int_1);
 
-    for(int i =290; i < 300; i++){
+    for(int i =240; i < 260; i++){
         LOG_INFO("Packet 1, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
     }
 
