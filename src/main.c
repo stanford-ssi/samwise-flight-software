@@ -59,7 +59,7 @@ int main()
     /* TESTS 2 function calls in one packet */
     struct test_t1DS{
         int data_int_1;
-        uint8_t data_byteArr_1[16];
+        uint8_t data_byteArr_1[300];
     };
     struct test_t1DS first;
     struct test_t1DS second;
@@ -71,35 +71,36 @@ int main()
     first.data_byteArr_1[0] = 1;
     first.data_byteArr_1[1] = 2;
     first.data_byteArr_1[2] = 3;
-    first.data_byteArr_1[15] = 101;
+    first.data_byteArr_1[249] = 101;
 
     second.data_int_1 = 303;
     second.data_byteArr_1[0] = 111;
     second.data_byteArr_1[9] = 222;
-    second.data_byteArr_1[15] = 101;
+    second.data_byteArr_1[249] = 101;
 
 
     uint8_t packet1[251];
+    uint8_t packet2[251];
 
     packet1[0] = 1;
 
     LOG_INFO("PLEASE I SWEAR TO FUCKING OD, size is: %i", sizeof(first));
 
-    memcpy(&packet1[1], &first, sizeof(first));
+    memcpy(&packet1[1], &first, 250);
+    
+    
+    LOG_INFO("meow");
 
-    LOG_INFO("MEOWWWWW");
+    // (int*)((char*)first+250);
+    sleep_ms(500);
+    char *byte_pointer = (char *)&first;
 
-    *(packet1 + sizeof(first) + 1 * sizeof(uint8_t)) = 1;
+    memcpy(packet2, byte_pointer + 250, 304 - 250);
 
-    memcpy(packet1 + sizeof(first) + 2 * sizeof(uint8_t), &second, sizeof(second));
-
-    *(packet1 + 2 * sizeof(first) + 2) = 255;
 
     LOG_INFO("Packet before sending:");
 
-    for (int i = 0; i < 2 * sizeof(first) + 5; i++){
-        LOG_INFO("Byte At %i is %i", i, packet1[i]);
-    }
+    sleep_ms(500);
 
     command_switch_task_init(&slate);  // init queue
 
@@ -109,22 +110,28 @@ int main()
     LOG_INFO("Radio Payload added to queue");
 
     command_switch_dispatch(&slate);
-    command_switch_dispatch(&slate);
+
+
+    queue_try_add(&slate.radio_packets_out, &packet2);
+
+   command_switch_dispatch(&slate);
+    
+    //command_switch_dispatch(&slate);
 
     // get the struct
     queue_try_remove(&slate.task1_data, &first_out);
-    queue_try_remove(&slate.task1_data, &second_out);
 
     LOG_INFO("Expected integer 1: %i, received: %i", first.data_int_1, first_out.data_int_1);
 
-    for(int i =0 ; i < 16; i++){
+    for(int i =290; i < 300; i++){
         LOG_INFO("Packet 1, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
     }
-    LOG_INFO("Expected integer 2: %i, received: %i", second.data_int_1, second.data_int_1);
 
-    for(int i =0 ; i < 16; i++){
-        LOG_INFO("Packet 2, Index %i: Expected: %i, Received %i", i, second.data_byteArr_1[i], second_out.data_byteArr_1[i]);
+/*
+    for(int i =250 ; i < 300; i++){
+        LOG_INFO("Packet 2, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
     }
+    */
 
     /* End of TESTS */
 

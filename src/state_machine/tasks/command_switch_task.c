@@ -91,7 +91,7 @@ const int TASK1_QUEUE_LENGTH = 32; // max queue length for task 1
 struct TASK1_DATA_STRUCT_FORMAT
 {
     int data_int_1;
-    uint8_t data_byteArr_1[16];
+    uint8_t data_byteArr_1[300];
 };
 
 struct TASK2_DATA_STRUCT_FORMAT
@@ -134,7 +134,7 @@ void command_switch_task_init(slate_t *slate)
 }
 
 
-void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
+void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
 
     LOG_INFO("reading the function into the buffer");
     LOG_INFO("byte index before: %i", slate->current_byte_index);
@@ -162,9 +162,9 @@ void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
                 LOG_INFO("Function data is incomplete, checking for rest of command");
                 
                 // Calculate where to read from the packet to place into the struct
-                uint8_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
-                uint8_t* where_to_read_from_payload = payload + slate->current_byte_index;
-                uint8_t length = PAYLOAD_SIZE - slate->current_byte_index;
+                uint16_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
+                uint16_t* where_to_read_from_payload = payload + slate->current_byte_index;
+                uint16_t length = PAYLOAD_SIZE - slate->current_byte_index;
 
 
                 // Copy partial data into the struct
@@ -209,11 +209,11 @@ void read_function_into_memory(slate_t *slate, uint8_t max_size_of_struct){
                 sleep_ms(100);
 
                 // COPY ALL OF THE PARTIAL DATA FROM THE PAYLOAD INTO THE STRUCT
-                uint8_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
+                uint16_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
                 sleep_ms(100);
-                uint8_t* where_to_read_from_payload = payload + slate->current_byte_index;
+                uint16_t* where_to_read_from_payload = payload + slate->current_byte_index;
                 sleep_ms(100);
-                uint8_t length = max_size_of_struct - slate->current_task_byte_size;
+                uint16_t length = max_size_of_struct - slate->current_task_byte_size;
                 sleep_ms(100);
 
                 LOG_INFO("Reading from where in the payload: %i", slate->current_byte_index);
@@ -300,7 +300,7 @@ void command_switch_dispatch(slate_t *slate)
                     struct TASK1_DATA_STRUCT_FORMAT task1;
 
                     // How many bytes are in the struct we want? 
-                    uint8_t max_size_task1 = sizeof(task1);
+                    uint16_t max_size_task1 = sizeof(task1);
                     
                     // Reads whatever was in the package into the slate->buffer
                     read_function_into_memory(slate, max_size_task1);
