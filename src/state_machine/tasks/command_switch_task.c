@@ -1,9 +1,8 @@
 /**
- * @author  Sasha Luchyn
+ * @author  Sasha Luchyn + Michael Dalva
  * @date    2024-09-11
  *
  * Task to parse incoming bitstream and allocate data for according tasks
- * This is a very rough sketch of how it should work, nothing works
  */
 
 /* How to add new function (using an example of some task1")
@@ -17,45 +16,38 @@ eg: struct TASK1_DATA_STRUCT_FORMAT
 eg: queue_t task1_data;
 
 4. create a struct for a new function
-eg: struct TASK1_DATA_STRUCT_FORMAT T1DS;
+eg: struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task1;
 
 5. initialize queue in the command_switch_task_init
-eg: queue_init(&slate->task1_data, sizeof(T1DS), TASK1_QUEUE_LENGTH);
+eg: queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK1_QUEUE_LENGTH);
 
 6. add a case to the switch case in command_switch_dispatch
-eg (old): 
-case Func1_MNEM: 
-                    // copy to struct for the first function sizeof(struct) bytes
-                    // from payload array starting at payload_head + 1
-                    memcpy(&T1DS, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS));
-                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
-                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
-                    payload_head += sizeof(T1DS);                   // move for data size 
-                    break;
+eg:
+case Func1_MNEM:{
 
-eg (new, with wrapper): 
-case Func1_MNEM: // TODO test this shit,
-                                 // TODO evaluate the need of supporting data of len more than
-                                 // the space left in the packet
+                        // Create a temporary task1 to add things into the queue.
+                        struct TASK1_DATA_STRUCT_FORMAT task1;
+                        
+                        // How many bytes are in the struct we want? 
+                        uint16_t max_size_task1 = sizeof(task1);
+                        
+                        // Reads whatever was in the package into the slate->buffer
+                        read_function_into_memory(slate, max_size_task1, Func1_MNEM);
 
-                    struct TASK1_DATA_STRUCT_FORMAT* T1DS_count = &T1DS;
-                    // support for data longer than the space left in a packet (potentially useless?)
-                    while (payload_head + FUNC_MNEMONIC_BYTE_SIZE + sizeof(T1DS) >= PAYLOAD_SIZE ){
-                        // copy max length, modify payload head and try to dequeue a new payload
-                        memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE,
-                                     PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE); // copy the rest of the packet
-                        T1DS_count += PAYLOAD_SIZE - payload_head - FUNC_MNEMONIC_BYTE_SIZE;    // move pointer of the DS
-                        queue_try_remove(&slate->radio_packets_out, &payload);   // get next packet
-                        payload_head = 0;                                       // start next packet from start
-                    }
+                        if(slate->current_task_byte_size == max_size_task1){
+                            slate->current_task_byte_size = 0;
+                            // memcopy the things in the buffer into a struct
+                            memcpy(&task1, slate->buffer, max_size_task1);
 
-                    // copy to struct for the first function sizeof(struct) bytes
-                    // from payload array starting at payload_head + 1
-                    memcpy(&T1DS_count, &payload + payload_head + FUNC_MNEMONIC_BYTE_SIZE, sizeof(T1DS) % PAYLOAD_SIZE);
-                    queue_try_add(&slate->task1_data, &T1DS);       // adding the task data to the appropriate queue
-                    payload_head += FUNC_MNEMONIC_BYTE_SIZE;        // move for func mnem 
-                    payload_head += sizeof(T1DS) % PAYLOAD_SIZE;                   // move for data size 
-                    break;
+                            // Set the currently uploading function to 0 (no functions are in the process of being uploaded)
+                            slate->uploading_function_number = 0;
+
+                            // AT THIS POINT, AN ENTIRE STRUCT HAS BEEN READ, SO WE WILL ADD IT HERE !
+                            queue_try_add(&slate->task1_data, &task1);
+                        }
+                        
+                }break;
+
 
 7. All set! (hopefully)
 
@@ -134,7 +126,7 @@ void command_switch_task_init(slate_t *slate)
 }
 
 
-void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
+void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct, uint8_t function_id){
 
     LOG_INFO("reading the function into the buffer");
     LOG_INFO("byte index before: %i", slate->current_byte_index);
@@ -155,8 +147,9 @@ void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
             LOG_INFO("Current byte index: %i", slate->current_byte_index);
 
             // Check how far the struct WOULD go in bytes
-            uint8_t estimated_end_byte_index = slate->current_byte_index + (max_size_of_struct - slate->current_task_byte_size);
-            
+            uint16_t estimated_end_byte_index = slate->current_byte_index + (max_size_of_struct - slate->current_task_byte_size);
+
+
             // If the struct would end AFTER the payload size 
             if(estimated_end_byte_index >= PAYLOAD_SIZE){
                 LOG_INFO("Function data is incomplete, checking for rest of command");
@@ -169,7 +162,7 @@ void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
 
                 // Copy partial data into the struct
                 memcpy(where_to_place_into_struct, where_to_read_from_payload, length);
-                
+
                 // Increase task1_current_byte_size 
                 slate->current_task_byte_size += length;
 
@@ -195,6 +188,9 @@ void read_function_into_memory(slate_t *slate, uint16_t max_size_of_struct){
                     // If there is no next payload, it probably hasn't come yet, so just break
                     // The next for loops will just not do anything cus it won't be able to peek new data.
                     slate->current_byte_index = 0;
+
+                    // Set the function uploading number to the current function that is being transmitted
+                    slate->uploading_function_number = function_id;
                     break;
                 }
             }
@@ -295,31 +291,37 @@ void command_switch_dispatch(slate_t *slate)
             switch(function_id){
 
                 // THESE NEED TO START FROM 1 BECAUSE 0 IS BEING USED AS THE "NOT UPLOADING" INDEX
-                case Func1_MNEM:
-                    // Create a temporary task1 to add things into the queue.
-                    struct TASK1_DATA_STRUCT_FORMAT task1;
+                case Func1_MNEM:{
 
-                    // How many bytes are in the struct we want? 
-                    uint16_t max_size_task1 = sizeof(task1);
-                    
-                    // Reads whatever was in the package into the slate->buffer
-                    read_function_into_memory(slate, max_size_task1);
-                    
-                    LOG_INFO("current task byte task: %i", slate->current_task_byte_size);
-                    LOG_INFO("max size of task 1: %i", max_size_task1);
+                        // Create a temporary task1 to add things into the queue.
+                        struct TASK1_DATA_STRUCT_FORMAT task1;
+                        
+                        // How many bytes are in the struct we want? 
+                        uint16_t max_size_task1 = sizeof(task1);
+                        
+                        // Reads whatever was in the package into the slate->buffer
+                        read_function_into_memory(slate, max_size_task1, Func1_MNEM);
+                        
+                        LOG_INFO("current task byte task: %i", slate->current_task_byte_size);
+                        LOG_INFO("max size of task 1: %i", max_size_task1);
 
-                    if(slate->current_task_byte_size == max_size_task1){
-                        slate->current_task_byte_size = 0;
-                        // memcopy the things in the buffer into a struct
-                        memcpy(&task1, slate->buffer, max_size_task1);
-                        for(int i =0; i < 20; i++){
-                            LOG_INFO("copying data structure.. at index: %i, the byte is: %i", i, slate->buffer[i]);
+                        if(slate->current_task_byte_size == max_size_task1){
+                            slate->current_task_byte_size = 0;
+                            // memcopy the things in the buffer into a struct
+                            memcpy(&task1, slate->buffer, max_size_task1);
+                            for(int i =0; i < 20; i++){
+                                LOG_INFO("copying data structure.. at index: %i, the byte is: %i", i, slate->buffer[i]);
+                            }
+
+                            // Set the currently uploading function to 0 (no functions are in the process of being uploaded)
+                            slate->uploading_function_number = 0;
+
+                            // AT THIS POINT, AN ENTIRE STRUCT HAS BEEN READ, SO WE WILL ADD IT HERE !
+                            queue_try_add(&slate->task1_data, &task1);
                         }
+                        
+                }break;
 
-                        // AT THIS POINT, AN ENTIRE STRUCT HAS BEEN READ, SO WE WILL ADD IT HERE !
-                        queue_try_add(&slate->task1_data, &task1);
-                    }
-                    break;
                 //case Func2_MNEM:
                 //    break;
             }
