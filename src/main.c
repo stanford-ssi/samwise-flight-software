@@ -31,31 +31,25 @@ void init_mission_control_command_queue(uint16_t payload_size){
     queue_init(&mission_control_command_queue, payload_size * sizeof(uint8_t), 32);
 }
 void add_packet_to_send_queue(uint8_t* buffer){
-    LOG_INFO("ADDING THINGS TO THE SEND QUEUE");
+    LOG_INFO("queueing command");
     bool added = queue_try_add(&mission_control_command_queue, buffer);
-    if(added){
-        LOG_INFO("SUCCESSFULLY ADDED TO THE QUEUE");
-    }
-    else{
-        LOG_INFO("there was an error in adding to the queue");
-    }
 }
 
 void send_queue_to_satellite(slate_t *s){
     uint8_t payload[251];
 
-    LOG_INFO("ATTEMPTING TO SEND THINGS TO THE RADIO");
+    LOG_INFO("sending entire queue to radio");
 
     while(queue_try_remove(&mission_control_command_queue, payload)){
-        sleep_ms(500);
-        LOG_INFO("Sending a command to the radio");
 
         // Then put it into the radio queue
         queue_try_add(&(s->radio_packets_out), payload);
-        sleep_ms(500);
-        LOG_INFO("hopefully it was added?");
-        sleep_ms(500);
+
+
+        LOG_INFO("Sent a command to the radio");
     }
+
+    LOG_INFO("finished sending queue to radio");
 
     first_open_byte_index = 0;
 
@@ -70,24 +64,18 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
 
     // While we have not saved all of the bytes
     while(struct_bytes_saved < struct_buffer_size){
-        LOG_INFO("Number of saved bytes so far: %i", struct_bytes_saved);
 
         // predict where the last byte will be located
         uint16_t predicted_end_location = first_open_byte_index + (struct_buffer_size - struct_bytes_saved);
 
         // If it will end after the payload, we need another packet
         if(predicted_end_location >= payload_size){
-            LOG_INFO("overflowing, need to save partial first");
 
             uint8_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
             uint8_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
             uint16_t length = payload_size - first_open_byte_index;
 
             memcpy(buffer_start, struct_buffer_start, length);
-
-            for(int i = 0; i < 10; i++){
-                LOG_INFO("adding packet, index: %i, with byte: %i",i, buffer_location[i]);
-            }
 
             // now we need to add whatever is in the buffer to be sent to the radio
             add_packet_to_send_queue(buffer_location);
@@ -114,10 +102,6 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
                     LOG_INFO("THIS SHOULD NOT BE HAPPENING WHEN LOADING COMMANDS TO SEND OVER");
                 }
 
-                for(int i = 0; i < 10; i++){
-                    LOG_INFO("adding packet, index: %i, with byte: %i",i, buffer_location[i]);
-                }
-
                 add_packet_to_send_queue(buffer_location);
             }
             struct_bytes_saved += length;
@@ -125,25 +109,6 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
     }
 }
 
-void send_test_commands(slate_t* s, struct test_t1DS* struct1){
-
-    uint8_t buffer[251];
-    struct1->data_int_1 = 100;
-    struct1->data_byteArr_1[0] = 0;
-    struct1->data_byteArr_1[1] = 1;
-    struct1->data_byteArr_1[2] = 2;
-    struct1->data_byteArr_1[3] = 3;
-
-
-    LOG_INFO("number of bytes in command: %i", sizeof(*struct1));
-
-    uint8_t struct_buffer[sizeof(*struct1)];
-
-    memcpy(struct_buffer, struct1, sizeof(*struct1));
-
-    add_commands_to_send_queue(s, buffer, 1, struct_buffer, 251, sizeof(*struct1), true);
-    send_queue_to_satellite(s);
-}
 /**
  * Main code entry point.
  *
@@ -228,11 +193,22 @@ int main()
     command_switch_task_init(&slate);  // init queue
     init_mission_control_command_queue(251);
 
+    uint8_t buffer[251];
+
     struct test_t1DS first;
-    uint8_t* ptr;
+    first.data_int_1 = 100;
+    first.data_byteArr_1[0] = 0;
+    first.data_byteArr_1[1] = 1;
+    first.data_byteArr_1[2] = 2;
+    first.data_byteArr_1[3] = 3;
 
-    send_test_commands(&slate, &first);
+    uint8_t struct_buffer[sizeof(first)];
 
+    memcpy(struct_buffer, &first, sizeof(first));
+
+    add_commands_to_send_queue(&slate, buffer, 1, struct_buffer, 251, sizeof(first), false);
+    add_commands_to_send_queue(&slate, buffer, 1, struct_buffer, 251, sizeof(first), true);
+    send_queue_to_satellite(&slate);
     
     // meow
     //queue_try_add(&slate.radio_packets_out, packet1);
@@ -241,18 +217,33 @@ int main()
     LOG_INFO("Radio Payload added to queue");
 
     command_switch_dispatch(&slate);
+    command_switch_dispatch(&slate);
     
     //command_switch_dispatch(&slate);
 
     // get the struct
     struct test_t1DS first_out;
+    struct test_t1DS second_out;
     queue_try_remove(&slate.task1_data, &first_out);
+    queue_try_remove(&slate.task1_data, &second_out);
 
-    LOG_INFO("Expected integer 1: %i, received: %i", first.data_int_1, first_out.data_int_1);
-
-    for(int i =0; i < 10; i++){
-        LOG_INFO("Struct 1, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
+    bool same = true;
+    for(int i = 0; i < 300; i++){
+        if(first.data_byteArr_1[i] != first_out.data_byteArr_1[i]){
+            same = false;
+        }
     }
+
+    LOG_INFO("True or false, the byte arrays are the same: %i", same);
+
+    same = true;
+    for(int i = 0; i < 300; i++){
+        if(first.data_byteArr_1[i] != second_out.data_byteArr_1[i]){
+            same = false;
+        }
+    }
+
+    LOG_INFO("True or false, the byte arrays of second are the same: %i", same);
 
 /*
     for(int i =250 ; i < 300; i++){
