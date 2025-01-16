@@ -28,17 +28,33 @@ struct test_t1DS{
 };
 
 void init_mission_control_command_queue(uint16_t payload_size){
-    queue_init(&mission_control_command_queue, payload_size, 20);
+    queue_init(&mission_control_command_queue, payload_size * sizeof(uint8_t), 32);
 }
 void add_packet_to_send_queue(uint8_t* buffer){
-    queue_try_add(&mission_control_command_queue, buffer);
+    LOG_INFO("ADDING THINGS TO THE SEND QUEUE");
+    bool added = queue_try_add(&mission_control_command_queue, buffer);
+    if(added){
+        LOG_INFO("SUCCESSFULLY ADDED TO THE QUEUE");
+    }
+    else{
+        LOG_INFO("there was an error in adding to the queue");
+    }
 }
 
-void send_queue_to_satellite(slate_t* slate){
-    uint8_t* payload;
+void send_queue_to_satellite(slate_t *s){
+    uint8_t payload[251];
+
+    LOG_INFO("ATTEMPTING TO SEND THINGS TO THE RADIO");
+
     while(queue_try_remove(&mission_control_command_queue, payload)){
+        sleep_ms(500);
+        LOG_INFO("Sending a command to the radio");
+
         // Then put it into the radio queue
-        queue_try_add(&slate->radio_packets_out, payload);
+        queue_try_add(&(s->radio_packets_out), payload);
+        sleep_ms(500);
+        LOG_INFO("hopefully it was added?");
+        sleep_ms(500);
     }
 
     first_open_byte_index = 0;
@@ -46,7 +62,7 @@ void send_queue_to_satellite(slate_t* slate){
 }
 
 
-void add_commands_to_send_queue(slate_t* slate, uint8_t* buffer_location, uint8_t function_number, uint8_t* struct_buffer, uint16_t payload_size, uint16_t struct_buffer_size, bool add_stop_after){
+void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t function_number, uint8_t* struct_buffer, uint16_t payload_size, uint16_t struct_buffer_size, bool add_stop_after){
     uint16_t struct_bytes_saved = 0;
 
     buffer_location[first_open_byte_index] = function_number;
@@ -64,7 +80,7 @@ void add_commands_to_send_queue(slate_t* slate, uint8_t* buffer_location, uint8_
             LOG_INFO("overflowing, need to save partial first");
 
             uint8_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
-            uint16_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
+            uint8_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
             uint16_t length = payload_size - first_open_byte_index;
 
             memcpy(buffer_start, struct_buffer_start, length);
@@ -79,8 +95,8 @@ void add_commands_to_send_queue(slate_t* slate, uint8_t* buffer_location, uint8_
             first_open_byte_index = 0;
         }
         else{
-            uint16_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
-            uint16_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
+            uint8_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
+            uint8_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
             uint16_t length = struct_buffer_size - struct_bytes_saved;
 
             memcpy(buffer_start, struct_buffer_start, length);
@@ -109,9 +125,9 @@ void add_commands_to_send_queue(slate_t* slate, uint8_t* buffer_location, uint8_
     }
 }
 
-void send_test_commands(slate_t* slate, struct test_t1DS* struct1){
+void send_test_commands(slate_t* s, struct test_t1DS* struct1){
 
-    uint8_t* buffer[251];
+    uint8_t buffer[251];
     struct1->data_int_1 = 100;
     struct1->data_byteArr_1[0] = 0;
     struct1->data_byteArr_1[1] = 1;
@@ -125,8 +141,8 @@ void send_test_commands(slate_t* slate, struct test_t1DS* struct1){
 
     memcpy(struct_buffer, struct1, sizeof(*struct1));
 
-    add_commands_to_send_queue(&slate, buffer, 1, struct_buffer, 251, sizeof(*struct1), true);
-    send_queue_to_satellite(&slate);
+    add_commands_to_send_queue(s, buffer, 1, struct_buffer, 251, sizeof(*struct1), true);
+    send_queue_to_satellite(s);
 }
 /**
  * Main code entry point.
@@ -210,8 +226,11 @@ int main()
     */
 
     command_switch_task_init(&slate);  // init queue
+    init_mission_control_command_queue(251);
 
     struct test_t1DS first;
+    uint8_t* ptr;
+
     send_test_commands(&slate, &first);
 
     
