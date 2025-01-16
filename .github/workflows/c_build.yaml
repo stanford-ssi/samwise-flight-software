@@ -41,6 +41,9 @@ jobs:
         path: |
           build/samwise*.uf2
 
+    - name: Clean
+      run: rm -rf ${{github.workspace}}/build
+
     - name: Configure CMake for RP2350
       run: cmake -B ${{github.workspace}}/build -DRP2350=ON
 
