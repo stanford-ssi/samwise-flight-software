@@ -1,2 +1,0 @@
-#The following file should contain the list of commands to implement and their description
-
