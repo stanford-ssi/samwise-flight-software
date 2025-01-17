@@ -151,15 +151,11 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                 queue_try_remove(&slate->radio_packets_out, payload);
                 
                 // Check if there is a next payload
-                uint8_t next_payload[PAYLOAD_SIZE];
-                bool successful_next_peek = queue_try_peek(&slate->radio_packets_out, next_payload);
+                bool successful_next_peek = queue_try_peek(&slate->radio_packets_out, payload);
                 
                 // If there is a next payload
                 if(successful_next_peek){
                     LOG_DEBUG("discarding packet, reading next packet was successfull");
-
-                    // Make it the new "payload"
-                    memcpy(payload, next_payload, PAYLOAD_SIZE * sizeof(uint8_t));
 
                     // reset the slate->current_byte_index
                     slate->current_byte_index = 0;
