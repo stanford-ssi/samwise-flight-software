@@ -31,6 +31,7 @@ typedef struct samwise_slate
         radio_packets_out; // My guess at what input data queue will look like
     queue_t task1_data; // queues of this kind will exist for each task called
                         // from radio com
+    queue_t task2_data;
 
     uint8_t buffer[304];
 
