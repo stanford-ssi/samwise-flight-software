@@ -21,30 +21,21 @@ eg: struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task1;
 5. initialize queue in the command_switch_task_init
 eg: queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK1_QUEUE_LENGTH);
 
+*note the TASK1_QUEUE_LENGTH is the length of the queu, in other words
+ how many calls to that function can be queued simultaniously*
+
+
 6. add a case to the switch case in command_switch_dispatch
 eg:
 case Func1_MNEM:{
-
-                        // Create a temporary task1 to add things into the queue.
-                        struct TASK1_DATA_STRUCT_FORMAT task1;
-                        
-                        // How many bytes are in the struct we want? 
-                        uint16_t max_size_task1 = sizeof(task1);
-                        
-                        // Reads whatever was in the package into the slate->buffer
-                        read_function_into_memory(slate, max_size_task1, Func1_MNEM);
-
-                        if(slate->current_task_byte_size == max_size_task1){
-                            slate->current_task_byte_size = 0;
-                            // memcopy the things in the buffer into a struct
-                            memcpy(&task1, slate->buffer, max_size_task1);
-
-                            // Set the currently uploading function to 0 (no functions are in the process of being uploaded)
-                            slate->uploading_function_number = 0;
-
-                            // AT THIS POINT, AN ENTIRE STRUCT HAS BEEN READ, SO WE WILL ADD IT HERE !
-                            queue_try_add(&slate->task1_data, &task1);
-                        }
+                    // Create a temporary datastructure appropriate for the task to add things into the queue.
+                    struct TASK1_DATA_STRUCT_FORMAT task;
+                    
+                    // How many bytes are in the struct we want? 
+                    uint16_t task_size = sizeof(task);
+                    
+                    // Reads whatever was in the package into the slate->buffer
+                    enqueue_function_from_buffer(slate, task_size, Func1_MNEM, &slate->task1_data);
                         
                 }break;
 
@@ -53,10 +44,11 @@ case Func1_MNEM:{
 
 */
 
-// Function Mnemonics FuncName assignedNumber
+// Function Mnemonics: #define FuncName assignedNumber
 // assignedNumber < (2^(FUNC_MNEMONIC_BYTE_SIZE)*8) -1
-#define STOP_MNEM 255       // stop byte is added on the last transmission of the packet
+#define STOP_MNEM 255       // stop byte is added on the last transmission of the packet (everything afterwards is disregarded in that packet)
 #define Func1_MNEM 1
+#define Func2_MNEM 2
 //.....
 //#define Func254_MNEM 254
 
@@ -66,10 +58,10 @@ case Func1_MNEM:{
 #include "pico/stdlib.h"
 #include "slate.h"
 
-#define PAYLOAD_SIZE 251                     // in bytes TODO check?/ get from driver mod?
-const int RADIO_PACKETS_OUT_MAX_LENGTH = 32; // max queue length
-const int FUNC_MNEMONIC_BYTE_SIZE = 1;
-const int TASK1_QUEUE_LENGTH = 32; // max queue length for task 1
+#define PAYLOAD_SIZE 251                       // in bytes TODO check?/ get from driver mod?
+const int RADIO_PACKETS_OUT_MAX_LENGTH = 64;   // max radio queue length
+const int FUNC_MNEMONIC_BYTE_SIZE = 1;         // how many bytes are used to identify the function
+const int TASK1_QUEUE_LENGTH = 32;             // max queue length for task 1
 
 
 
@@ -93,18 +85,11 @@ struct TASK2_DATA_STRUCT_FORMAT
 };
 
 
-
-
 // in the end, we should replace these with just the size of the structs for each function,
 // that way we don't need to create random structs just to get the size.
 struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task1;
 struct TASK2_DATA_STRUCT_FORMAT current_data_holder_task2;
 
-uint8_t task1_current_byte_size = 0;
-uint8_t task2_current_byte_size = 0;
-
-uint8_t maximum_struct_allocation = 0;
-// What is the struct
 
 void command_switch_task_init(slate_t *slate)
 {
@@ -115,12 +100,10 @@ void command_switch_task_init(slate_t *slate)
 
     // initialize queue for task 1
     queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK1_QUEUE_LENGTH);
+    // initialize queue for task 2
     queue_init(&slate->task2_data, sizeof(current_data_holder_task2), TASK1_QUEUE_LENGTH);
 
-    const uint8_t MAX = 10;
-
-    slate->buffer[MAX];
-
+    // initializing status variables
     slate->current_task_byte_size = 0;
     slate->current_byte_index = 0;
     slate->uploading_function_number = 0;
@@ -128,7 +111,7 @@ void command_switch_task_init(slate_t *slate)
 
 
 /// @brief This function attempts to read the slate's incoming packet's queue in order to extract exactly 1 function. 
-/// If it has not received all of the packets, it will return false, but save its progress.
+/// If it has not received all of the packets needed for that function, it will return false, but save its progress.
 /// @param slate - The address of the slate
 /// @param max_size_of_struct The size of the struct that you want to extract from the radio queue.
 /// @param function_id The function ID that you found in the buffer.
@@ -141,9 +124,6 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
     bool successful_peek = queue_try_peek(&slate->radio_packets_out, payload);
 
     if(successful_peek){
-
-        // Get the function id from the first byte that we are reading from.
-        //uint8_t function_id = payload[slate->current_byte_index];
         
         // While struct only partially filled
         while(slate->current_task_byte_size < max_size_of_struct){
@@ -164,7 +144,7 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                 // Copy partial data into the struct
                 memcpy(where_to_place_into_struct, where_to_read_from_payload, length);
 
-                // Increase task1_current_byte_size 
+                // Increase task_current_byte_size 
                 slate->current_task_byte_size += length;
 
                 // Dequeue the packet because we have exhausted it.
@@ -176,7 +156,7 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                 
                 // If there is a next payload
                 if(successful_next_peek){
-                    LOG_INFO("discarding packet, reading next");
+                    LOG_DEBUG("discarding packet, reading next packet was successfull");
 
                     // Make it the new "payload"
                     memcpy(payload, next_payload, PAYLOAD_SIZE * sizeof(uint8_t));
@@ -185,7 +165,7 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                     slate->current_byte_index = 0;
                 }
                 else{
-                    LOG_INFO("discarding packet, still waiting for next packet");
+                    LOG_DEBUG("discarding packet, still waiting for next packet");
                     // If there is no next payload, it probably hasn't come yet, so just break
                     // The next for loops will just not do anything cus it won't be able to peek new data.
                     slate->current_byte_index = 0;
@@ -202,19 +182,13 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                 uint8_t* where_to_read_from_payload = payload + slate->current_byte_index;
                 uint16_t length = max_size_of_struct - slate->current_task_byte_size;
 
-                LOG_INFO("max size of struct: %i, current task byte size: %i", max_size_of_struct, slate->current_task_byte_size);
+                LOG_DEBUG("max size of struct: %i, current task byte size: %i", max_size_of_struct, slate->current_task_byte_size);
                 // Copy partial data into the struct
                 memcpy(where_to_place_into_struct, where_to_read_from_payload, length);
 
-                for(int i =0; i < length; i++){
-                    LOG_INFO("at index %i, the byte is: %i", i, where_to_read_from_payload[i]);
-                }
-                
-                // AT THIS POINT, THE STRUCT SHOULD BE COMPLETED !!! RAHHH !!!
-                
-                // place the struct into the queue
+                // AT THIS POINT, THE STRUCT SHOULD BE COMPLETED !!! RAHHH 
 
-                // Update the size of task1_current_byte_size
+                // Update the size of current_task_byte_size
                 slate->current_task_byte_size += length;
 
                 // Update the current byte index so that it is now pointing at where the next function should be.
@@ -225,10 +199,10 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
         // If the full package was retrieved
         if(slate->current_task_byte_size == max_size_of_struct){
             
-            LOG_INFO("we received a full command, and we are now left at index: %i", slate->current_byte_index);
+            LOG_DEBUG("we received the full function data, and we are now left at index: %i", slate->current_byte_index);
             // if the full package was retrieved, and then next thing is a stop, then stop
             if(slate->current_byte_index >= PAYLOAD_SIZE || payload[slate->current_byte_index] == STOP_MNEM){
-                LOG_INFO("discarding packet, stop byte.");
+                LOG_DEBUG("discarding packet, stop byte.");
                 // Delete the packet
                 queue_try_remove(&slate->radio_packets_out, payload);
 
@@ -236,13 +210,13 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
                 slate->current_byte_index = 0;
             }
             else{
-                LOG_INFO("not discarding the packet cus there might be something else, leaving off at: %i", slate->current_byte_index);
+                LOG_DEBUG("not discarding the packet cus there might be something else, leaving off at: %i", slate->current_byte_index);
             }
 
             return true;
         }
         else{
-            LOG_INFO("command not fully received");
+            LOG_DEBUG("function data not fully received");
             return false;
         }
     }
@@ -267,9 +241,9 @@ bool enqueue_function_from_buffer(slate_t* slate, uint16_t datastructure_size, u
         slate->uploading_function_number = 0;
 
         queue_try_add(queue_pointer, slate->buffer);
+        return true;   
     }
 
-    return true;   
 }
 
 
@@ -302,7 +276,7 @@ void command_switch_dispatch(slate_t *slate)
                 slate->current_task_byte_size = 0;
             }
 
-            LOG_INFO("{radio} this is what function was received: %i", function_id);
+            LOG_DEBUG("{command_dispatch} received call for function_id: %i", function_id);
 
             switch(function_id){
 
@@ -318,17 +292,15 @@ void command_switch_dispatch(slate_t *slate)
                     enqueue_function_from_buffer(slate, task_size, Func1_MNEM, &slate->task1_data);
                         
                 }break;
-                case 2:{
+                case Func2_MNEM:{
                     // Create a temporary task1 to add things into the queue.
                     struct TASK2_DATA_STRUCT_FORMAT task;
                     
                     // How many bytes are in the struct we want? 
                     uint16_t task_size = sizeof(task);
-
-                    LOG_INFO("task size is %i", task_size);
                     
                     // Reads whatever was in the package into the slate->buffer
-                    enqueue_function_from_buffer(slate, task_size, 2, &slate->task2_data);
+                    enqueue_function_from_buffer(slate, task_size, Func2_MNEM, &slate->task2_data);
                 } break;
             }
 

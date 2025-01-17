@@ -164,51 +164,7 @@ int main()
     //     sched_dispatch(&slate);
     // }
 
-    /*
-    struct test_t1DS first;
-    struct test_t1DS second;
-
-    struct test_t1DS first_out;
-    struct test_t1DS second_out;
-
-    first.data_int_1 = 229;
-    first.data_byteArr_1[0] = 1;
-    first.data_byteArr_1[1] = 2;
-    first.data_byteArr_1[2] = 3;
-    first.data_byteArr_1[249] = 101;
-    first.data_byteArr_1[256] = 199;
-
-    second.data_int_1 = 303;
-    second.data_byteArr_1[0] = 111;
-    second.data_byteArr_1[9] = 222;
-    second.data_byteArr_1[249] = 101;
-
-
-    uint8_t packet1[251];
-    uint8_t packet2[251];
-
-    packet1[0] = 1;
-
-    LOG_INFO("PLEASE I SWEAR TO FUCKING OD, size is: %i", sizeof(first));
-
-    memcpy(&packet1[1], &first, 250);
-    
-    
-    LOG_INFO("meow");
-
-    // (int*)((char*)first+250);
-    sleep_ms(500);
-    char *byte_pointer = (char *)&first;
-
-    memcpy(packet2, byte_pointer + 250, 304 - 250);
-
-
-    LOG_INFO("Packet before sending:");
-
-    sleep_ms(500);
-    */
-
-    command_switch_task_init(&slate);  // init queue
+    command_switch_task_init(&slate);  // init queues
     init_mission_control_command_queue(251);
 
     uint8_t buffer[251];
@@ -267,12 +223,7 @@ int main()
     LOG_INFO("True or false, the byte arrays are the same: %i", same);
 
     LOG_INFO("bool: %i, number: %i", second_out.yes_or_no, second_out.testing);
-
-/*
-    for(int i =250 ; i < 300; i++){
-        LOG_INFO("Packet 2, Index %i: Expected: %i, Received %i", i, first.data_byteArr_1[i], first_out.data_byteArr_1[i]);
-    }
-    */
+    
 
     /* End of TESTS */
 
