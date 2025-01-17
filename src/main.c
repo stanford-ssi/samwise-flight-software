@@ -24,14 +24,23 @@ queue_t mission_control_command_queue;
 uint16_t first_open_byte_index = 0;
 
 /* TESTS 2 function calls in one packet */
-struct test_t1DS{
+struct function1_struct{
     int data_int_1;
     uint8_t data_byteArr_1[300];
 };
 
+struct function2_struct{
+    bool yes_or_no;
+    uint16_t testing;
+};
+
+/// @brief Initializes the mission control command queue, which holds commands before they are sent off to the satellite.
+/// @param payload_size - The amount of bytes of CONTENT in a packet, excluding special information. Usually 251.
 void init_mission_control_command_queue(uint16_t payload_size){
     queue_init(&mission_control_command_queue, payload_size * sizeof(uint8_t), 32);
 }
+
+
 void add_packet_to_send_queue(uint8_t* buffer){
     LOG_INFO("queueing command");
     bool added = queue_try_add(&mission_control_command_queue, buffer);
@@ -204,19 +213,30 @@ int main()
 
     uint8_t buffer[251];
 
-    struct test_t1DS first;
+    struct function1_struct first;
     first.data_int_1 = 100;
     first.data_byteArr_1[0] = 0;
     first.data_byteArr_1[1] = 1;
     first.data_byteArr_1[2] = 2;
     first.data_byteArr_1[3] = 3;
 
+    struct function2_struct struct2;
+    struct2.yes_or_no = 1;
+    struct2.testing = 25;
+
+
     uint8_t struct_buffer[sizeof(first)];
 
     memcpy(struct_buffer, &first, sizeof(first));
 
     add_commands_to_send_queue(&slate, buffer, 1, struct_buffer, 251, sizeof(first), false);
-    add_commands_to_send_queue(&slate, buffer, 1, struct_buffer, 251, sizeof(first), true);
+
+    uint8_t new_struct_buffer[sizeof(struct2)];
+
+    memcpy(struct_buffer, &struct2, sizeof(struct2));
+
+    add_commands_to_send_queue(&slate, buffer, 2, struct_buffer, 251, sizeof(struct2), true);
+
     send_queue_to_satellite(&slate);
     
     // meow
@@ -231,10 +251,11 @@ int main()
     //command_switch_dispatch(&slate);
 
     // get the struct
-    struct test_t1DS first_out;
-    struct test_t1DS second_out;
+    struct function1_struct first_out;
+    struct function2_struct second_out;
+
     queue_try_remove(&slate.task1_data, &first_out);
-    queue_try_remove(&slate.task1_data, &second_out);
+    queue_try_remove(&slate.task2_data, &second_out);
 
     bool same = true;
     for(int i = 0; i < 300; i++){
@@ -245,14 +266,7 @@ int main()
 
     LOG_INFO("True or false, the byte arrays are the same: %i", same);
 
-    same = true;
-    for(int i = 0; i < 300; i++){
-        if(first.data_byteArr_1[i] != second_out.data_byteArr_1[i]){
-            same = false;
-        }
-    }
-
-    LOG_INFO("True or false, the byte arrays of second are the same: %i", same);
+    LOG_INFO("bool: %i, number: %i", second_out.yes_or_no, second_out.testing);
 
 /*
     for(int i =250 ; i < 300; i++){
