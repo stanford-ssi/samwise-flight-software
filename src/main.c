@@ -5,6 +5,7 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "drivers/rfm9x.h"
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
@@ -15,7 +16,6 @@
  * Statically allocate the slate.
  */
 slate_t slate;
-
 
 /**
  * Main code entry point.
@@ -49,14 +49,12 @@ int main()
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
+
+
     while (true)
     {
         sched_dispatch(&slate);
     }
 
-    /*
-     * We should NEVER be here so something bad has happened.
-     * @todo reboot!
-     */
     ERROR("We reached the end of the code - this is REALLY BAD!");
 }
