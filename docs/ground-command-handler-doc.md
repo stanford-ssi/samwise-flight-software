@@ -1,5 +1,3 @@
-TODO:
-// rename payload_size to packet_size
 
 ## Ground Control
 
