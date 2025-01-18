@@ -12,7 +12,7 @@
 
 #include "drivers/payload_uart.h"
 #include "pins.h"
-#include "state.h"
+#include "slate.h"
 
 #define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
 
