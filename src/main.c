@@ -45,6 +45,13 @@ int main()
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
     /*
+     * Print commit hash
+     */
+#ifdef COMMIT_HASH
+    LOG_INFO("main: Running samwise-flight-software %s", "COMMIT_HASH");
+#endif
+
+    /*
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");

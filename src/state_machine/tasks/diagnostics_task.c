@@ -4,7 +4,7 @@
 
 #ifdef BRINGUP
 
-#include "i2c_scan_task.h"
+#include "diagnostics_task.h"
 #include "slate.h"
 
 /**
@@ -16,7 +16,7 @@ static bool reserved_addr(uint8_t addr)
     return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
 }
 
-void i2c_scan_task_init(slate_t *slate)
+void diagnostics_task_init(slate_t *slate)
 {
     // This example will use I2C0 on the default SDA and SCL pins (GP4, GP5 on a
     // Pico)
@@ -29,7 +29,7 @@ void i2c_scan_task_init(slate_t *slate)
     LOG_INFO("Scan task initialized I2C...");
 }
 
-void i2c_scan_task_dispatch(slate_t *slate)
+void diagnostics_task_dispatch(slate_t *slate)
 {
     // Sweep through all 7-bit I2C addresses, to see if any slaves are present
     // on the I2C bus. Print out a table that looks like this:
@@ -74,10 +74,10 @@ void i2c_scan_task_dispatch(slate_t *slate)
     printf("Done.\n");
 }
 
-sched_task_t i2c_scan_task = {.name = "i2c_scan",
+sched_task_t diagnostics_task = {.name = "diagnostics",
                               .dispatch_period_ms = 1000,
-                              .task_init = &i2c_scan_task_init,
-                              .task_dispatch = &i2c_scan_task_dispatch,
+                              .task_init = &diagnostics_task_init,
+                              .task_dispatch = &diagnostics_task_dispatch,
 
                               /* Set to an actual value on init */
                               .next_dispatch = 0};

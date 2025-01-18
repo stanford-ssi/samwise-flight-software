@@ -17,7 +17,7 @@ sched_state_t *bringup_get_next_state(slate_t *slate)
 
 sched_state_t bringup_state = {.name = "bringup",
                                .num_tasks = 1,
-                               .task_list = {&i2c_scan_task},
+                               .task_list = {&diagnostics_task},
                                .get_next_state = &bringup_get_next_state};
 
 #endif

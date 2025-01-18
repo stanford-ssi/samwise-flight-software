@@ -50,6 +50,8 @@ file(GLOB drivers CONFIGURE_DEPENDS "src/drivers/*.c")
 set(samwise_code ${top} ${scheduler} ${state_machine_tasks}
   ${state_machine_states} ${drivers})
 
+set(COMMIT_HASH "no-hash")
+
 function(configure_samwise_executable TARGET_NAME DEFINES)
     add_executable(${TARGET_NAME} ${samwise_code})
     
@@ -67,7 +69,8 @@ function(configure_samwise_executable TARGET_NAME DEFINES)
         ${CMAKE_CURRENT_LIST_DIR}/src
     )
 
-    target_compile_definitions(${TARGET_NAME} PRIVATE ${DEFINES})
+    target_compile_definitions(${TARGET_NAME} PRIVATE ${DEFINES}
+      COMMIT_HASH="${COMMIT_HASH}")
     
     pico_add_extra_outputs(${TARGET_NAME})
 endfunction()
