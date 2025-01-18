@@ -5,12 +5,12 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "drivers/flash.h"
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 #include "slate.h"
-#include "drivers/flash.h"
 
 /**
  * Statically allocate the slate.
