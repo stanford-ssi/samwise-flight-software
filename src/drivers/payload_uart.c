@@ -50,7 +50,7 @@ static void uart_rx_callback()
     {
         uint8_t ch = uart_getc(PAYLOAD_UART_ID);
         queue_try_add(&slate_for_irq->rpi_uart_queue, &ch);
-        slate_for_irq->last_byte_receive_time = get_absolute_time();
+        slate_for_irq->rpi_uart_last_byte_receive_time = get_absolute_time();
     }
 }
 
@@ -93,7 +93,7 @@ static packet_header_t compute_packet_header(const uint8_t *packet,
  *
  * @return Number of bytes received, may be less than desired
  */
-static uint16_t receive_into(void *dest, uint16_t num_bytes,
+static uint16_t receive_into(slate_t *slate, void *dest, uint16_t num_bytes,
                              uint16_t timeout_ms)
 {
     uint8_t *dest_ptr = (uint8_t *)dest; // Convert to char* for arithmetic
@@ -101,7 +101,8 @@ static uint16_t receive_into(void *dest, uint16_t num_bytes,
     for (int i = 0; i < timeout_ms; i++)
     {
         // Drain the queue
-        while (queue_try_remove(&uart_queue, dest_ptr + bytes_received))
+        while (
+            queue_try_remove(&slate->rpi_uart_queue, dest_ptr + bytes_received))
         {
             bytes_received++;
             if (bytes_received == num_bytes)
@@ -116,16 +117,16 @@ static uint16_t receive_into(void *dest, uint16_t num_bytes,
     return bytes_received;
 }
 
-static bool receive_ack()
+static bool receive_ack(slate_t *slate)
 {
     // Receive a single byte
     uint8_t received_byte;
-    uint16_t received = receive_into(&received_byte, 1, 1000);
+    uint16_t received = receive_into(slate, &received_byte, 1, 1000);
 
     return received && received_byte == ACK_BYTE;
 }
 
-static bool receive_syn()
+static bool receive_syn(slate_t *slate)
 {
     // Receive multiple sync bytes
     uint8_t count = 0;
@@ -133,7 +134,7 @@ static bool receive_syn()
     while (true)
     {
         uint8_t received_byte;
-        uint16_t received = receive_into(&received_byte, 1, 1000);
+        uint16_t received = receive_into(slate, &received_byte, 1, 1000);
 
         if (!received)
             return false;
@@ -178,31 +179,31 @@ bool payload_uart_init(slate_t *slate)
                       UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_RPI_UART_RX));
 
     // Set baud rate
-    uart_init(UART_ID, BAUD_RATE);
+    uart_init(PAYLOAD_UART_ID, BAUD_RATE);
 
     // Set UART flow control CTS/RTS, we don't want these, so turn them off
-    uart_set_hw_flow(UART_ID, false, false);
+    uart_set_hw_flow(PAYLOAD_UART_ID, false, false);
 
     // Set our data format
-    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+    uart_set_format(PAYLOAD_UART_ID, DATA_BITS, STOP_BITS, PARITY);
 
     // Turn off FIFO's - we want to do this character by character
-    uart_set_fifo_enabled(UART_ID, false);
+    uart_set_fifo_enabled(PAYLOAD_UART_ID, false);
 
     // Set up a RX interrupt
     // We need to set up the handler first
     // Select correct interrupt for the UART we are using
     int UART_IRQ = PAYLOAD_UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
-    queue_init(&slate->payload_uart_queue,
-               sizeof(unit8_t), /* Size of each element */
+    queue_init(&slate->rpi_uart_queue,
+               sizeof(uint8_t), /* Size of each element */
                256 /* Max elements */);
 
     // And set up and enable the interrupt handlers
-    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_exclusive_handler(UART_IRQ, uart_rx_callback);
     irq_set_enabled(UART_IRQ, true);
 
     // Now enable the UART to send interrupts - RX only
-    uart_set_irq_enables(UART_ID, true, false);
+    uart_set_irq_enables(PAYLOAD_UART_ID, true, false);
 }
 
 /**
@@ -213,8 +214,8 @@ bool payload_uart_init(slate_t *slate)
  * @param seq_num   Sequence number (useful for sending multiple packets, ignore
  * otherwise)
  */
-bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
-                               uint16_t seq_num)
+bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
+                               uint16_t len, uint16_t seq_num)
 {
     // Check packet length
     if (len > MAX_PACKET_LEN)
@@ -229,10 +230,10 @@ bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
     {
         for (int j = 0; j < SYN_COUNT; j++)
         {
-            uart_putc_raw(UART_ID, SYN_BYTE);
+            uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }
 
-        if (receive_ack())
+        if (receive_ack(slate))
         {
             syn_acknowledged = true;
             break;
@@ -254,7 +255,7 @@ bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
     uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
                         sizeof(packet_header_t));
 
-    if (!receive_ack())
+    if (!receive_ack(slate))
     {
         printf("Header was not acknowledged!\n");
         return false;
@@ -264,7 +265,7 @@ bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
     uart_write_blocking(PAYLOAD_UART_ID, packet, len);
 
     // Wait for ACK
-    return receive_ack();
+    return receive_ack(slate);
 }
 
 /**
@@ -273,12 +274,12 @@ bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
  * @param packet    Array of bytes to place the packet
  * @return The number of bytes read, or 0 if no response
  */
-uint16_t payload_uart_read_packet(uint8_t *packet)
+uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
 {
     uint16_t bytes_received;
 
     // Wait for sync
-    if (!receive_syn())
+    if (!receive_syn(slate))
     {
         printf("Syn was not received!\n");
         return 0;
@@ -287,7 +288,8 @@ uint16_t payload_uart_read_packet(uint8_t *packet)
 
     // Receive header
     packet_header_t header;
-    bytes_received = receive_into(&header, sizeof(packet_header_t), 1000);
+    bytes_received =
+        receive_into(slate, &header, sizeof(packet_header_t), 1000);
 
     if (bytes_received < sizeof(packet_header_t))
     {
@@ -304,7 +306,7 @@ uint16_t payload_uart_read_packet(uint8_t *packet)
     }
 
     // Read actual packet
-    bytes_received = receive_into(packet, header.length, 1000);
+    bytes_received = receive_into(slate, packet, header.length, 1000);
 
     if (bytes_received < header.length)
     {
