@@ -39,6 +39,7 @@ int main()
      * The reboot counter is incremented each time this code runs.
      */
     persistent_data_t *data = init_persistent_data();
+    increment_reboot_counter();
     printf("Current reboot count: %d\n", data->reboot_counter);
 
     /*
