@@ -1,3 +1,5 @@
+TODO:
+// rename payload_size to packet_size
 
 ## Ground Control
 
@@ -126,7 +128,7 @@ void send_queue_to_satellite(slate_t *s){
 		// Then put it into the radio queue
 		
 		// This should be replaced with the radio code to 
-		queue_try_add(&(s->rx_queue), payload);
+		queue_try_add(&(s->radio_packets_out), payload);
 		LOG_INFO("Sent a command to the radio");
 	
 	}
