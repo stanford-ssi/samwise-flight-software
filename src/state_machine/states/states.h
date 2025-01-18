@@ -28,14 +28,19 @@ extern sched_state_t bringup_state;
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
+
+#ifdef BRINGUP
+static const sched_state_t *all_states[] = {
+    &bringup_state
+};
+static sched_state_t *const initial_state = &bringup_state;
+#else
 static const sched_state_t *all_states[] = {
     &init_state,
-    &running_state,
-#ifdef BRINGUP
-    &bringup_state,
-#endif
+    &running_state
 };
 static sched_state_t *const initial_state = &init_state;
+#endif
 
 /*
  * Must be a macro because it is used to initialize an array

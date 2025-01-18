@@ -48,7 +48,7 @@ int main()
      * Print commit hash
      */
 #ifdef COMMIT_HASH
-    LOG_INFO("main: Running samwise-flight-software %s", "COMMIT_HASH");
+    LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
 #endif
 
     /*

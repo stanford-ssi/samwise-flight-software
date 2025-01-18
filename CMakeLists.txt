@@ -50,7 +50,7 @@ file(GLOB drivers CONFIGURE_DEPENDS "src/drivers/*.c")
 set(samwise_code ${top} ${scheduler} ${state_machine_tasks}
   ${state_machine_states} ${drivers})
 
-set(COMMIT_HASH "no-hash")
+option(COMMIT_HASH "Commit hash" "no-hash")
 
 function(configure_samwise_executable TARGET_NAME DEFINES)
     add_executable(${TARGET_NAME} ${samwise_code})
