@@ -7,7 +7,7 @@
 
 /* How to add new function (using an example of some task1")
 1. add a mnemonic code for the function 
-eg: #define FUNC1_ID 1
+eg: #define COMMAND1_ID 1
 
 2. create or choose an existing data structure for this function 
 eg: struct TASK1_DATA_STRUCT_FORMAT
@@ -42,15 +42,19 @@ eg:
 #include "pico/stdlib.h"
 #include "slate.h"
 
+// are you down for command and packet.
+
+// how do we differentiate between the entire thing that the 
+
 const int RADIO_PACKETS_OUT_MAX_LENGTH = 64;   // max radio queue length
 const int FUNC_MNEMONIC_BYTE_SIZE = 1;         // how many bytes are used to identify the function
-const int TASK1_QUEUE_LENGTH = 32;             // max queue length for task 1
+const int TASK_QUEUE_LENGTH = 32;             // max queue length for task 1
 
 
-#define PAYLOAD_SIZE 251                       // in bytes TODO check?/ get from driver mod?
-#define STOP_MNEM 255       // stop byte is added on the last transmission of the packet (everything afterwards is disregarded in that packet)
-#define FUNC1_ID 1
-#define FUNC2_ID 2
+#define PACKET_BYTE_LENGTH 251                       // in bytes TODO check?/ get from driver mod?
+#define STOP_BYTE 255       // stop byte is added on the last transmission of the packet (everything afterwards is disregarded in that packet)
+#define COMMAND1_ID 1
+#define COMMAND2_ID 2
 
 /*
  * The following structs include ALL of the data that should be stored in the non-header payload data.
@@ -83,21 +87,15 @@ struct TASK2_DATA_STRUCT_FORMAT current_data_holder_task2;
 void command_switch_task_init(slate_t *slate)
 {
     // initialize queue for radio input data (TODO: probably move to radio files)
-    queue_init(&slate->radio_packets_out, PAYLOAD_SIZE * sizeof(uint8_t), RADIO_PACKETS_OUT_MAX_LENGTH);
+    queue_init(&slate->radio_packets_out, PACKET_BYTE_LENGTH * sizeof(uint8_t), RADIO_PACKETS_OUT_MAX_LENGTH);
 
-    /*
-        Now, initialize queues for every function.
-        Every time a command is sent to execute a certain function, the request will be added to the queue.
-    */
-    queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK1_QUEUE_LENGTH);
-    queue_init(&slate->task2_data, sizeof(current_data_holder_task2), TASK1_QUEUE_LENGTH);
+    // Initialize queues for storing processed commands
+    queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK_QUEUE_LENGTH);
+    queue_init(&slate->task2_data, sizeof(current_data_holder_task2), TASK_QUEUE_LENGTH);
 
-    /*
-        Initialize information that tracks how packets are received and uploaded
-    */
-    slate->current_task_byte_size = 0;
-    slate->current_byte_index = 0;
-    slate->uploading_function_number = 0;
+    slate->num_uploaded_bytes = 0; // Number of bytes currently uploaded to buffer
+    slate->packet_buffer_index = 0; // Index of the position in payload buffer
+    slate->uploading_command_id = 0; // number of command that is currently being uploaded (0 if nothing uploading)
 }
 
 
@@ -106,102 +104,93 @@ void command_switch_task_init(slate_t *slate)
 /// @param slate - The address of the slate
 /// @param max_size_of_struct The size of the struct that you want to extract from the radio queue.
 /// @param function_id The function ID that you found in the buffer.
-bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint8_t function_id){
+bool place_packets_into_struct_buffer(slate_t *slate, uint16_t bytes_per_command, uint8_t command_id){
 
-    // Create the payload that is about to be read
-    uint8_t payload[PAYLOAD_SIZE]; 
+    // Dequeue packets into this packet buffer
+    uint8_t packet_buffer[PACKET_BYTE_LENGTH]; 
 
-    /*
-        Get a payload from the queue
-    */
-    bool successful_peek = queue_try_peek(&slate->radio_packets_out, payload); 
+    // Dequeue one packet from the queue
+    bool successful_peek = queue_try_peek(&slate->radio_packets_out, packet_buffer); 
 
-
+    // If a packet was successfully dequeued...
     if(successful_peek){
         
-        /*
-            Loop through packets to get function data bytes.
-            False if not enough packets.
-        */
-        while(slate->current_task_byte_size < max_size_of_struct){
-            uint16_t estimated_end_byte_index = slate->current_byte_index + (max_size_of_struct - slate->current_task_byte_size);
+        // While the command upload is incomplete
+        while(slate->num_uploaded_bytes < bytes_per_command){
 
-            /*
-                If the struct is too large for the current packet...
-                    1) Save everything left in the packet
-                    2) Discard the packet
-                    3) move on to the next packet (false if no more packets)
-            */
-            if(estimated_end_byte_index >= PAYLOAD_SIZE){
-                /*
-                    Copy bytes until the end of the packet into a struct.
-                    Remove the packet when done.
-                */
-                uint8_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
-                uint8_t* where_to_read_from_payload = payload + slate->current_byte_index;
-                uint16_t length = PAYLOAD_SIZE - slate->current_byte_index;
+            // Estimate the final index of the command (if there were no packet limitations)
+            uint16_t estimated_end_byte_index = slate->packet_buffer_index + (bytes_per_command - slate->num_uploaded_bytes);
 
-                // Copy partial data into the struct
-                memcpy(where_to_place_into_struct, where_to_read_from_payload, length);
+            // If that estimated index is too large for the current packet...
+            if(estimated_end_byte_index >= PACKET_BYTE_LENGTH){
+                
+                // Addresses for READ -> WRITE from packet to struct
+                uint8_t* packet_buffer_read = packet_buffer + slate->packet_buffer_index;
+                uint8_t* struct_buffer_write = slate->struct_buffer + slate->num_uploaded_bytes;
+                uint16_t length = PACKET_BYTE_LENGTH - slate->packet_buffer_index;
 
-                // Dequeue the packet because we have exhausted it.
-                queue_try_remove(&slate->radio_packets_out, payload);
+                // READ from packet_buffer, WRITE into the struct_buffer
+                memcpy(struct_buffer_write, packet_buffer_read, length);
 
-                /**
-                 * Increment byte progress size, but reset the buffer index.
-                 */
-                slate->current_task_byte_size += length;
-                slate->current_byte_index = 0;
+                // Remove the packet because we uploaded all its data.
+                queue_try_remove(&slate->radio_packets_out, packet_buffer);
 
-                /*
-                    If the next packet is missing, keep track of what function we are looking for.
-                    If the packet exists, save it into payload and repeat.
-                */
-                if(!queue_try_peek(&slate->radio_packets_out, payload)){
-                    slate->uploading_function_number = function_id;
+                // Update how many bytes have been uploaded
+                slate->num_uploaded_bytes += length;
+
+                // Reset the index in the buffer
+                slate->packet_buffer_index = 0;
+
+                // Attempt to retrieve the next packet in the queue...
+                // ... then we can continue the uploading...
+                if(!queue_try_peek(&slate->radio_packets_out, packet_buffer)){ // If dequeuing fails, just save where you left off.
+                    slate->uploading_command_id = command_id;
                     return false;
                 }
             }
-            /**
-             * Otherwise, the end of the command is somewhere in this packet.
-             */
-            else{ 
-                /**
-                 * Determine where to read bytes into the struct
-                 */
-                uint8_t* where_to_place_into_struct = slate->buffer + slate->current_task_byte_size;
-                uint8_t* where_to_read_from_payload = payload + slate->current_byte_index;
-                uint16_t length = max_size_of_struct - slate->current_task_byte_size;
+            // Otherwise, the end of the command is in this packet
+            else{
+                // Addresses for READ -> WRITE from packet to struct
+                uint8_t* packet_buffer_read = slate->struct_buffer + slate->num_uploaded_bytes;
+                uint8_t* struct_buffer_write = packet_buffer + slate->packet_buffer_index;
+                uint16_t length = bytes_per_command - slate->num_uploaded_bytes;
 
-                // Copy data into the struct
-                memcpy(where_to_place_into_struct, where_to_read_from_payload, length);
+                // READ from packet_buffer, WRITE into the struct_buffer
+                memcpy(struct_buffer_write, packet_buffer_read, length);
                 
-                // At this point the struct is fully constructed
+                // At this point the struct buffer is complete
 
-                /**
-                 * Update tracking variables
-                 */
-                slate->current_task_byte_size += length;
+                // Update the number of uploaded bytes
+                slate->num_uploaded_bytes += length;
 
-                // Update the current byte index so that it is now pointing at where the next function should be.
-                slate->current_byte_index += length;
+                // Update packet buffer index to remember where we left off
+                // packet buffer index should be LESS THAN OR EQUAL TO PACKET_BYTE_SIZE at this point
+                slate->packet_buffer_index += length;
             }
         }
         
-        /**
-         * Finally, if the command has been fully received...
-         * potentially you will have to remove it.
-         */
-        if(slate->current_task_byte_size == max_size_of_struct){
-            if(slate->current_byte_index >= PAYLOAD_SIZE || payload[slate->current_byte_index] == STOP_MNEM){
-                // if whole function data was retrieved, and then next thing is a stop byte, then stop
-                queue_try_remove(&slate->radio_packets_out, payload);  // remove packet as the stop byte indicate that it was the last command in the packet
-                slate->current_byte_index = 0;  // set read index to 0, so next packet is read from 0 index
+        // At this point, either:
+        //      1) The entire command has been received and placed into the struct buffer
+        //      2) Only part of the command has been received, and we are waiting for the rest
+
+        // If the command has been FULLY received...
+        if(slate->num_uploaded_bytes == bytes_per_command){
+
+            // If the last byte was at the end of the packet_buffer, or if the packet_buffer is reading a stop byte...
+            if(slate->packet_buffer_index >= PACKET_BYTE_LENGTH || packet_buffer[slate->packet_buffer_index] == STOP_BYTE){
+                
+                // Discard the current packet
+                queue_try_remove(&slate->radio_packets_out, packet_buffer);  // remove packet as the stop byte indicate that it was the last command in the packet
+
+                // Reset the packet buffer index
+                slate->packet_buffer_index = 0;
             }
+
+            // Successfully retrieved a full command
             return true;
         }
         else{
-            LOG_DEBUG("function data not fully received");
+            // Only received part of a commmand.
             return false;
         }
     }
@@ -210,24 +199,24 @@ bool read_function_into_buffer(slate_t *slate, uint16_t max_size_of_struct, uint
 /// @brief Parses the current packets as the given function and attempts to save it into the queues..
 /// @param slate 
 /// @param datastructure_size The size of the expected datastructure in bytes (use "sizeof(datastructure_for_function1)")
-/// @param func_id Function id (Function mnenmonic) 
+/// @param func_id Function id (Function mnenmonic)
 /// @param write_address Pointer to an empty datastructure for your function
 /// @param queue_pointer Pointer to the queue on the slate where to add this function to (&slat)
 /// @return returns true if successfully loaded function into the appropriate task queue
-bool parse_packets_as_command(slate_t* slate, uint16_t datastructure_size, uint8_t func_id, void* queue_pointer){
-    
-    // returns 0 if there was an error reading the function into the buffer
-    if(!read_function_into_buffer(slate, datastructure_size, func_id)) return 0;
+bool parse_packets_as_command(slate_t* slate, uint16_t bytes_per_command, uint8_t func_id, void* queue_pointer){
+    // Attempt to read bytes from the packet buffer into the struct buffer
+    // Return 0 if there was an error reading the function into the buffer
+    if(!place_packets_into_struct_buffer(slate, bytes_per_command, func_id)) return 0;
 
-    // if function data was read fully
-    if(slate->current_task_byte_size == datastructure_size){
-        slate->current_task_byte_size = 0;
+    // If function data was read fully
+    if(slate->num_uploaded_bytes == bytes_per_command){
+        slate->num_uploaded_bytes = 0;
 
         // Set the currently uploading function to 0 (no functions are in the process of being uploaded)
-        slate->uploading_function_number = 0;
+        slate->uploading_command_id = 0;
 
         // Add the function that was read into its task queue
-        queue_try_add(queue_pointer, slate->buffer);
+        queue_try_add(queue_pointer, slate->struct_buffer);
         return true;   
     }
 
@@ -241,39 +230,40 @@ void command_switch_dispatch(slate_t *slate)
     for(int i = 0; i < number_of_commands_to_process; i++){
         
         // This payload will store what is currently up next in the radio receive queue
-        uint8_t payload[PAYLOAD_SIZE];
+        uint8_t packet[PACKET_BYTE_LENGTH];
         
         // Peek at the upcoming item in the radio receive queue
-        bool successful_peek = queue_try_peek(&slate->radio_packets_out, payload);
+        bool successful_peek = queue_try_peek(&slate->radio_packets_out, packet);
         
         if(successful_peek){
             /**
-             * Update the function ID depending on if it was previously uploading.
-             * If previously not loading (function id == 0) then reset the task byte size.
+             * Update the command ID depending on if it was previously uploading.
+             * If previously not loading (command id == 0) then reset the task byte size.
              */
-            uint8_t function_id = slate->uploading_function_number;
-            if(slate->uploading_function_number == 0){
-                function_id = payload[slate->current_byte_index];
-                slate->current_byte_index += FUNC_MNEMONIC_BYTE_SIZE;
-                slate->current_task_byte_size = 0;
+            uint8_t command_id = slate->uploading_command_id;
+
+            if(slate->uploading_command_id == 0){
+                command_id = packet[slate->packet_buffer_index];
+                slate->packet_buffer_index += FUNC_MNEMONIC_BYTE_SIZE;
+                slate->num_uploaded_bytes = 0;
             }
             
             /**
              * Pass specific structs and taks queues appropriate for each function
              */
-            switch(function_id){
+            switch(command_id){
 
                 // FUNC_ID NEED TO START FROM 1 BECAUSE 0 IS BEING USED AS THE "NOT UPLOADING" INDEX
-                case FUNC1_ID:{
+                case COMMAND1_ID:{
                     struct TASK1_DATA_STRUCT_FORMAT task;
                     uint16_t task_size = sizeof(task);
-                    parse_packets_as_command(slate, task_size, FUNC1_ID, &slate->task1_data);
+                    parse_packets_as_command(slate, task_size, COMMAND1_ID, &slate->task1_data);
                         
                 }break;
-                case FUNC2_ID:{
+                case COMMAND2_ID:{
                     struct TASK2_DATA_STRUCT_FORMAT task;
                     uint16_t task_size = sizeof(task);
-                    parse_packets_as_command(slate, task_size, FUNC2_ID, &slate->task2_data);
+                    parse_packets_as_command(slate, task_size, COMMAND2_ID, &slate->task2_data);
                 } break;
             }
         }

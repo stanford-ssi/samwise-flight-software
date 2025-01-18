@@ -33,11 +33,11 @@ typedef struct samwise_slate
                         // from radio com
     queue_t task2_data;
 
-    uint8_t buffer[304];
+    uint8_t struct_buffer[304];
 
-    uint16_t current_task_byte_size;
-    uint16_t current_byte_index;
+    uint16_t num_uploaded_bytes;
+    uint16_t packet_buffer_index;
     uint16_t last_place_on_packet;
-    uint8_t uploading_function_number;
+    uint8_t uploading_command_id;
 
 } slate_t;
