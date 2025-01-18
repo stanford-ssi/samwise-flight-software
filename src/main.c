@@ -12,10 +12,27 @@
 #include "scheduler/scheduler.h"
 #include "slate.h"
 
+typedef struct
+{
+    uint8_t src;
+    uint8_t dst;
+    uint8_t flags;
+    uint8_t seq;
+    uint8_t len;
+    uint8_t data[252];
+} packet_t;
+
 /**
  * Statically allocate the slate.
  */
 slate_t slate;
+
+struct TASK2_DATA_STRUCT_FORMAT
+{
+    bool yes_no;
+    uint16_t number;
+};
+
 
 /**
  * Main code entry point.
@@ -50,6 +67,21 @@ int main()
      */
     LOG_INFO("main: Dispatching the state machine...");
 
+    struct TASK2_DATA_STRUCT_FORMAT struct2;
+    struct2.yes_no = true;
+    struct2.number = 15;
+
+    packet_t p;
+
+    p.len = sizeof(struct2) + 1;
+    p.dst = 255;
+    p.src;
+    p.seq;
+    p.flags;
+    p.data[0] = 2;
+    memcpy(p.data + 1, &p, p.len);
+
+    queue_try_add(&slate.tx_queue, &p);
 
     while (true)
     {
