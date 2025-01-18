@@ -89,7 +89,7 @@ static void rx_done()
 
 static void interrupt_received(uint gpio, uint32_t events)
 {
-    if (gpio == RFM9X_D0)
+    if (gpio == SAMWISE_RF_D0_PIN)
     {
 
         if (rfm9x_tx_done(&s->radio))
@@ -118,8 +118,9 @@ void radio_task_init(slate_t *slate)
     queue_init(&slate->rx_queue, sizeof(packet_t), RX_QUEUE_SIZE);
 
     // create the radio here
-    slate->radio = rfm9x_mk(RFM9X_SPI, RFM9X_RESET, RFM9X_CS, RFM9X_TX,
-                            RFM9X_RX, RFM9X_CLK, RFM9X_D0, &interrupt_received);
+    slate->radio = rfm9x_mk(SAMWISE_RF_SPI, SAMWISE_RF_RST_PIN,
+        SAMWISE_RF_CS_PIN, SAMWISE_RF_MOSI_PIN, SAMWISE_RF_MISO_PIN,
+        SAMWISE_RF_SCK_PIN, SAMWISE_RF_D0_PIN, &interrupt_received);
 
     // initialize the radio here
     rfm9x_init(&slate->radio);

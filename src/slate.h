@@ -18,6 +18,13 @@
 
 typedef struct samwise_slate
 {
+#ifdef BRINGUP
+    /*
+     * Bringup script
+     */
+    uint32_t loop_counter;
+#endif
+
     /*
      * State machine info.
      */

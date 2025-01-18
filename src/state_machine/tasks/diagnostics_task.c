@@ -2,7 +2,9 @@
 #include "hardware/i2c.h"
 #include "macros.h"
 #include "pico/stdlib.h"
+#include "pico/unique_id.h"
 
+#include "drivers/rfm9x.h"
 #include "diagnostics_task.h"
 #include "pins.h"
 #include "slate.h"
@@ -18,11 +20,27 @@ static bool reserved_addr(uint8_t addr)
 
 void diagnostics_task_init(slate_t *slate)
 {
+    slate->loop_counter = 0;
     LOG_INFO("Scan task initialized I2C...");
 }
 
 void diagnostics_task_dispatch(slate_t *slate)
 {
+    
+    slate->loop_counter++;
+    LOG_INFO("Loop #%d", slate->loop_counter);
+
+    /*
+     * Unique ID
+     */
+    char id_str[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
+    pico_get_unique_board_id_string(id_str, sizeof(id_str));
+    LOG_INFO("Chip ID: %s", id_str);
+
+    /*
+     * I2C
+     */
+
     // Sweep through all 7-bit I2C addresses, to see if any slaves are present
     // on the I2C bus. Print out a table that looks like this:
     //
@@ -76,12 +94,6 @@ void diagnostics_task_dispatch(slate_t *slate)
             printf("%02x ", addr);
         }
 
-        // Perform a 1-byte dummy read from the probe address. If a slave
-        // acknowledges this address, the function returns the number of bytes
-        // transferred. If the address byte is ignored, the function returns
-        // -1.
-
-        // Skip over any reserved addresses.
         int ret;
         uint8_t rxdata;
         if (reserved_addr(addr))
@@ -95,7 +107,8 @@ void diagnostics_task_dispatch(slate_t *slate)
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
     }
-    printf("Done.\n");
+    LOG_INFO("Radio version: v%d", rfm9x_version(&slate->radio));
+    LOG_INFO("Done.\n");
 }
 
 sched_task_t diagnostics_task = {.name = "diagnostics",

@@ -33,6 +33,9 @@ static bool init_gpio_pins()
     i2c_init(SAMWISE_POWER_MONITOR_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SAMWISE_POWER_MONITOR_SCL_PIN, GPIO_FUNC_I2C);
+
+    gpio_init(SAMWISE_RF_REGULATOR_PIN);
+    gpio_set_dir(SAMWISE_RF_REGULATOR_PIN, GPIO_OUT);
 #endif
 
 #ifdef BRINGUP

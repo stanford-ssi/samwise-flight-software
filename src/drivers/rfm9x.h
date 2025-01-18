@@ -91,6 +91,9 @@ uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
                       uint8_t keep_listening, uint8_t with_ack,
                       bool blocking_wait_for_packet);
 
+
+uint32_t rfm9x_version(rfm9x_t *r);
+
 void rfm9x_listen(rfm9x_t *r);
 void rfm9x_transmit(rfm9x_t *r);
 
