@@ -5,13 +5,13 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "drivers/flash.h"
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "drivers/flash.h"
 
 /**
  * Main code entry point.
