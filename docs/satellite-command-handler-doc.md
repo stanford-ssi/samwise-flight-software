@@ -94,6 +94,16 @@ case COMMAND1_ID:{
 ```
 
 ## 9. You're all set!
+See merging info below, only needs to be done once
+
+#####  *command_switch_task.c file*
+- note: when merging with radio, verify the following constant: `PACKET_BYTE_LENGTH`
+- note: when merging with radio, make sure to comment out and verify the following:
+- note: when merging with radio, delete the `RADIO_PACKETS_OUT_MAX_LENGTH` constant as it will not be used anymore
+```c
+queue_init(&slate->rx_queue, PACKET_BYTE_LENGTH * sizeof(uint8_t), RADIO_PACKETS_OUT_MAX_LENGTH);
+```
+
 ## If you have any questions contact:
 - Sasha Luchyn GitHub: @Jackal-Studios
 - Michael Dalva Github: @spirou7
