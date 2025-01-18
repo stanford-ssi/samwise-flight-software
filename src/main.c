@@ -11,8 +11,6 @@
 #include "scheduler/scheduler.h"
 #include "slate.h"
 
-#include "state_machine/tasks/command_switch_task.h"
-
 /**
  * Statically allocate the slate.
  */

@@ -126,7 +126,7 @@ void send_queue_to_satellite(slate_t *s){
 		// Then put it into the radio queue
 		
 		// This should be replaced with the radio code to 
-		queue_try_add(&(s->radio_packets_out), payload);
+		queue_try_add(&(s->rx_queue), payload);
 		LOG_INFO("Sent a command to the radio");
 	
 	}

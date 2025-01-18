@@ -28,9 +28,9 @@ typedef struct samwise_slate
 
     bool led_state;
 
+    queue_t rx_queue;  // assuming this will be a queue of packets
+    
     // command_switch_task data below
-    queue_t
-        radio_packets_out; // My guess at what input data queue will look like
     queue_t task1_data; // queues of this kind will exist for each task called
                         // from radio com
     queue_t task2_data;
