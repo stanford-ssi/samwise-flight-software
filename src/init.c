@@ -12,6 +12,8 @@
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 
+#include "drivers/payload_uart.h"
+
 /**
  * Initialize all gpio pins to their default states.
  *
@@ -37,6 +39,11 @@ bool init(slate_t *slate)
      * Initialize gpio pins
      */
     ASSERT(init_gpio_pins());
+
+    /*
+     * Initialize uart
+     */
+    ASSERT(payload_uart_init(slate));
 
     /*
      * Initialize the state machine

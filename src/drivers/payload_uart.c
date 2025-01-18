@@ -6,11 +6,11 @@
  */
 #include "hardware/irq.h"
 #include "hardware/uart.h"
-#include "pico/printf.h"
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
 #include "drivers/payload_uart.h"
+#include "macros.h"
 #include "pins.h"
 #include "slate.h"
 
@@ -28,10 +28,6 @@
 #define SYN_RETRIES 3
 #define SYN_BYTE '$'
 #define SYN_COUNT 3
-
-static int chars_rxed = 0;
-
-uint8_t packet_buf[MAX_PACKET_LEN];
 
 static slate_t *slate_for_irq; // Need to save to be accessible to IRQ
 
@@ -204,6 +200,8 @@ bool payload_uart_init(slate_t *slate)
 
     // Now enable the UART to send interrupts - RX only
     uart_set_irq_enables(PAYLOAD_UART_ID, true, false);
+
+    return true;
 }
 
 /**
@@ -220,7 +218,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     // Check packet length
     if (len > MAX_PACKET_LEN)
     {
-        printf("Packet is too long!\n");
+        LOG_DEBUG("Packet is too long!\n");
         return false;
     }
 
@@ -244,7 +242,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
 
     if (!syn_acknowledged)
     {
-        printf("Payload did not respond to sync!\n");
+        LOG_DEBUG("Payload did not respond to sync!\n");
         return false;
     }
 
@@ -257,7 +255,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
 
     if (!receive_ack(slate))
     {
-        printf("Header was not acknowledged!\n");
+        LOG_DEBUG("Header was not acknowledged!\n");
         return false;
     }
 
@@ -281,7 +279,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     // Wait for sync
     if (!receive_syn(slate))
     {
-        printf("Syn was not received!\n");
+        LOG_DEBUG("Syn was not received!\n");
         return 0;
     }
     send_ack();
@@ -293,7 +291,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
 
     if (bytes_received < sizeof(packet_header_t))
     {
-        printf("Header was not received!\n");
+        LOG_DEBUG("Header was not received!\n");
         return 0;
     }
     send_ack();
@@ -301,7 +299,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     // Check header
     if (header.length > MAX_PACKET_LEN)
     {
-        printf("Packet is too long!\n");
+        LOG_DEBUG("Packet is too long!\n");
         return 0;
     }
 
@@ -310,14 +308,14 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
 
     if (bytes_received < header.length)
     {
-        printf("Packet was not fully received!\n");
+        LOG_DEBUG("Packet was not fully received!\n");
         return 0;
     }
 
     // Verify checksum
     if (crc32(packet, header.length) != header.checksum)
     {
-        printf("Invalid checksum!\n");
+        LOG_DEBUG("Invalid checksum!\n");
         return 0;
     }
     send_ack();
