@@ -13,3 +13,6 @@
 #define RFM9X_RESET (21)
 #define RFM9X_CS (20)
 #define RFM9X_D0 (28)
+
+#define SAMWISE_RPI_UART_TX (30)
+#define SAMWISE_RPI_UART_RX (31)

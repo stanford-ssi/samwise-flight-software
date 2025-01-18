@@ -1,0 +1,324 @@
+/**
+ * @author Niklas Vainio and Marc Reyes
+ * @date 2025-01-18
+ *
+ * UART packet and command handler routines for communicating with the RPi
+ */
+#include "hardware/irq.h"
+#include "hardware/uart.h"
+#include "pico/printf.h"
+#include "pico/stdlib.h"
+#include "pico/util/queue.h"
+
+#include "drivers/payload_uart.h"
+#include "pins.h"
+#include "state.h"
+
+#define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
+
+// UART parameters
+#define BAUD_RATE 115200
+#define DATA_BITS 8
+#define STOP_BITS 1
+#define PARITY UART_PARITY_NONE
+
+// Packet parameters
+#define MAX_PACKET_LEN 4069
+#define ACK_BYTE '!'
+#define SYN_RETRIES 3
+#define SYN_BYTE '$'
+#define SYN_COUNT 3
+
+static int chars_rxed = 0;
+
+uint8_t packet_buf[MAX_PACKET_LEN];
+
+static slate_t *slate_for_irq; // Need to save to be accessible to IRQ
+
+typedef struct
+{
+    uint16_t length;   // NOTE: Little endian
+    uint16_t seq_num;  // NOTE: Little endian
+    uint32_t checksum; // NOTE: Little endian
+} packet_header_t;
+
+// RX interrupt handler
+static void uart_rx_callback()
+{
+    // Add characters to the queue
+    while (uart_is_readable(PAYLOAD_UART_ID))
+    {
+        uint8_t ch = uart_getc(PAYLOAD_UART_ID);
+        queue_try_add(&slate_for_irq->rpi_uart_queue, &ch);
+        slate_for_irq->last_byte_receive_time = get_absolute_time();
+    }
+}
+
+// From https://gist.github.com/xobs/91a84d29152161e973d717b9be84c4d0
+// (not using fast version because we want small binary size)
+unsigned int crc32(const uint8_t *message, uint16_t len)
+{
+    int i, j;
+    unsigned int byte, crc, mask;
+
+    i = 0;
+    crc = 0xFFFFFFFF;
+    while (i < len)
+    {
+        byte = message[i]; // Get next byte.
+        crc = crc ^ byte;
+        for (j = 7; j >= 0; j--)
+        { // Do eight times.
+            mask = -(crc & 1);
+            crc = (crc >> 1) ^ (0xEDB88320 & mask);
+        }
+        i = i + 1;
+    }
+    return ~crc;
+}
+
+/**
+ * Return the header for a gien message packet
+ */
+static packet_header_t compute_packet_header(const uint8_t *packet,
+                                             uint16_t len, uint16_t seq_num)
+{
+    packet_header_t header = {len, seq_num, crc32(packet, len)};
+
+    return header;
+}
+
+/**
+ * Receive up to num_bytes bytes into the buffer specified by dest.
+ *
+ * @return Number of bytes received, may be less than desired
+ */
+static uint16_t receive_into(void *dest, uint16_t num_bytes,
+                             uint16_t timeout_ms)
+{
+    uint8_t *dest_ptr = (uint8_t *)dest; // Convert to char* for arithmetic
+    uint16_t bytes_received = 0;
+    for (int i = 0; i < timeout_ms; i++)
+    {
+        // Drain the queue
+        while (queue_try_remove(&uart_queue, dest_ptr + bytes_received))
+        {
+            bytes_received++;
+            if (bytes_received == num_bytes)
+            {
+                return num_bytes;
+            }
+        }
+
+        sleep_ms(1);
+    }
+
+    return bytes_received;
+}
+
+static bool receive_ack()
+{
+    // Receive a single byte
+    uint8_t received_byte;
+    uint16_t received = receive_into(&received_byte, 1, 1000);
+
+    return received && received_byte == ACK_BYTE;
+}
+
+static bool receive_syn()
+{
+    // Receive multiple sync bytes
+    uint8_t count = 0;
+
+    while (true)
+    {
+        uint8_t received_byte;
+        uint16_t received = receive_into(&received_byte, 1, 1000);
+
+        if (!received)
+            return false;
+
+        if (received_byte == SYN_BYTE)
+        {
+            count++;
+        }
+
+        if (count >= SYN_COUNT)
+        {
+            return true;
+        }
+    }
+}
+
+static void send_ack()
+{
+    uart_putc_raw(PAYLOAD_UART_ID, ACK_BYTE);
+}
+
+static void send_syn()
+{
+    for (int i = 0; i < SYN_COUNT; i++)
+    {
+        uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
+    }
+}
+
+/**
+ * Initialize hardware and interrupts
+ */
+bool payload_uart_init(slate_t *slate)
+{
+    // Store slate pointer
+    slate_for_irq = slate;
+
+    // Set the TX and RX pins by using the function select on the GPIO
+    gpio_set_function(SAMWISE_RPI_UART_TX,
+                      UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_RPI_UART_TX));
+    gpio_set_function(SAMWISE_RPI_UART_RX,
+                      UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_RPI_UART_RX));
+
+    // Set baud rate
+    uart_init(UART_ID, BAUD_RATE);
+
+    // Set UART flow control CTS/RTS, we don't want these, so turn them off
+    uart_set_hw_flow(UART_ID, false, false);
+
+    // Set our data format
+    uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+
+    // Turn off FIFO's - we want to do this character by character
+    uart_set_fifo_enabled(UART_ID, false);
+
+    // Set up a RX interrupt
+    // We need to set up the handler first
+    // Select correct interrupt for the UART we are using
+    int UART_IRQ = PAYLOAD_UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
+    queue_init(&slate->payload_uart_queue,
+               sizeof(unit8_t), /* Size of each element */
+               256 /* Max elements */);
+
+    // And set up and enable the interrupt handlers
+    irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+    irq_set_enabled(UART_IRQ, true);
+
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(UART_ID, true, false);
+}
+
+/**
+ * Write a packet to the RPi over UART
+ *
+ * @param packet    Array of bytes containing the packet
+ * @param len       Number of bytes in the packet
+ * @param seq_num   Sequence number (useful for sending multiple packets, ignore
+ * otherwise)
+ */
+bool payload_uart_write_packet(const uint8_t *packet, uint16_t len,
+                               uint16_t seq_num)
+{
+    // Check packet length
+    if (len > MAX_PACKET_LEN)
+    {
+        printf("Packet is too long!\n");
+        return false;
+    }
+
+    // Write sync packet and wait for ack
+    bool syn_acknowledged = false;
+    for (int i = 0; i < SYN_RETRIES; i++)
+    {
+        for (int j = 0; j < SYN_COUNT; j++)
+        {
+            uart_putc_raw(UART_ID, SYN_BYTE);
+        }
+
+        if (receive_ack())
+        {
+            syn_acknowledged = true;
+            break;
+        }
+
+        sleep_ms(100);
+    }
+
+    if (!syn_acknowledged)
+    {
+        printf("Payload did not respond to sync!\n");
+        return false;
+    }
+
+    // Calculate the header
+    packet_header_t header = compute_packet_header(packet, len, seq_num);
+
+    // Send header and receive ACK
+    uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
+                        sizeof(packet_header_t));
+
+    if (!receive_ack())
+    {
+        printf("Header was not acknowledged!\n");
+        return false;
+    }
+
+    // Send actual packet
+    uart_write_blocking(PAYLOAD_UART_ID, packet, len);
+
+    // Wait for ACK
+    return receive_ack();
+}
+
+/**
+ * Read a serial packet from the RPi
+ *
+ * @param packet    Array of bytes to place the packet
+ * @return The number of bytes read, or 0 if no response
+ */
+uint16_t payload_uart_read_packet(uint8_t *packet)
+{
+    uint16_t bytes_received;
+
+    // Wait for sync
+    if (!receive_syn())
+    {
+        printf("Syn was not received!\n");
+        return 0;
+    }
+    send_ack();
+
+    // Receive header
+    packet_header_t header;
+    bytes_received = receive_into(&header, sizeof(packet_header_t), 1000);
+
+    if (bytes_received < sizeof(packet_header_t))
+    {
+        printf("Header was not received!\n");
+        return 0;
+    }
+    send_ack();
+
+    // Check header
+    if (header.length > MAX_PACKET_LEN)
+    {
+        printf("Packet is too long!\n");
+        return 0;
+    }
+
+    // Read actual packet
+    bytes_received = receive_into(packet, header.length, 1000);
+
+    if (bytes_received < header.length)
+    {
+        printf("Packet was not fully received!\n");
+        return 0;
+    }
+
+    // Verify checksum
+    if (crc32(packet, header.length) != header.checksum)
+    {
+        printf("Invalid checksum!\n");
+        return 0;
+    }
+    send_ack();
+
+    return header.length;
+}

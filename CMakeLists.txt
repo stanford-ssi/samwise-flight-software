@@ -53,7 +53,7 @@ pico_enable_stdio_usb(samwise 1)
 
 # Add the standard library to the build
 target_link_libraries(samwise
-        pico_stdlib hardware_spi)
+        pico_stdlib hardware_uart hardware_spi)
 
 
 # Add the standard include files to the build
