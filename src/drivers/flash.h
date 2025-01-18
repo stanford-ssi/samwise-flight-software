@@ -26,16 +26,7 @@ typedef struct {
  */
 persistent_data_t *init_persistent_data(void);
 
-/**
- * @brief Write the persistent data to flash memory.
- * @param data Pointer to the data to write.
- */
-void write_persistent_data(persistent_data_t *data);
-
-/**
- * @brief Read the persistent data from flash memory.
- * @return Pointer to the persistent data in flash.
- */
-const persistent_data_t *read_persistent_data(void);
+void increment_reboot_counter();
+uint32_t get_reboot_counter();
 
 #endif // FLASH_H

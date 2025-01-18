@@ -42,15 +42,25 @@ persistent_data_t *init_persistent_data() {
     if (flash_data->marker != INIT_MARKER) {
         // If uninitialized, set initial values
         data.marker = INIT_MARKER;
-        data.reboot_counter = 1;
-        printf("First boot detected, initializing reboot counter to 1\n");
+        data.reboot_counter = 0;
     } else {
         // If initialized, increment the counter
         data = *flash_data;
-        data.reboot_counter += 1;
-        printf("Loaded reboot counter from flash: %d\n", data.reboot_counter);
     }
 
     write_persistent_data(&data);
     return &data;
+}
+
+void increment_reboot_counter() {
+    static persistent_data_t data;
+    const persistent_data_t *flash_data = read_persistent_data();
+    data = *flash_data;
+    data.reboot_counter++;
+    write_persistent_data(&data);
+}
+
+uint32_t get_reboot_counter() {
+    const persistent_data_t *flash_data = read_persistent_data();
+    return flash_data->reboot_counter;
 }

@@ -39,7 +39,7 @@ file(GLOB top CONFIGURE_DEPENDS "src/*.c")
 file(GLOB scheduler CONFIGURE_DEPENDS "src/scheduler/*.c")
 file(GLOB state_machine_tasks CONFIGURE_DEPENDS "src/state_machine/tasks/*.c")
 file(GLOB state_machine_states CONFIGURE_DEPENDS "src/state_machine/states/*.c")
-file(GLOB flash CONFIGURE_DEPENDS "src/flash/*.c")
+file(GLOB flash CONFIGURE_DEPENDS "src/drivers/*.c")
 
 add_executable(samwise ${top} ${scheduler} ${state_machine_tasks}
   ${state_machine_states} ${flash})
