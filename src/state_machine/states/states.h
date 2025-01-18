@@ -30,15 +30,10 @@ extern sched_state_t bringup_state;
  */
 
 #ifdef BRINGUP
-static const sched_state_t *all_states[] = {
-    &bringup_state
-};
+static const sched_state_t *all_states[] = {&bringup_state};
 static sched_state_t *const initial_state = &bringup_state;
 #else
-static const sched_state_t *all_states[] = {
-    &init_state,
-    &running_state
-};
+static const sched_state_t *all_states[] = {&init_state, &running_state};
 static sched_state_t *const initial_state = &init_state;
 #endif
 

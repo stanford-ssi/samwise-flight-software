@@ -3,8 +3,8 @@
 #include "macros.h"
 #include "pico/stdlib.h"
 
-#include "pins.h"
 #include "diagnostics_task.h"
+#include "pins.h"
 #include "slate.h"
 
 /**
@@ -58,8 +58,10 @@ void diagnostics_task_dispatch(slate_t *slate)
         if (reserved_addr(addr))
             ret = PICO_ERROR_GENERIC;
         else
-            //ret = i2c_read_blocking(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false);
-            ret = i2c_read_timeout_us(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false, 1000);
+            // ret = i2c_read_blocking(SAMWISE_MPPT_I2C, addr, &rxdata, 1,
+            // false);
+            ret = i2c_read_timeout_us(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
+                                      1000);
 
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
@@ -85,8 +87,10 @@ void diagnostics_task_dispatch(slate_t *slate)
         if (reserved_addr(addr))
             ret = PICO_ERROR_GENERIC;
         else
-            //ret = i2c_read_blocking(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata, 1, false);
-            ret = i2c_read_timeout_us(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata, 1, false, 1000);
+            // ret = i2c_read_blocking(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
+            // 1, false);
+            ret = i2c_read_timeout_us(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
+                                      1, false, 1000);
 
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
@@ -95,11 +99,11 @@ void diagnostics_task_dispatch(slate_t *slate)
 }
 
 sched_task_t diagnostics_task = {.name = "diagnostics",
-                              .dispatch_period_ms = 1000,
-                              .task_init = &diagnostics_task_init,
-                              .task_dispatch = &diagnostics_task_dispatch,
+                                 .dispatch_period_ms = 1000,
+                                 .task_init = &diagnostics_task_init,
+                                 .task_dispatch = &diagnostics_task_dispatch,
 
-                              /* Set to an actual value on init */
-                              .next_dispatch = 0};
+                                 /* Set to an actual value on init */
+                                 .next_dispatch = 0};
 
 #endif
