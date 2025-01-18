@@ -15,6 +15,8 @@
 #include "pico/util/queue.h"
 #include "scheduler/scheduler.h"
 
+#define max_datastructure_size 304 // buffer size should be maxsize of biggest datastructure
+
 typedef struct samwise_slate
 {
     /*
@@ -33,7 +35,7 @@ typedef struct samwise_slate
                         // from radio com
     queue_t task2_data;
 
-    uint8_t struct_buffer[304];
+    uint8_t struct_buffer[max_datastructure_size];
 
     uint16_t num_uploaded_bytes;
     uint16_t packet_buffer_index;
