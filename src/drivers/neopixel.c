@@ -7,25 +7,25 @@
 #include "drivers/pio/ws2812.pio.h"
 #include "drivers/neopixel.h"
 
-static inline void put_pixel(uint32_t pixel_grb, int pin) {
-  pio_sm_put_blocking(pio0, pin, pixel_grb << 8u);
+static inline void put_pixel(uint32_t pixel_grb, uint pin) {
+  pio_sm_put_blocking(pio0, pin, pixel_grb << 8);
 }
 
-static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b) {
-  return ((uint32_t)(r) << 8) |
-         ((uint32_t)(g) << 16) |
+static inline uint32_t ugrb_u32(uint8_t g, uint8_t r, uint8_t b) {
+  return ((uint32_t)(g) << 16) |
+         ((uint32_t)(r) << 8) |
          (uint32_t)(b);
 }
 
-void neopixel_init(int ledPin){
+void neopixel_init(uint ledPin){
     PIO pio = pio0;
-    int sm = 0;
+    uint sm = 0;
     uint offset = pio_add_program(pio, &ws2812_program);
-    char str[12];
+    //char str[12];
 
-    ws2812_program_init(pio, sm, offset, ledPin, 800000, true);
+    ws2812_program_init(pio, sm, offset, ledPin, 800000.0f, true);
 }
 
-void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b, int ledPin){
-    put_pixel(urgb_u32(r,g,b), ledPin);
+void neopixel_set_color_grb(uint8_t g, uint8_t r, uint8_t b, uint ledPin){
+    put_pixel(ugrb_u32(g,r,b), ledPin);
 }
