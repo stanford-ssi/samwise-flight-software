@@ -14,4 +14,3 @@ typedef struct
     uint8_t len;
     uint8_t data[252];
 } packet_t;
-

@@ -27,7 +27,7 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.dst = 0;
     pkt.flags = 0;
     pkt.seq = 0;
-    
+
     // Serialize data from slate variables
     // Current state name
     size_t name_len = strlen(slate->current_state->name);
@@ -36,7 +36,7 @@ void beacon_task_dispatch(slate_t *slate)
         tmp_data[pkt_len] = slate->current_state->name[pkt_len];
     }
     tmp_data[pkt_len++] = ',';
-    
+
     // Current time
     tmp_data[pkt_len++] = slate->time_in_current_state_ms & 0x11111111;
     tmp_data[pkt_len++] = (slate->time_in_current_state_ms >> 8) & 0x11111111;
@@ -60,7 +60,6 @@ void beacon_task_dispatch(slate_t *slate)
     {
         LOG_ERROR("Beacon pkt failed to commit to tx_queue");
     }
-
 }
 
 sched_task_t beacon_task = {.name = "beacon",
