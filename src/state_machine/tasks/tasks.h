@@ -22,3 +22,4 @@
 extern sched_task_t print_task;
 extern sched_task_t blink_task;
 extern sched_task_t radio_task;
+extern sched_task_t beacon_task;
