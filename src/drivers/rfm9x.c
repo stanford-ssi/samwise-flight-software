@@ -753,6 +753,56 @@ uint8_t rfm9x_await_rx(rfm9x_t *r)
     return 1;
 }
 
+uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n)
+{
+    LOG_INFO("putting into the radio");
+    uint8_t old_mode = rfm9x_get_mode(r);
+    rfm9x_set_mode(r, STANDBY_MODE);
+
+    rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
+
+    rfm9x_put_buf(r, _RH_RF95_REG_00_FIFO, buf, n);
+    rfm9x_put8(r, _RH_RF95_REG_22_PAYLOAD_LENGTH, n);
+    LOG_INFO("placed into radio");
+
+    rfm9x_set_mode(r, old_mode);
+    return 0;
+}
+
+uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf)
+{
+    uint8_t n_read = 0;
+    uint8_t old_mode = rfm9x_get_mode(r);
+    rfm9x_set_mode(r, STANDBY_MODE);
+
+    // Check for CRC error
+    if (rfm9x_is_crc_enabled(r) && rfm9x_crc_error(r))
+    {
+        // TODO report somehow
+    }
+    else
+    {
+        uint8_t fifo_length = rfm9x_get8(r, _RH_RF95_REG_13_RX_NB_BYTES);
+        if (fifo_length > 0)
+        {
+            uint8_t current_addr =
+                rfm9x_get8(r, _RH_RF95_REG_10_FIFO_RX_CURRENT_ADDR);
+            rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, current_addr);
+
+            // read the packet
+            rfm9x_get_buf(r, _RH_RF95_REG_00_FIFO, buf, fifo_length);
+        }
+        n_read = fifo_length;
+    }
+    rfm9x_set_mode(r, old_mode);
+    return n_read;
+}
+
+void rfm9x_clear_interrupts(rfm9x_t *r)
+{
+    rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
+}
+
 uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
 {
     while (1)
