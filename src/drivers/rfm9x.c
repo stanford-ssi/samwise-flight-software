@@ -770,6 +770,7 @@ int rfm9x_await_rx(rfm9x_t *r)
 
 uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n)
 {
+    LOG_INFO("putting into the radio");
     uint8_t old_mode = rfm9x_get_mode(r);
     rfm9x_set_mode(r, STANDBY_MODE);
 
@@ -777,6 +778,7 @@ uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n)
 
     rfm9x_put_buf(r, _RH_RF95_REG_00_FIFO, buf, n);
     rfm9x_put8(r, _RH_RF95_REG_22_PAYLOAD_LENGTH, n);
+    LOG_INFO("placed into radio");
 
     rfm9x_set_mode(r, old_mode);
     return 0;

@@ -29,6 +29,7 @@ static void tx_done()
     packet_t p;
     if (queue_try_remove(&s->tx_queue, &p))
     {
+        LOG_INFO("removing something from the transmit queue");
         uint8_t p_buf[p.len + 4];
         p_buf[0] = p.dst;
         p_buf[1] = p.src;
@@ -36,11 +37,13 @@ static void tx_done()
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
 
+
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
         rfm9x_clear_interrupts(&s->radio);
 
         s->tx_packets++;
         s->tx_bytes += sizeof(p_buf);
+        LOG_INFO("this is after it clears intereupt");
     }
     else
     {
@@ -138,6 +141,7 @@ void radio_task_dispatch(slate_t *slate)
     // Switch to transmit mode if queue is not empty
     if (!queue_is_empty(&slate->tx_queue))
     {
+        LOG_INFO("actually transmitting something");
         rfm9x_transmit(&slate->radio);
         // Since the interrupt only fires when done transmitting the last
         // packet, we need to get it started manually
