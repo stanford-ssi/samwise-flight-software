@@ -11,7 +11,7 @@
 #include "slate.h"
 #include "drivers/neopixel.h"
 
-const int NEOPIXEL_PIN = 0; 
+const uint NEOPIXEL_PIN = 0; 
 
 void blink_task_init(slate_t *slate)
 {
@@ -23,10 +23,10 @@ void blink_task_dispatch(slate_t *slate)
 {
     slate->led_state = !slate->led_state;
     if (slate->led_state){
-        neopixel_set_color_rgb(0xff, 0xff, 0, NEOPIXEL_PIN); //yellow
+        neopixel_set_color_grb(0xff, 0xff, 0, NEOPIXEL_PIN); //yellow
     }
     else{
-        neopixel_set_color_rgb(0xff, 0, 0xff, NEOPIXEL_PIN); //purple
+        neopixel_set_color_grb(0xff, 0, 0xff, NEOPIXEL_PIN); //purple
     }
 }
 
