@@ -1,11 +1,9 @@
 #pragma once
 
 #include "macros.h"
-
-// The following ordering needs to be preserved
-#include "typedefs.h"
 #include "slate.h"
 #include "state_machine.h"
+#include "typedefs.h"
 
 #include "running_state.h"
 

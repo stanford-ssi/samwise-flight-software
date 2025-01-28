@@ -7,18 +7,16 @@
 
 #include <string.h>
 
-#include "pico/stdlib.h"
-#include "pico/util/queue.h"
 #include "hardware/gpio.h"
 #include "hardware/spi.h"
+#include "pico/stdlib.h"
+#include "pico/util/queue.h"
 
 #include "macros.h"
 #include "pins.h"
-
-// The following ordering needs to be preserved
-#include "typedefs.h"
 #include "slate.h"
 #include "state_machine.h"
+#include "typedefs.h"
 
 #include "rfm9x.h"
 

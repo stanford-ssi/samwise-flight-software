@@ -14,8 +14,8 @@
 #include "pico/types.h"
 #include "pico/util/queue.h"
 
-#include "typedefs.h"
 #include "state_machine.h"
+#include "typedefs.h"
 
 #include "rfm9x.h"
 

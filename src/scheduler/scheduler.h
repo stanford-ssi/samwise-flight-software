@@ -8,15 +8,13 @@
 
 #pragma once
 
-#include "pico/types.h"
 #include "pico/time.h"
+#include "pico/types.h"
 
 #include "macros.h"
-
-// The following ordering needs to be preserved
-#include "typedefs.h"
 #include "slate.h"
 #include "state_machine.h"
+#include "typedefs.h"
 
 // Add required include files for states
 #include "init_state.h"

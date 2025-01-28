@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 
-#include "typedefs.h"
 #include "slate.h"
+#include "typedefs.h"
 
 #define MAX_TASKS_PER_STATE 10
 
