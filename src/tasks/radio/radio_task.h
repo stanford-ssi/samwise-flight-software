@@ -5,8 +5,20 @@
 
 #pragma once
 
-#include "scheduler/scheduler.h"
+#include <string.h>
+
+#include "hardware/gpio.h"
+#include "hardware/spi.h"
+#include "pico/stdlib.h"
+#include "pico/util/queue.h"
+
+#include "macros.h"
+#include "pins.h"
 #include "slate.h"
+#include "state_machine.h"
+#include "typedefs.h"
+
+#include "rfm9x.h"
 
 #define TX_QUEUE_SIZE 16
 #define RX_QUEUE_SIZE 16
@@ -24,4 +36,4 @@ typedef struct
 void radio_task_init(slate_t *slate);
 void radio_task_dispatch(slate_t *slate);
 
-sched_task_t radio_task;
+extern sched_task_t radio_task;

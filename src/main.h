@@ -1,8 +1,3 @@
-/**
- * @author  Niklas Vainio
- * @date    2024-08-27
- */
-
 #pragma once
 
 #include "pico/stdlib.h"
@@ -11,6 +6,7 @@
 #include "slate.h"
 #include "state_machine.h"
 
-#include "scheduler.h"
+#include "init.h"
 
-bool init(slate_t *slate);
+#include "rfm9x.h"
+#include "scheduler.h"

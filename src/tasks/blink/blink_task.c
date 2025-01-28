@@ -5,10 +5,7 @@
  * Task to blink the onboard LED.
  */
 
-#include "state_machine/tasks/blink_task.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "slate.h"
+#include "blink_task.h"
 
 void blink_task_init(slate_t *slate)
 {

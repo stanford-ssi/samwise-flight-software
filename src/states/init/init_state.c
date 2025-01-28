@@ -1,5 +1,4 @@
-#include "state_machine/states/init.h"
-#include "state_machine/states/states.h"
+#include "init_state.h"
 
 sched_state_t *init_get_next_state(slate_t *slate)
 {

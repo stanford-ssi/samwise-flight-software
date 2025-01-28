@@ -1,7 +1,13 @@
 #pragma once
 
+#include "hardware/resets.h"
 #include "hardware/spi.h"
+
 #include "pico/stdlib.h"
+#include "pico/time.h"
+
+#include "bit-support.h"
+#include "macros.h"
 
 #define PACKET_SIZE 256
 #define PAYLOAD_SIZE 251

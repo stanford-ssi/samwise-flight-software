@@ -5,10 +5,13 @@
 
 #pragma once
 
-#include "scheduler/scheduler.h"
+#include "pico/stdlib.h"
+
 #include "slate.h"
+#include "state_machine.h"
+#include "typedefs.h"
 
 void blink_task_init(slate_t *slate);
 void blink_task_dispatch(slate_t *slate);
 
-sched_task_t blink_task;
+extern sched_task_t blink_task;
