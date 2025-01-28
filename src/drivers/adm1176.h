@@ -1,3 +1,11 @@
+/**
+ * @author  Summit Kawakami
+ * @date    2024-01-27
+ *
+ * File contains typedef declarations for adm1176 (SAMWISE power monitor)
+ * driver and associated functions.
+ */
+
 #ifndef ADM1176_H
 #define ADM1176_H
 
