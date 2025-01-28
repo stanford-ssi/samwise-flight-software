@@ -7,16 +7,16 @@
  */
 
 #include "scheduler.h"
-#include "macros.h"
-#include "pico/time.h"
-#include "slate.h"
 
-/*
- * Include the actual state machine
+/**
+ * List of all states. We need this because we cannot enumerate all states at
+ * runtime.
+ *
+ * Note: For each state, the order of the task list determines priority. Tasks
+ * nearer the top have higher priority.
  */
-#include "state_machine/states/states.h"
-#include "state_machine/tasks/tasks.h"
-
+static const sched_state_t *all_states[] = {&init_state, &running_state};
+static sched_state_t *const initial_state = &init_state;
 static size_t n_tasks = 0;
 static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];
 

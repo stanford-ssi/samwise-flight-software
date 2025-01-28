@@ -5,4 +5,6 @@
 
 #pragma once
 
+#include "pico/stdlib.h"
+
 void fatal_error();

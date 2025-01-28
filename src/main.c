@@ -5,12 +5,7 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
-#include "drivers/rfm9x.h"
-#include "init.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "scheduler/scheduler.h"
-#include "slate.h"
+#include "main.h"
 
 /**
  * Statically allocate the slate.

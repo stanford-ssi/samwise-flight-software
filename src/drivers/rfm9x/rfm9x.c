@@ -1,10 +1,4 @@
 #include "rfm9x.h"
-#include "bit-support.h"
-#include "hardware/resets.h"
-#include "hardware/spi.h"
-#include "pico/time.h"
-#include "src/macros.h"
-#include <string.h>
 
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
                  uint spi_rx_pin, uint spi_clk_pin, uint d0_pin,

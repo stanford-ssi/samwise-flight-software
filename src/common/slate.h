@@ -11,10 +11,13 @@
 
 #pragma once
 
-#include "drivers/rfm9x.h"
 #include "pico/types.h"
 #include "pico/util/queue.h"
-#include "scheduler/scheduler.h"
+
+#include "typedefs.h"
+#include "state_machine.h"
+
+#include "rfm9x.h"
 
 typedef struct samwise_slate
 {

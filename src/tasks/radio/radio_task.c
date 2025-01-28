@@ -6,19 +6,7 @@
  * and switch to transmit mode to send packets on the transmit queue.
  */
 
-#include "state_machine/tasks/radio_task.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "pico/util/queue.h"
-#include "pins.h"
-#include "slate.h"
-
-#include "drivers/rfm9x.h"
-
-#include "hardware/gpio.h"
-#include "hardware/spi.h"
-
-#include <string.h>
+#include "radio_task.h"
 
 static slate_t *s;
 

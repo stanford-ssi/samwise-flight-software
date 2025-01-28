@@ -11,8 +11,6 @@
  */
 
 #include "error.h"
-#include "macros.h"
-#include "pico/stdlib.h"
 
 /**
  * This function should be called if we encounter an unrecoverable error. In
