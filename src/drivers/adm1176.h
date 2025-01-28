@@ -14,15 +14,17 @@
 typedef struct {
     i2c_inst_t *i2c;
     uint8_t address;
+    float sense_resistor;
+    float voltage_range
 } adm1176_t;
 
 // Register addresses
-#define ADM1176_VOLTAGE_REG  0x02
-#define ADM1176_CURRENT_REG  0x03
-#define ADM1176_ALERT_REG    0x00
+#define ADM1176_VOLTAGE_REG  0x00 // Config/Status register
+#define ADM1176_CURRENT_REG  0x02 // Voltage MSBs (Table 13 Page 20)
+#define ADM1176_ALERT_REG    0x03 // Current MSBs (Table 14 Page 20)
 
 // Function prototypes
-adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address);
+adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor, float voltage_range);
 float adm1176_get_voltage(adm1176_t *device);
 float adm1176_get_current(adm1176_t *device);
 void adm1176_config_alert(adm1176_t *device, uint8_t config);
