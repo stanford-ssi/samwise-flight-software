@@ -52,6 +52,16 @@ const int TASK1_QUEUE_LENGTH = 32;             // max queue length for task 1
 #define COMMAND1_ID 1
 #define COMMAND2_ID 2
 
+typedef struct
+{
+    uint8_t src;
+    uint8_t dst;
+    uint8_t flags;
+    uint8_t seq;
+    uint8_t len; // this should be the length of the packet structure being sent over
+    uint8_t data[252];
+} packet_t;
+
 /*
  * The following structs include ALL of the data that should be stored in the non-header payload data.
  * FOR EXAMPLE: When receiving a packet, there should only be PACKET_BYTE_LENGTH that are saved into the radio queue that WE have to deal with.
@@ -226,17 +236,17 @@ void command_switch_dispatch(slate_t *slate)
     for(int i = 0; i < number_of_commands_to_process; i++){
         
         // This packet will store what is currently up next in the radio receive queue
-        uint8_t packet[256];
+        packet_t packet;
 
         
         
         // Peek at the upcoming item in the radio receive queue
-        bool successful_peek = queue_try_remove(&slate->rx_queue, packet);
+        bool successful_peek = queue_try_remove(&slate->rx_queue, &packet);
         
         if(successful_peek){
 
-            for(int i = 0; i < 10; i++){
-                LOG_INFO("packet index: %i, has value: %i", i, packet[i]);
+            for(int i = 0; i < packet.len; i++){
+                LOG_INFO("packet data: %i, has value: %i", i, packet.data[i]);
             }
             /**
              * Update the command ID depending on if it was previously uploading.
@@ -244,7 +254,7 @@ void command_switch_dispatch(slate_t *slate)
              */
             uint8_t command_id = slate->uploading_command_id;
 
-            command_id = packet[5];
+            command_id = packet.data[0];
             
             /**
              * Pass specific structs and taks queues appropriate for each command

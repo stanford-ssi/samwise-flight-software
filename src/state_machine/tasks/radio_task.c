@@ -36,6 +36,10 @@ static void tx_done()
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
 
+        for(int i = 0; i < p.len; i++){
+            LOG_INFO("SENDING packet data: %i, has value: %i", i, p.data[i]);
+        }
+
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
         rfm9x_clear_interrupts(&s->radio);
 
