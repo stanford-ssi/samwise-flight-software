@@ -10,4 +10,6 @@ target_include_directories(print_task PUBLIC
   "${PROJECT_SOURCE_DIR}/src/drivers/rfm9x"
 )
 
-add_subdirectory(test)
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()

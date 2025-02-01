@@ -20,6 +20,8 @@ set(toolchainVersion 13_2_Rel1)
 set(picotoolVersion 2.0.0)
 include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 # ====================================================================================
+project(samwise C CXX ASM)
+
 set(TEST OFF)
 
 if(DEFINED TEST)
@@ -28,6 +30,9 @@ else()
   add_definitions(-DTEST=0)
   set(PICO_BOARD pico CACHE STRING "Board type")
 endif()
+
+# Include testing library
+include(CTest)
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(${CMAKE_CURRENT_LIST_DIR}/pico-sdk/pico_sdk_init.cmake)
@@ -38,8 +43,6 @@ endif()
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
-
-project(samwise C CXX ASM)
 
 # Include src
 # Executable `samwise` built under src/
