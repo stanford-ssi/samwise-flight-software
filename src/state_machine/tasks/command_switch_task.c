@@ -226,23 +226,25 @@ void command_switch_dispatch(slate_t *slate)
     for(int i = 0; i < number_of_commands_to_process; i++){
         
         // This packet will store what is currently up next in the radio receive queue
-        uint8_t packet[PACKET_BYTE_LENGTH];
+        uint8_t packet[256];
+
+        
         
         // Peek at the upcoming item in the radio receive queue
-        bool successful_peek = queue_try_peek(&slate->rx_queue, packet);
+        bool successful_peek = queue_try_remove(&slate->rx_queue, packet);
         
         if(successful_peek){
+
+            for(int i = 0; i < 10; i++){
+                LOG_INFO("packet index: %i, has value: %i", i, packet[i]);
+            }
             /**
              * Update the command ID depending on if it was previously uploading.
              * If previously not loading (command id == 0) then reset the task byte size.
              */
             uint8_t command_id = slate->uploading_command_id;
 
-            if(slate->uploading_command_id == 0){
-                command_id = packet[slate->packet_buffer_index];
-                slate->packet_buffer_index += COMMAND_MNEMONIC_BYTE_SIZE;
-                slate->num_uploaded_bytes = 0;
-            }
+            command_id = packet[5];
             
             /**
              * Pass specific structs and taks queues appropriate for each command
@@ -260,7 +262,11 @@ void command_switch_dispatch(slate_t *slate)
                     struct TASK2_DATA_STRUCT_FORMAT task;
                     uint16_t task_size = sizeof(task);
                     parse_packets_as_command(slate, task_size, COMMAND2_ID, &slate->task2_data);
+                    
+                    LOG_INFO("struct: %i, %i", task.number, task.yes_no);
                 } break;
+                default:
+                break;
             }
         }
     }

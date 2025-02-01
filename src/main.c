@@ -83,16 +83,19 @@ int main()
 
     p.len = sizeof(struct2) + 1;
     p.dst = 255;
-    p.src;
+    p.src = 0;
     p.seq;
     p.flags;
     p.data[0] = 2;
-    memcpy(p.data + 1, &p, p.len);
+    memcpy(p.data + 1, &struct2, sizeof(struct2));
 
+    
     queue_try_add(&slate.tx_queue, &p);
 
     while (true)
     {
+        
+        sleep_ms(100);
         sched_dispatch(&slate);
     }
 
