@@ -11,9 +11,9 @@
 #include "error.h"
 // #include "pico/time.h"
 
-
 #ifdef TEST
-
+#include <stdio.h>
+#include <time.h>
 #include "../mock_pico/printf.h"
 #include "../mock_pico/time.h"
 #else

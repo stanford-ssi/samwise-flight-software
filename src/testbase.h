@@ -3,10 +3,12 @@
  * @date    2024-10-28
  */
 
-// #ifdef TEST
-//     #include <CUnit/CUnit.h>
-//     #include <CUnit/Basic.h>
-// #endif
+#ifdef TEST
+    #include <CUnit/CUnit.h>
+    #include <CUnit/Basic.h>
+    #include <stdio.h>
+    #include <stdlib.h>
+#endif
 
 #include "init.h"
 #include "macros.h"
@@ -14,5 +16,5 @@
 #include "slate.h"
 
 
-// slate_t test_slate;
-// int test_main(void);
+slate_t test_slate;
+int test_main(sched_task_t *task);
