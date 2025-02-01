@@ -6,11 +6,19 @@
  */
 
 #include "drivers/rfm9x.h"
+#include "drivers/adm1176.h"
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "scheduler/scheduler.h"
 #include "slate.h"
+#include "hardware/i2c.h"
+
+// Define I2C settings
+#define I2C_PORT i2c1  // Using I2C1
+#define I2C_SDA 38     // GPIO 38 for SDA
+#define I2C_SCL 39     // GPIO 39 for SCL
+#define ADM1176_ADDR 0x40 // Default I2C address for ADM1176
 
 
 /**
@@ -47,6 +55,17 @@ int main()
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
+    // Initialize I2C1
+    i2c_init(I2C_PORT, 100 * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+    LOG_INFO("I2C1 initialized on SDA %d, SCL: %d", I2C_SDA, I2C_SCL);
+    
+    adm1176_t adm_sensor = adm1176_mk(I2C_PORT, ADM1176_ADDR, 0.02, 26.46);
+    
+    LOG_INFO("ADM1176 initialized at I2C address 0x%X", ADM1176_ADDR);
     /*
      * Go state machine!
      */
@@ -63,7 +82,12 @@ int main()
 
     while (true)
     {
-        sched_dispatch(&slate);
+        float voltage = adm1176_get_voltage(&adm_sensor);
+        float current = adm1176_get_current(&adm_sensor);
+
+        printf("[ADM1176] VOLTAGE: %.3f V, Current: %.3f A\n", voltage, current);
+        sleep_ms(1000);
+        // sched_dispatch(&slate);
     }
 
     /*
