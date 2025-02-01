@@ -90,7 +90,7 @@ int main()
     memcpy(p.data + 1, &struct2, sizeof(struct2));
 
     
-    queue_try_add(&slate.tx_queue, &p);
+    //queue_try_add(&slate.tx_queue, &p);
 
     while (true)
     {
