@@ -2,10 +2,24 @@
  * @author  Niklas Vainio
  * @date    2024-08-23
  *
- * This file contains the main entry point for the SAMWISE flight code.
+ * This file contains the main entry point for the SAMWISE flight code and a test for the GPIO for the burn wire.
  */
 
 #include "main.h"
+#include "pico/stdlib.h"
+
+#define LED_PIN 25 //Define the LED GPIO
+
+/**
+ * Setup the LED GPIO.
+ */
+
+void setup_led(void)
+{
+    gpio_init(LED_PIN);                // Initialize the LED GPIO
+    gpio_set_dir(LED_PIN, GPIO_OUT);   // Set the GPIO direction to output
+}
+
 
 /**
  * Statically allocate the slate.
@@ -33,6 +47,12 @@ int main()
         sleep_ms(5000);
     }
 
+    setup_led();
+
+    // Turn on the LED to indicate initialization start
+    gpio_put(LED_PIN, 1);
+    LOG_INFO("main: LED turned on for initialization indicator.");
+
     /*
      * Initialize everything.
      */
@@ -40,6 +60,13 @@ int main()
     LOG_INFO("main: Initializing everything...");
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
+
+    /*
+     * Optionally turn off the LED after initialization or use it for status.
+     * For example, turn it off after initialization:
+     */
+    gpio_put(LED_PIN, 0);
+    LOG_INFO("main: LED turned off after initialization.");
 
     /*
      * Go state machine!

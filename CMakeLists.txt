@@ -24,9 +24,10 @@ set(TEST OFF)
 
 if(DEFINED TEST)
   add_definitions(-DTEST=1)
+  set(PICO_BOARD pico2 CACHE STRING "Board type")
 else()
   add_definitions(-DTEST=0)
-  set(PICO_BOARD pico CACHE STRING "Board type")
+  set(PICO_BOARD pico2 CACHE STRING "Board type")
 endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
