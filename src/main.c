@@ -83,6 +83,7 @@ int main()
 
     
     //queue_try_add(&slate.tx_queue, &p);
+    //queue_try_add(&slate.tx_queue, &p);
 
     while (true)
     {

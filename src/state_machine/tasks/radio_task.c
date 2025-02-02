@@ -27,7 +27,7 @@ int receive(rfm9x_t radio_module);
 static void tx_done()
 {
     packet_t p;
-    if (queue_try_peek(&s->tx_queue, &p))
+    if (queue_try_remove(&s->tx_queue, &p))
     {
         uint8_t p_buf[p.len + 4];
         p_buf[0] = p.dst;
