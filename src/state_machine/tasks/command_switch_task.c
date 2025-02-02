@@ -209,23 +209,16 @@ bool place_packets_into_struct_buffer(slate_t *slate, uint16_t bytes_per_command
 /// @param write_address Pointer to an empty datastructure for your command
 /// @param queue_pointer Pointer to the queue on the slate where to add this command to (&slat)
 /// @return returns true if successfully loaded command into the appropriate task queue
-bool parse_packets_as_command(slate_t* slate, uint16_t bytes_per_command, uint8_t command_id, void* queue_pointer){
-    // Attempt to read bytes from the packet buffer into the struct buffer
-    // Return 0 if there was an error reading the command into the buffer
-    if(!place_packets_into_struct_buffer(slate, bytes_per_command, command_id)) return 0;
+bool parse_packets_as_command(slate_t* slate, queue_t* queue_pointer){
+    // get whatever is the most recent packet in the slate receive queue
+    packet_t packet;
+    queue_try_remove(&slate->rx_queue, &packet);
+    sleep_ms(500);
+    LOG_INFO("was able to receive a packet out of the rx queue");
 
-    // If command data was read fully
-    if(slate->num_uploaded_bytes == bytes_per_command){
-        slate->num_uploaded_bytes = 0;
-
-        // Set the currently uploading command to 0 (no commands are in the process of being uploaded)
-        slate->uploading_command_id = 0;
-
-        // Add the command that was read into its task queue
-        queue_try_add(queue_pointer, slate->struct_buffer);
-        return true;   
-    }
-
+    queue_try_add(&queue_pointer, packet.data + 1);
+    sleep_ms(500);
+    LOG_INFO("added the packet to the proper task queue");
 }
 
 /// @brief 
@@ -248,13 +241,18 @@ void command_switch_dispatch(slate_t *slate)
             for(int i = 0; i < packet.len; i++){
                 LOG_INFO("packet data: %i, has value: %i", i, packet.data[i]);
             }
+
             /**
              * Update the command ID depending on if it was previously uploading.
              * If previously not loading (command id == 0) then reset the task byte size.
              */
             uint8_t command_id = slate->uploading_command_id;
 
+            sleep_ms(500); 
             command_id = packet.data[0];
+
+            sleep_ms(500);
+            LOG_INFO("the command id is: %i", command_id);
             
             /**
              * Pass specific structs and taks queues appropriate for each command
@@ -265,14 +263,16 @@ void command_switch_dispatch(slate_t *slate)
                 case COMMAND1_ID:{
                     struct TASK1_DATA_STRUCT_FORMAT task;
                     uint16_t task_size = sizeof(task);
-                    parse_packets_as_command(slate, task_size, COMMAND1_ID, &slate->task1_data);
+                    parse_packets_as_command(slate, &slate->task1_data);
                         
                 }break;
                 case COMMAND2_ID:{
                     struct TASK2_DATA_STRUCT_FORMAT task;
-                    uint16_t task_size = sizeof(task);
-                    parse_packets_as_command(slate, task_size, COMMAND2_ID, &slate->task2_data);
-                    
+                    memcpy(&task, packet.data + 1, sizeof(task));
+                    sleep_ms(500);
+                    LOG_INFO("copied the queue data into a structure");
+                    queue_try_add(&slate->task2_data, &task);
+
                     LOG_INFO("struct: %i, %i", task.number, task.yes_no);
                 } break;
                 default:
