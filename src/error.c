@@ -13,6 +13,7 @@
 #include "error.h"
 #include "macros.h"
 #include "pico/stdlib.h"
+#include "drivers/neopixel.h"
 
 /**
  * This function should be called if we encounter an unrecoverable error. In
@@ -32,10 +33,18 @@ void fatal_error()
     {
         for (uint32_t i = 0; i < 3; i++)
         {
-            gpio_put(PICO_DEFAULT_LED_PIN, 1);
-            sleep_ms(100);
-            gpio_put(PICO_DEFAULT_LED_PIN, 0);
-            sleep_ms(100);
+	    #ifdef PICO
+            	gpio_put(PICO_DEFAULT_LED_PIN, 1);
+            	sleep_ms(100);
+            	gpio_put(PICO_DEFAULT_LED_PIN, 0);
+            	sleep_ms(100);
+	    #else
+		neopixel_set_color_grb(0, 0xff, 0, 0);
+		sleep_ms(100);
+		neopixel_set_color_grb(0, 0xff, 0, 0);
+		sleep_ms(100);
+	    #endif
+
         }
         sleep_ms(500);
     }
