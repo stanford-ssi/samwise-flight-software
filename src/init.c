@@ -8,11 +8,6 @@
  */
 
 #include "init.h"
-#include "hardware/i2c.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "pins.h"
-#include "scheduler/scheduler.h"
 
 /**
  * Initialize all gpio pins to their default states.

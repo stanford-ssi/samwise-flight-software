@@ -6,13 +6,12 @@
 #pragma once
 
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
 
-#include "macros.h"
 #include "slate.h"
 #include "state_machine.h"
-#include "pins.h"
+#include "typedefs.h"
 
-#include "scheduler.h"
+void blink_task_init(slate_t *slate);
+void blink_task_dispatch(slate_t *slate);
 
-bool init(slate_t *slate);
+extern sched_task_t blink_task;

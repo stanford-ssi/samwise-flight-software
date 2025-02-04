@@ -8,68 +8,18 @@
 
 #pragma once
 
+#include "pico/time.h"
 #include "pico/types.h"
 
-#define MAX_TASKS_PER_STATE 10
+#include "macros.h"
+#include "slate.h"
+#include "state_machine.h"
+#include "typedefs.h"
 
-struct samwise_slate;
-typedef struct samwise_slate slate_t;
-
-/**
- * Holds the info for a single task. A single task can belong to multiple
- * states.
+/*
+ * Must be a macro because it is used to initialize an array
  */
-typedef struct sched_task
-{
-    /**
-     * Friendly name for the task.
-     */
-    const char *name;
-
-    /**
-     * Minimum number of milliseconds between dispatches of this task.
-     */
-    const uint32_t dispatch_period_ms;
-
-    /**
-     * Earliest time this task can be dispatched.
-     */
-    absolute_time_t next_dispatch;
-
-    /**
-     * Called once when the task initializes.
-     * @param slate     Pointer to the current satellite slate
-     */
-    void (*task_init)(slate_t *slate);
-
-    /**
-     * Called each time the task dispatches.
-     * @param slate     Pointer to the current satellite slate
-     */
-    void (*task_dispatch)(slate_t *slate);
-
-} sched_task_t;
-
-/**
- * Holds the info for defining a state.
- */
-typedef struct sched_state
-{
-    /**
-     * Friendly name for the state.
-     */
-    const char *name;
-
-    size_t num_tasks;
-    sched_task_t *task_list[MAX_TASKS_PER_STATE];
-
-    /**
-     * Called each time the state dispatches.
-     * @param slate     Pointer to the current satellite slate
-     * @return The next state to transition to
-     */
-    struct sched_state *(*get_next_state)(slate_t *slate);
-} sched_state_t;
+#define num_states (sizeof(all_states) / sizeof(sched_state_t *))
 
 void sched_init(slate_t *slate);
 void sched_dispatch(slate_t *slate);
