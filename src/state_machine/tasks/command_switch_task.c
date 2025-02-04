@@ -9,8 +9,8 @@
 1. add a mnemonic code for the command 
 eg: #define COMMAND1_ID 1
 
-2. create or choose an existing data structure for this command 
-eg: struct TASK1_DATA_STRUCT_FORMAT
+2. create or choose an existing data structure for this command. Define it in the packet.h file.
+eg: struct TASK1_DATA_STRUCT_FORMAT 
 
 3. create a queue in the slate.h file
 eg: queue_t task1_data;
@@ -53,31 +53,10 @@ const int TASK1_QUEUE_LENGTH = 32;             // max queue length for task 1
 #define COMMAND1_ID 1
 #define COMMAND2_ID 2
 
-
-/*
- * The following structs include ALL of the data that should be stored in the non-header payload data.
- * FOR EXAMPLE: When receiving a packet, there should only be PACKET_BYTE_LENGTH that are saved into the radio queue that WE have to deal with.
- * 
- * 
- * THE FIRST COMMAND_MNEMONIC_BYTE_SIZE worth of bytes should be allocated only to the command id. so basically there are only PACKET_BYTE_LENGTH - COMMAND_MNEMONIC_BYTE_SIZE packets with struct content in them.
- */
-struct TASK1_DATA_STRUCT_FORMAT
-{
-    int data_int_1;
-    uint8_t data_byteArr_1[300];
-};
-
-struct TASK2_DATA_STRUCT_FORMAT
-{
-    bool yes_no;
-    uint16_t number;
-};
-
-
 // in the end, we should replace these with just the size of the structs for each command,
 // that way we don't need to create random structs just to get the size.
-struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task1;
-struct TASK2_DATA_STRUCT_FORMAT current_data_holder_task2;
+TASK1_DATA current_data_holder_task1;
+TASK2_DATA current_data_holder_task2;
 
 
 /// @brief Initialize the command switch task
@@ -123,14 +102,14 @@ void command_switch_dispatch(slate_t *slate)
             switch(command_id){
                 // COMMAND_ID NEED TO START FROM 1 BECAUSE 0 IS BEING USED AS THE "NOT UPLOADING" INDEX
                 case COMMAND1_ID:{
-                    struct TASK1_DATA_STRUCT_FORMAT task;
+                    TASK1_DATA task;
                     memcpy(&task, packet.data + 1, sizeof(task));
                     queue_try_add(&slate->task1_data, &task);
-                    LOG_INFO("struct 1: %i, %i", task.data_int_1);
+                    LOG_INFO("struct 1: %i, %i", task);
                         
                 }break;
                 case COMMAND2_ID:{
-                    struct TASK2_DATA_STRUCT_FORMAT task;
+                    TASK2_DATA task;
                     memcpy(&task, packet.data + 1, sizeof(task));
                     queue_try_add(&slate->task2_data, &task);
                     LOG_INFO("struct 2: %i, %i", task.number, task.yes_no);
