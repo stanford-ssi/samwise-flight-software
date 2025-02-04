@@ -82,6 +82,7 @@ _Bool* initialize_packet_status_arr(int num_packets) {
    return packets_status;
 }
 
+// Maybe we could just encode the bools as a series of bits that make up bytes and send those instead.
 // Convert bool* array to char* so it can be sent as a packet
 char* bool_to_char(_Bool* bool_array) {
    char* char_array = malloc(GROUP_SIZE + 1); // +1 for null terminator (if needed)
@@ -120,6 +121,8 @@ char* char_to_bool(char* char_array) {
 struct FileTransferProtocol FTP;
 
 _Bool receive_file(char* local_path, slate_t slate) {
+
+   // I imagine that this response struct will be replaced by whatever struct we use in the file sending command
    struct responseStruct* response = FTP.cdh.receive_response(timeout=15);
    
    int num_packets = response->num_packets;
@@ -251,6 +254,7 @@ _Bool send_file(char* filename) {
    int num_full_packets = (int)(filesize / CHUNK_SIZE);
    int total_packets = filesize % CHUNK_SIZE > 0 ? num_full_packets + 1 : num_full_packets;
 
+   // Sending this response will instead be replaced with "sending a command with info about the number of packet and total packets"
    FTP.cdh.send_response(num_full_packets, total_packets);
 
    for (int packet_number = 0; packet_number < num_full_packets; packet_number++) {
