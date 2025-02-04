@@ -8,5 +8,4 @@
 
 #include "init.h"
 
-#include "rfm9x.h"
 #include "scheduler.h"
