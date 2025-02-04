@@ -102,7 +102,6 @@ void sched_dispatch(slate_t *slate)
             task->next_dispatch =
                 make_timeout_time_ms(task->dispatch_period_ms);
 
-            LOG_DEBUG("sched: Dispatching task %s", task->name);
             task->task_dispatch(slate);
         }
     }

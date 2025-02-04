@@ -11,10 +11,13 @@
 
 #pragma once
 
+#include "drivers/rfm9x.h"
 #include "pico/types.h"
 #include "pico/util/queue.h"
 #include "scheduler/scheduler.h"
 #include "drivers/rfm9x.h"
+
+#define max_datastructure_size 304 // buffer size should be maxsize of biggest datastructure
 
 typedef struct samwise_slate
 {
@@ -28,9 +31,30 @@ typedef struct samwise_slate
     bool led_state;
 
     /*
+     * Command switch
+     */
+    queue_t task1_data; // queues of this kind will exist for each task called
+                        // from radio com
+    queue_t task2_data;
+
+    uint8_t struct_buffer[max_datastructure_size];
+
+    uint16_t num_uploaded_bytes;
+    uint16_t packet_buffer_index;
+    uint16_t last_place_on_packet;
+    uint8_t uploading_command_id;
+
+    /*
      * Radio
      */
     rfm9x_t radio;
+    uint8_t radio_node;
     queue_t tx_queue;
     queue_t rx_queue;
+    uint32_t rx_bytes;
+    uint32_t rx_packets;
+    uint32_t rx_backpressure_drops;
+    uint32_t rx_bad_packet_drops;
+    uint32_t tx_bytes;
+    uint32_t tx_packets;
 } slate_t;
