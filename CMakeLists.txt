@@ -48,7 +48,7 @@ else()
 endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
-include(${CMAKE_CURRENT_LIST_DIR}/pico-sdk/pico_sdk_init.cmake)
+include(pico-sdk/pico_sdk_init.cmake)
 
 if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
   message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")

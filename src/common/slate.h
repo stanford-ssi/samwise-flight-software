@@ -19,6 +19,9 @@
 
 #include "rfm9x.h"
 
+// Largest possible command data structure
+#define MAX_DATASTRUCTURE_SIZE 304
+
 typedef struct samwise_slate
 {
 #ifdef BRINGUP
@@ -36,6 +39,20 @@ typedef struct samwise_slate
     uint64_t time_in_current_state_ms;
 
     bool led_state;
+
+    /*
+     * Command switch
+     */
+    queue_t task1_data; // queues of this kind will exist for each task called
+                        // from radio com
+    queue_t task2_data;
+
+    uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
+
+    uint16_t num_uploaded_bytes;
+    uint16_t packet_buffer_index;
+    uint16_t last_place_on_packet;
+    uint8_t uploading_command_id;
 
     /*
      * Radio

@@ -5,6 +5,7 @@
 #include "typedefs.h"
 
 #include "blink_task.h"
+#include "command_task.h"
 #include "print_task.h"
 #include "radio_task.h"
 

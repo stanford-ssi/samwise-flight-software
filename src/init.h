@@ -11,8 +11,5 @@
 #include "macros.h"
 #include "pins.h"
 #include "slate.h"
-#include "state_machine.h"
-
-#include "scheduler.h"
 
 bool init(slate_t *slate);

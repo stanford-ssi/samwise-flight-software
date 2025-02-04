@@ -9,12 +9,8 @@
 #include "scheduler.h"
 #include "states.h"
 
-/**
- * List of all states. We need this because we cannot enumerate all states at
- * runtime.
- *
- * Note: For each state, the order of the task list determines priority. Tasks
- * nearer the top have higher priority.
+/*
+ * Include the actual state machine
  */
 static const sched_state_t *all_states[] = {&init_state,
 #ifdef BRINGUP

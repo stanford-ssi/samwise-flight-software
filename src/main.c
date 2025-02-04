@@ -5,7 +5,12 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
-#include "main.h"
+#include "init.h"
+#include "macros.h"
+#include "pico/stdlib.h"
+#include "rfm9x.h"
+#include "scheduler.h"
+#include "slate.h"
 
 /**
  * Statically allocate the slate.
@@ -52,6 +57,7 @@ int main()
 
     while (true)
     {
+        sleep_ms(100);
         sched_dispatch(&slate);
     }
 
