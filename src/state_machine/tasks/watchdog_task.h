@@ -13,4 +13,4 @@
 void watchdog_task_init(slate_t *slate);
 void watchdog_task_dispatch(slate_t *slate);
 
-sm_task_t watchdog_task;
+sched_task_t watchdog_task;
