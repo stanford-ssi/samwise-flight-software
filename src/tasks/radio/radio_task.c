@@ -106,9 +106,10 @@ void radio_task_init(slate_t *slate)
     queue_init(&slate->rx_queue, sizeof(packet_t), RX_QUEUE_SIZE);
 
     // create the radio here
-    slate->radio = rfm9x_mk(SAMWISE_RF_SPI, SAMWISE_RF_RST_PIN,
-        SAMWISE_RF_CS_PIN, SAMWISE_RF_MOSI_PIN, SAMWISE_RF_MISO_PIN,
-        SAMWISE_RF_SCK_PIN, SAMWISE_RF_D0_PIN, &interrupt_received);
+    slate->radio =
+        rfm9x_mk(SAMWISE_RF_SPI, SAMWISE_RF_RST_PIN, SAMWISE_RF_CS_PIN,
+                 SAMWISE_RF_MOSI_PIN, SAMWISE_RF_MISO_PIN, SAMWISE_RF_SCK_PIN,
+                 SAMWISE_RF_D0_PIN, &interrupt_received);
 
     // initialize the radio here
     rfm9x_init(&slate->radio);

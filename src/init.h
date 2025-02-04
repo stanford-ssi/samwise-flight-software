@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "pico/stdlib.h"
 #include "hardware/i2c.h"
+#include "pico/stdlib.h"
 
 #include "macros.h"
+#include "pins.h"
 #include "slate.h"
 #include "state_machine.h"
-#include "pins.h"
 
 #include "scheduler.h"
 

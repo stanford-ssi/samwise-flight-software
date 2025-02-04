@@ -1,5 +1,5 @@
-#include "macros.h"
 #include "diagnostics_task.h"
+#include "macros.h"
 #ifdef BRINGUP
 
 /**
@@ -19,7 +19,7 @@ void diagnostics_task_init(slate_t *slate)
 
 void diagnostics_task_dispatch(slate_t *slate)
 {
-    
+
     slate->loop_counter++;
     LOG_INFO("Loop #%d", slate->loop_counter);
 
