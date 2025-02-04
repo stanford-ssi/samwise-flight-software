@@ -66,7 +66,7 @@ int main()
      */
     LOG_INFO("main: Dispatching the state machine...");
 
-    example_to_tx_queue();
+    //example_to_tx_queue();
 
     while (true)
     {
