@@ -7,6 +7,7 @@
  */
 
 #include "scheduler.h"
+#include "states.h"
 
 /**
  * List of all states. We need this because we cannot enumerate all states at
@@ -15,7 +16,11 @@
  * Note: For each state, the order of the task list determines priority. Tasks
  * nearer the top have higher priority.
  */
-static const sched_state_t *all_states[] = {&init_state, &running_state};
+static const sched_state_t *all_states[] = {&init_state,
+#ifdef BRINGUP
+                                            &bringup_state,
+#endif
+                                            &running_state};
 static sched_state_t *const initial_state = &init_state;
 static size_t n_tasks = 0;
 static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];

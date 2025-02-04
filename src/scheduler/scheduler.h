@@ -16,10 +16,6 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
-// Add required include files for states
-#include "init_state.h"
-#include "running_state.h"
-
 /*
  * Must be a macro because it is used to initialize an array
  */

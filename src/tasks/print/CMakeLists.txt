@@ -8,6 +8,8 @@ target_include_directories(print_task PUBLIC
   "${PROJECT_SOURCE_DIR}/src/common"
   "${PROJECT_SOURCE_DIR}/src/common/error"
   "${PROJECT_SOURCE_DIR}/src/drivers/rfm9x"
+
+  "${PROJECT_SOURCE_DIR}/src/tasks/print"
 )
 
 add_subdirectory(test)

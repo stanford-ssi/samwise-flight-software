@@ -1,18 +1,11 @@
-/**
- * @author  Niklas Vainio
- * @date    2024-08-27
- */
-
 #pragma once
 
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
-
-#include "macros.h"
+#include "pico/unique_id.h"
 #include "pins.h"
+#include "rfm9x.h"
 #include "slate.h"
 #include "state_machine.h"
 
-#include "scheduler.h"
-
-bool init(slate_t *slate);
+extern sched_task_t diagnostics_task;

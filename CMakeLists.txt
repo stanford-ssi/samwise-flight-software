@@ -2,6 +2,24 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+option(PROFILE "Build profile to build for" "PICO")
+option(COMMIT_HASH "Commit hash" "no-hash")
+if(PROFILE STREQUAL "PICO")
+  set(PICO_BOARD pico)
+  set(SAMWISE_DEFINES PICO)
+elseif(PROFILE STREQUAL "PICUBED-DEBUG")
+  set(PICO_BOARD pico2)
+  set(SAMWISE_DEFINES "")
+elseif(PROFILE STREQUAL "PICUBED-FLIGHT")
+  set(PICO_BOARD pico2)
+  set(SAMWISE_DEFINES FLIGHT)
+elseif(PROFILE STREQUAL "PICUBED-BRINGUP")
+  set(PICO_BOARD pico2)
+  set(SAMWISE_DEFINES BRINGUP)
+else()
+  message(WARNING "Unrecognized build profile ${PROFILE}")
+endif()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -20,13 +38,13 @@ set(toolchainVersion 13_2_Rel1)
 set(picotoolVersion 2.0.0)
 include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 # ====================================================================================
+
 set(TEST OFF)
 
 if(DEFINED TEST)
   add_definitions(-DTEST=1)
 else()
   add_definitions(-DTEST=0)
-  set(PICO_BOARD pico CACHE STRING "Board type")
 endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
@@ -36,10 +54,10 @@ if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
   message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
+project(samwise C CXX ASM)
+
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
-
-project(samwise C CXX ASM)
 
 # Include src
 # Executable `samwise` built under src/

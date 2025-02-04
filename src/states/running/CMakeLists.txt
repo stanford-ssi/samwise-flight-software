@@ -6,7 +6,6 @@ target_link_libraries(running_state PUBLIC print_task blink_task radio_task)
 # Specify directories with relevant header files
 target_include_directories(running_state PUBLIC
   "${PROJECT_SOURCE_DIR}/src/common"
-  "${PROJECT_SOURCE_DIR}/src/tasks/blink"
-  "${PROJECT_SOURCE_DIR}/src/tasks/print"
-  "${PROJECT_SOURCE_DIR}/src/tasks/radio"
+
+  "${PROJECT_SOURCE_DIR}/src/states/running"
 )
