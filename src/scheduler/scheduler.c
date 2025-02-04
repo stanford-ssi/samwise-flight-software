@@ -7,16 +7,17 @@
  */
 
 #include "scheduler.h"
-#include "macros.h"
-#include "pico/time.h"
-#include "slate.h"
+#include "states.h"
 
 /*
  * Include the actual state machine
  */
-#include "state_machine/states/states.h"
-#include "state_machine/tasks/tasks.h"
-
+static const sched_state_t *all_states[] = {&init_state,
+#ifdef BRINGUP
+                                            &bringup_state,
+#endif
+                                            &running_state};
+static sched_state_t *const initial_state = &init_state;
 static size_t n_tasks = 0;
 static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];
 

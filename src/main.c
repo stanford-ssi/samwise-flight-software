@@ -5,25 +5,17 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
-#include "drivers/rfm9x.h"
 #include "init.h"
 #include "macros.h"
 #include "pico/stdlib.h"
-#include "scheduler/scheduler.h"
+#include "rfm9x.h"
+#include "scheduler.h"
 #include "slate.h"
-#include "state_machine/tasks/packet.h"
 
 /**
  * Statically allocate the slate.
  */
 slate_t slate;
-
-struct TASK2_DATA_STRUCT_FORMAT
-{
-    bool yes_no;
-    uint16_t number;
-};
-
 
 /**
  * Main code entry point.
@@ -31,11 +23,9 @@ struct TASK2_DATA_STRUCT_FORMAT
  * This should never return (unless something really bad happens!)
  */
 int main()
-{   
-    // Some ugly code with linter errors
-    int x = 10 + 5;
+{
     stdio_init_all();
-    
+
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
@@ -54,11 +44,16 @@ int main()
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
     /*
+     * Print commit hash
+     */
+#ifdef COMMIT_HASH
+    LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
+#endif
+
+    /*
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
-
-    //example_to_tx_queue();
 
     while (true)
     {
@@ -66,26 +61,10 @@ int main()
         sched_dispatch(&slate);
     }
 
+    /*
+     * We should NEVER be here so something bad has happened.
+     * @todo reboot!
+     */
+
     ERROR("We reached the end of the code - this is REALLY BAD!");
-}
-
-void example_to_tx_queue(){
-
-    struct TASK2_DATA_STRUCT_FORMAT struct2;
-    struct2.yes_no = true;
-    struct2.number = 15;
-
-    packet_t p;
-
-    p.len = sizeof(struct2) + 1;
-    p.dst = 255;
-    p.src = 0;
-    p.seq;
-    p.flags;
-    p.data[0] = 2;
-    memcpy(p.data + 1, &struct2, sizeof(struct2));
-
-    
-    queue_try_add(&slate.tx_queue, &p);
-    queue_try_add(&slate.tx_queue, &p);
 }

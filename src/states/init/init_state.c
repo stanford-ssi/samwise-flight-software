@@ -1,5 +1,4 @@
-#include "state_machine/states/init.h"
-#include "state_machine/states/states.h"
+#include "init_state.h"
 
 extern sched_state_t bringup_state;
 

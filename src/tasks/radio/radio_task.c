@@ -6,19 +6,7 @@
  * and switch to transmit mode to send packets on the transmit queue.
  */
 
-#include "state_machine/tasks/radio_task.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "pico/util/queue.h"
-#include "pins.h"
-#include "slate.h"
-
-#include "drivers/rfm9x.h"
-
-#include "hardware/gpio.h"
-#include "hardware/spi.h"
-
-#include <string.h>
+#include "radio_task.h"
 
 static slate_t *s;
 
@@ -35,11 +23,6 @@ static void tx_done()
         p_buf[2] = p.seq;
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
-
-        for (int i = 0; i < p.len; i++)
-        {
-            LOG_INFO("SENDING packet data: %i, has value: %i", i, p.data[i]);
-        }
 
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
         rfm9x_clear_interrupts(&s->radio);
@@ -64,8 +47,6 @@ static void rx_done()
 
     uint8_t n = rfm9x_packet_from_fifo(&s->radio, &p_buf[0]);
     s->rx_bytes += n;
-
-    LOG_INFO("the number of bytes: %i", n);
 
     if (n > 0)
     {

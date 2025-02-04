@@ -9,6 +9,7 @@ on:
     paths:
       - "src/**"
       - "CMakeLists.txt"
+  workflow_dispatch:
 
 jobs:
   Build:
@@ -24,19 +25,36 @@ jobs:
     - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
       uses: carlosperate/arm-none-eabi-gcc-action@v1
 
-    - name: Configure CMake
+    - name: Configure CMake for RP2040
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build
+      run: cmake -B ${{github.workspace}}/build -DCOMMIT_HASH=${{github.sha}}
 
-    - name: Build
+    - name: Build for RP2040
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build
 
-    - name: Archive Build Products
+    - name: Archive Build Products for RP2040
       uses: actions/upload-artifact@v4
       with:
-        name: samwise-products
+        name: samwise-products-rp2040
         path: |
-          build/samwise.*
+          build/samwise*.uf2
+
+    - name: Clean
+      run: rm -rf ${{github.workspace}}/build
+
+    - name: Configure CMake for RP2350
+      run: cmake -B ${{github.workspace}}/build -DCOMMIT_HASH=${{github.sha}} -DRP2350=ON
+
+    - name: Build for RP2350
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build
+
+    - name: Archive Build Products for RP2350
+      uses: actions/upload-artifact@v4
+      with:
+        name: samwise-products-rp2350
+        path: |
+          build/samwise*.uf2
 

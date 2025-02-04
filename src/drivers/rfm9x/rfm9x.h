@@ -1,7 +1,13 @@
 #pragma once
 
+#include "hardware/resets.h"
 #include "hardware/spi.h"
+
 #include "pico/stdlib.h"
+#include "pico/time.h"
+
+#include "bit-support.h"
+#include "macros.h"
 
 #define PACKET_SIZE 256
 #define PAYLOAD_SIZE 251
@@ -90,6 +96,8 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
                       uint8_t keep_listening, uint8_t with_ack,
                       bool blocking_wait_for_packet);
+
+uint32_t rfm9x_version(rfm9x_t *r);
 
 void rfm9x_listen(rfm9x_t *r);
 void rfm9x_transmit(rfm9x_t *r);

@@ -38,7 +38,7 @@ eg:
 7. All set! (hopefully)
 */
 
-#include "state_machine/tasks/command_switch_task.h"
+#include "command_task.h"
 #include "macros.h"
 #include "packet.h"
 #include "pico/stdlib.h"
@@ -64,7 +64,7 @@ TASK2_DATA current_data_holder_task2;
 
 /// @brief Initialize the command switch task
 /// @param slate Address of the slate
-void command_switch_task_init(slate_t *slate)
+void command_task_init(slate_t *slate)
 {
     // initialize queue for radio input data,TODO: assumed to be initialized in
     // the radio module and comment out when merging
@@ -86,7 +86,7 @@ void command_switch_task_init(slate_t *slate)
 
 /// @brief
 /// @param slate
-void command_switch_dispatch(slate_t *slate)
+void command_task_dispatch(slate_t *slate)
 {
     int number_of_commands_to_process = 1;
     for (int i = 0; i < number_of_commands_to_process; i++)
@@ -140,9 +140,9 @@ void command_switch_dispatch(slate_t *slate)
     }
 }
 
-sched_task_t command_switch_task = {.name = "command_switch",
-                                    .dispatch_period_ms = 100,
-                                    .task_init = &command_switch_task_init,
-                                    .task_dispatch = &command_switch_dispatch,
-                                    /* Set to an actual value on init */
-                                    .next_dispatch = 0};
+sched_task_t command_task = {.name = "command",
+                             .dispatch_period_ms = 100,
+                             .task_init = &command_task_init,
+                             .task_dispatch = &command_task_dispatch,
+                             /* Set to an actual value on init */
+                             .next_dispatch = 0};

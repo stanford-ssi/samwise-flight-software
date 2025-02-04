@@ -11,15 +11,26 @@
 
 #pragma once
 
-#include "drivers/rfm9x.h"
 #include "pico/types.h"
 #include "pico/util/queue.h"
-#include "scheduler/scheduler.h"
 
-#define max_datastructure_size 304 // buffer size should be maxsize of biggest datastructure
+#include "state_machine.h"
+#include "typedefs.h"
+
+#include "rfm9x.h"
+
+// Largest possible command data structure
+#define MAX_DATASTRUCTURE_SIZE 304
 
 typedef struct samwise_slate
 {
+#ifdef BRINGUP
+    /*
+     * Bringup script
+     */
+    uint32_t loop_counter;
+#endif
+
     /*
      * State machine info.
      */
@@ -36,7 +47,7 @@ typedef struct samwise_slate
                         // from radio com
     queue_t task2_data;
 
-    uint8_t struct_buffer[max_datastructure_size];
+    uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
     uint16_t num_uploaded_bytes;
     uint16_t packet_buffer_index;

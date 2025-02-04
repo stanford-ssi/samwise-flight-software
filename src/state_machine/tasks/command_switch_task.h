@@ -11,4 +11,4 @@
 void command_switch_task_init(slate_t *slate);
 void command_switch_dispatch(slate_t *slate);
 
-sched_task_t command_switch; 
+sched_task_t command_switch;
