@@ -68,3 +68,5 @@ typedef struct samwise_slate
     uint32_t tx_bytes;
     uint32_t tx_packets;
 } slate_t;
+
+extern slate_t slate;

@@ -6,15 +6,13 @@ target_link_libraries(diagnostics_task PUBLIC
   hardware_i2c
   hardware_spi
   pico_unique_id
+  slate
+  common
   error
   rfm9x
 )
 
 # Specify directories with relevant header files
 target_include_directories(diagnostics_task PUBLIC
-  "${PROJECT_SOURCE_DIR}/src/common"
-  "${PROJECT_SOURCE_DIR}/src/common/error"
-  "${PROJECT_SOURCE_DIR}/src/drivers/rfm9x"
-
   "${PROJECT_SOURCE_DIR}/src/tasks/diagnostics"
 )

@@ -1,6 +1,8 @@
 add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
 add_subdirectory(common)
+add_subdirectory(slate)
+add_subdirectory(error)
 add_subdirectory(drivers)
 add_subdirectory(scheduler)
 add_subdirectory(states)
@@ -25,7 +27,7 @@ target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
   pico_unique_id pico_stdlib)
 
 # Samwise
-target_link_libraries(samwise PRIVATE scheduler error rfm9x)
+target_link_libraries(samwise PRIVATE scheduler error rfm9x slate)
 
 # Global include directory common for all targets
 target_include_directories(samwise PUBLIC
