@@ -90,11 +90,13 @@ static packet_header_t compute_packet_header(const uint8_t *packet,
  * @return Number of bytes received, may be less than desired
  */
 static uint16_t receive_into(slate_t *slate, void *dest, uint16_t num_bytes,
-                             uint16_t timeout_ms)
+                             uint32_t timeout_ms)
 {
+    absolute_time_t start = get_absolute_time();
     uint8_t *dest_ptr = (uint8_t *)dest; // Convert to char* for arithmetic
     uint16_t bytes_received = 0;
-    for (int i = 0; i < timeout_ms; i++)
+    while (absolute_time_diff_us(start, get_absolute_time()) <
+           timeout_ms * 1000)
     {
         // Drain the queue
         while (
@@ -106,8 +108,6 @@ static uint16_t receive_into(slate_t *slate, void *dest, uint16_t num_bytes,
                 return num_bytes;
             }
         }
-
-        sleep_ms(1);
     }
 
     return bytes_received;
