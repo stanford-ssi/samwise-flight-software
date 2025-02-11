@@ -13,11 +13,6 @@
 #include "slate.h"
 
 /**
- * Statically allocate the slate.
- */
-slate_t slate;
-
-/**
  * Main code entry point.
  *
  * This should never return (unless something really bad happens!)

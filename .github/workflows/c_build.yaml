@@ -25,36 +25,39 @@ jobs:
     - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
       uses: carlosperate/arm-none-eabi-gcc-action@v1
 
-    - name: Configure CMake for RP2040
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCOMMIT_HASH=${{github.sha}}
+    - name: Configure PICO profile
+      run: cmake -B ${{github.workspace}}/build-2040 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICO
 
-    - name: Build for RP2040
+    - name: Build PICO profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build
-
-    - name: Archive Build Products for RP2040
+      run: cmake --build ${{github.workspace}}/build-2040
+    - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
-        name: samwise-products-rp2040
+        name: samwise-products-pico
         path: |
-          build/samwise*.uf2
+          build-2040/src/samwise*.uf2
 
-    - name: Clean
-      run: rm -rf ${{github.workspace}}/build
-
-    - name: Configure CMake for RP2350
-      run: cmake -B ${{github.workspace}}/build -DCOMMIT_HASH=${{github.sha}} -DRP2350=ON
-
-    - name: Build for RP2350
+    - name: Configure PICUBED-FLIGHT profile
+      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
+    - name: Build PICUBED-FLIGHT profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build
-
-    - name: Archive Build Products for RP2350
+      run: cmake --build ${{github.workspace}}/build-2350
+    - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
-        name: samwise-products-rp2350
+        name: samwise-products-picubed-flight
         path: |
-          build/samwise*.uf2
+          build-2350/src/samwise*.uf2
 
+    - name: Configure PICUBED-BRINGUP profile
+      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP
+    - name: Build PICUBED-BRINGUP profile
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build-2350
+    - name: Archive Build Products for PICO
+      uses: actions/upload-artifact@v4
+      with:
+        name: samwise-products-picubed-bringup
+        path: |
+          build-2350/src/samwise*.uf2

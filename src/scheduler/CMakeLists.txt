@@ -5,14 +5,13 @@ target_link_libraries(scheduler PUBLIC
   init_state
   running_state
   bringup_state
+  slate
+  common
   error
 )
 
 target_include_directories(scheduler PUBLIC
-  "${PROJECT_SOURCE_DIR}/src/common"
-  "${PROJECT_SOURCE_DIR}/src/states/init"
-  "${PROJECT_SOURCE_DIR}/src/states/running"
-  "${PROJECT_SOURCE_DIR}/src/states/bringup"
+  "${PROJECT_SOURCE_DIR}/src/scheduler"
 )
 
 # Debug message to print the list of include directories for state_machine

@@ -5,8 +5,7 @@
  */
 
 #include "print_task.h"
-#include "macros.h"
-#include "slate.h"
+
 
 void print_task_init(slate_t *slate)
 {
