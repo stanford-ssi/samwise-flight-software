@@ -82,9 +82,9 @@ bool* initialize_packet_status_arr(int num_packets) {
    return packets_status;
 }
 
-// Convert bool* array to char* so it can be sent as a packet hi
-char* bool_to_char(bool* bool_array, int length) {
-   char* char_array = malloc(sizeof(char)*GROUP_SIZE + 1); // +1 for null terminator (if needed)
+// Convert bool* array to char* so it can be sent as a packet
+char* bool_to_char(_Bool* bool_array) {
+   char* char_array = malloc(GROUP_SIZE + 1); // +1 for null terminator (if needed)
    
    if (char_array == NULL) {
       //printf("Memory allocation failed\n");
