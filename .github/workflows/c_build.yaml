@@ -36,7 +36,7 @@ jobs:
       with:
         name: samwise-products-pico
         path: |
-          build-2350/samwise*.uf2
+          build-2040/src/samwise*.uf2
 
     - name: Configure PICUBED-FLIGHT profile
       run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
@@ -48,7 +48,7 @@ jobs:
       with:
         name: samwise-products-picubed-flight
         path: |
-          build-2350/samwise*.uf2
+          build-2350/src/samwise*.uf2
 
     - name: Configure PICUBED-BRINGUP profile
       run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP
@@ -60,4 +60,4 @@ jobs:
       with:
         name: samwise-products-picubed-bringup
         path: |
-          build-2350/samwise*.uf2
+          build-2350/src/samwise*.uf2
