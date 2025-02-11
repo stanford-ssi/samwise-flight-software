@@ -30,7 +30,7 @@ jobs:
 
     - name: Build PICO profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-pico
+      run: cmake --build ${{github.workspace}}/build-2040
     - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
