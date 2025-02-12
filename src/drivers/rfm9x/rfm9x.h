@@ -8,6 +8,7 @@
 
 #include "bit-support.h"
 #include "macros.h"
+#include "pins.h"
 
 #define PACKET_SIZE 256
 #define PAYLOAD_SIZE 251
@@ -26,7 +27,9 @@ typedef enum
     RX_MODE = 5,
 } rfm9x_mode_t;
 
-typedef void (*rfm9x_interrupt_func)(uint, uint32_t);
+typedef void (*rfm9x_tx_irq)(void);
+typedef void (*rfm9x_rx_irq)(void);
+
 
 typedef struct _rfm9x
 {
@@ -37,7 +40,12 @@ typedef struct _rfm9x
     uint spi_clk_pin;
     uint d0_pin;
 
-    rfm9x_interrupt_func interrupt_func;
+    rfm9x_tx_irq tx_irq;
+    rfm9x_rx_irq rx_irq;
+
+#ifndef PICO
+    uint rf_reg_pin;
+#endif
 
     spi_inst_t *spi;
     uint8_t seq; /* current sequence number */
@@ -47,9 +55,7 @@ typedef struct _rfm9x
 /*
  * Creates an RFM9X helper struct. Uninitialized.
  */
-rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
-                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin,
-                 rfm9x_interrupt_func interrupt_func);
+rfm9x_t rfm9x_mk();
 
 /*
  * Initializes an RFM9X radio.
@@ -108,6 +114,9 @@ uint8_t rfm9x_rx_done(rfm9x_t *r);
 uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n);
 uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf);
 void rfm9x_clear_interrupts(rfm9x_t *r);
+
+void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
+void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 
 typedef enum
 {

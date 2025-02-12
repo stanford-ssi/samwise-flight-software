@@ -1,6 +1,6 @@
 #include "onboard_led.h"
 
-struct onboard_led mk_onboard_led() {
+struct onboard_led onboard_led_mk() {
   return (struct onboard_led) {
     .pin = PICO_DEFAULT_LED_PIN,
     .on = false,

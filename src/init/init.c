@@ -1,5 +1,5 @@
 /**
- * @author  Niklas Vainio
+ * @author  Niklas Vainio, Joseph Shetaye
  * @date    2024-08-27
  *
  * This file should be used to define functions that run when the satellite
@@ -17,7 +17,6 @@
 static bool init_gpio_pins()
 {
 #ifndef PICO
-    // Default i2c
     i2c_init(SAMWISE_MPPT_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_MPPT_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SAMWISE_MPPT_SCL_PIN, GPIO_FUNC_I2C);
@@ -57,7 +56,11 @@ static bool init_gpio_pins()
 }
 
 static bool init_drivers(slate_t* slate) {
+  slate->onboard_led = onboard_led_mk();
   onboard_led_init(&slate->onboard_led);
+
+  slate->radio = rfm9x_mk();
+  rfm9x_init(&slate->radio);
 
   return true;
 }

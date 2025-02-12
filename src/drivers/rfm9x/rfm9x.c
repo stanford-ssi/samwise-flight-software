@@ -1,17 +1,19 @@
 #include "rfm9x.h"
 
-rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
-                 uint spi_rx_pin, uint spi_clk_pin, uint d0_pin,
-                 rfm9x_interrupt_func interrupt_func)
+rfm9x_t rfm9x_mk()
 {
-    rfm9x_t r = {.reset_pin = reset_pin,
-                 .spi_cs_pin = cs_pin,
-                 .spi_tx_pin = spi_tx_pin,
-                 .spi_rx_pin = spi_rx_pin,
-                 .spi_clk_pin = spi_clk_pin,
-                 .d0_pin = d0_pin,
-                 .interrupt_func = interrupt_func,
-                 .spi = spi,
+    rfm9x_t r = {.reset_pin = SAMWISE_RF_RST_PIN,
+                 .spi_cs_pin = SAMWISE_RF_CS_PIN,
+                 .spi_tx_pin = SAMWISE_RF_MOSI_PIN,
+                 .spi_rx_pin = SAMWISE_RF_MISO_PIN,
+                 .spi_clk_pin = SAMWISE_RF_SCK_PIN,
+                 .d0_pin = SAMWISE_RF_D0_PIN,
+                 .tx_irq = NULL,
+                 .rx_irq = NULL,
+                 .spi = SPI_NUM(SAMWISE_RF_SPI),
+#ifndef PICO
+                 .rf_reg_pin = SAMWISE_RF_REGULATOR_PIN,
+#endif
                  /*
                   * Default values
                   */
@@ -580,8 +582,42 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
     return c;
 }
 
+static rfm9x_t* radio_with_interrupts;
+
+static void rfm9x_interrupt_received(uint gpio, uint32_t events) {
+    if (gpio == radio_with_interrupts->d0_pin)
+    {
+
+        if (rfm9x_tx_done(radio_with_interrupts)) {
+            if(radio_with_interrupts->tx_irq != NULL) {
+              radio_with_interrupts->tx_irq();
+            }
+        } else if (rfm9x_rx_done(radio_with_interrupts)) {
+          if(radio_with_interrupts->rx_irq != NULL) {
+            radio_with_interrupts->rx_irq();
+          }
+        }
+    }
+}
+
 void rfm9x_init(rfm9x_t *r)
 {
+    ASSERT(radio_with_interrupts == NULL);
+    radio_with_interrupts = r;
+
+#ifndef PICO
+    // Setup RF regulator
+    gpio_init(r->rf_reg_pin);
+    gpio_set_dir(r->rf_reg_pin, GPIO_OUT);
+
+#ifdef BRINGUP
+    gpio_put(r->rf_reg_pin, 0);
+#else
+    gpio_put(r->rf_reg_pin, 1);
+#endif
+
+#endif
+
     // Setup reset line
     gpio_init(r->reset_pin);
     gpio_set_dir(r->reset_pin, GPIO_IN);
@@ -594,6 +630,7 @@ void rfm9x_init(rfm9x_t *r)
     gpio_disable_pulls(r->spi_cs_pin);
     gpio_put(r->spi_cs_pin, 1);
 
+    // SPI
     gpio_set_function(r->spi_clk_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_tx_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_rx_pin, GPIO_FUNC_SPI);
@@ -605,7 +642,6 @@ void rfm9x_init(rfm9x_t *r)
     gpio_pull_down(r->d0_pin);
 
     // Initialize SPI for the RFM9X
-
     busy_wait_ms(10);
 
     // RFM9X.pdf 4.3 p75:
@@ -614,7 +650,7 @@ void rfm9x_init(rfm9x_t *r)
     spi_init(r->spi, RFM9X_SPI_BAUDRATE);
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
-    // Reset the chip
+    // TODO: Reset the chip
     // rfm9x_reset(r);
 
     /*
@@ -679,12 +715,17 @@ void rfm9x_init(rfm9x_t *r)
     ASSERT(rfm9x_get_lna_boost(r) == 0b11);
 
     // Setup interrupt
-    if (r->interrupt_func != NULL)
-    {
-        gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
-                                           r->interrupt_func);
-    }
+    gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
+        &rfm9x_interrupt_received);
 }
+
+void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq) {
+  r->rx_irq = irq;
+}
+void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq) {
+  r->tx_irq = irq;
+}
+
 
 /*
  * Print a raw packet. L includes all bytes, even header.
