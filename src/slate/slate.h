@@ -18,6 +18,7 @@
 #include "typedefs.h"
 
 #include "rfm9x.h"
+#include "onboard_led.h"
 
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
@@ -38,7 +39,10 @@ typedef struct samwise_slate
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
 
-    bool led_state;
+    /*
+     * LED
+     */
+    onboard_led_t onboard_led;
 
     /*
      * Command switch

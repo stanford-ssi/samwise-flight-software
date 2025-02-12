@@ -7,15 +7,11 @@
 
 #include "blink_task.h"
 
-void blink_task_init(slate_t *slate)
-{
-    slate->led_state = false;
-}
+void blink_task_init(slate_t *slate) {}
 
 void blink_task_dispatch(slate_t *slate)
 {
-    slate->led_state = !slate->led_state;
-    gpio_put(PICO_DEFAULT_LED_PIN, slate->led_state);
+    onboard_led_toggle(&slate->onboard_led);
 }
 
 sched_task_t blink_task = {.name = "blink",

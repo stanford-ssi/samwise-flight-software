@@ -12,4 +12,7 @@
 #include "pins.h"
 #include "slate.h"
 
+#include "onboard_led.h"
+#include "scheduler.h"
+
 bool init(slate_t *slate);

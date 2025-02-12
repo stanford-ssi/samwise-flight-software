@@ -8,6 +8,7 @@
 #include "pico/stdlib.h"
 
 #include "slate.h"
+#include "onboard_led.h"
 #include "state_machine.h"
 #include "typedefs.h"
 

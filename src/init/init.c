@@ -8,9 +8,6 @@
  */
 
 #include "init.h"
-#include "macros.h"
-#include "pico/stdlib.h"
-#include "scheduler/scheduler.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -19,10 +16,7 @@
  */
 static bool init_gpio_pins()
 {
-#ifdef PICO
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-#else
+#ifndef PICO
     // Default i2c
     i2c_init(SAMWISE_MPPT_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_MPPT_SDA_PIN, GPIO_FUNC_I2C);
@@ -62,6 +56,12 @@ static bool init_gpio_pins()
     return true;
 }
 
+static bool init_drivers(slate_t* slate) {
+  onboard_led_init(&slate->onboard_led);
+
+  return true;
+}
+
 /**
  * Primary function called by main to initialize everything.
  *
@@ -74,6 +74,8 @@ bool init(slate_t *slate)
      * Initialize gpio pins
      */
     ASSERT(init_gpio_pins());
+
+    ASSERT(init_drivers(slate));
 
     /*
      * Initialize the state machine
