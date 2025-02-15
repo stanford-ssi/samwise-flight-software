@@ -2,7 +2,7 @@
  * @author  <Chloe Zhong>
  * @date    <1/11/2025>
  *
- * <BRIEF DESCRIPTION OF TASK>
+ * <watchdog header file>
  */
 
 #pragma once

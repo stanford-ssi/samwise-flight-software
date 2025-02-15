@@ -14,10 +14,6 @@
 
 int WATCHDOG_PIN = 6;
 
-/*
- * IMPORTANT: Remember to add your task to all_tasks in state_machine_states.h
- */
-
 void watchdog_task_init(slate_t *slate)
 {
     
