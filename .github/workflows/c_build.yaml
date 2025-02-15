@@ -13,8 +13,10 @@ on:
 
 jobs:
   Build:
-
-    runs-on: ubuntu-latest
+    # Run on one of Joseph's self hosted runners
+    # TODO: The next satellite should NOT inherit this!
+    runs-on: [self-hosted, linux, x64]
+    # runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -30,7 +32,7 @@ jobs:
 
     - name: Build PICO profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2040
+      run: cmake --build ${{github.workspace}}/build-2040 --parallel 4
     - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
@@ -42,7 +44,7 @@ jobs:
       run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
     - name: Build PICUBED-FLIGHT profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350
+      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
     - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
@@ -54,7 +56,7 @@ jobs:
       run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP
     - name: Build PICUBED-BRINGUP profile
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350
+      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
     - name: Archive Build Products for PICO
       uses: actions/upload-artifact@v4
       with:
