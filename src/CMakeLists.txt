@@ -8,7 +8,6 @@ add_subdirectory(scheduler)
 add_subdirectory(states)
 add_subdirectory(tasks)
 add_subdirectory(init)
-add_subdirectory(logger)
 
 add_executable(samwise main.c)
 
