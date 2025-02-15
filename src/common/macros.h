@@ -9,11 +9,7 @@
 #pragma once
 
 #include "error.h"
-#if TEST == 1
-#include <stdio.h>
-#else
-#include "pico/printf.h"
-#endif
+#include "logger/logger.h"
 
 /**
  * If this symbol is defined, we are configured to run a flight build.
