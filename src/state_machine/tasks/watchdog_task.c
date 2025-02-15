@@ -9,7 +9,7 @@
 #include "watchdog_task.h"
 #include "macros.h"
 #include "slate.h"
-#include "gpio.h"
+#include "pico/stdlib.h"
 
 
 int WATCHDOG_PIN = 6;
