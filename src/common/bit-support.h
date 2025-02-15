@@ -7,20 +7,17 @@
 // set x[bit]=0 (leave the rest unaltered) and return the value
 static inline uint32_t bit_clr(uint32_t x, uint32_t bit)
 {
-    ASSERT(bit < 32);
     return x & ~(1 << bit);
 }
 
 // set x[bit]=1 (leave the rest unaltered) and return the value
 static inline uint32_t bit_set(uint32_t x, uint32_t bit)
 {
-    ASSERT(bit < 32);
     return x | (1 << bit);
 }
 
 static inline uint32_t bit_not(uint32_t x, uint32_t bit)
 {
-    ASSERT(bit < 32);
     return x ^ (1 << bit);
 }
 
@@ -30,7 +27,6 @@ static inline uint32_t bit_not(uint32_t x, uint32_t bit)
 // is x[bit] == 1?
 static inline uint32_t bit_is_on(uint32_t x, uint32_t bit)
 {
-    ASSERT(bit < 32);
     return (x >> bit) & 1;
 }
 static inline uint32_t bit_is_off(uint32_t x, uint32_t bit)
@@ -51,24 +47,18 @@ static inline uint32_t bits_mask(uint32_t nbits)
     // all bits on.
     if (nbits == 32)
         return ~0;
-    ASSERT(nbits >= 0 && nbits < 32);
     return (1 << nbits) - 1;
 }
 
 // extract bits [lb:ub]  (inclusive)
 static inline uint32_t bits_get(uint32_t x, uint32_t lb, uint32_t ub)
 {
-    ASSERT(lb <= ub);
-    ASSERT(ub < 32);
     return (x >> lb) & bits_mask(ub - lb + 1);
 }
 
 // set bits[off:n]=0, leave the rest unchanged.
 static inline uint32_t bits_clr(uint32_t x, uint32_t lb, uint32_t ub)
 {
-    ASSERT(lb <= ub);
-    ASSERT(ub < 32);
-
     uint32_t mask = bits_mask(ub - lb + 1);
 
     // XXX: check that gcc handles shift by more bit-width as expected.
@@ -79,18 +69,7 @@ static inline uint32_t bits_clr(uint32_t x, uint32_t lb, uint32_t ub)
 static inline uint32_t bits_set(uint32_t x, uint32_t lb, uint32_t ub,
                                 uint32_t v)
 {
-    ASSERT(lb <= ub);
-    ASSERT(ub < 32);
-
-#if 0
-    // XXX: not sure if special casing is clearer, or if we just keep the
-    if(lb == 0 && ub == 31)
-        return v;
-#endif
     uint32_t n = ub - lb + 1;
-    ASSERT(n <= 32);
-    ASSERT((bits_mask(n) & v) == v);
-
     return bits_clr(x, lb, ub) | (v << lb);
 }
 
@@ -98,8 +77,6 @@ static inline uint32_t bits_set(uint32_t x, uint32_t lb, uint32_t ub,
 static inline uint32_t bits_eq(uint32_t x, uint32_t lb, uint32_t ub,
                                uint32_t val)
 {
-    ASSERT(lb <= ub);
-    ASSERT(ub < 32);
     return bits_get(x, lb, ub) == val;
 }
 

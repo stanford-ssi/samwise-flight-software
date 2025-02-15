@@ -59,6 +59,39 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
                 "[ERROR] " fmt "\n", ##__VA_ARGS__)
 #endif
 
+/**
+ * Log an error messgae and calls the fatal_error function. In non-flight
+ * builds, this locks the system in an unrecoverable panic state
+ */
+#define ERROR(message)                                                         \
+    do                                                                         \
+    {                                                                          \
+        LOG_ERROR("%s:%d %s\n", __FILE__, __LINE__, message);                  \
+        fatal_error();                                                         \
+    } while (0)
+
+/**
+ * Assert a certain condition at runtime and raise an error if it is false.
+ */
+#define ASSERT(condition)                                                      \
+    do                                                                         \
+    {                                                                          \
+        if (!(condition))                                                      \
+        {                                                                      \
+            ERROR("Assertion failed: " #condition);                            \
+        }                                                                      \
+    } while (0)
+
+/**
+ * Assert a certain condition only in debug builds.
+ */
+#ifdef FLIGHT
+#define DEBUG_ASSERT(condition) (void)0
+#else
+#define DEBUG_ASSERT(condition) ASSERT(condition, message)
+#endif
+
+
 // Initialize the logger
 void logger_init(void);
 
