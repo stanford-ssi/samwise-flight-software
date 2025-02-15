@@ -10,8 +10,7 @@
 #define SPI0_TX (19)
 #define SPI0_RX (16)
 
-// TODO: this is a bad, leaky abstraction
-#define SAMWISE_RF_SPI (SPI_INSTANCE(0))
+#define SAMWISE_RF_SPI (0)
 #define SAMWISE_RF_SCK_PIN (18)
 #define SAMWISE_RF_MOSI_PIN (19)
 #define SAMWISE_RF_MISO_PIN (16)
@@ -48,7 +47,7 @@
 #define SAMWISE_SIDE_DEPLOY_DETECT_B_PIN (9)
 #define SAMWISE_SIDE_DEPLOY_DETECT_A_PIN (10)
 
-#define SAMWISE_RF_SPI (SPI_INSTANCE(1))
+#define SAMWISE_RF_SPI (1)
 #define SAMWISE_RF_REGULATOR_PIN (21)
 #define SAMWISE_RF_RST_PIN (11)
 #define SAMWISE_RF_MISO_PIN (12)
