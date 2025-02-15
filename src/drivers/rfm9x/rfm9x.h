@@ -6,8 +6,8 @@
 #include "pico/stdlib.h"
 #include "pico/time.h"
 
-#include "logger.h"
 #include "bit-support.h"
+#include "logger.h"
 #include "macros.h"
 #include "pins.h"
 

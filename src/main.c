@@ -6,8 +6,8 @@
  */
 
 #include "init.h"
-#include "macros.h"
 #include "logger.h"
+#include "macros.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"

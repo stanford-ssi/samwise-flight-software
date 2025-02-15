@@ -8,23 +8,24 @@
  */
 #pragma once
 
-#include "pico/time.h"
-#include "pico/types.h"
 #include "pico/printf.h"
 #include "pico/stdlib.h"
+#include "pico/time.h"
+#include "pico/types.h"
 
 // Log levels
-typedef enum {
+typedef enum
+{
     LOG_LEVEL_DEBUG = 0,
     LOG_LEVEL_INFO = 1,
     LOG_LEVEL_ERROR = 2
 } LOG_LEVEL;
 
 // Output sinks as bit flags
-#define LOG_SINK_NONE  0b000
+#define LOG_SINK_NONE 0b000
 #define LOG_SINK_FLASH 0b100
-#define LOG_SINK_DISK  0b010
-#define LOG_SINK_TEST  0b001
+#define LOG_SINK_DISK 0b010
+#define LOG_SINK_TEST 0b001
 
 /* Single main logging function
  * Parameters:
@@ -33,19 +34,29 @@ typedef enum {
  *  fmt: printf-like format string
  *  args: variable args
  */
-void log_message(LOG_LEVEL level, uint8_t sink_mask, const char* fmt, ...);
-
-
+void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
 
 // Convenience macros that automatically handle TEST mode
 #ifdef TEST
-    #define LOG_DEBUG(fmt, ...) log_message(LOG_LEVEL_DEBUG, LOG_SINK_TEST, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
-    #define LOG_INFO(fmt, ...)  log_message(LOG_LEVEL_INFO, LOG_SINK_TEST, "[INFO] " fmt "\n", ##__VA_ARGS__)
-    #define LOG_ERROR(fmt, ...) log_message(LOG_LEVEL_ERROR, LOG_SINK_TEST, "[ERROR] " fmt "\n", ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...)                                                    \
+    log_message(LOG_LEVEL_DEBUG, LOG_SINK_TEST, "[DEBUG] " fmt "\n",           \
+                ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...)                                                     \
+    log_message(LOG_LEVEL_INFO, LOG_SINK_TEST, "[INFO] " fmt "\n",             \
+                ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...)                                                    \
+    log_message(LOG_LEVEL_ERROR, LOG_SINK_TEST, "[ERROR] " fmt "\n",           \
+                ##__VA_ARGS__)
 #else
-    #define LOG_DEBUG(fmt, ...) log_message(LOG_LEVEL_DEBUG, LOG_SINK_FLASH | LOG_SINK_DISK, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
-    #define LOG_INFO(fmt, ...)  log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK, "[INFO] " fmt "\n", ##__VA_ARGS__)
-    #define LOG_ERROR(fmt, ...) log_message(LOG_LEVEL_ERROR, LOG_SINK_FLASH | LOG_SINK_DISK, "[ERROR] " fmt "\n", ##__VA_ARGS__)
+#define LOG_DEBUG(fmt, ...)                                                    \
+    log_message(LOG_LEVEL_DEBUG, LOG_SINK_FLASH | LOG_SINK_DISK,               \
+                "[DEBUG] " fmt "\n", ##__VA_ARGS__)
+#define LOG_INFO(fmt, ...)                                                     \
+    log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK,                \
+                "[INFO] " fmt "\n", ##__VA_ARGS__)
+#define LOG_ERROR(fmt, ...)                                                    \
+    log_message(LOG_LEVEL_ERROR, LOG_SINK_FLASH | LOG_SINK_DISK,               \
+                "[ERROR] " fmt "\n", ##__VA_ARGS__)
 #endif
 
 // Initialize the logger

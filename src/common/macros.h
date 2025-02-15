@@ -46,7 +46,7 @@
 //  * non-flight build.
 //  */
 // #ifndef FLIGHT
-// #define LOG_DEBUG(fmt, ...)                                                    \
+// #define LOG_DEBUG(fmt, ...) \
 //     printf("[DEBUG]   " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
 // #else
 // #define LOG_DEBUG(fmt, ...) (void)0
@@ -56,14 +56,15 @@
 //  * Log a printf-style formatted message at the info level. Will log in both
 //  * flight and test builds.
 //  */
-// #define LOG_INFO(fmt, ...)                                                     \
+// #define LOG_INFO(fmt, ...) \
 //     printf("[INFO]    " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
 
 // /**
-//  * Log a printf-style formatted error message. Will log in both flight and test
+//  * Log a printf-style formatted error message. Will log in both flight and
+//  test
 //  * builds.
 //  */
-// #define LOG_ERROR(fmt, ...)                                                    \
+// #define LOG_ERROR(fmt, ...) \
 //     printf("[ERROR]   " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
 
 // /**
