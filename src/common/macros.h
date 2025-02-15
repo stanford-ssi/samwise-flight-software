@@ -9,6 +9,7 @@
 #pragma once
 
 #include "error.h"
+#include "logger.h"
 
 /**
  * If this symbol is defined, we are configured to run a flight build.
@@ -66,11 +67,12 @@
 //  */
 // #define LOG_ERROR(fmt, ...) \
 //     printf("[ERROR]   " fmt "\n" __VA_OPT__(, ) __VA_ARGS__)
+//
 
-// /**
-//  * Log an error messgae and calls the fatal_error function. In non-flight
-//  * builds, this locks the system in an unrecoverable panic state
-//  */
+/**
+ * Log an error messgae and calls the fatal_error function. In non-flight
+ * builds, this locks the system in an unrecoverable panic state
+ */
 #define ERROR(message)                                                         \
     do                                                                         \
     {                                                                          \
@@ -98,3 +100,4 @@
 #else
 #define DEBUG_ASSERT(condition) ASSERT(condition, message)
 #endif
+
