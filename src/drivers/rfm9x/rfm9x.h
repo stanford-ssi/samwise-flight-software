@@ -30,7 +30,6 @@ typedef enum
 typedef void (*rfm9x_tx_irq)(void);
 typedef void (*rfm9x_rx_irq)(void);
 
-
 typedef struct _rfm9x
 {
     uint reset_pin;

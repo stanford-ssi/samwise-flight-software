@@ -6,7 +6,6 @@
 
 #include "print_task.h"
 
-
 void print_task_init(slate_t *slate)
 {
     LOG_INFO("Test task is initializing...");

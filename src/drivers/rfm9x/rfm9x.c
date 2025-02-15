@@ -582,20 +582,26 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
     return c;
 }
 
-static rfm9x_t* radio_with_interrupts;
+static rfm9x_t *radio_with_interrupts;
 
-static void rfm9x_interrupt_received(uint gpio, uint32_t events) {
+static void rfm9x_interrupt_received(uint gpio, uint32_t events)
+{
     if (gpio == radio_with_interrupts->d0_pin)
     {
 
-        if (rfm9x_tx_done(radio_with_interrupts)) {
-            if(radio_with_interrupts->tx_irq != NULL) {
-              radio_with_interrupts->tx_irq();
+        if (rfm9x_tx_done(radio_with_interrupts))
+        {
+            if (radio_with_interrupts->tx_irq != NULL)
+            {
+                radio_with_interrupts->tx_irq();
             }
-        } else if (rfm9x_rx_done(radio_with_interrupts)) {
-          if(radio_with_interrupts->rx_irq != NULL) {
-            radio_with_interrupts->rx_irq();
-          }
+        }
+        else if (rfm9x_rx_done(radio_with_interrupts))
+        {
+            if (radio_with_interrupts->rx_irq != NULL)
+            {
+                radio_with_interrupts->rx_irq();
+            }
         }
     }
 }
@@ -716,16 +722,17 @@ void rfm9x_init(rfm9x_t *r)
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
-        &rfm9x_interrupt_received);
+                                       &rfm9x_interrupt_received);
 }
 
-void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq) {
-  r->rx_irq = irq;
+void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
+{
+    r->rx_irq = irq;
 }
-void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq) {
-  r->tx_irq = irq;
+void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
+{
+    r->tx_irq = irq;
 }
-
 
 /*
  * Print a raw packet. L includes all bytes, even header.

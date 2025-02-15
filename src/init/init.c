@@ -27,42 +27,43 @@ static bool init_gpio_pins()
 #endif
 
 #ifdef BRINGUP
-    
+
 #endif
 
     return true;
 }
 
-static bool init_drivers(slate_t* slate) {
-  slate->onboard_led = onboard_led_mk();
-  onboard_led_init(&slate->onboard_led);
+static bool init_drivers(slate_t *slate)
+{
+    slate->onboard_led = onboard_led_mk();
+    onboard_led_init(&slate->onboard_led);
 
-  slate->radio = rfm9x_mk();
+    slate->radio = rfm9x_mk();
 #ifdef BRINGUP
-  gpio_init(SAMWISE_RF_RST_PIN);
-  gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
-  gpio_put(SAMWISE_RF_RST_PIN, 0);
+    gpio_init(SAMWISE_RF_RST_PIN);
+    gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_RST_PIN, 0);
 
-  gpio_init(SAMWISE_RF_MISO_PIN);
-  gpio_set_dir(SAMWISE_RF_MISO_PIN, GPIO_OUT);
-  gpio_put(SAMWISE_RF_MISO_PIN, 0);
+    gpio_init(SAMWISE_RF_MISO_PIN);
+    gpio_set_dir(SAMWISE_RF_MISO_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_MISO_PIN, 0);
 
-  gpio_init(SAMWISE_RF_MOSI_PIN);
-  gpio_set_dir(SAMWISE_RF_MOSI_PIN, GPIO_OUT);
-  gpio_put(SAMWISE_RF_MOSI_PIN, 0);
+    gpio_init(SAMWISE_RF_MOSI_PIN);
+    gpio_set_dir(SAMWISE_RF_MOSI_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_MOSI_PIN, 0);
 
-  gpio_init(SAMWISE_RF_CS_PIN);
-  gpio_set_dir(SAMWISE_RF_CS_PIN, GPIO_OUT);
-  gpio_put(SAMWISE_RF_CS_PIN, 0);
+    gpio_init(SAMWISE_RF_CS_PIN);
+    gpio_set_dir(SAMWISE_RF_CS_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_CS_PIN, 0);
 
-  gpio_init(SAMWISE_RF_SCK_PIN);
-  gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
-  gpio_put(SAMWISE_RF_SCK_PIN, 0);
+    gpio_init(SAMWISE_RF_SCK_PIN);
+    gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_SCK_PIN, 0);
 #else
-  rfm9x_init(&slate->radio);
+    rfm9x_init(&slate->radio);
 #endif
 
-  return true;
+    return true;
 }
 
 /**
