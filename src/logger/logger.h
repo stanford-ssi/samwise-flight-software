@@ -8,9 +8,10 @@
  */
 #pragma once
 
-#include <stdint.h>
-#include <stdarg.h>
-#include <stdbool.h>
+#include "pico/time.h"
+#include "pico/types.h"
+#include "pico/printf.h"
+
 // Log levels
 typedef enum {
     LOG_LEVEL_DEBUG = 0,

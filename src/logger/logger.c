@@ -1,7 +1,5 @@
 #include "logger.h"
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdbool.h>
+
 
 // Track enabled sinks using bitwise OR
 static uint8_t enabled_sinks = LOG_SINK_TEST | LOG_SINK_FLASH | LOG_SINK_DISK;
