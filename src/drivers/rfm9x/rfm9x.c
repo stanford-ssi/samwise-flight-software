@@ -10,7 +10,7 @@ rfm9x_t rfm9x_mk()
                  .d0_pin = SAMWISE_RF_D0_PIN,
                  .tx_irq = NULL,
                  .rx_irq = NULL,
-                 .spi = SPI_NUM(SAMWISE_RF_SPI),
+                 .spi = SPI_INSTANCE(SAMWISE_RF_SPI),
 #ifndef PICO
                  .rf_reg_pin = SAMWISE_RF_REGULATOR_PIN,
 #endif
