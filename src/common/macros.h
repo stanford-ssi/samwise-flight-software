@@ -9,7 +9,6 @@
 #pragma once
 
 #include "error.h"
-#include "logger/logger.h"
 
 /**
  * If this symbol is defined, we are configured to run a flight build.
@@ -71,12 +70,12 @@
 //  * Log an error messgae and calls the fatal_error function. In non-flight
 //  * builds, this locks the system in an unrecoverable panic state
 //  */
-// #define ERROR(message)                                                         \
-//     do                                                                         \
-//     {                                                                          \
-//         LOG_ERROR("%s:%d %s\n", __FILE__, __LINE__, message);                  \
-//         fatal_error();                                                         \
-//     } while (0)
+#define ERROR(message)                                                         \
+    do                                                                         \
+    {                                                                          \
+        LOG_ERROR("%s:%d %s\n", __FILE__, __LINE__, message);                  \
+        fatal_error();                                                         \
+    } while (0)
 
 /**
  * Assert a certain condition at runtime and raise an error if it is false.

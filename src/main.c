@@ -7,7 +7,7 @@
 
 #include "init.h"
 #include "macros.h"
-#include "pico/stdlib.h"
+#include "logger.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
@@ -19,8 +19,6 @@
  */
 int main()
 {
-    stdio_init_all();
-
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.

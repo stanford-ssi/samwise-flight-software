@@ -8,6 +8,7 @@ add_subdirectory(scheduler)
 add_subdirectory(states)
 add_subdirectory(tasks)
 add_subdirectory(init)
+add_subdirectory(logger)
 
 add_executable(samwise main.c)
 
@@ -22,6 +23,6 @@ target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
   pico_unique_id pico_stdlib)
 
 # Samwise
-target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init)
+target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger)
 
 pico_add_extra_outputs(samwise)

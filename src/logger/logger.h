@@ -11,6 +11,7 @@
 #include "pico/time.h"
 #include "pico/types.h"
 #include "pico/printf.h"
+#include "pico/stdlib.h"
 
 // Log levels
 typedef enum {

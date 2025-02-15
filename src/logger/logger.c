@@ -11,6 +11,7 @@ void logger_init(void) {
         // TODO: Initialize flash logging when ready
         // TODO: Initialize disk logging when ready
     #endif
+    stdio_init_all();
 }
 
 // Enable/disable specific sinks
