@@ -14,7 +14,7 @@
 #include "pins.h"
 #include "slate.h"
 
-#define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
+#define PAYLOAD_UART_ID uart1 // Required to use pins 30 and 31 (see datasheet)
 
 // UART parameters
 #define BAUD_RATE 115200
@@ -28,11 +28,14 @@
 #define SYN_RETRIES 3
 #define SYN_BYTE '$'
 #define SYN_COUNT 3
+#define START_BYTE '@'
 
 static slate_t *slate_for_irq; // Need to save to be accessible to IRQ
 
+// Note: The start byte ensures that desyncing does not happen.
 typedef struct
 {
+    uint8_t start_byte; //  NOTE: Little endian
     uint16_t length;   // NOTE: Little endian
     uint16_t seq_num;  // NOTE: Little endian
     uint32_t checksum; // NOTE: Little endian
@@ -117,7 +120,7 @@ static bool receive_ack(slate_t *slate)
 {
     // Receive a single byte
     uint8_t received_byte;
-    uint16_t received = receive_into(slate, &received_byte, 1, 1000);
+uint16_t received = receive_into(slate, &received_byte, 1, 1000);
 
     return received && received_byte == ACK_BYTE;
 }
@@ -147,6 +150,10 @@ static bool receive_syn(slate_t *slate)
     }
 }
 
+static bool start_byte_read(slate_t *slate){
+
+}
+
 static void send_ack()
 {
     uart_putc_raw(PAYLOAD_UART_ID, ACK_BYTE);
@@ -158,6 +165,14 @@ static void send_syn()
     {
         uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
     }
+}
+
+void payload_turn_on(slate_t *slate){
+    gpio_put(SAMWISE_RPI_ENABLE_PIN, 1);
+}
+
+void payload_turn_off(slate_t *slate){
+    gpio_put(SAMWISE_RPI_ENABLE_PIN, 0);
 }
 
 /**
@@ -173,6 +188,11 @@ bool payload_uart_init(slate_t *slate)
                       UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_RPI_UART_TX));
     gpio_set_function(SAMWISE_RPI_UART_RX,
                       UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_RPI_UART_RX));
+    
+    // Setting RPI_ENABLE_PIN as output
+    gpio_init(SAMWISE_RPI_ENABLE_PIN);
+    gpio_set_dir(SAMWISE_RPI_ENABLE_PIN, GPIO_OUT);
+    payload_turn_off(slate);
 
     // Set baud rate
     uart_init(PAYLOAD_UART_ID, BAUD_RATE);
@@ -249,6 +269,9 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     // Calculate the header
     packet_header_t header = compute_packet_header(packet, len, seq_num);
 
+    // Send the start byte for the header
+    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
+
     // Send header and receive ACK
     uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
                         sizeof(packet_header_t));
@@ -283,6 +306,9 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
         return 0;
     }
     send_ack();
+
+    // Wait until we receive a start byte
+    
 
     // Receive header
     packet_header_t header;

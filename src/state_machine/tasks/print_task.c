@@ -12,15 +12,18 @@
 void print_task_init(slate_t *slate)
 {
     LOG_INFO("Test task is initializing...");
+    payload_turn_on(slate);
 }
 
 void print_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending a command to the RPI...");
 
-    char packet[] = "['ping', [], {}]";
+    char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
+
+    sleep_ms(1000);
 
     char received[1024];
     uint16_t received_len = payload_uart_read_packet(slate, received);

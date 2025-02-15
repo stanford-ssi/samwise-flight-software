@@ -19,5 +19,7 @@
 // #define SAMWISE_RPI_UART_RX (31)
 
 // For pico
-#define SAMWISE_RPI_UART_TX (0)
-#define SAMWISE_RPI_UART_RX (1)
+#define SAMWISE_RPI_UART_TX (24)
+#define SAMWISE_RPI_UART_RX (25)
+
+#define SAMWISE_RPI_ENABLE_PIN (29)
