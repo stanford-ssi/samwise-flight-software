@@ -1,47 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include "slate.h"
-
-
-int GROUP_SIZE = 32;       // Number of packets to send before the sender requests an ACK
-int MAX_ACK_RETRIES = 6;   // Number of times the sender will ask for an ACK before giving up
-int MAX_RESEND_CYCLES = 6; // Number of times the sender will resend missing packets before giving up
-int MAX_BAD_PACKETS = 6;   //Number of consecutive bad packets before the receiver aborts
-
-unsigned char ZERO_CHUNK[32] = {0};
-unsigned char ZERO = 0;
-
-char SEND_ACK[] = "!SEND_ACK!";
-char ABORT_FILE_TRANSFER[] = "!ABORT!";
-
-int CHUNK_SIZE = 250;
-
-struct CDH {
-
-};
-
-struct PTP {
-
-};
-
-struct FileTransferProtocol {
-   int id;
-   int chunk_size;
-   struct CDH cdh;
-   struct PTP ptp;
-};
-
-struct responseStruct {
-   int num_packets;
-   int file_size;
-};
-
-struct packetStruct {
-   int seq_num;
-   char* chunk;
-   int packet_size;
-};
+#include "file_transfer.h"
 
 int min(int num1, int num2) {
    if (num1 <= num2) {
@@ -53,86 +10,107 @@ int min(int num1, int num2) {
    }
 }
 
-// Count number of missing_packets (false elements in packets_status array)
-int count_missing_packets(bool* packets_status) {
-   int num_missing_packets = 0;
-   
-   for (int i = 0; i < GROUP_SIZE; i++) {
-      if (packets_status[i] == false) {
-         num_missing_packets++;
-      }
+bool* initialize_packet_status_bool_arr(int length) {
+   bool* packet_status = malloc(sizeof(bool) * length);
+
+   for (int i = 0; i < length; i++) {
+      packet_status[i] = false;
    }
 
-   return num_missing_packets;
+   return packet_status;
 }
 
 // Create new packet_status_array. Instead of changing length of array, simply set last elements of array to true if num_packets < GROUP_SIZE
-bool* initialize_packet_status_arr(int num_packets) {
-   bool* packets_status;
-   packets_status = malloc(sizeof(bool)*GROUP_SIZE);
+packet_t initialize_packet_status_arr(int num_packets) {
+   packet_t status;
 
-   for (int i = 0; i < num_packets; i++) {
-      packets_status[i] = false;
+   status.len = num_packets;
+   for (int i = 0; i < 4; i++) {
+      status.data[i] = 0;
    }
 
-   for (int i = num_packets; i < GROUP_SIZE; i++) {
-      packets_status[i] = true;
+   return status;
+}
+
+// Count number of missing_packets (false elements in packets_status array)
+int count_missing_packets(packet_t status) {
+   bool* missing_packets_bool_arr = packet_to_bool(status);
+   return count_missing_packets_bool_arr(missing_packets_bool_arr, status.len);
+}
+
+// Count number of missing_packets in a bool arr
+int count_missing_packets_bool_arr(bool* packets_status, int length) {
+   int missing_packets = 0;
+
+   for (int i = 0; i < length; i++) {
+      if (packets_status[i] == false) {
+         missing_packets++;
+      }
    }
 
-   return packets_status;
+   return missing_packets;
 }
 
 // Convert bool* array to char* so it can be sent as a packet
-char* bool_to_char(bool* bool_array, int length) {
-   char* char_array = malloc(sizeof(char)*GROUP_SIZE + 1); // +1 for null terminator (if needed)
-   
-   if (char_array == NULL) {
-      //printf("Memory allocation failed\n");
-      return NULL;
+packet_t bool_to_packet(bool* bool_array, int length) {
+   packet_t status = initialize_packet_status_arr(length);
+
+   for (int i = 0; i < length; i++) {
+      if (bool_array) {
+         status.data[i / 8] |= (1 << (i % 8));
+      }
    }
 
-   // Convert each bool to a corresponding char
-   for (size_t i = 0; i < length; i++) {
-      char_array[i] = bool_array[i] ? '1' : '0'; // Use '1' for true and '0' for false
-   }
-
-   char_array[i+1] = '\0';
-
-   return char_array;
+   return status;
 }
 
 // Convert char* array back to bool* array once received
-bool* char_to_bool(char* char_array) {
-   bool* bool_array = malloc(sizeof(bool)*GROUP_SIZE); // +1 for null terminator (if needed)
+bool* packet_to_bool(packet_t status) {
+   bool* bool_array = malloc(sizeof(bool)*GROUP_SIZE);
    
    if (bool_array == NULL) {
-      //printf("Memory allocation failed\n");
       return NULL;
    }
 
     // Convert each bool to a corresponding char
-   for (int i = 0; i < GROUP_SIZE; i++) {
-      if (char_array[i] == '\0') {
-         break;
-      }
-
-      bool_array[i] = (char_array[i] == '1'); // Use '1' for true and '0' for false
+   for (int i = 0; i < status.len; i++) {
+      bool_array[i] = (status.data[i / 8] & (1 << (i % 8)) == 1);
    }
 
    return bool_array;
 }
 
-bool add_data_to_packet(char* data, int data_size, struct packetStruct *packet) {
-   (*packet).packet_size = data_size;
-   (*packet).chunk = malloc(((*packet).packet_size + 1) * sizeof(char));
+uint8_t* string_to_uint8_t(const char* str) {
+   uint8_t* to_return = malloc(strlen(str) * sizeof(uint8_t));
 
-   if ((*packet).chunk == NULL) {
-      return false;
+   for (int i = 0; i < strlen(str); i++) {
+      to_return[i] = (uint8_t)(str[i]);
    }
 
-   memcpy(packet->chunk, data, data_size);
-   
-   packet->chunk[data_size] = '\0'; // Null-terminate for safety
+   return to_return;
+}
+
+enum packet_type check_packet_type(packet_t pkt) {
+   uint8_t* ACKNOWLEDGEMENT = string_to_uint8_t(SEND_ACK);
+   uint8_t* ABORT_TRANSFER = string_to_uint8_t(ABORT_FILE_TRANSFER);
+
+   if (memcmp(pkt.data, ACKNOWLEDGEMENT, pkt.len) == 0) {
+      return ACK;
+   }
+
+   if (memcmp(pkt.data, ABORT_TRANSFER, pkt.len) == 0) {
+      return ABORT;
+   }
+
+   return DATA;
+}
+
+bool add_data_to_packet(uint8_t* data, int data_size, packet_t *packet) {
+   packet->len = data_size;
+
+   for (int i = 0; i < data_size; i++) {
+      packet->data[i] = data[i];
+   }
 
    return true;
 }
@@ -150,7 +128,7 @@ bool receive_file(char* local_path, slate_t slate) {
    int num_packets_to_receive = min(num_packets, GROUP_SIZE);
 
    // As packets are received, elements of array are set to true
-   bool* packets_status = initialize_packet_status_arr(num_packets_to_receive);
+   bool* packet_status_arr = initialize_packet_status_bool_arr(num_packets_to_receive);
 
    int n_groups = 0;
    int consecutive_bad_packets = 0;
@@ -167,30 +145,30 @@ bool receive_file(char* local_path, slate_t slate) {
 
    // Expand file preemptively
    for (int i = 0; i < file_size / sizeof(ZERO_CHUNK); i++) {
-      fwrite(ZERO_CHUNK, sizeof(unsigned char), sizeof(ZERO_CHUNK), fptr); 
+      fwrite(ZERO_CHUNK, sizeof(uint8_t), sizeof(ZERO_CHUNK), fptr); 
    }
 
    for (int i = 0; i < file_size % sizeof(ZERO_CHUNK); i++) {
-      fwrite(ZERO, sizeof(unsigned char), 1, fptr);
+      fwrite(ZERO, sizeof(uint8_t), 1, fptr);
    }
 
    fflush(fptr);
 
    // Start receiving packets
    while (consecutive_bad_packets < MAX_BAD_PACKETS) {
-      struct packetStruct packet;
+      packet_t packet;
 
-      char* data = malloc(sizeof(char) * (CHUNK_SIZE));
+      uint8_t* data = malloc(sizeof(uint8_t) * (CHUNK_SIZE));
 
       queue_try_remove(slate.rx_queue, data);
 
       add_data_to_packet(data, CHUNK_SIZE, &packet);
 
       free(data);
-      //struct packetStruct packet = FTP.ptp.receive_packet(timeout=10);
+      //packet_t packet = FTP.ptp.receive_packet(timeout=10);
 
       // Bad packet
-      if (packet.chunk == NULL) {
+      if (packet.data == NULL) {
          consecutive_bad_packets++;
          //printf("Received a bad packet! Consecutive bad packets at: %d", consecutive_bad_packets);
          continue;
@@ -199,29 +177,21 @@ bool receive_file(char* local_path, slate_t slate) {
       // Packet received successfully
       consecutive_bad_packets = 0;
 
-      int seq_num = packet.seq_num;
-      char* data = packet.chunk;
-
-      packets_status[seq_num] = true;
+      packet_status_arr[packet.seq] = true;
 
       //printf("Received packet: %d!", seq_num);
 
       // If packet tells us to abort_file_transfer
-      if (strcmp(data, &ABORT_FILE_TRANSFER[0]) == 0) {
+      if (check_packet_type(packet) == ABORT) {
          //printf("Aborting file transfer!");
          return false;
       }
 
       // Send acknowledgement of packets received
-      else if (strcmp(data, &SEND_ACK[0]) == 0) {
-         //printf("Sending ack...");
+      else if (check_packet_type(packet) == ACK) {
+         packet_t packets_status = bool_to_packet(packet_status_arr, num_packets_to_receive);
 
-         char* file_status = bool_to_char(packets_status, num_packets_to_receive);
-
-         // Send packets received
-         struct packetStruct packet;
-         add_data_to_packet(file_status, num_packets_to_receive, &packet);
-         queue_try_add(slate.tx_queue, packet.chunk);
+         queue_try_add(slate.tx_queue, packet.data);
 
          //FTP.cdh.send_response(packets_status);
 
@@ -244,10 +214,10 @@ bool receive_file(char* local_path, slate_t slate) {
 
             n_groups++;
 
-            free(packets_status);
+            free(packet_status_arr);
 
             // Reinitialize packets_status array
-            packets_status = initialize_packet_status_arr(num_packets_to_receive);
+            packet_status_arr = initialize_packet_status_bool_arr(num_packets_to_receive);
 
             //printf("Group %d successfully received", n_groups);
          }
@@ -257,7 +227,7 @@ bool receive_file(char* local_path, slate_t slate) {
       else {
          fseek(fptr, seq_num * CHUNK_SIZE + n_groups * CHUNK_SIZE * GROUP_SIZE, SEEK_SET);
 
-         fwrite(data, 1, CHUNK_SIZE, fptr);
+         fwrite(packet.data, sizeof(uint8_t), packet.len, fptr);
 
          fflush(fptr);
 
@@ -300,20 +270,20 @@ bool send_file(char* filename) {
       
       // Find this packet within the file, and obtain its data
       fseek(fptr, packet_number * CHUNK_SIZE, SEEK_SET);
-      char* data = malloc(sizeof(char) * CHUNK_SIZE);
-      fgets(data, CHUNK_SIZE, fptr);
+      uint8_t* data = malloc(sizeof(char) * CHUNK_SIZE);
+      fread(data, sizeof(uint8_t), CHUNK_SIZE, fptr);
 
       // Send this packet
-      struct packetStruct packet;
-      packet.seq_num = seq;
+      packet_t packet;
+      packet.seq = seq;
       add_data_to_packet(data, CHUNK_SIZE, &packet);
 
-      queue_try_add(slate.tx_queue, packet.chunk);
+      queue_try_add(slate.tx_queue, packet.data);
       //FTP.ptp.send_packet(data, seq);
 
       // If we reach the end of a group, send missing packets
       if (seq == GROUP_SIZE - 1) {
-         bool result = send_missing_packets(fptr, packet_number / GROUP_SIZE);
+         bool result = send_missing_packets(fptr, packet_number / GROUP_SIZE, slate);
 
          if (!result) {
             return false;
@@ -331,16 +301,16 @@ bool send_file(char* filename) {
 
       fseek(fptr, num_full_packets * CHUNK_SIZE, SEEK_SET);
 
-      char* data = malloc(sizeof(char)*last_packet_size);
+      uint8_t* data = malloc(sizeof(char)*last_packet_size);
 
-      fgets(data, last_packet_size, fptr); 
+      fread(data, sizeof(uint8_t), last_packet_size, fptr);
 
-      struct packetStruct packet;
-      packet.seq_num = seq;
+      packet_t packet;
+      packet.seq = seq;
       
       add_data_to_packet(data, last_packet_size, &packet);
 
-      queue_try_add(slate.tx_queue, packet.chunk);
+      queue_try_add(slate.tx_queue, packet.data);
 
       free(data);
 
@@ -365,12 +335,12 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
 
       // Packets status was not received
       if (missing_packets == NULL) {
-         struct packetStruct abort;
-         add_data_to_packet(ABORT_FILE_TRANSFER, strlen(ABORT_FILE_TRANSFER), &abort);
+         packet_t abort;
+         add_data_to_packet(string_to_uint8_t(ABORT_FILE_TRANSFER), strlen(ABORT_FILE_TRANSFER), &abort);
 
          //printf("Receiver not responding - aborting file transfer!");
 
-         queue_try_add(slate.tx_queue, abort.chunk);
+         queue_try_add(slate.tx_queue, abort.data);
 
          //FTP.ptp.send_packet(ABORT_FILE_TRANSFER);
 
@@ -378,7 +348,7 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
       }
 
       // No missing packets, we're done
-      if (count_missing_packets(missing_packets) == 0) {
+      if (count_missing_packets_bool_arr(missing_packets) == 0) {
          //printf("We have received this group successfully!");
          return true;
       }
@@ -394,8 +364,8 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
    
             fgets(data, CHUNK_SIZE, fptr);
 
-            struct packetStruct packet;
-            packet.seq_num = j;
+            packet_t packet;
+            packet.seq = j;
             add_data_to_packet(data, CHUNK_SIZE, &packet);
 
             //printf("Sending packet %d\n", j);
@@ -409,10 +379,10 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
 
    //printf("Packets are still missing - aborting file transfer!");
 
-   struct packetStruct abort;
-   add_data_to_packet(&ABORT_FILE_TRANSFER[0], strlen(ABORT_FILE_TRANSFER), &abort);
+   packet_t abort;
+   add_data_to_packet(string_to_uint8_t(ABORT_FILE_TRANSFER), strlen(ABORT_FILE_TRANSFER), &abort);
 
-   queue_try_add(slate.tx_queue, abort.chunk);
+   queue_try_add(slate.tx_queue, abort.data);
 
    return false;
 }
@@ -425,16 +395,16 @@ bool* request_missing_packets(slate_t slate) {
       //printf("Requesting missing packets");
 
       // Request an acknowledgement, which will send packets status
-      struct packetStruct ACK;
-      add_data_to_packet(SEND_ACK, strlen(SEND_ACK), &ACK;)
+      packet_t ACK;
+      add_data_to_packet(string_to_uint8_t(SEND_ACK), strlen(SEND_ACK), &ACK);
 
-      queue_try_add(slate.tx_queue, ACK.chunk);
+      queue_try_add(slate.tx_queue, ACK.data);
 
       // Receive packets status and convert to bool
-      struct packetStruct missing_packets_char;
-      queue_try_remove(slate.rx_queue, missing_packets_char.chunk);
+      packet_t missing_packets_pkt;
+      queue_try_remove(slate.rx_queue, missing_packets_pkt.data);
 
-      bool* missing_packets = char_to_bool(missing_packets_char.chunk);
+      bool* missing_packets = packet_to_bool(missing_packets_pkt);
 
       if (missing_packets != NULL) {
          //printf("Recever is missing packets!");
