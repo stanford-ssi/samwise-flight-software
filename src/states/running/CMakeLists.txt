@@ -9,6 +9,7 @@ target_link_libraries(running_state PUBLIC
   radio_task
   command_task
   beacon_task
+  watchdog_task
 )
 
 # Specify directories with relevant header files
