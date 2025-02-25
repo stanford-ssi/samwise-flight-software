@@ -22,7 +22,8 @@ int main()
     printf("Starting beacon test");
     mock_slate(&slate);
     beacon_task_init(&slate);
-    printf("Beacon Initialized.\nMocked current time: %d\n", slate.time_in_current_state_ms);
+    printf("Beacon Initialized.\nMocked current time: %d\n",
+           slate.time_in_current_state_ms);
     beacon_task_dispatch(&slate);
     return 0;
 }
