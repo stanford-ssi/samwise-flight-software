@@ -1,5 +1,6 @@
 #include "diagnostics_task.h"
 #include "macros.h"
+#include "drivers/adm1176/adm1176.h"
 #ifdef BRINGUP
 
 /**
@@ -11,15 +12,25 @@ static bool reserved_addr(uint8_t addr)
     return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
 }
 
+// Add power monitor instance
+static adm1176_t power_monitor;
+
 void diagnostics_task_init(slate_t *slate)
 {
     slate->loop_counter = 0;
     LOG_INFO("Scan task initialized I2C...");
+
+    // Initialize power monitor
+    power_monitor = adm1176_mk(
+        SAMWISE_POWER_MONITOR_I2C,
+        ADM1176_I2C_ADDR,
+        ADM1176_DEFAULT_SENSE_RESISTOR,
+        ADM1176_DEFAULT_VOLTAGE_RANGE
+    );
 }
 
 void diagnostics_task_dispatch(slate_t *slate)
 {
-
     slate->loop_counter++;
     LOG_INFO("Loop #%d", slate->loop_counter);
 
@@ -29,6 +40,13 @@ void diagnostics_task_dispatch(slate_t *slate)
     char id_str[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
     pico_get_unique_board_id_string(id_str, sizeof(id_str));
     LOG_INFO("Chip ID: %s", id_str);
+
+    /*
+     * Power Monitor
+     */
+    float voltage = adm1176_get_voltage(&power_monitor);
+    float current = adm1176_get_current(&power_monitor);
+    LOG_INFO("Power Monitor - Voltage: %.3fV, Current: %.3fA", voltage, current);
 
     /*
      * I2C
