@@ -25,7 +25,6 @@ static bool init_gpio_pins()
     gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SAMWISE_POWER_MONITOR_SCL_PIN, GPIO_FUNC_I2C);
 
-    
 #endif
 
 #ifdef BRINGUP

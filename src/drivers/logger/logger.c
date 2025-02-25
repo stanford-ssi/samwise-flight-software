@@ -1,7 +1,8 @@
 #include "logger.h"
 
 // Track enabled sinks using bitwise OR
-static uint8_t enabled_sinks = LOG_SINK_TEST | LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB;
+static uint8_t enabled_sinks =
+    LOG_SINK_TEST | LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB;
 
 // Initialize logger system
 void logger_init(void)
@@ -10,11 +11,10 @@ void logger_init(void)
 #ifdef TEST
     // idk do something?
 #else
-    
+
     // TODO: Initialize flash logging when ready
     // TODO: Initialize disk logging when ready
 #endif
-  
 }
 
 // Enable/disable specific sinks

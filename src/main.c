@@ -19,7 +19,7 @@
  */
 int main()
 {
-    stdio_usb_init();  
+    stdio_usb_init();
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.

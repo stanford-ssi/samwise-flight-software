@@ -6,8 +6,8 @@
 
 #include "print_task.h"
 
-#include "pins.h"
 #include "hardware/gpio.h"
+#include "pins.h"
 
 static uint32_t count = 0;
 

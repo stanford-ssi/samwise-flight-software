@@ -50,13 +50,15 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
                 ##__VA_ARGS__)
 #else
 #define LOG_DEBUG(fmt, ...)                                                    \
-    log_message(LOG_LEVEL_DEBUG, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,               \
+    log_message(LOG_LEVEL_DEBUG,                                               \
+                LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,                 \
                 "[DEBUG] " fmt "\n", ##__VA_ARGS__)
 #define LOG_INFO(fmt, ...)                                                     \
-    log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,                \
+    log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB, \
                 "[INFO] " fmt "\n", ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...)                                                    \
-    log_message(LOG_LEVEL_ERROR, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,               \
+    log_message(LOG_LEVEL_ERROR,                                               \
+                LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,                 \
                 "[ERROR] " fmt "\n", ##__VA_ARGS__)
 #endif
 
@@ -91,7 +93,6 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
 #else
 #define DEBUG_ASSERT(condition) ASSERT(condition, message)
 #endif
-
 
 // Initialize the logger
 void logger_init(void);

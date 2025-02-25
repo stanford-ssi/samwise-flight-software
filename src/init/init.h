@@ -12,9 +12,9 @@
 #include "pins.h"
 #include "slate.h"
 
-#include "rfm9x.h"
 #include "logger.h"
 #include "onboard_led.h"
+#include "rfm9x.h"
 #include "scheduler.h"
 
 bool init(slate_t *slate);
