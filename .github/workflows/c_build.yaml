@@ -15,8 +15,8 @@ jobs:
   Build:
     # Run on one of Joseph's self hosted runners
     # TODO: The next satellite should NOT inherit this!
-    runs-on: [self-hosted, linux, x64]
-    # runs-on: ubuntu-latest
+    # runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4

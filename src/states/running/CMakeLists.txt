@@ -8,6 +8,7 @@ target_link_libraries(running_state PUBLIC
   blink_task
   radio_task
   command_task
+  beacon_task
 )
 
 # Specify directories with relevant header files
