@@ -24,6 +24,7 @@ static bool init_gpio_pins()
     i2c_init(SAMWISE_POWER_MONITOR_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SAMWISE_POWER_MONITOR_SCL_PIN, GPIO_FUNC_I2C);
+
 #endif
 
 #ifdef BRINGUP
@@ -37,6 +38,8 @@ static bool init_drivers(slate_t *slate)
 {
     slate->onboard_led = onboard_led_mk();
     onboard_led_init(&slate->onboard_led);
+
+    logger_init();
 
     slate->radio = rfm9x_mk();
 #ifdef BRINGUP
@@ -74,6 +77,9 @@ static bool init_drivers(slate_t *slate)
  */
 bool init(slate_t *slate)
 {
+
+    gpio_init(SAMWISE_WATCHDOG_FEED_PIN);
+    gpio_set_dir(SAMWISE_WATCHDOG_FEED_PIN, GPIO_OUT);
     /*
      * Initialize gpio pins
      */
