@@ -22,10 +22,11 @@ typedef enum
 } LOG_LEVEL;
 
 // Output sinks as bit flags
-#define LOG_SINK_NONE 0b000
-#define LOG_SINK_FLASH 0b100
-#define LOG_SINK_DISK 0b010
-#define LOG_SINK_TEST 0b001
+#define LOG_SINK_NONE (0)
+#define LOG_SINK_FLASH (1)
+#define LOG_SINK_DISK (2)
+#define LOG_SINK_TEST (3)
+#define LOG_SINK_USB (4)
 
 /* Single main logging function
  * Parameters:
@@ -49,13 +50,13 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
                 ##__VA_ARGS__)
 #else
 #define LOG_DEBUG(fmt, ...)                                                    \
-    log_message(LOG_LEVEL_DEBUG, LOG_SINK_FLASH | LOG_SINK_DISK,               \
+    log_message(LOG_LEVEL_DEBUG, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,               \
                 "[DEBUG] " fmt "\n", ##__VA_ARGS__)
 #define LOG_INFO(fmt, ...)                                                     \
-    log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK,                \
+    log_message(LOG_LEVEL_INFO, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,                \
                 "[INFO] " fmt "\n", ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...)                                                    \
-    log_message(LOG_LEVEL_ERROR, LOG_SINK_FLASH | LOG_SINK_DISK,               \
+    log_message(LOG_LEVEL_ERROR, LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB,               \
                 "[ERROR] " fmt "\n", ##__VA_ARGS__)
 #endif
 

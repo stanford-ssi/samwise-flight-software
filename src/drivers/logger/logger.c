@@ -1,17 +1,20 @@
 #include "logger.h"
 
 // Track enabled sinks using bitwise OR
-static uint8_t enabled_sinks = LOG_SINK_TEST | LOG_SINK_FLASH | LOG_SINK_DISK;
+static uint8_t enabled_sinks = LOG_SINK_TEST | LOG_SINK_FLASH | LOG_SINK_DISK | LOG_SINK_USB;
 
 // Initialize logger system
 void logger_init(void)
 {
 // Initialize hardware/drivers for FLASH/DISK if needed
-#ifndef TEST
+#ifdef TEST
+    // idk do something?
+#else
+    
     // TODO: Initialize flash logging when ready
     // TODO: Initialize disk logging when ready
 #endif
-    stdio_init_all();
+  
 }
 
 // Enable/disable specific sinks
@@ -46,7 +49,9 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...)
     va_end(args);
 
     // Output to each enabled sink
-    if (sink_mask & LOG_SINK_TEST)
+
+    // Both USB & testing use printf
+    if (sink_mask & LOG_SINK_TEST || sink_mask & LOG_SINK_USB)
     {
         printf("%s", buffer);
     }

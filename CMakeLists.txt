@@ -41,7 +41,7 @@ include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 
 set(TEST OFF)
 
-if(DEFINED TEST)
+if(TEST)
   add_definitions(-DTEST=1)
 else()
   add_definitions(-DTEST=0)

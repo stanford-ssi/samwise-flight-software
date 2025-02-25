@@ -19,6 +19,7 @@
  */
 int main()
 {
+    stdio_usb_init();  
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
@@ -31,8 +32,8 @@ int main()
     /*
      * Initialize everything.
      */
-    LOG_INFO("main: Slate uses %d bytes", sizeof(slate));
-    LOG_INFO("main: Initializing everything...");
+    LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
+    LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
@@ -50,7 +51,6 @@ int main()
 
     while (true)
     {
-        sleep_ms(100);
         sched_dispatch(&slate);
     }
 
