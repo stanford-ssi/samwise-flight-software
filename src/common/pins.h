@@ -18,6 +18,8 @@
 #define SAMWISE_RF_CS_PIN (20)
 #define SAMWISE_RF_D0_PIN (28)
 
+#define SAMWISE_WATCHDOG_FEED_PIN (6)
+
 #else
 
 /*
