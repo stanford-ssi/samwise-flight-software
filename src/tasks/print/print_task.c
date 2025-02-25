@@ -6,6 +6,8 @@
 
 #include "print_task.h"
 
+static uint32_t count = 0;
+
 void print_task_init(slate_t *slate)
 {
     LOG_INFO("Test task is initializing...");
@@ -13,7 +15,8 @@ void print_task_init(slate_t *slate)
 
 void print_task_dispatch(slate_t *slate)
 {
-    LOG_INFO("Test task is dispatching...");
+    LOG_INFO("Test task is dispatching... %d", count);
+    count++;
 }
 
 sched_task_t print_task = {.name = "print",

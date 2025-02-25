@@ -51,14 +51,14 @@ void sched_init(slate_t *slate)
         }
     }
 
-    LOG_INFO("sched: Enumerated %d tasks", n_tasks);
+    LOG_DEBUG("sched: Enumerated %d tasks", n_tasks);
 
     /*
      * Initialize all tasks.
      */
     for (size_t i = 0; i < n_tasks; i++)
     {
-        LOG_INFO("sched: Initializing task %s", all_tasks[i]->name);
+        LOG_DEBUG("sched: Initializing task %s", all_tasks[i]->name);
         all_tasks[i]->task_init(slate);
     }
 
@@ -118,7 +118,7 @@ void sched_dispatch(slate_t *slate)
     sched_state_t *const next_state = current_state_info->get_next_state(slate);
     if (next_state != current_state_info)
     {
-        LOG_INFO("sched: Transitioning to state %s", next_state->name);
+        LOG_DEBUG("sched: Transitioning to state %s", next_state->name);
 
         slate->current_state = next_state;
         slate->entered_current_state_time = get_absolute_time();
