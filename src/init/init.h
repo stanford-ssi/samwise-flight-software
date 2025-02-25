@@ -14,8 +14,8 @@
 
 #include "logger.h"
 #include "onboard_led.h"
-#include "watchdog.h"
 #include "rfm9x.h"
 #include "scheduler.h"
+#include "watchdog.h"
 
 bool init(slate_t *slate);

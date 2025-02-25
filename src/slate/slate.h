@@ -17,9 +17,9 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
-#include "watchdog.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
+#include "watchdog.h"
 
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304

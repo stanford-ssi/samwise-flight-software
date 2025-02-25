@@ -1,7 +1,7 @@
 #pragma once
 #include "diagnostics_task.h"
-#include "watchdog_task.h"
 #include "macros.h"
+#include "watchdog_task.h"
 
 #ifdef BRINGUP
 

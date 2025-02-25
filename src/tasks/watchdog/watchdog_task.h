@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "slate.h"
 #include "macros.h"
 #include "pico/stdlib.h"
+#include "slate.h"
 
 void watchdog_task_init(slate_t *slate);
 void watchdog_task_dispatch(slate_t *slate);
