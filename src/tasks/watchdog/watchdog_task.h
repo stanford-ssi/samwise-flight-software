@@ -8,9 +8,10 @@
 #pragma once
 
 #include "slate.h"
-#include "state_machine/states/states.h"
+#include "macros.h"
+#include "pico/stdlib.h"
 
 void watchdog_task_init(slate_t *slate);
 void watchdog_task_dispatch(slate_t *slate);
 
-sched_task_t watchdog_task;
+extern sched_task_t watchdog_task;

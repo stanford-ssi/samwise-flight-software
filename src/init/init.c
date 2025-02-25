@@ -39,6 +39,9 @@ static bool init_drivers(slate_t *slate)
     slate->onboard_led = onboard_led_mk();
     onboard_led_init(&slate->onboard_led);
 
+    slate->watchdog = watchdog_mk();
+    watchdog_init(&slate->watchdog);
+
     logger_init();
 
     slate->radio = rfm9x_mk();

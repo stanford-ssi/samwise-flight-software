@@ -17,6 +17,7 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+#include "watchdog.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 
@@ -38,6 +39,11 @@ typedef struct samwise_slate
     sched_state_t *current_state;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
+
+    /*
+     * Watchdog
+     */
+    watchdog_t watchdog;
 
     /*
      * LED
