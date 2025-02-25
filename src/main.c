@@ -19,7 +19,10 @@
  */
 int main()
 {
-    stdio_usb_init();
+  // For some reason this CANNOT be done in the logger
+#ifndef TEST
+  stdio_usb_init();
+#ndif
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
