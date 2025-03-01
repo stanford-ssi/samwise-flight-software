@@ -7,11 +7,11 @@
  */
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 #include "pico/stdlib.h"
+#include <stdint.h>
+#include <stdio.h>
 
 /**
  * @brief Structure to persistently store reboot count and initialization
