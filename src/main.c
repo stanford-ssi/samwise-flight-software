@@ -13,6 +13,8 @@
 #include "scheduler.h"
 #include "slate.h"
 
+#include "drivers/burn_wire.h"
+
 /**
  * Main code entry point.
  *
@@ -55,11 +57,17 @@ int main()
     /*
      * Go state machine!
      */
-    LOG_INFO("main: Dispatching the state machine...");
+    // LOG_INFO("main: Dispatching the state machine...");
+
+    // // while (true)
+    // // {
+    // //     sched_dispatch(&slate);
+    // // }
 
     while (true)
     {
-        sched_dispatch(&slate);
+        sleep_ms(10000);
+        brun_wire_activate(&slate, 500, 16, true, false);
     }
 
     /*

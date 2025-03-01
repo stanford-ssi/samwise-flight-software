@@ -10,6 +10,8 @@
 
 #include "init.h"
 
+#include "drivers/burn_wire.h"
+
 /**
  * Initialize all gpio pins to their default states.
  *
@@ -70,7 +72,10 @@ static bool init_drivers(slate_t *slate)
     rfm9x_init(&slate->radio);
 #endif
 
-    return true;
+    // Initialize burn wire
+    burn_wire_init(slate_t * slate)
+
+        return true;
 }
 
 /**
