@@ -11,7 +11,7 @@ void logger_init(void)
 #ifdef TEST
     // idk do something?
 #else
-
+    stdio_usb_init();
     // TODO: Initialize flash logging when ready
     // TODO: Initialize disk logging when ready
 #endif
