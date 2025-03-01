@@ -1,3 +1,6 @@
 [submodule "pico-sdk"]
 	path = pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk
+[submodule "src/drivers/sd-card/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico"]
+	path = src/drivers/sd-card/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico
+	url = git@github.com:carlk3/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico.git
