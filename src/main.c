@@ -12,7 +12,7 @@
 #include "scheduler.h"
 #include "slate.h"
 
-#include "drivers/burn_wire.h"
+#include "burn_wire.h"
 
 /**
  * Main code entry point.
@@ -62,7 +62,7 @@ int main()
     while (true)
     {
         sleep_ms(10000);
-        brun_wire_activate(&slate, 500, 16, true, false);
+        burn_wire_activate(&slate, 500, 16, true, false);
     }
 
     /*

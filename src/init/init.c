@@ -9,7 +9,7 @@
 
 #include "init.h"
 
-#include "drivers/burn_wire.h"
+#include "burn_wire.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -72,9 +72,9 @@ static bool init_drivers(slate_t *slate)
 #endif
 
     // Initialize burn wire
-    burn_wire_init(slate_t * slate)
+    burn_wire_init(slate);
 
-        return true;
+    return true;
 }
 
 /**
