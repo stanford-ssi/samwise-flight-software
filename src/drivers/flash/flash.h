@@ -5,12 +5,13 @@
  * This file defines types and global declarations for flash and data structure
  * persistence.
  */
-#ifndef FLASH_H
-#define FLASH_H
+#pragma once
 
+#include <stdio.h>
 #include <stdint.h>
-
-#define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
+#include "hardware/flash.h"
+#include "hardware/sync.h"
+#include "pico/stdlib.h"
 
 /**
  * @brief Structure to persistently store reboot count and initialization
@@ -31,5 +32,3 @@ persistent_data_t *init_persistent_data(void);
 
 void increment_reboot_counter();
 uint32_t get_reboot_counter();
-
-#endif // FLASH_H

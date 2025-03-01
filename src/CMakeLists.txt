@@ -22,6 +22,7 @@ target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
   pico_unique_id pico_stdlib)
 
 # Samwise
-target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger)
+target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
+  flash)
 
 pico_add_extra_outputs(samwise)

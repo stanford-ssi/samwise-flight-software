@@ -5,13 +5,13 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
-#include "drivers/flash.h"
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
+#include "flash.h"
 
 /**
  * Main code entry point.
@@ -40,7 +40,7 @@ int main()
      */
     persistent_data_t *data = init_persistent_data();
     increment_reboot_counter();
-    printf("Current reboot count: %d\n", data->reboot_counter);
+    LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
 
     /*
      * Initialize everything.

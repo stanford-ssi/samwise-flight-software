@@ -5,13 +5,8 @@
  * This file contains methods to write to flash, and read and store persistent
  * data between reboots.
  */
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "flash.h"
-#include "hardware/flash.h"
-#include "hardware/sync.h"
-#include "pico/stdlib.h"
 
 #define FLASH_TARGET_OFFSET (256 * 1024)
 #define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
