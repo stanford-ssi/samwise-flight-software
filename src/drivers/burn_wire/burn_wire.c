@@ -4,9 +4,9 @@
  */
 
 #include "burn_wire.h"
-#include "slate.h"
 
 #include "hardware/pwm.h"
+#include "pico/stdlib.h"
 
 static uint burn_a_slice_num;
 static uint burn_b_slice_num;
@@ -17,7 +17,7 @@ void burn_wire_init(slate_t *slate)
 {
     // Initialize all pins
     gpio_init(SAMWISE_ENAB_BURN_A);
-    gpio_set_dir(SAMWISE_ENAB_BURN_A, GPIO_PWM);
+    gpio_set_dir(SAMWISE_ENAB_BURN_A, GPIO_FUNC_PWM);
     burn_a_slice_num = pwm_gpio_to_slice_num(SAMWISE_ENAB_BURN_A);
 
     pwm_set_wrap(burn_a_slice_num, BURN_WIRE_PWM_WRAP);
@@ -25,7 +25,7 @@ void burn_wire_init(slate_t *slate)
     pwm_set_enabled(burn_a_slice_num, true);
 
     gpio_init(SAMWISE_ENAB_BURN_B);
-    gpio_set_dir(SAMWISE_ENAB_BURN_B, GPIO_PWM);
+    gpio_set_dir(SAMWISE_ENAB_BURN_B, GPIO_FUNC_PWM);
     gpio_put(SAMWISE_ENAB_BURN_B, 0);
     burn_b_slice_num = pwm_gpio_to_slice_num(SAMWISE_ENAB_BURN_B);
 
