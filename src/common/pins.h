@@ -19,7 +19,7 @@
 #define SAMWISE_RF_D0_PIN (28)
 
 // Random unused pin, since on the PICO we don't have a watchdog attached.
-#define SAMWISE_WATCHDOG_FEED_PIN (29)
+#define SAMWISE_WATCHDOG_FEED_PIN (6)
 
 #else
 

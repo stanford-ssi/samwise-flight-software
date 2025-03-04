@@ -1,3 +1,4 @@
+
 /**
  * @author  Niklas Vainio, Joseph Shetaye
  * @date    2024-08-27
@@ -38,6 +39,9 @@ static bool init_drivers(slate_t *slate)
 {
     slate->onboard_led = onboard_led_mk();
     onboard_led_init(&slate->onboard_led);
+
+    slate->watchdog = watchdog_mk();
+    watchdog_init(&slate->watchdog);
 
     logger_init();
 

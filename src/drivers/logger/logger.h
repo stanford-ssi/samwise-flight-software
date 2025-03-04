@@ -9,6 +9,7 @@
 #pragma once
 
 #include "pico/printf.h"
+#include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "pico/types.h"
