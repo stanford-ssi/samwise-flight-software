@@ -11,9 +11,10 @@
 // Total of 64 chars reserved for name field.
 //   - 1 byte for initial length
 #define MAX_STR_LEN 63
+#define MAX_DATA_SIZE 252
 
 // Statically allocat a local byte array to serialize the slate into.
-uint8_t tmp_data[252];
+uint8_t tmp_data[MAX_DATA_SIZE];
 
 // Write a single uint64_t into a byte array from a starting byte
 // and return the new length.
@@ -90,6 +91,12 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
 
     // [92 + 4 = 96] Write the current tx_packets
     pkt_len = write_uint32(data, pkt_len, slate->tx_packets);
+
+    if (pkt_len > MAX_DATA_SIZE)
+    {
+        LOG_ERROR("Serialized data too long: %d", pkt_len);
+        return 0;
+    }
 
     return pkt_len;
 }
