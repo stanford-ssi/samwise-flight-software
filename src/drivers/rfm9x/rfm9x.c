@@ -12,7 +12,7 @@ rfm9x_t rfm9x_mk()
                  .rx_irq = NULL,
                  .spi = SPI_INSTANCE(SAMWISE_RF_SPI),
 #ifndef PICO
-                 .rf_reg_pin = SAMWISE_RF_REGULATOR_PIN,
+                 .enable_pin = SAMWISE_RF_ENABLE_PIN,
 #endif
                  /*
                   * Default values
@@ -23,6 +23,11 @@ rfm9x_t rfm9x_mk()
                  .debug = 0};
     return r;
 }
+
+void rfm9x_set_enable(rfm9x_t *r, bool enable) {
+  
+}
+
 
 /*
  * RFM9X SPI transaction code.
@@ -613,15 +618,9 @@ void rfm9x_init(rfm9x_t *r)
 
 #ifndef PICO
     // Setup RF regulator
-    gpio_init(r->rf_reg_pin);
-    gpio_set_dir(r->rf_reg_pin, GPIO_OUT);
-
-#ifdef BRINGUP
-    gpio_put(r->rf_reg_pin, 0);
-#else
-    gpio_put(r->rf_reg_pin, 1);
-#endif
-
+    gpio_init(r->enable_pin);
+    gpio_set_dir(r->enable_pin, GPIO_OUT);
+    gpio_put(r->enable_pin, 0);
 #endif
 
     // Setup reset line
@@ -647,23 +646,41 @@ void rfm9x_init(rfm9x_t *r)
     gpio_set_dir(r->d0_pin, GPIO_IN);
     gpio_pull_down(r->d0_pin);
 
-    // Initialize SPI for the RFM9X
-    busy_wait_ms(10);
-
     // RFM9X.pdf 4.3 p75:
     // CPOL = 0, CPHA = 0 (mode 0)
     // MSB first
     spi_init(r->spi, RFM9X_SPI_BAUDRATE);
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
+    // Setup interrupt
+    gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
+                                       &rfm9x_interrupt_received);
+}
+
+void rfm9x_power_up(rfm9x_t *r) {
+#ifndef PICO
+#ifdef BRINGUP
+    return;
+#else
+    gpio_put(r->enable_pin, 1);
+#endif
+#endif
+
+    // Initialize SPI for the RFM9X
+    busy_wait_ms(10);
+
     // TODO: Reset the chip
     // rfm9x_reset(r);
 
     /*
-     * Calibrate the oscillator
+     * Switch to standby
      */
     rfm9x_set_mode(r, STANDBY_MODE);
     sleep_ms(10);
+    
+    /*
+     * Calibrate the oscillator
+     */
     rfm9x_trigger_osc_calibration(r);
     sleep_ms(1000); // 1 second
 
@@ -719,10 +736,14 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_set_lna_boost(r, 0b11);
     ASSERT(rfm9x_get_lna_boost(r) == 0b11);
+}
 
-    // Setup interrupt
-    gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
-                                       &rfm9x_interrupt_received);
+void rfm9x_power_down(rfm9x_t *r) {
+#ifndef PICO
+#ifndef BRINGUP
+	gpio_put(r->enable_pin, 0);
+#endif
+#endif
 }
 
 void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq)

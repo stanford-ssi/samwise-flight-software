@@ -95,6 +95,9 @@ void radio_task_init(slate_t *slate)
     rfm9x_set_tx_irq(&slate->radio, &tx_done);
     rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
+    // Power up!
+    rfm9x_power_up(&slate->radio);
+
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
 

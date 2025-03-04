@@ -44,7 +44,7 @@ typedef struct _rfm9x
     rfm9x_rx_irq rx_irq;
 
 #ifndef PICO
-    uint rf_reg_pin;
+    uint enable_pin;
 #endif
 
     spi_inst_t *spi;
@@ -117,6 +117,9 @@ void rfm9x_clear_interrupts(rfm9x_t *r);
 
 void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
+
+void rfm9x_power_up(rfm9x_t *r);
+void rfm9x_power_down(rfm9x_t *r);
 
 typedef enum
 {
