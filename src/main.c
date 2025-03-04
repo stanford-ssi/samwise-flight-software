@@ -57,17 +57,11 @@ int main()
     /*
      * Go state machine!
      */
-    // LOG_INFO("main: Dispatching the state machine...");
-
-    // // while (true)
-    // // {
-    // //     sched_dispatch(&slate);
-    // // }
+    LOG_INFO("main: Dispatching the state machine...");
 
     while (true)
     {
-        sleep_ms(10000);
-        burn_wire_activate(&slate, 500, 16, true, false);
+        sched_dispatch(&slate);
     }
 
     /*
