@@ -64,9 +64,6 @@ static bool init_drivers(slate_t *slate)
  */
 bool init(slate_t *slate)
 {
-
-    gpio_init(SAMWISE_WATCHDOG_FEED_PIN);
-    gpio_set_dir(SAMWISE_WATCHDOG_FEED_PIN, GPIO_OUT);
     /*
      * Initialize gpio pins
      */
