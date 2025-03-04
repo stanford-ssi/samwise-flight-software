@@ -49,6 +49,7 @@ typedef struct samwise_slate
      * LED
      */
     onboard_led_t onboard_led;
+    bool neopixel_is_on;
 
     /*
      * Command switch

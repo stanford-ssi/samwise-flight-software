@@ -11,6 +11,7 @@
 #include "init.h"
 
 #include "burn_wire.h"
+#include "neopixel.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -74,6 +75,7 @@ static bool init_drivers(slate_t *slate)
 
     // Initialize burn wire
     burn_wire_init(slate);
+    neopixel_init(SAMWISE_NEOPIXEL_PIN);
 
     return true;
 }
