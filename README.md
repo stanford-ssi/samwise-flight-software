@@ -18,7 +18,7 @@ this project has a few additional goals:
 * Clean code
 
 ## Building
-To build the code in this repo, enter the build folder with `cd build` (if you do not have one), and then run `cmake ..` followed by `make -j8`.
+To build the code in this repo, run `cmake -B build -DPROFILE=PICUBED-DEBUG` then `cmake --build build --parallel`.
 
 The following targets will be built:
 * `samwise_pico_debug`: pico exectuable

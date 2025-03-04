@@ -15,13 +15,13 @@ pico_set_program_name(samwise samwise)
 pico_set_program_version(samwise "0.1")
 
 # pico_enable_stdio_uart(samwise 0)
-pico_enable_stdio_usb(samwise 1)
 
 # Pico SDK
 target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
   pico_unique_id pico_stdlib)
 
 # Samwise
-target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger burn_wire)
+target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
+  flash)
 
 pico_add_extra_outputs(samwise)
