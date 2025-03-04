@@ -11,6 +11,7 @@
  * Statically allocate the slate.
  */
 slate_t slate;
+uint8_t tmp_data[252];
 
 void mock_slate(slate_t *slate)
 {
@@ -25,5 +26,9 @@ int main()
     printf("Beacon Initialized.\nMocked current time: %d\n",
            slate.time_in_current_state_ms);
     beacon_task_dispatch(&slate);
+    serialize_slate(&slate, tmp_data);
+    uint64_t time;
+    read_uint64(tmp_data, 0, time);
+    printf("Serialized time: %d\n", time);
     return 0;
 }
