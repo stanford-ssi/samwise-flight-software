@@ -54,7 +54,7 @@ size_t write_string(uint8_t *data, size_t pkt_len, const char *str)
         LOG_ERROR("String: %s too long to encode", str);
         return pkt_len;
     }
-    data[pkt_len++] = (uint8_t) str_len;
+    data[pkt_len++] = (uint8_t)str_len;
     for (size_t i = 0; i < str_len; ++i)
     {
         data[pkt_len++] = str[i];
