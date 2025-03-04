@@ -12,8 +12,6 @@
 #include "scheduler.h"
 #include "slate.h"
 
-#include "burn_wire.h"
-
 /**
  * Main code entry point.
  *
