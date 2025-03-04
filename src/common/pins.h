@@ -22,6 +22,12 @@
 // Random unused pin, since on the PICO we don't have a watchdog attached.
 #define SAMWISE_WATCHDOG_FEED_PIN (29)
 
+#define SAMWISE_ENAB_BURN_A (36)
+#define SAMWISE_BURN_A_PWM_CHANNEL (PWM_CHAN_A)
+#define SAMWISE_ENAB_BURN_B (35)
+#define SAMWISE_BURN_B_PWM_CHANNEL (PWM_CHAN_B)
+#define SAMWISE_BURN_RELAY (44)
+
 #else
 
 /*
