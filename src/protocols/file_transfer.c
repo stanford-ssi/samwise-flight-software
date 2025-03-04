@@ -94,12 +94,16 @@ enum packet_type check_packet_type(packet_t pkt) {
    uint8_t* ACKNOWLEDGEMENT = string_to_uint8_t(SEND_ACK);
    uint8_t* ABORT_TRANSFER = string_to_uint8_t(ABORT_FILE_TRANSFER);
 
-   if (memcmp(pkt.data, ACKNOWLEDGEMENT, pkt.len) == 0) {
-      return ACK;
+   if (pkt.len == strlen(SEND_ACK)) {
+      if (memcmp(pkt.data, ACKNOWLEDGEMENT, pkt.len) == 0) {
+         return ACK;
+      }
    }
 
-   if (memcmp(pkt.data, ABORT_TRANSFER, pkt.len) == 0) {
-      return ABORT;
+   if (pkt.len == strlen(ABORT_FILE_TRANSFER)) {
+      if (memcmp(pkt.data, ABORT_TRANSFER, pkt.len) == 0) {
+         return ABORT;
+      }
    }
 
    return DATA;
@@ -119,7 +123,8 @@ struct FileTransferProtocol FTP;
 
 // Receive a file
 bool receive_file(char* local_path, slate_t slate) {
-   struct responseStruct* response = FTP.cdh.receive_response(timeout=15);
+   //struct responseStruct* response = FTP.cdh.receive_response(timeout=15);
+   
    
    int num_packets = response->num_packets;
    int file_size = response->file_size;
@@ -160,7 +165,7 @@ bool receive_file(char* local_path, slate_t slate) {
 
       uint8_t* data = malloc(sizeof(uint8_t) * (CHUNK_SIZE));
 
-      queue_try_remove(slate.rx_queue, data);
+      queue_try_remove(&slate.receive_packet, &packet);
 
       add_data_to_packet(data, CHUNK_SIZE, &packet);
 
@@ -191,7 +196,7 @@ bool receive_file(char* local_path, slate_t slate) {
       else if (check_packet_type(packet) == ACK) {
          packet_t packets_status = bool_to_packet(packet_status_arr, num_packets_to_receive);
 
-         queue_try_add(slate.tx_queue, packet.data);
+         queue_try_add(&slate.send_packet, &packet);
 
          //FTP.cdh.send_response(packets_status);
 
@@ -278,7 +283,7 @@ bool send_file(char* filename) {
       packet.seq = seq;
       add_data_to_packet(data, CHUNK_SIZE, &packet);
 
-      queue_try_add(slate.tx_queue, packet.data);
+      queue_try_add(&slate.send_packet, packet.data);
       //FTP.ptp.send_packet(data, seq);
 
       // If we reach the end of a group, send missing packets
@@ -310,7 +315,7 @@ bool send_file(char* filename) {
       
       add_data_to_packet(data, last_packet_size, &packet);
 
-      queue_try_add(slate.tx_queue, packet.data);
+      queue_try_add(&slate.send_packet, &packet);
 
       free(data);
 
@@ -340,7 +345,7 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
 
          //printf("Receiver not responding - aborting file transfer!");
 
-         queue_try_add(slate.tx_queue, abort.data);
+         queue_try_add(&slate.send_packet, &abort);
 
          //FTP.ptp.send_packet(ABORT_FILE_TRANSFER);
 
@@ -370,7 +375,7 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
 
             //printf("Sending packet %d\n", j);
 
-            queue_try_add(slate.tx_queue, packet.chunk);
+            queue_try_add(&slate.send_packet, &packet);
             //FTP.ptp.send_packet(data);
             free(data);
          }
@@ -382,7 +387,7 @@ bool send_missing_packets(FILE* fptr, int cur_group, slate_t slate) {
    packet_t abort;
    add_data_to_packet(string_to_uint8_t(ABORT_FILE_TRANSFER), strlen(ABORT_FILE_TRANSFER), &abort);
 
-   queue_try_add(slate.tx_queue, abort.data);
+   queue_try_add(&slate.send_packet, &abort);
 
    return false;
 }
@@ -398,11 +403,11 @@ bool* request_missing_packets(slate_t slate) {
       packet_t ACK;
       add_data_to_packet(string_to_uint8_t(SEND_ACK), strlen(SEND_ACK), &ACK);
 
-      queue_try_add(slate.tx_queue, ACK.data);
+      queue_try_add(&slate.send_packet, &ACK);
 
       // Receive packets status and convert to bool
       packet_t missing_packets_pkt;
-      queue_try_remove(slate.rx_queue, missing_packets_pkt.data);
+      queue_try_remove(&slate.receive_packet, &missing_packets_pkt);
 
       bool* missing_packets = packet_to_bool(missing_packets_pkt);
 

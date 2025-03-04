@@ -4,7 +4,6 @@
 #include <string.h>
 #include "packet.h"
 
-
 int GROUP_SIZE = 32;       // Number of packets to send before the sender requests an ACK
 int MAX_ACK_RETRIES = 6;   // Number of times the sender will ask for an ACK before giving up
 int MAX_RESEND_CYCLES = 6; // Number of times the sender will resend missing packets before giving up
@@ -22,7 +21,7 @@ enum packet_type {
    ABORT
 };
 
-int CHUNK_SIZE = 250;
+int CHUNK_SIZE = 252;
 
 struct CDH {
 

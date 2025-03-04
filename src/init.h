@@ -10,6 +10,7 @@
 
 #include "macros.h"
 #include "pins.h"
-#include "slate.h"
+#include "scheduler/scheduler.h"
+
 
 bool init(slate_t *slate);

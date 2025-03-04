@@ -47,6 +47,10 @@ typedef struct samwise_slate
                         // from radio com
     queue_t task2_data;
 
+    queue_t receive_packet;
+    
+    queue_t send_packet;
+
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
     uint16_t num_uploaded_bytes;

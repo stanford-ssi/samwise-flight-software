@@ -27,3 +27,4 @@ typedef struct
     bool yes_no;
     uint16_t number;
 } TASK2_DATA;
+

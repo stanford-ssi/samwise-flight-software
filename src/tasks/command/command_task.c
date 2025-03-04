@@ -11,7 +11,7 @@ eg: #define COMMAND1_ID 1
 
 2. create or choose an existing data structure for this command. Define it in
 the packet.h file. eg: struct TASK1_DATA_STRUCT_FORMAT
-
+                                                                        
 3. create a queue in the slate.h file
 eg: queue_t task1_data;
 
@@ -22,7 +22,7 @@ eg: struct TASK1_DATA_STRUCT_FORMAT current_data_holder_task1;
 eg: queue_init(&slate->task1_data, sizeof(current_data_holder_task1),
 TASK1_QUEUE_LENGTH);
 
-*note the TASK1_QUEUE_LENGTH is the length of the queu, in other words
+*note the TASK1_QUEUE_LENGTH is the length of the queue, in other words
  how many calls for that command can be queued simultaniously*
 
 
@@ -56,11 +56,22 @@ const int TASK1_QUEUE_LENGTH = 32; // max queue length for task 1
 #define COMMAND1_ID 1
 #define COMMAND2_ID 2
 
+#define PACKET_SEND 3
+#define PACKET_RECEIVE 4
+
+#define SEND_FILE_INFO 5
+#define RECEIVE_FILE_INFO 
+
+const int PACKET_QUEUE_LENGTH = 32;
+
 // in the end, we should replace these with just the size of the structs for
 // each command, that way we don't need to create random structs just to get the
 // size.
 TASK1_DATA current_data_holder_task1;
 TASK2_DATA current_data_holder_task2;
+
+packet_t current_data_holder_send;
+packet_t current_data_holder_receive;
 
 /// @brief Initialize the command switch task
 /// @param slate Address of the slate
@@ -76,6 +87,11 @@ void command_task_init(slate_t *slate)
                TASK1_QUEUE_LENGTH);
     queue_init(&slate->task2_data, sizeof(current_data_holder_task2),
                TASK1_QUEUE_LENGTH);
+
+    queue_init(&slate->receive_packet, sizeof(current_data_holder_receive),
+                PACKET_QUEUE_LENGTH);
+    queue_init(&slate->send_packet, sizeof(current_data_holder_send),
+                PACKET_QUEUE_LENGTH);
 
     slate->num_uploaded_bytes =
         0; // Number of bytes currently uploaded to buffer
@@ -133,6 +149,21 @@ void command_task_dispatch(slate_t *slate)
                     LOG_INFO("struct 2: %i, %i", task.number, task.yes_no);
                 }
                 break;
+                case PACKET_SEND:
+                {
+                    packet_t task;
+                    uint16_t task_size = sizeof(task);
+                    queue_try_add(&slate->send_packet, &task); 
+                }
+                break;
+                case PACKET_RECEIVE:
+                {
+                    packet_t task;
+                    uint16_t task_size = sizeof(task);
+                    queue_try_add(&slate->receive_packet, &task); 
+                }
+                break;
+
                 default:
                     break;
             }
