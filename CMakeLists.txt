@@ -16,6 +16,8 @@ elseif(PROFILE STREQUAL "PICUBED-FLIGHT")
 elseif(PROFILE STREQUAL "PICUBED-BRINGUP")
   set(PICO_BOARD pico2)
   set(SAMWISE_DEFINES BRINGUP)
+elseif(PROFILE STREQUAL "TEST")
+  set(SAMWISE_DEFINES TEST)
 else()
   message(WARNING "Unrecognized build profile ${PROFILE}")
 endif()
@@ -38,14 +40,6 @@ set(toolchainVersion 13_2_Rel1)
 set(picotoolVersion 2.0.0)
 include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 # ====================================================================================
-
-set(TEST OFF)
-
-if(TEST)
-  add_definitions(-DTEST=1)
-else()
-  add_definitions(-DTEST=0)
-endif()
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico-sdk/pico_sdk_init.cmake)

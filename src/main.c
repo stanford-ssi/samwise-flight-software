@@ -5,6 +5,7 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "flash.h"
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
@@ -19,10 +20,6 @@
  */
 int main()
 {
-    // For some reason this CANNOT be done in the logger
-#ifndef TEST
-    stdio_usb_init();
-#endif
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
@@ -31,6 +28,14 @@ int main()
     {
         sleep_ms(5000);
     }
+
+    /*
+     * Initialize persistent data or load existing data if already in flash.
+     * The reboot counter is incremented each time this code runs.
+     */
+    persistent_data_t *data = init_persistent_data();
+    increment_reboot_counter();
+    LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
 
     /*
      * Initialize everything.
