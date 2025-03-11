@@ -16,8 +16,8 @@ static void tx_done()
     if (queue_try_remove(&s->tx_queue, &p))
     {
         uint8_t p_buf[p.len + 4];
-        p_buf[0] = p.dst;
-        p_buf[1] = p.src;
+        p_buf[0] = DST_ADDR;
+        p_buf[1] = SRC_ADDR;
         p_buf[2] = p.seq;
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
