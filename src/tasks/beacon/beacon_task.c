@@ -126,7 +126,7 @@ void beacon_task_dispatch(slate_t *slate)
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))
     {
-        LOG_INFO("Beacon pkt added to queue");
+      LOG_INFO("%d byte beacon pkt added to queue", pkt.len);
     }
     else
     {
