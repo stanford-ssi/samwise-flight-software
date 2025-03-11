@@ -27,6 +27,8 @@ static void tx_done()
 
         s->tx_packets++;
         s->tx_bytes += sizeof(p_buf);
+
+	rfm9x_transmit(&s->radio);
     }
     else
     {
@@ -111,8 +113,7 @@ void radio_task_dispatch(slate_t *slate)
 {
     // Switch to transmit mode if queue is not empty
     if (!queue_is_empty(&slate->tx_queue))
-    {
-        rfm9x_transmit(&slate->radio);
+    { 
         // Since the interrupt only fires when done transmitting the last
         // packet, we need to get it started manually
         tx_done();
