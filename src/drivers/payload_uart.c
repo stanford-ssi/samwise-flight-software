@@ -14,7 +14,7 @@
 #include "pins.h"
 #include "slate.h"
 
-#define PAYLOAD_UART_ID uart1 // Required to use pins 30 and 31 (see datasheet)
+#define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
 
 // UART parameters
 #define BAUD_RATE 115200
@@ -28,6 +28,7 @@
 #define SYN_RETRIES 3
 #define SYN_BYTE '$'
 #define SYN_COUNT 3
+#define START_TRIES 10
 #define START_BYTE '@'
 
 static slate_t *slate_for_irq; // Need to save to be accessible to IRQ
@@ -35,7 +36,6 @@ static slate_t *slate_for_irq; // Need to save to be accessible to IRQ
 // Note: The start byte ensures that desyncing does not happen.
 typedef struct
 {
-    uint8_t start_byte; //  NOTE: Little endian
     uint16_t length;   // NOTE: Little endian
     uint16_t seq_num;  // NOTE: Little endian
     uint32_t checksum; // NOTE: Little endian
@@ -150,8 +150,28 @@ static bool receive_syn(slate_t *slate)
     }
 }
 
-static bool start_byte_read(slate_t *slate){
+static bool receive_header_start(slate_t *slate){
+    uint8_t run_count = 0;
 
+    while (run_count < START_TRIES){
+        uint8_t received_byte;
+        uint16_t received = receive_into(slate, &received_byte, 1, 1000);
+
+        if (!received){
+            LOG_DEBUG("No bytes received!\n");
+            return false;
+        }
+
+        if (received_byte == START_BYTE){
+            return true;
+        }
+
+        LOG_DEBUG("Wrong byte received, rerunning to get start byte!\n");
+        run_count++;
+    }
+
+    LOG_DEBUG("Wait for start header timeout!\n");
+    return false;
 }
 
 static void send_ack()
@@ -265,12 +285,11 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
         LOG_DEBUG("Payload did not respond to sync!\n");
         return false;
     }
+        
+    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
 
     // Calculate the header
     packet_header_t header = compute_packet_header(packet, len, seq_num);
-
-    // Send the start byte for the header
-    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
 
     // Send header and receive ACK
     uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
@@ -307,8 +326,10 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     }
     send_ack();
 
-    // Wait until we receive a start byte
-    
+    // Just wait for a start byte before reading the header
+    if (!receive_header_start(slate)){
+        return 0;
+    }
 
     // Receive header
     packet_header_t header;
@@ -321,6 +342,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
         return 0;
     }
     send_ack();
+
 
     // Check header
     if (header.length > MAX_PACKET_LEN)
