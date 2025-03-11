@@ -791,19 +791,24 @@ uint32_t rfm9x_version(rfm9x_t *r)
 void rfm9x_transmit(rfm9x_t *r)
 {
     // we do not have an LNA
-    rfm9x_set_mode(r, TX_MODE);
     uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    dioValue = bits_set(dioValue, 6, 7, 0b00);
+    dioValue = bits_set(dioValue, 6, 7, 0b01);
     rfm9x_put8(r, _RH_RF95_REG_40_DIO_MAPPING1, dioValue);
+    rfm9x_set_mode(r, TX_MODE);
 }
 
 void rfm9x_listen(rfm9x_t *r)
 {
-    rfm9x_set_mode(r, RX_MODE);
     uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
     dioValue = bits_set(dioValue, 6, 7, 0b00);
     rfm9x_put8(r, _RH_RF95_REG_40_DIO_MAPPING1, dioValue);
+    rfm9x_set_mode(r, RX_MODE);
 }
+
+void rfm9x_standby(rfm9x_t *r) {
+    rfm9x_set_mode(r, STANDBY_MODE);
+}
+
 
 uint8_t rfm9x_tx_done(rfm9x_t *r)
 {
@@ -834,14 +839,18 @@ int rfm9x_await_rx(rfm9x_t *r)
 uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n)
 {
     uint8_t old_mode = rfm9x_get_mode(r);
-    rfm9x_set_mode(r, STANDBY_MODE);
+    if(old_mode != STANDBY_MODE) {
+      rfm9x_set_mode(r, STANDBY_MODE);
+    }
 
     rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
 
     rfm9x_put_buf(r, _RH_RF95_REG_00_FIFO, buf, n);
     rfm9x_put8(r, _RH_RF95_REG_22_PAYLOAD_LENGTH, n);
 
-    rfm9x_set_mode(r, old_mode);
+    if(old_mode != STANDBY_MODE) {
+      rfm9x_set_mode(r, old_mode);
+    }
     return 0;
 }
 
