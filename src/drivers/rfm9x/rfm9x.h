@@ -1,15 +1,7 @@
 #pragma once
 
-#include "hardware/resets.h"
 #include "hardware/spi.h"
-
 #include "pico/stdlib.h"
-#include "pico/time.h"
-
-#include "bit-support.h"
-#include "logger.h"
-#include "macros.h"
-#include "pins.h"
 
 #define PACKET_SIZE 256
 #define PAYLOAD_SIZE 251
@@ -28,9 +20,6 @@ typedef enum
     RX_MODE = 5,
 } rfm9x_mode_t;
 
-typedef void (*rfm9x_tx_irq)(void);
-typedef void (*rfm9x_rx_irq)(void);
-
 typedef struct _rfm9x
 {
     uint reset_pin;
@@ -38,15 +27,6 @@ typedef struct _rfm9x
     uint spi_rx_pin;
     uint spi_tx_pin;
     uint spi_clk_pin;
-    uint d0_pin;
-
-    rfm9x_tx_irq tx_irq;
-    rfm9x_rx_irq rx_irq;
-
-#ifndef PICO
-    uint rf_reg_pin;
-#endif
-
     spi_inst_t *spi;
     uint8_t seq; /* current sequence number */
     uint32_t high_power : 1, max_power : 1, debug : 1;
@@ -55,7 +35,8 @@ typedef struct _rfm9x
 /*
  * Creates an RFM9X helper struct. Uninitialized.
  */
-rfm9x_t rfm9x_mk();
+rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
+                 uint spi_rx_pin, uint spi_clk_pin);
 
 /*
  * Initializes an RFM9X radio.
@@ -71,16 +52,6 @@ uint32_t rfm9x_version(rfm9x_t *r);
 
 /*
  * Send a raw transmission from the RFM9X.
- *
- * r: the radio
- * data: the data to send
- * l: the length of the data. Must be less than `PAYLOAD_SIZE`
- * keep_listening: 0 to stop listening after sending, 1 to keep blocking
- * destination: radio to send it to. 255 is broadcast.
- * node: our address
- * identifier: Sequence number — if sending multiple packets, increment by one
- * per packet.
- * flags:
  */
 uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
                    uint8_t destination, uint8_t node, uint8_t identifier,
@@ -100,23 +71,7 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
  * Receive a transmission.
  */
 uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack,
-                      bool blocking_wait_for_packet);
-
-uint32_t rfm9x_version(rfm9x_t *r);
-
-void rfm9x_listen(rfm9x_t *r);
-void rfm9x_transmit(rfm9x_t *r);
-
-uint8_t rfm9x_tx_done(rfm9x_t *r);
-uint8_t rfm9x_rx_done(rfm9x_t *r);
-
-uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n);
-uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf);
-void rfm9x_clear_interrupts(rfm9x_t *r);
-
-void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
-void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
+                      uint8_t keep_listening, uint8_t with_ack);
 
 typedef enum
 {
@@ -156,15 +111,6 @@ typedef enum
     _RH_RF95_REG_25_FIFO_RX_BYTE_ADDR = 0x25,
     _RH_RF95_REG_26_MODEM_CONFIG3 = 0x26,
 
-    /**
-     * In this register:
-     * Bits 7-6: Dio0Mapping
-     * Bits 5-4: Dio1Mapping
-     * Bits 3-2: Dio2Mapping
-     * Bits 1-0: Dio3Mapping
-     *
-     * (p. 100 of documentation)
-     */
     _RH_RF95_REG_40_DIO_MAPPING1 = 0x40,
     _RH_RF95_REG_41_DIO_MAPPING2 = 0x41,
     _RH_RF95_REG_42_VERSION = 0x42,
@@ -195,3 +141,4 @@ typedef enum
     _RH_FLAGS_ACK = 0x80,
     _RH_FLAGS_RETRY = 0x40,
 } rfm9x_reg_t;
+

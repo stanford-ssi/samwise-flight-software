@@ -47,7 +47,7 @@ static bool init_drivers(slate_t *slate)
 
     logger_init();
 
-    slate->radio = rfm9x_mk();
+    //slate->radio = rfm9x_mk();
 #ifdef BRINGUP
     gpio_init(SAMWISE_RF_RST_PIN);
     gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
