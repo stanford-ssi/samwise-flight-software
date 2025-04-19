@@ -6,6 +6,7 @@
 #include "macros.h"
 #include "pico/printf.h"
 #include "pico/time.h"
+#include "pins.h"
 #include <string.h>
 
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
@@ -587,6 +588,11 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
 
 void rfm9x_init(rfm9x_t *r)
 {
+    // Setup regulator line
+    gpio_init(SAMWISE_RF_REGULATOR_PIN);
+    gpio_set_dir(SAMWISE_RF_REGULATOR_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_RF_REGULATOR_PIN, 1);
+
     // Setup reset line
     gpio_init(r->reset_pin);
     gpio_set_dir(r->reset_pin, GPIO_IN);
