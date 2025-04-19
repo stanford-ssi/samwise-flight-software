@@ -6,8 +6,8 @@ sched_state_t *running_get_next_state(slate_t *slate)
 }
 
 sched_state_t running_state = {.name = "running",
-                               .num_tasks = 6,
-                               .task_list = {&print_task, &blink_task,
-                                             &radio_task, &command_task,
-                                             &beacon_task, &watchdog_task},
+                               .num_tasks = 1,
+                               .task_list = {
+                                             &radio_task
+                                                },
                                .get_next_state = &running_get_next_state};

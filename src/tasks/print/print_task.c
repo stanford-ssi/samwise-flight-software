@@ -5,6 +5,7 @@
  */
 
 #include "print_task.h"
+#include "logger.h"
 
 static uint32_t count = 0;
 

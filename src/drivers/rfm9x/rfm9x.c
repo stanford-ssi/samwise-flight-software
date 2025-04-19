@@ -4,6 +4,7 @@
 #include "hardware/spi.h"
 #include "pico/time.h"
 #include "macros.h"
+#include "logger.h"
 #include "pico/printf.h"
 #include <string.h>
 

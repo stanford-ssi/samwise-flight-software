@@ -1,4 +1,5 @@
 add_subdirectory(beacon)
+add_subdirectory(print)
 add_subdirectory(blink)
 add_subdirectory(command)
 add_subdirectory(diagnostics)

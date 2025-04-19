@@ -8,4 +8,3 @@ target_include_directories(print_task PUBLIC
   "${PROJECT_SOURCE_DIR}/src/tasks/print"
 )
 
-add_subdirectory(test)

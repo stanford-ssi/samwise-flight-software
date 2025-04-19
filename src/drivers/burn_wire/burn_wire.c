@@ -7,6 +7,7 @@
 
 #include "hardware/pwm.h"
 #include "pico/stdlib.h"
+#include "logger.h"
 
 static uint burn_a_slice_num;
 static uint burn_b_slice_num;
