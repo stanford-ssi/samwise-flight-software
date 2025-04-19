@@ -141,4 +141,3 @@ typedef enum
     _RH_FLAGS_ACK = 0x80,
     _RH_FLAGS_RETRY = 0x40,
 } rfm9x_reg_t;
-

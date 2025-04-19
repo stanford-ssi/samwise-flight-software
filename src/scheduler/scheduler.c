@@ -7,8 +7,8 @@
  */
 
 #include "scheduler.h"
-#include "states.h"
 #include "logger.h"
+#include "states.h"
 
 /*
  * Include the actual state machine

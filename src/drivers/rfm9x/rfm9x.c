@@ -2,10 +2,10 @@
 #include "bit-support.h"
 #include "hardware/resets.h"
 #include "hardware/spi.h"
-#include "pico/time.h"
-#include "macros.h"
 #include "logger.h"
+#include "macros.h"
 #include "pico/printf.h"
+#include "pico/time.h"
 #include <string.h>
 
 rfm9x_t rfm9x_mk(spi_inst_t *spi, uint reset_pin, uint cs_pin, uint spi_tx_pin,
@@ -1018,4 +1018,3 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
 
     return acked;
 }
-

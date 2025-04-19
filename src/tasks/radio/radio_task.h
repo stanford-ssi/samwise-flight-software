@@ -5,9 +5,9 @@
 
 #pragma once
 
+#include "packet.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "packet.h"
 
 #define TX_QUEUE_SIZE 16
 #define RX_QUEUE_SIZE 16
