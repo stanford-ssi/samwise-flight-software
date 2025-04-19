@@ -33,7 +33,7 @@ void radio_task_init(slate_t *slate)
 
 void radio_task_dispatch(slate_t *slate)
 {
-    rfm9x_send(&slate->radio, "HELLO WORLD", 11, false, 0xff, 0xff, 0, 0);
+//    rfm9x_send(&slate->radio, "HELLO WORLD", 11, false, 0xff, 0xff, 0, 0);
     LOG_INFO("sending packet...");
 }
 
