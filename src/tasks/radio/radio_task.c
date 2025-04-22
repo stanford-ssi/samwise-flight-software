@@ -18,16 +18,17 @@ static void tx_done()
         uint8_t p_buf[p.len + 4];
         p_buf[0] = DST_ADDR;
         p_buf[1] = SRC_ADDR;
-        p_buf[2] = p.seq;
-        p_buf[3] = p.flags;
+        p_buf[2] = 0; // p.seq;
+        p_buf[3] = 0; // p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
 
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
-        rfm9x_clear_interrupts(&s->radio);
+        //rfm9x_clear_interrupts(&s->radio);
 
         s->tx_packets++;
         s->tx_bytes += sizeof(p_buf);
 
+	LOG_INFO("about to transmit...");
 	rfm9x_transmit(&s->radio);
     }
     else
@@ -94,8 +95,9 @@ void radio_task_init(slate_t *slate)
     queue_init(&slate->rx_queue, sizeof(packet_t), RX_QUEUE_SIZE);
 
     // Install interrupt handlers
-    rfm9x_set_tx_irq(&slate->radio, &tx_done);
-    rfm9x_set_rx_irq(&slate->radio, &rx_done);
+
+    rfm9x_set_tx_irq(&slate->radio, NULL);
+    //rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
     // Power up!
     rfm9x_power_up(&slate->radio);
@@ -120,12 +122,12 @@ void radio_task_dispatch(slate_t *slate)
     }
     else
     {
-        rfm9x_listen(&slate->radio);
+      //rfm9x_listen(&slate->radio);
     }
 }
 
 sched_task_t radio_task = {.name = "radio",
-                           .dispatch_period_ms = 100,
+                           .dispatch_period_ms = 1000,
                            .task_init = &radio_task_init,
                            .task_dispatch = &radio_task_dispatch,
 

@@ -15,8 +15,11 @@
 #define PAYLOAD_SIZE 251
 
 #define RFM9X_SPI_BAUDRATE (1000 * 1000)
-#define RFM9X_FREQUENCY 438100000
+#define RFM9X_FREQUENCY 433000000
 #define RFM9X_BANDWIDTH 125000
+
+#define SRC_ADDR 1
+#define DST_ADDR 255
 
 typedef enum
 {
@@ -105,6 +108,7 @@ uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
 
 uint32_t rfm9x_version(rfm9x_t *r);
 
+void rfm9x_standby(rfm9x_t *r);
 void rfm9x_listen(rfm9x_t *r);
 void rfm9x_transmit(rfm9x_t *r);
 
