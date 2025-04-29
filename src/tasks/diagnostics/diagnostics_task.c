@@ -118,7 +118,7 @@ void diagnostics_task_dispatch(slate_t *slate)
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
     }
-    LOG_INFO("Radio version: v%d", rfm9x_version(&slate->radio));
+    // LOG_INFO("Radio version: v%d", rfm9x_version(&slate->radio));
     LOG_INFO("Done.\n");
 }
 

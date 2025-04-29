@@ -1,5 +1,6 @@
 #pragma once
 #include "diagnostics_task.h"
+#include "print_task.h"
 #include "macros.h"
 
 #ifdef BRINGUP
