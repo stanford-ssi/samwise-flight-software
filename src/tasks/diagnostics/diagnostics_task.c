@@ -1,6 +1,6 @@
 #include "diagnostics_task.h"
 #include "macros.h"
-#include "drivers/adm1176/adm1176.h"
+#include "adm1176.h"
 #ifdef BRINGUP
 
 /**
