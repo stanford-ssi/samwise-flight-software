@@ -1,6 +1,6 @@
 /**
  * @author  Marc Aaron Reyes
- * @date    2025-05-03\
+ * @date    2025-05-03
  */
 
 #include "payload_task.h"

@@ -54,6 +54,10 @@ int main()
 #endif
 
     /*
+     * Go startup sequence
+     */
+
+    /*
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
