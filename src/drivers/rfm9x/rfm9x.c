@@ -222,8 +222,8 @@ static inline void rfm9x_set_frequency(rfm9x_t *r, uint32_t f)
     uint8_t msb = (frf >> 16) & 0xFF;
     uint8_t mid = (frf >> 8) & 0xFF;
     uint8_t lsb = frf & 0xFF;
-    printf("Setting frequency to %u Hz\n", f);
-    printf("frf = %u, msb = %u, mid = %u, lsb = %u\n", frf, msb, mid, lsb);
+    LOG_DEBUG("RFM9X: Setting frequency to %f MHz", (float)f/10);
+    LOG_DEBUG("frf = %u, msb = %x, mid = %x, lsb = %x", frf, msb, mid, lsb);
     rfm9x_put8(r, _RH_RF95_REG_06_FRF_MSB, msb);
     rfm9x_put8(r, _RH_RF95_REG_07_FRF_MID, mid);
     rfm9x_put8(r, _RH_RF95_REG_08_FRF_LSB, lsb);
