@@ -6,6 +6,7 @@ target_link_libraries(diagnostics_task PUBLIC
   hardware_i2c
   hardware_spi
   pico_unique_id
+  logger
   slate
   common
   error

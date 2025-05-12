@@ -1,4 +1,6 @@
-#include "slate.h"
+#pragma once
+
+#include "pico/types.h"
 
 typedef struct
 {

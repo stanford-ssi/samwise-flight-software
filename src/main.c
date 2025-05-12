@@ -5,9 +5,10 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "flash.h"
 #include "init.h"
+#include "logger.h"
 #include "macros.h"
-#include "pico/stdlib.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
@@ -19,8 +20,6 @@
  */
 int main()
 {
-    stdio_init_all();
-
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
@@ -31,10 +30,18 @@ int main()
     }
 
     /*
+     * Initialize persistent data or load existing data if already in flash.
+     * The reboot counter is incremented each time this code runs.
+     */
+    persistent_data_t *data = init_persistent_data();
+    increment_reboot_counter();
+    LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
+
+    /*
      * Initialize everything.
      */
-    LOG_INFO("main: Slate uses %d bytes", sizeof(slate));
-    LOG_INFO("main: Initializing everything...");
+    LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
+    LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
@@ -52,7 +59,6 @@ int main()
 
     while (true)
     {
-        sleep_ms(100);
         sched_dispatch(&slate);
     }
 

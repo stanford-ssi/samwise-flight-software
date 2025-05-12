@@ -1,4 +1,5 @@
 #pragma once
+#include "hardware/pwm.h"
 #include "macros.h"
 
 #ifdef PICO
@@ -17,6 +18,15 @@
 #define SAMWISE_RF_RST_PIN (21)
 #define SAMWISE_RF_CS_PIN (20)
 #define SAMWISE_RF_D0_PIN (28)
+
+// Random unused pin, since on the PICO we don't have a watchdog attached.
+#define SAMWISE_WATCHDOG_FEED_PIN (6)
+
+#define SAMWISE_ENAB_BURN_A (36)
+#define SAMWISE_BURN_A_PWM_CHANNEL (PWM_CHAN_A)
+#define SAMWISE_ENAB_BURN_B (35)
+#define SAMWISE_BURN_B_PWM_CHANNEL (PWM_CHAN_B)
+#define SAMWISE_BURN_RELAY (44)
 
 #else
 
@@ -38,7 +48,6 @@
 #define SAMWISE_POWER_MONITOR_I2C (I2C_INSTANCE(1))
 #define SAMWISE_POWER_MONITOR_SDA_PIN (38)
 #define SAMWISE_POWER_MONITOR_SCL_PIN (39)
-
 #define SAMWISE_WATCHDOG_FEED_PIN (6)
 
 #define SAMWISE_MPPT_STAT_1_PIN (7)
@@ -55,5 +64,11 @@
 #define SAMWISE_RF_SCK_PIN (14)
 #define SAMWISE_RF_MOSI_PIN (15)
 #define SAMWISE_RF_D0_PIN (20)
+
+#define SAMWISE_ENAB_BURN_A (36)
+#define SAMWISE_BURN_A_PWM_CHANNEL (PWM_CHAN_A)
+#define SAMWISE_ENAB_BURN_B (35)
+#define SAMWISE_BURN_B_PWM_CHANNEL (PWM_CHAN_B)
+#define SAMWISE_BURN_RELAY (44)
 
 #endif
