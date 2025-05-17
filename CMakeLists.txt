@@ -53,6 +53,9 @@ project(samwise C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+# Add the library directories
+add_subdirectory(lib/tinycrypt)
+
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)
