@@ -1,6 +1,6 @@
 #include "diagnostics_task.h"
-#include "macros.h"
 #include "adm1176.h"
+#include "macros.h"
 #ifdef BRINGUP
 
 /**
@@ -21,12 +21,9 @@ void diagnostics_task_init(slate_t *slate)
     LOG_INFO("Scan task initialized I2C...");
 
     // Initialize power monitor
-    power_monitor = adm1176_mk(
-        SAMWISE_POWER_MONITOR_I2C,
-        ADM1176_I2C_ADDR,
-        ADM1176_DEFAULT_SENSE_RESISTOR,
-        ADM1176_DEFAULT_VOLTAGE_RANGE
-    );
+    power_monitor = adm1176_mk(SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
+                               ADM1176_DEFAULT_SENSE_RESISTOR,
+                               ADM1176_DEFAULT_VOLTAGE_RANGE);
 }
 
 void diagnostics_task_dispatch(slate_t *slate)
@@ -46,7 +43,8 @@ void diagnostics_task_dispatch(slate_t *slate)
      */
     float voltage = adm1176_get_voltage(&power_monitor);
     float current = adm1176_get_current(&power_monitor);
-    LOG_INFO("Power Monitor - Voltage: %.3fV, Current: %.3fA", voltage, current);
+    LOG_INFO("Power Monitor - Voltage: %.3fV, Current: %.3fA", voltage,
+             current);
 
     /*
      * I2C
