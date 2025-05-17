@@ -101,6 +101,13 @@ void command_task_dispatch(slate_t *slate)
 
         if (successful_peek)
         {
+            if (!is_packet_authenticated(&packet))
+            {
+                // Packet is not authenticated, drop it
+                LOG_ERROR("Packet authentication failed. Dropping packet.");
+                continue;
+            }
+
             /**
              * Update the command ID depending on if it was previously
              * uploading. If previously not loading (command id == 0) then reset
