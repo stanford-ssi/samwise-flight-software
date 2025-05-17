@@ -71,25 +71,28 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     // [64] Write the current state name
     pkt_len = write_string(data, pkt_len, slate->current_state->name);
 
-    // [64 + 8 = 72] Write the current time
+    // [64 + 4 = 68] Write the reboot counter
+    pkt_len = write_uint32(data, pkt_len, slate->reboot_counter);
+
+    // [68 + 8 = 76] Write the current time
     pkt_len = write_uint64(data, pkt_len, slate->time_in_current_state_ms);
 
-    // [72 + 4 = 76] Write the current rx_bytes
+    // [76 + 4 = 80] Write the current rx_bytes
     pkt_len = write_uint32(data, pkt_len, slate->rx_bytes);
 
-    // [76 + 4 = 80] Write the current rx_packets
+    // [80 + 4 = 84] Write the current rx_packets
     pkt_len = write_uint32(data, pkt_len, slate->rx_packets);
 
-    // [80 + 4 = 84] Write the current rx_backpressure_drops
+    // [84 + 4 = 88] Write the current rx_backpressure_drops
     pkt_len = write_uint32(data, pkt_len, slate->rx_backpressure_drops);
 
-    // [84 + 4 = 88] Write the current rx_bad_packet_drops
+    // [88 + 4 = 92] Write the current rx_bad_packet_drops
     pkt_len = write_uint32(data, pkt_len, slate->rx_bad_packet_drops);
 
-    // [88 + 4 = 92] Write the current tx_bytes
+    // [92 + 4 = 96] Write the current tx_bytes
     pkt_len = write_uint32(data, pkt_len, slate->tx_bytes);
 
-    // [92 + 4 = 96] Write the current tx_packets
+    // [96 + 4 = 100] Write the current tx_packets
     pkt_len = write_uint32(data, pkt_len, slate->tx_packets);
 
     if (pkt_len > MAX_DATA_SIZE)

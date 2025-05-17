@@ -11,6 +11,7 @@ target_link_libraries(diagnostics_task PUBLIC
   common
   error
   rfm9x
+  adm1176
 )
 
 # Specify directories with relevant header files
