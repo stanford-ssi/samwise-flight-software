@@ -5,6 +5,7 @@ target_link_libraries(bringup_state PUBLIC
   common
   slate
   diagnostics_task
+  print_task
   watchdog_task
   running_state
   init_state
