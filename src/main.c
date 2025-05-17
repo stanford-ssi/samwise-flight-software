@@ -43,6 +43,7 @@ int main()
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
+    slate.reboot_counter = data->reboot_counter;
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
     /*
