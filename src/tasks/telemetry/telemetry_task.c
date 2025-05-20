@@ -7,6 +7,7 @@ static mppt_t solar_charger_monitor;
 
 void telemetry_task_init(slate_t *slate)
 {
+    #ifndef PICO
     LOG_INFO("Scanning the I2C bus...\n");
     bool found_device = false;
     for (uint8_t addr = 0x08; addr < 0x78; ++addr)
@@ -45,6 +46,13 @@ void telemetry_task_init(slate_t *slate)
 
     // Initialize MPPT
     solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
+    #else
+    // Initialize mocked PICO power monitor
+    power_monitor = adm1176_mk_mock();
+
+    // Initialize mocked PICO MPPT
+    solar_charger_monitor = mppt_mk_mock();
+    #endif
 }
 
 void telemetry_task_dispatch(slate_t *slate)
