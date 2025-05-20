@@ -10,7 +10,9 @@ void payload_task_init(slate_t *slate){
     payload_turn_on(slate);
 }
 
-void info_command_test(slate_t *slate){
+void payload_task_dispatch(slate_t *slate){
+    sleep_ms(10000);
+    LOG_INFO("Sending an Info Request Command to the RPI...");
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
@@ -33,11 +35,6 @@ void info_command_test(slate_t *slate){
         }
         printf("\n");
     }
-}
-
-void payload_task_dispatch(slate_t *slate){
-    LOG_INFO("Sending an Info Request Command to the RPI...");
-    info_command_test(slate);
 }
 
 sched_task_t payload_task = {.name = "payload",

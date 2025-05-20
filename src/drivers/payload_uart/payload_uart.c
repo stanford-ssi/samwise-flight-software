@@ -189,6 +189,7 @@ static void send_syn()
 
 void payload_turn_on(slate_t *slate){
     gpio_put(SAMWISE_RPI_ENAB, 1);
+    LOG_DEBUG("Pulled ENAB high");
 }
 
 void payload_turn_off(slate_t *slate){
