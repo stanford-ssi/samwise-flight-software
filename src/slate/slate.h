@@ -36,6 +36,7 @@ typedef struct samwise_slate
     /*
      * State machine info.
      */
+    uint32_t reboot_counter;
     sched_state_t *current_state;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;

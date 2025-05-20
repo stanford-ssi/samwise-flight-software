@@ -7,6 +7,7 @@
 #include "beacon_task.h"
 #include "blink_task.h"
 #include "command_task.h"
+#include "diagnostics_task.h"
 #include "print_task.h"
 #include "radio_task.h"
 #include "watchdog_task.h"
