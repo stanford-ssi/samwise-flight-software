@@ -70,7 +70,10 @@ float adm1176_get_current(adm1176_t *device)
 
 void adm1176_config_alert(adm1176_t *device, uint8_t config)
 {
-    if (!device->i2c) return;
+    if (!device->i2c)
+    {
+        return;
+    }
     uint8_t buf[2] = {ADM1176_ALERT_REG, config};
     i2c_write_blocking(device->i2c, device->address, buf, 2, false);
 }

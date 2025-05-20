@@ -8,7 +8,8 @@ const lt8491_cfg_register_t CFG[9] = {
     {"CFG_RDACI", 0x34, 0x0728},   {"RFBIN2", 0x36, 0x02DC},
     {"RDBIN1", 0x38, 0x03B9}};
 
-mppt_t mppt_mk_mock() {
+mppt_t mppt_mk_mock()
+{
     mppt_t device;
     device.i2c = NULL;
     device.address = 0x00;
@@ -131,7 +132,8 @@ void mppt_init(mppt_t *device)
 
 uint16_t mppt_get_voltage(mppt_t *device)
 {
-    if (!device->i2c) {
+    if (!device->i2c)
+    {
         return device->voltage; // Mock device
     }
     uint8_t result_2_bytes[2];
@@ -148,7 +150,8 @@ uint16_t mppt_get_voltage(mppt_t *device)
 
 uint16_t mppt_get_current(mppt_t *device)
 {
-    if (!device->i2c) {
+    if (!device->i2c)
+    {
         return device->current; // Mock device
     }
     uint8_t result_2_bytes[2];
