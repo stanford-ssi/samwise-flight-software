@@ -24,6 +24,7 @@ typedef struct
 } adm1176_t;
 
 // Function declarations
+adm1176_t adm1176_mk_mock();
 adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor,
                      float voltage_range);
 float adm1176_get_voltage(adm1176_t *device);

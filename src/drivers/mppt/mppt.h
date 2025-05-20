@@ -47,6 +47,7 @@ typedef struct
 } mppt_t;
 
 // Function declarations
+mppt_t mppt_mk_mock();
 mppt_t mppt_mk(i2c_inst_t *i2c, uint8_t address);
 uint16_t mppt_get_voltage(mppt_t *device);
 uint16_t mppt_get_current(mppt_t *device);
