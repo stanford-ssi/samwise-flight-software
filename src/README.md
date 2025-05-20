@@ -1,3 +1,16 @@
+# Building executable
+
+## Pre-requisite
+
+Download and install gcc-arm-none-eabi compiler: https://github.com/stanford-ssi/samwise-flight-software/blob/main/docs/ONBOARDING.md#linux
+
+## Building from source
+
+1. Update submodule files with `git submodule update --init --recursive`
+2. Create build directory `mkdir build` and navigate into it
+3. Cmake with a particular platform (e.g. PICO, PICUBED-DEBUG) `cmake -DPROFILE=PICUBED-DEBUG`
+4. Make and compile binary `make -j8`
+
 # Code structure
 
 The layout of our flight software is loosely organized into 3 categories:
