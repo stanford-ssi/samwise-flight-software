@@ -8,17 +8,6 @@ const lt8491_cfg_register_t CFG[9] = {
     {"CFG_RDACI", 0x34, 0x0728},   {"RFBIN2", 0x36, 0x02DC},
     {"RDBIN1", 0x38, 0x03B9}};
 
-// Telemetry Register Addresses (mirrors Python TELE tuple)
-// Not directly used in the provided main loop logic in the same way as CFG,
-// but defined for completeness or future use.
-const uint8_t TELE[5] = {
-    0x00, // TELE_TBAT
-    0x02, // TELE_POUT
-    0x04, // TELE_PIN
-    0x08, // TELE_IOUT
-    0x0A  // TELE_IIN
-};
-
 mppt_t mppt_mk(i2c_inst_t *i2c, uint8_t address)
 {
     mppt_t device;
@@ -79,8 +68,9 @@ void mppt_init(mppt_t *device)
 
     cmd_buf[0] = LT8491_CTRL_CHRG_EN; // Register address for CTRL_CHRG_EN
     cmd_buf[1] = 0; // Value to disable charging (assuming 0 means disable)
+    i2c_write_data(device->address, cmd_buf, 2);
 
-    printf("Configuring LT8491 registers...\n");
+    LOG_INFO("Configuring LT8491 registers...\n");
     for (int i = 0; i < NUM_CFG_REGISTERS; ++i)
     {
         uint8_t write_buf[3];
@@ -96,11 +86,11 @@ void mppt_init(mppt_t *device)
 
         cmd_buf[0] = CFG[i].addr;         // Register address for LSB
         cmd_buf[1] = CFG[i].value & 0xFF; // Low byte
-        i2c_write_data(LT8491_I2C_ADDR, cmd_buf, 2);
+        i2c_write_data(device->address, cmd_buf, 2);
 
         cmd_buf[0] = CFG[i].addr + 1;            // Register address for MSB
         cmd_buf[1] = (CFG[i].value >> 8) & 0xFF; // High byte
-        i2c_write_data(LT8491_I2C_ADDR, cmd_buf, 2);
+        i2c_write_data(device->address, cmd_buf, 2);
 
         // Read back the 16-bit value (LSB from CFG[i].addr, MSB from
         // CFG[i].addr+1)
@@ -113,13 +103,14 @@ void mppt_init(mppt_t *device)
                  CFG[i].name, CFG[i].value, read_value_check, read_buf_word[0],
                  read_buf_word[1]);
     }
+    LOG_INFO("LT8491 configuration complete.\n");
 
     // Turn ON charging after configuration
     // Python: i2c.writeto_then_readfrom(LT8491_ADDR, bytearray([0x23, 1]),
     // result)
     cmd_buf[0] = LT8491_CTRL_CHRG_EN; // CTRL_CHRG_EN register
     cmd_buf[1] = 1;                   // Value to enable
-    i2c_write_data(LT8491_I2C_ADDR, cmd_buf, 2);
+    i2c_write_data(device->address, cmd_buf, 2);
 
     // Device completed initialization
     device->is_initialized = true;
@@ -128,8 +119,8 @@ void mppt_init(mppt_t *device)
 uint16_t mppt_get_voltage(mppt_t *device)
 {
     uint8_t result_2_bytes[2];
-    uint8_t reg_to_read = 0x10; // TELE_VINR (Input Voltage)
-    i2c_write_then_read(LT8491_I2C_ADDR, &reg_to_read, 1, result_2_bytes, 2);
+    uint8_t reg_to_read = LT8491_TELE_VINR; // TELE_VINR (Input Voltage)
+    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
     uint16_t tele_value_16 =
         (uint16_t)result_2_bytes[0] |
         ((uint16_t)result_2_bytes[1] << 8);          // Read in 10 mV increments
@@ -142,8 +133,8 @@ uint16_t mppt_get_voltage(mppt_t *device)
 uint16_t mppt_get_current(mppt_t *device)
 {
     uint8_t result_2_bytes[2];
-    uint8_t reg_to_read = 0x0A; // TELE_IIN (Input Current)
-    i2c_write_then_read(LT8491_I2C_ADDR, &reg_to_read, 1, result_2_bytes, 2);
+    uint8_t reg_to_read = LT8491_TELE_IIN; // TELE_IIN (Input Current)
+    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
     uint16_t tele_value_16 = (uint16_t)result_2_bytes[0] |
                              ((uint16_t)result_2_bytes[1] << 8); // Read in mA
     LOG_DEBUG("TELE_IIN: %u mA\n", tele_value_16);

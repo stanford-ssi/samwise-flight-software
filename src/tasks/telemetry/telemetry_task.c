@@ -1,7 +1,4 @@
 #include "telemetry_task.h"
-#include "adm1176.h"
-#include "macros.h"
-#include "mppt.h"
 
 // Add power monitor instance
 static adm1176_t power_monitor;
@@ -57,12 +54,20 @@ void telemetry_task_dispatch(slate_t *slate)
     float current = adm1176_get_current(&power_monitor);
     LOG_INFO("Power Monitor - Voltage: %.3fV, Current: %.3fA", voltage,
              current);
+    
+    // Convert float into mV and mA and write to slate
+    slate->battery_voltage = (uint16_t)(voltage * 1000); // Convert to mV
+    slate->battery_current = (uint16_t)(current * 1000); // Convert to mA
 
     // Read telemetry data from the LT8491
     uint16_t solar_voltage = mppt_get_voltage(&solar_charger_monitor);
     uint16_t solar_current = mppt_get_current(&solar_charger_monitor);
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
+
+    // Write to slate
+    slate->solar_voltage = solar_voltage;
+    slate->solar_current = solar_current;
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",
