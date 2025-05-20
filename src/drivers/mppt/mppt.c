@@ -11,7 +11,7 @@ const lt8491_cfg_register_t CFG[9] = {
 mppt_t mppt_mk_mock() {
     mppt_t device;
     device.i2c = NULL;
-    device.address = NULL;
+    device.address = 0x00;
     device.is_charging = false;
     device.is_initialized = true;
     device.voltage = 420;
@@ -141,7 +141,7 @@ uint16_t mppt_get_voltage(mppt_t *device)
         (uint16_t)result_2_bytes[0] |
         ((uint16_t)result_2_bytes[1] << 8);          // Read in 10 mV increments
     float voltage_mV = (float)tele_value_16 / 10.0f; // Convert to mV
-    LOG_DEBUG("TELE_IIN: %.2f mV\n", voltage_mV);
+    LOG_DEBUG("TELE_VINR: %.2f mV\n", voltage_mV);
     device->voltage = (uint16_t)voltage_mV; // Store in device struct
     return device->voltage;
 }

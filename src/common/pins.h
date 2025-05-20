@@ -28,6 +28,10 @@
 #define SAMWISE_BURN_B_PWM_CHANNEL (PWM_CHAN_B)
 #define SAMWISE_BURN_RELAY (44)
 
+// Mocked I2C pins (these resolve to null pointers and should not be dereferenced)
+#define SAMWISE_MPPT_I2C 0
+#define SAMWISE_POWER_MONITOR_I2C 0
+
 #else
 
 /*
