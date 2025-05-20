@@ -7,6 +7,7 @@
 
 void payload_task_init(slate_t *slate){
     LOG_INFO("Payload task is initializing...");
+    payload_uart_init(slate);
     payload_turn_on(slate);
 }
 
