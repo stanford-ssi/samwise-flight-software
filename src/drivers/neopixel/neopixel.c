@@ -1,6 +1,8 @@
 
 #include "neopixel.h"
 
+#ifndef PICO
+// Neopixel only available on PICUBED boards
 static inline void put_pixel(uint32_t pixel_grb, uint pin)
 {
     pio_sm_put_blocking(pio0, pin, pixel_grb << 8);
@@ -26,3 +28,16 @@ void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
               SAMWISE_NEOPIXEL_PIN, r, g, b);
     put_pixel(ugrb_u32(g, r, b), SAMWISE_NEOPIXEL_PIN);
 }
+#else
+void neopixel_init()
+{
+    LOG_INFO("[neopixel] Fake init neopixel driver - hardware only exists on "
+             "PICUBED.");
+}
+
+void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+    LOG_DEBUG("Setting neopixel on Pin %u rgb values: %u %u %u",
+              SAMWISE_NEOPIXEL_PIN, r, g, b);
+}
+#endif

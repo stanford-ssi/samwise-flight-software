@@ -5,11 +5,7 @@
 
 #pragma once
 
-#include "pico/stdlib.h"
-
-#ifndef PICO
-// Neopixel only available on PICUBED boards
 #include "neopixel.h"
-#endif
+#include "pico/stdlib.h"
 
 void fatal_error();
