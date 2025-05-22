@@ -9,10 +9,10 @@
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
+#include "neopixel.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "neopixel.h"
 
 /**
  * Main code entry point.
