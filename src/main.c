@@ -9,6 +9,7 @@
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
+#include "neopixel.h"
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
@@ -52,6 +53,8 @@ int main()
 #ifdef COMMIT_HASH
     LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
 #endif
+
+    neopixel_set_color_rgb(0, 0xff, 0xff);
 
     /*
      * Go state machine!

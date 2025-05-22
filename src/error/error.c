@@ -30,10 +30,17 @@ void fatal_error()
     {
         for (uint32_t i = 0; i < 3; i++)
         {
+#ifdef PICO
             gpio_put(PICO_DEFAULT_LED_PIN, 1);
             sleep_ms(100);
             gpio_put(PICO_DEFAULT_LED_PIN, 0);
             sleep_ms(100);
+#else
+            neopixel_set_color_rgb(0xff, 0x33, 0);
+            sleep_ms(100);
+            neopixel_set_color_rgb(0, 0, 0);
+            sleep_ms(100);
+#endif
         }
         sleep_ms(500);
     }
