@@ -93,13 +93,13 @@ void radio_task_init(slate_t *slate)
     queue_init(&slate->rx_queue, sizeof(packet_t), RX_QUEUE_SIZE);
 
     // Install interrupt handlers
-    // rfm9x_set_tx_irq(&slate->radio, &tx_done);
-    rfm9x_set_tx_irq(&slate->radio, 0);
+    rfm9x_set_tx_irq(&slate->radio, &tx_done);
+    // rfm9x_set_tx_irq(&slate->radio, 0);
     rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
     // Switch to receive mode
-    // rfm9x_listen(&slate->radio);
-    rfm9x_transmit(&slate->radio);
+    rfm9x_listen(&slate->radio);
+    // rfm9x_transmit(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
 }
 
@@ -123,7 +123,7 @@ void radio_task_dispatch(slate_t *slate)
 }
 
 sched_task_t radio_task = {.name = "radio",
-                           .dispatch_period_ms = 5000,
+                           .dispatch_period_ms = 100,
                            .task_init = &radio_task_init,
                            .task_dispatch = &radio_task_dispatch,
 

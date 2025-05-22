@@ -72,7 +72,7 @@ void ping_command_test(slate_t *slate)
     }
 }
 
-void test_payload_command(slate_t *slate)
+void test_ping_payload_command(slate_t *slate)
 {
     char report[MAX_RECEIVED_LEN];
     int report_len = payload_send_command(slate, "ping", report);
@@ -90,7 +90,7 @@ void payload_task_dispatch(slate_t *slate)
     // beacon_down_command_test(slate);
     // ping_command_test(slate);
 
-    test_payload_command(slate);
+    test_ping_payload_command(slate);
 }
 
 sched_task_t payload_task = {.name = "payload",
