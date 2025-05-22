@@ -15,7 +15,7 @@ static int write_count = 0;
 
 char *ping_cmd()
 {
-    char command[] = "[\"ping\", [], {}]";
+    char *command = "[\"ping\", [], {}]";
     return command;
 }
 
@@ -71,7 +71,7 @@ int verify_command(const uint8_t *command)
     int command_found_index = -1;
     while (command_index < COMMAND_NUM)
     {
-        if (strcmp(commands[command_index].name, command[0]) == 0)
+        if (strcmp(commands[command_index].name, command) == 0)
         {
             command_found_index = command_index;
             break;
@@ -125,8 +125,8 @@ uint16_t payload_send_command(slate_t *slate, const uint8_t *command,
     else
     {
         LOG_INFO("ACK received!");
-        return received_msg;
+        return received_msg_len;
     }
 
-    return received_msg_len;
+    return 0;
 }

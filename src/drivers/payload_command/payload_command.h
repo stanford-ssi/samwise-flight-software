@@ -5,7 +5,7 @@
  */
 #include "slate.h"
 
-typedef int (*command_fn_t)();
+typedef char *(*command_fn_t)();
 
 typedef struct
 {
