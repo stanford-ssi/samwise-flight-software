@@ -1,49 +1,79 @@
+/**
+ * @author: Marc Aaron Reyes
+ * @date: 2025-05-21
+ */
 #include "adm1176.h"
 
-// Read 2-byte register
-static uint16_t adm1176_read_reg(adm1176_t *device, uint8_t reg)
+void adm1176_init(adm1176_t *pwm, i2c_inst_t *i2c_bus, uint8_t i2c_addr,
+                  float sense_resistor)
 {
-    uint8_t buf[2];
-    i2c_write_blocking(device->i2c, device->address, &reg, 1, true);
-    i2c_read_blocking(device->i2c, device->address, buf, 2, false);
-    return (buf[0] << 4) | (buf[1] >> 4); // 12 bit ADC form
+    pwm->i2c = i2c_bus;
+    pwm->address = i2c_addr;
+    pwm->sense_resistor = sense_resistor;
 }
 
-// Read 3 byte (voltage + current)
-static void adm1176_read_voltage_current(adm1176_t *device,
-                                         uint16_t *voltage_raw,
-                                         uint16_t *current_raw)
+bool adm1176_config(adm1176_t *pwm, int *mode, int mode_len)
 {
-    uint8_t buf[3];
-    i2c_read_blocking(device->i2c, device->address, buf, 3, false);
-    *current_raw = (buf[0] << 4 | buf[1] >> 4); // Current MSBs + partial LSBs
-    *voltage_raw = ((buf[1] & 0x0F) << 8) | buf[2]; // Voltage MSBs + LSBs
+    _cmd_buf[0] = 0x0;
+
+    for (int i = 0; i < mode_len; i++)
+    {
+        switch (mode[i])
+        {
+            case 1:
+                _cmd_buf[0] |= (1 << 0);
+                break;
+            case 2:
+                _cmd_buf[0] |= (1 << 1);
+                break;
+            case 3:
+                _cmd_buf[0] |= (1 << 2);
+                break;
+            case 4:
+                _cmd_buf[0] |= (1 << 3);
+                break;
+            case 5:
+                _cmd_buf[0] |= (1 << 4);
+                break;
+        }
+    }
+
+    if (i2c_write_blocking(pwm->i2c, pwm->address, _cmd_buf, 1, false) != 1)
+    {
+        return false;
+    }
+
+    return true;
 }
 
-adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor,
-                     float voltage_range)
+float adm1176_read_voltage(adm1176_t *pwm)
 {
-    return (adm1176_t){.i2c = i2c,
-                       .address = address,
-                       .sense_resistor = sense_resistor,
-                       .voltage_range = voltage_range};
+    i2c_read_blocking(pwm->i2c, pwm->address, _read_buf, 3, false);
+
+    float raw_volts = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
+    return (26.35f / 4096.0f) * raw_volts;
 }
 
-float adm1176_get_voltage(adm1176_t *device)
+float adm1176_read_current(adm1176_t *pwm)
 {
-    uint16_t raw = adm1176_read_reg(device, ADM1176_VOLTAGE_REG);
-    return raw * (device->voltage_range / 4096.0);
+    i2c_read_blocking(pwm->i2c, pwm->address, _read_buf, 3, false);
+
+    float raw_amps = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
+    return ((0.10584f / 4096.0f) * raw_amps) / pwm->sense_resistor;
 }
 
-float adm1176_get_current(adm1176_t *device)
+void adm1176_on(adm1176_t *pwm)
 {
-    uint16_t raw_current = adm1176_read_reg(device, ADM1176_CURRENT_REG);
-    return raw_current *
-           (0.10584 / 4096.0); // numerator is I_fullscale, page 20 ADM1176
+    _ext_cmd_buf[0] = 0x83;
+    _ext_cmd_buf[1] = 0;
+    i2c_write_blocking(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false);
+    int modes[2] = {1, 3};
+    adm1176_config(pwm, modes, 2);
 }
 
-void adm1176_config_alert(adm1176_t *device, uint8_t config)
+void adm1176_off(adm1176_t *pwm)
 {
-    uint8_t buf[2] = {ADM1176_ALERT_REG, config};
-    i2c_write_blocking(device->i2c, device->address, buf, 2, false);
+    _ext_cmd_buf[0] = 0x83;
+    _ext_cmd_buf[1] = 1;
+    i2c_write_blocking(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false);
 }
