@@ -37,7 +37,7 @@ void neopixel_init()
 
 void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
-    LOG_DEBUG("Setting neopixel on Pin %u rgb values: %u %u %u",
-              SAMWISE_NEOPIXEL_PIN, r, g, b);
+    LOG_DEBUG("Setting neopixel on Pin <MISSING> rgb values: %u %u %u", r, g,
+              b);
 }
 #endif
