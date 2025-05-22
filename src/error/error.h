@@ -7,4 +7,9 @@
 
 #include "pico/stdlib.h"
 
+#ifndef PICO
+// Neopixel only available on PICUBED boards
+#include "neopixel.h"
+#endif
+
 void fatal_error();

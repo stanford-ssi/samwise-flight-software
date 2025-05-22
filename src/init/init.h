@@ -17,5 +17,6 @@
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "watchdog.h"
+#include "neopixel.h"
 
 bool init(slate_t *slate);
