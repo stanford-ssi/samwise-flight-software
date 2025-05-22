@@ -1,7 +1,7 @@
 /**
  * @author Marc Aaron Reyes
  * @date 2025-05-21
- * 
+ *
  * An easier way to send commands via UART to the Payload
  */
 
@@ -13,8 +13,9 @@
 
 static int write_count = 0;
 
-char *ping_cmd(){
-    char command[] = "[\"ping\", [], {}]";
+char *ping_cmd()
+{
+    char *command = "[\"ping\", [], {}]";
     return command;
 }
 
@@ -22,7 +23,8 @@ static const command_t commands[] = {
     {"ping", ping_cmd},
 };
 
-bool init_payload(slate_t *slate){
+bool init_payload(slate_t *slate)
+{
     LOG_INFO("Initializing UART protocols with Payload...");
     payload_uart_init(slate);
 
@@ -37,17 +39,21 @@ bool init_payload(slate_t *slate){
     return true;
 }
 
-uint16_t create_seq_num(){
+uint16_t create_seq_num()
+{
     return write_count;
 }
 
-int strcmp(const char *s1, const char *s2) {
+int strcmp(const char *s1, const char *s2)
+{
     // Loops through each index of both char*
     int ptr = 0;
-    while ((s1[ptr] != '\0') || (s2[ptr] != '\0')){
-        
+    while ((s1[ptr] != '\0') || (s2[ptr] != '\0'))
+    {
+
         // Finds the difference between their ASCII values
-        if (s1[ptr] != s2[ptr]){
+        if (s1[ptr] != s2[ptr])
+        {
             return s1[ptr] - s2[ptr];
         }
 
@@ -59,11 +65,14 @@ int strcmp(const char *s1, const char *s2) {
     return 0;
 }
 
-int verify_command(const uint8_t *command){
+int verify_command(const uint8_t *command)
+{
     int command_index = 0;
     int command_found_index = -1;
-    while (command_index < COMMAND_NUM){
-        if (strcmp(commands[command_index].name, command[0]) == 0){
+    while (command_index < COMMAND_NUM)
+    {
+        if (strcmp(commands[command_index].name, command) == 0)
+        {
             command_found_index = command_index;
             break;
         }
@@ -74,19 +83,24 @@ int verify_command(const uint8_t *command){
     return 1;
 }
 
-char *format_command(const uint8_t *command){
+char *format_command(const uint8_t *command)
+{
     int cmd_index = verify_command(command);
-    if (cmd_index == -1){
+    if (cmd_index == -1)
+    {
         return NULL;
-    } 
+    }
 
     return commands[cmd_index].fn();
 }
 
-uint16_t payload_send_command(slate_t *slate, const uint8_t *command, uint8_t *report){
+uint16_t payload_send_command(slate_t *slate, const uint8_t *command,
+                              uint8_t *report)
+{
     char *command_packet = format_command(command);
 
-    if (command_packet == NULL){
+    if (command_packet == NULL)
+    {
         report = "Invalid command!";
         LOG_INFO("Command not valid!");
         return 0;
@@ -103,12 +117,16 @@ uint16_t payload_send_command(slate_t *slate, const uint8_t *command, uint8_t *r
 
     char received_msg[MAX_RECEIVED_LEN];
     uint16_t received_msg_len = payload_uart_read_packet(slate, received_msg);
-    if (received_msg_len == 0){
-        LOG_INFO("An ACK was not received from Payload, Payload may not be responding...");
-    } else {
+    if (received_msg_len == 0)
+    {
+        LOG_INFO("An ACK was not received from Payload, Payload may not be "
+                 "responding...");
+    }
+    else
+    {
         LOG_INFO("ACK received!");
-        return received_msg;
+        return received_msg_len;
     }
 
-    return received_msg_len;
+    return 0;
 }
