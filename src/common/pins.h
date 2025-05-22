@@ -28,6 +28,10 @@
 #define SAMWISE_BURN_B_PWM_CHANNEL (PWM_CHAN_B)
 #define SAMWISE_BURN_RELAY (44)
 
+#define SAMWISE_RPI_ENAB (29)
+#define SAMWISE_UART_TX (0)
+#define SAMWISE_UART_RX (1)
+
 #else
 
 /*
