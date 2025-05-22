@@ -72,6 +72,11 @@ static bool init_drivers(slate_t *slate)
     rfm9x_init(&slate->radio);
 #endif
 
+    // Initialize Neopixel if on PICUBED
+#ifndef PICO
+    neopixel_init();
+#endif
+
     // Initialize burn wire
     burn_wire_init(slate);
 
