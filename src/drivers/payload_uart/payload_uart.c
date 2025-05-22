@@ -9,8 +9,8 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
-#include "payload_uart.h"
 #include "macros.h"
+#include "payload_uart.h"
 #include "pins.h"
 #include "slate.h"
 
@@ -120,7 +120,7 @@ static bool receive_ack(slate_t *slate)
 {
     // Receive a single byte
     uint8_t received_byte;
-uint16_t received = receive_into(slate, &received_byte, 1, 1000);
+    uint16_t received = receive_into(slate, &received_byte, 1, 1000);
 
     return received && received_byte == ACK_BYTE;
 }
@@ -150,19 +150,23 @@ static bool receive_syn(slate_t *slate)
     }
 }
 
-static bool receive_header_start(slate_t *slate){
+static bool receive_header_start(slate_t *slate)
+{
     uint8_t run_count = 0;
 
-    while (run_count < START_TRIES){
+    while (run_count < START_TRIES)
+    {
         uint8_t received_byte;
         uint16_t received = receive_into(slate, &received_byte, 1, 1000);
 
-        if (!received){
+        if (!received)
+        {
             LOG_DEBUG("No bytes received!\n");
             return false;
         }
 
-        if (received_byte == START_BYTE){
+        if (received_byte == START_BYTE)
+        {
             return true;
         }
 
@@ -187,12 +191,14 @@ static void send_syn()
     }
 }
 
-void payload_turn_on(slate_t *slate){
+void payload_turn_on(slate_t *slate)
+{
     gpio_put(SAMWISE_RPI_ENAB, 1);
     LOG_DEBUG("Pulled ENAB high");
 }
 
-void payload_turn_off(slate_t *slate){
+void payload_turn_off(slate_t *slate)
+{
     gpio_put(SAMWISE_RPI_ENAB, 0);
 }
 
@@ -209,7 +215,7 @@ bool payload_uart_init(slate_t *slate)
                       UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_UART_TX));
     gpio_set_function(SAMWISE_UART_RX,
                       UART_FUNCSEL_NUM(PAYLOAD_UART_ID, SAMWISE_UART_RX));
-    
+
     // Setting RPI_ENABLE_PIN as output
     gpio_init(SAMWISE_RPI_ENAB);
     gpio_set_dir(SAMWISE_RPI_ENAB, GPIO_OUT);
@@ -286,7 +292,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
         LOG_DEBUG("Payload did not respond to sync!\n");
         return false;
     }
-        
+
     uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
 
     // Calculate the header
@@ -328,7 +334,8 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     send_ack();
 
     // Just wait for a start byte before reading the header
-    if (!receive_header_start(slate)){
+    if (!receive_header_start(slate))
+    {
         return 0;
     }
 
@@ -343,7 +350,6 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
         return 0;
     }
     send_ack();
-
 
     // Check header
     if (header.length > MAX_PACKET_LEN)

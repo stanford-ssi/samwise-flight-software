@@ -81,9 +81,9 @@ typedef struct samwise_slate
 
     /*
      * RPi UART Communication
-     */ 
-        queue_t rpi_uart_queue;
-        absolute_time_t rpi_uart_last_byte_receive_time;
+     */
+    queue_t rpi_uart_queue;
+    absolute_time_t rpi_uart_last_byte_receive_time;
 
 } slate_t;
 

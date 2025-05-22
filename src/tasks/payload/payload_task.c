@@ -6,9 +6,10 @@
 #include "payload_task.h"
 #define MAX_RECEIVED_LEN 1024
 
-void payload_task_init(slate_t *slate){
+void payload_task_init(slate_t *slate)
+{
     LOG_INFO("Payload task is initializing...");
-    
+
     LOG_INFO("Initializing UART...");
     payload_uart_init(slate);
 
@@ -19,7 +20,8 @@ void payload_task_init(slate_t *slate){
     sleep_ms(10000);
 }
 
-void beacon_down_command_test(slate_t *slate){
+void beacon_down_command_test(slate_t *slate)
+{
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
@@ -44,7 +46,8 @@ void beacon_down_command_test(slate_t *slate){
     }
 }
 
-void ping_command_test(slate_t *slate){
+void ping_command_test(slate_t *slate)
+{
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
@@ -53,33 +56,40 @@ void ping_command_test(slate_t *slate){
 
     char received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
-    if (received_len == 0){
+    if (received_len == 0)
+    {
         LOG_INFO("ACK was not received!");
-    } else {
+    }
+    else
+    {
         LOG_INFO("ACK received!");
         LOG_INFO("ACK:");
-        for(int i = 0; i < received_len; i++){
+        for (int i = 0; i < received_len; i++)
+        {
             printf("%c", received[i]);
         }
         printf("\n");
     }
 }
 
-void test_payload_command(slate_t *slate){
+void test_payload_command(slate_t *slate)
+{
     char report[MAX_RECEIVED_LEN];
     int report_len = payload_send_command(slate, "ping", report);
 
-    for (int i = 0; i < report_len; i++){
+    for (int i = 0; i < report_len; i++)
+    {
         printf("%c", report[i]);
     }
     printf("\n");
 }
 
-void payload_task_dispatch(slate_t *slate){
+void payload_task_dispatch(slate_t *slate)
+{
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    //beacon_down_command_test(slate);
-    //ping_command_test(slate);
-    
+    // beacon_down_command_test(slate);
+    // ping_command_test(slate);
+
     test_payload_command(slate);
 }
 

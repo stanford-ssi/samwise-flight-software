@@ -98,10 +98,9 @@ void radio_task_init(slate_t *slate)
     rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
     // Switch to receive mode
-    //rfm9x_listen(&slate->radio);
-rfm9x_transmit(&slate->radio);
+    // rfm9x_listen(&slate->radio);
+    rfm9x_transmit(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
-
 }
 
 // When it sees something in the transmit queue, switches into transmit mode and
