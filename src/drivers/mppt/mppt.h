@@ -43,11 +43,11 @@ typedef struct
     uint8_t address;
     bool is_charging;
     bool is_initialized;
-    uint16_t VIN_mV; // TELE_VIN in mV
-    uint16_t voltage; // TELE_VINR in mV
-    uint16_t current; // TELE_IIN in mA
-    uint16_t battery_mV; // TELE_VBAT in mV
-    uint16_t battery_mA; // TELE_IOUT in mA
+    uint16_t VIN_mV;      // TELE_VIN in mV
+    uint16_t charging_mV; // TELE_VINR in mV
+    uint16_t charging_mA; // TELE_IIN in mA
+    uint16_t battery_mV;  // TELE_VBAT in mV
+    uint16_t battery_mA;  // TELE_IOUT in mA
 } mppt_t;
 
 // Function declarations

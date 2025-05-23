@@ -4,7 +4,7 @@
 const lt8491_cfg_register_t CFG[9] = {
     {"CFG_RSENSE1", 0x28, 0x2710}, {"CFG_RIMON_OUT", 0x2A, 0x0BC2},
     {"CFG_RSENSE2", 0x2C, 0x0CE4}, {"CFG_RDACO", 0x2E, 0x3854},
-    {"CFG_RFBOUT1", 0x30, 0x0604},  {"CFG_RFBOUT2", 0x32, 0x0942},
+    {"CFG_RFBOUT1", 0x30, 0x0604}, {"CFG_RFBOUT2", 0x32, 0x0942},
     {"CFG_RDACI", 0x34, 0x0728},   {"RFBIN2", 0x36, 0x02DC},
     {"RDBIN1", 0x38, 0x03B9}};
 
@@ -16,8 +16,8 @@ mppt_t mppt_mk_mock()
     device.is_charging = false;
     device.is_initialized = true;
     device.VIN_mV = 123;
-    device.voltage = 420;
-    device.current = 1000;
+    device.charging_mV = 420;
+    device.charging_mA = 1000;
     device.battery_mV = 4200;
     device.battery_mA = 20000;
     return device;
@@ -30,9 +30,9 @@ mppt_t mppt_mk(i2c_inst_t *i2c, uint8_t address)
     device.address = address;
     device.is_charging = false;
     device.is_initialized = false;
-    device.voltage = 0;
     device.VIN_mV = 0;
-    device.current = 0;
+    device.charging_mV = 0;
+    device.charging_mA = 0;
     device.battery_mV = 0;
     device.battery_mA = 0;
     return device;
@@ -70,6 +70,19 @@ int i2c_write_data(uint8_t device_addr, uint8_t *write_buf, size_t write_len)
         LOG_ERROR("Error writing data: %d\n", ret);
     }
     return ret; // Number of bytes written or error code
+}
+
+uint16_t mppt_send_instruction_and_read_2_byte(mppt_t *device, uint8_t inst)
+{
+    if (!device->i2c)
+    {
+        return 0xFFFFFF; // No-op for mock device - simulate error code
+    }
+    uint8_t result_2_bytes[2];
+    i2c_write_then_read(device->address, &inst, 1, result_2_bytes, 2);
+    uint16_t tele_value_16 =
+        (uint16_t)result_2_bytes[0] | ((uint16_t)result_2_bytes[1] << 8);
+    return tele_value_16;
 }
 
 void mppt_init(mppt_t *device)
@@ -114,9 +127,8 @@ void mppt_init(mppt_t *device)
         // Read back the 16-bit value (LSB from CFG[i].addr, MSB from
         // CFG[i].addr+1)
         read_cmd = CFG[i].addr;
-        i2c_write_then_read(LT8491_I2C_ADDR, &read_cmd, 1, read_buf_word, 2);
-        read_value_check = (uint16_t)read_buf_word[0] |
-                           ((uint16_t)read_buf_word[1] << 8); // LSB first
+        read_value_check =
+            mppt_send_instruction_and_read_2_byte(device, read_cmd);
 
         LOG_INFO("%s : Set 0x%04X, Read 0x%04X (LSB:0x%02X MSB:0x%02X)\n",
                  CFG[i].name, CFG[i].value, read_value_check, read_buf_word[0],
@@ -136,59 +148,56 @@ void mppt_init(mppt_t *device)
     device->is_initialized = true;
 }
 
+// Read TELE_VBAT (Battery Voltage)
 uint16_t mppt_get_battery_voltage(mppt_t *device)
 {
     if (!device->i2c)
     {
         return device->battery_mV; // Mock device
     }
-    uint8_t result_2_bytes[2];
-    uint8_t reg_to_read = LT8491_TELE_VBAT; // TELE_VBAT (Battery Voltage)
-    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
+    // Voltage values are read as 100*V (so 10mV increments)
     uint16_t tele_value_16 =
-        (uint16_t)result_2_bytes[0] |
-        ((uint16_t)result_2_bytes[1] << 8);          // Read in 10 mV increments
+        mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VBAT);
     uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
     LOG_DEBUG("TELE_VBAT: %u\n", tele_value_16);
     device->battery_mV = voltage_mV; // Store in device struct
     return device->battery_mV;
 }
 
+// Read TELE_IOUT (Battery Output Current)
 uint16_t mppt_get_battery_current(mppt_t *device)
 {
     if (!device->i2c)
     {
-        return device->current; // Mock device
+        return device->battery_mA; // Mock device
     }
-    uint8_t result_2_bytes[2];
-    uint8_t reg_to_read = LT8491_TELE_IOUT; // TELE_IOUT (Output Current)
-    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
-    uint16_t tele_value_16 = (uint16_t)result_2_bytes[0] |
-                             ((uint16_t)result_2_bytes[1] << 8); // Read in mA
+    // Current values are read in mA directly
+    uint16_t tele_value_16 =
+        mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_IOUT);
     LOG_DEBUG("TELE_IIN: %u\n", tele_value_16);
     device->battery_mA = tele_value_16; // Store in device struct
     return device->battery_mA;
 }
 
+// Read TELE_VINR (Charging Input Voltage - from solar panels)
 uint16_t mppt_get_voltage(mppt_t *device)
 {
     if (!device->i2c) // Mock device
     {
-        return device->voltage;
+        return device->charging_mV;
     }
-    uint8_t result_2_bytes[2];
-    // TELE_VINR (Input Voltage)
-    uint8_t reg_to_read = LT8491_TELE_VINR;
-    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
+    // Voltage values are read in 100*V (so 10mV increments)
     uint16_t tele_value_16 =
-        (uint16_t)result_2_bytes[0] |
-        ((uint16_t)result_2_bytes[1] << 8);          // Read in 10 mV increments
+        mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VINR);
     uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
     LOG_DEBUG("TELE_VINR: %u\n", tele_value_16);
-    device->voltage = voltage_mV; // Store in device struct
-    return device->voltage;
+    device->charging_mV = voltage_mV; // Store in device struct
+    return device->charging_mV;
 }
 
+// Read TELE_VIN (When solar supply operation is detected,
+// TELE_VIN will indicate 0)
+// TODO(yaoyiheng): For testing purposes, TBD whether this is needed for flight.
 uint16_t mppt_get_vin_voltage(mppt_t *device)
 {
     if (!device->i2c) // Mock device
@@ -196,30 +205,26 @@ uint16_t mppt_get_vin_voltage(mppt_t *device)
         return device->VIN_mV;
     }
     uint8_t result_2_bytes[2];
-    // TELE_VIN (When solar supply operation is detected, TELE_VIN will indicate 0)
-    uint8_t reg_to_read = LT8491_TELE_VIN;
-    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
+    // Voltage values are read in 100*V (so 10mV increments)
     uint16_t tele_value_16 =
-        (uint16_t)result_2_bytes[0] |
-        ((uint16_t)result_2_bytes[1] << 8);          // Read in 10 mV increments
+        mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VIN);
     uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
     LOG_DEBUG("TELE_VIN: %u\n", tele_value_16);
     device->VIN_mV = voltage_mV; // Store in device struct
     return device->VIN_mV;
 }
 
+// Read TELE_IIN (Input Current - from solar panels)
 uint16_t mppt_get_current(mppt_t *device)
 {
     if (!device->i2c)
     {
-        return device->current; // Mock device
+        return device->charging_mA; // Mock device
     }
-    uint8_t result_2_bytes[2];
-    uint8_t reg_to_read = LT8491_TELE_IIN; // TELE_IIN (Input Current)
-    i2c_write_then_read(device->address, &reg_to_read, 1, result_2_bytes, 2);
-    uint16_t tele_value_16 = (uint16_t)result_2_bytes[0] |
-                             ((uint16_t)result_2_bytes[1] << 8); // Read in mA
+    // Current values are read in mA directly
+    uint16_t tele_value_16 =
+        mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_IIN);
     LOG_DEBUG("TELE_IIN: %u\n", tele_value_16);
-    device->current = tele_value_16; // Store in device struct
-    return device->current;
+    device->charging_mA = tele_value_16; // Store in device struct
+    return device->charging_mA;
 }

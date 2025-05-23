@@ -74,8 +74,10 @@ void telemetry_task_dispatch(slate_t *slate)
     uint16_t solar_vin_voltage = mppt_get_vin_voltage(&solar_charger_monitor);
     uint16_t solar_voltage = mppt_get_voltage(&solar_charger_monitor);
     uint16_t solar_current = mppt_get_current(&solar_charger_monitor);
-    uint16_t solar_battery_voltage = mppt_get_battery_voltage(&solar_charger_monitor);
-    uint16_t solar_battery_current = mppt_get_battery_current(&solar_charger_monitor);
+    uint16_t solar_battery_voltage =
+        mppt_get_battery_voltage(&solar_charger_monitor);
+    uint16_t solar_battery_current =
+        mppt_get_battery_current(&solar_charger_monitor);
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
