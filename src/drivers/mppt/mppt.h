@@ -25,6 +25,7 @@
 #define LT8491_TELE_PIN 0x04
 #define LT8491_TELE_IOUT 0x08
 #define LT8491_TELE_IIN 0x0A
+#define LT8491_TELE_VBAT 0x0C
 #define LT8491_TELE_VIN 0x0E
 #define LT8491_TELE_VINR 0x10
 
@@ -42,14 +43,20 @@ typedef struct
     uint8_t address;
     bool is_charging;
     bool is_initialized;
-    uint16_t voltage; // in V
-    uint16_t current; // in A
+    uint16_t VIN_mV; // TELE_VIN in mV
+    uint16_t voltage; // TELE_VINR in mV
+    uint16_t current; // TELE_IIN in mA
+    uint16_t battery_mV; // TELE_VBAT in mV
+    uint16_t battery_mA; // TELE_IOUT in mA
 } mppt_t;
 
 // Function declarations
 mppt_t mppt_mk_mock();
 mppt_t mppt_mk(i2c_inst_t *i2c, uint8_t address);
+uint16_t mppt_get_battery_voltage(mppt_t *device);
+uint16_t mppt_get_battery_current(mppt_t *device);
 uint16_t mppt_get_voltage(mppt_t *device);
+uint16_t mppt_get_vin_voltage(mppt_t *device);
 uint16_t mppt_get_current(mppt_t *device);
 void mppt_init(mppt_t *device);
 void mppt_read_telemetry(mppt_t *device);

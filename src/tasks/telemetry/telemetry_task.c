@@ -20,12 +20,14 @@ void telemetry_task_init(slate_t *slate)
         // involve trying to read a known register. For a simple scan, we just
         // see if we get an ACK. The SDK functions return PICO_ERROR_GENERIC if
         // no device responds.
+        LOG_INFO("Scanning MPPT_I2C address 0x%02X\n", addr);
         int ret = i2c_read_blocking(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false);
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("MPPT Device found at 0x%02X\n", addr);
             found_device = true;
         }
+        LOG_INFO("Scanning POWER_I2C address 0x%02X\n", addr);
         ret = i2c_read_blocking(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata, 1,
                                 false);
         if (ret >= 0)
@@ -46,6 +48,7 @@ void telemetry_task_init(slate_t *slate)
 
     // Initialize MPPT
     solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
+    mppt_init(&solar_charger_monitor);
 #else
     // Initialize mocked PICO power monitor
     power_monitor = adm1176_mk_mock();
@@ -68,10 +71,16 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->battery_current = (uint16_t)(current * 1000); // Convert to mA
 
     // Read telemetry data from the LT8491
+    uint16_t solar_vin_voltage = mppt_get_vin_voltage(&solar_charger_monitor);
     uint16_t solar_voltage = mppt_get_voltage(&solar_charger_monitor);
     uint16_t solar_current = mppt_get_current(&solar_charger_monitor);
+    uint16_t solar_battery_voltage = mppt_get_battery_voltage(&solar_charger_monitor);
+    uint16_t solar_battery_current = mppt_get_battery_current(&solar_charger_monitor);
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
+    LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
+             solar_battery_current);
+    LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
 
     // Write to slate
     slate->solar_voltage = solar_voltage;
