@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.13)
 
 option(PROFILE "Build profile to build for" "PICO")
 option(COMMIT_HASH "Commit hash" "no-hash")
+option(PACKET_HMAC_PSK "Packet HMAC PSK")
+
 if(PROFILE STREQUAL "PICO")
   set(PICO_BOARD pico)
   set(SAMWISE_DEFINES PICO)
@@ -20,6 +22,21 @@ elseif(PROFILE STREQUAL "TEST")
   set(SAMWISE_DEFINES TEST)
 else()
   message(WARNING "Unrecognized build profile ${PROFILE}")
+endif()
+
+string(STRIP "${PACKET_HMAC_PSK}" PACKET_HMAC_PSK)
+if(NOT DEFINED PACKET_HMAC_PSK OR PACKET_HMAC_PSK STREQUAL "OFF")
+  message(WARNING "Running with authentication disabled")
+  if(PROFILE STREQUAL "PICUBED-FLIGHT")
+    message(FATAL_ERROR "PACKET_HMAC_PSK must be set for flight profile")
+  endif()
+else()
+  string(LENGTH "${PACKET_HMAC_PSK}" hmac_psk_length)
+  if(NOT hmac_psk_length EQUAL 32)
+    message(FATAL_ERROR "PACKET_HMAC_PSK must be exactly 32 characters long, got ${hmac_psk_length} characters")
+  endif()
+  message(STATUS "Packet authentication code enabled")
+  add_compile_definitions(PACKET_HMAC_PSK=\"${PACKET_HMAC_PSK}\")
 endif()
 
 set(CMAKE_C_STANDARD 11)
@@ -52,6 +69,9 @@ project(samwise C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
+
+# Add the library directories
+add_subdirectory(lib/tinycrypt)
 
 # Include src
 # Executable `samwise` built under src/

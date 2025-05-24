@@ -2,6 +2,7 @@ add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
 add_subdirectory(common)
 add_subdirectory(slate)
+add_subdirectory(packet)
 add_subdirectory(error)
 add_subdirectory(drivers)
 add_subdirectory(scheduler)
@@ -22,6 +23,6 @@ target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
 
 # Samwise
 target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
-  flash)
+  flash neopixel)
 
 pico_add_extra_outputs(samwise)

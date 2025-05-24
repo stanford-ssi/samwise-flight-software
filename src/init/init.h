@@ -13,6 +13,7 @@
 #include "slate.h"
 
 #include "logger.h"
+#include "neopixel.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "scheduler.h"
