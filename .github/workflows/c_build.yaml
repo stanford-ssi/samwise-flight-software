@@ -33,6 +33,8 @@ jobs:
             artifact: "samwise-products-picubed-bringup"
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup Project
         run: ./configure.sh
