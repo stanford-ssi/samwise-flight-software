@@ -6,6 +6,14 @@ on:
       - "**.c"
       - "**.cpp"
       - "**.h"
+  pull_request:
+    paths:
+      # only when a .c, .cpp, or .h file is changed
+      - "**.c"
+      - "**.cpp"
+      - "**.h"
+  workflow_dispatch:
+
 jobs:
   Lint-Check:
     runs-on: ubuntu-latest
