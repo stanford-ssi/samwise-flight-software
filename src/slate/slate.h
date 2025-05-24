@@ -86,6 +86,13 @@ typedef struct samwise_slate
     uint32_t rx_bad_packet_drops;
     uint32_t tx_bytes;
     uint32_t tx_packets;
+
+    /*
+     * RPi UART Communication
+     */
+    queue_t rpi_uart_queue;
+    absolute_time_t rpi_uart_last_byte_receive_time;
+
 } slate_t;
 
 extern slate_t slate;

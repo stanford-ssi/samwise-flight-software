@@ -22,6 +22,7 @@ static void tx_done()
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
 
+        LOG_INFO("p size: %d", sizeof(p_buf));
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
         rfm9x_clear_interrupts(&s->radio);
 
@@ -93,11 +94,12 @@ void radio_task_init(slate_t *slate)
 
     // Install interrupt handlers
     rfm9x_set_tx_irq(&slate->radio, &tx_done);
+    // rfm9x_set_tx_irq(&slate->radio, 0);
     rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
-
+    // rfm9x_transmit(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
 }
 
@@ -110,6 +112,7 @@ void radio_task_dispatch(slate_t *slate)
     if (!queue_is_empty(&slate->tx_queue))
     {
         rfm9x_transmit(&slate->radio);
+        LOG_INFO("Transmitting...");
         // Since the interrupt only fires when done transmitting the last
         // packet, we need to get it started manually
         tx_done();
