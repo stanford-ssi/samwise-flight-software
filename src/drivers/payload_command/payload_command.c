@@ -19,14 +19,10 @@ static const command_t commands[] = {
     {"ping", ping_cmd},
 };
 
-bool ping_cmd(char *command, int buf_size)
+char *ping_cmd()
 {
-    const char *command_str = "[\"ping\", [], {}]";
-    if (buf_size > sizeof(command_str) - 1)
-    {
-        command = memcpy(command, command_str, buf_size);
-    }
-    return false;
+    char *command = "[\"ping\", [], {}]";
+    return command;
 }
 
 bool init_payload(slate_t *slate)
