@@ -6,7 +6,6 @@
  */
 
 #include "beacon_task.h"
-#include "beacon_stats.h"
 
 // Some limits on the data types
 // Total of 64 chars reserved for name field.
