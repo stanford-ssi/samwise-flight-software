@@ -9,8 +9,8 @@
 
 // Some limits on the data types
 // Total of 64 chars reserved for name field.
-#define MAX_STR_LEN      64
-#define MAX_DATA_SIZE    252
+#define MAX_STR_LEN 64
+#define MAX_DATA_SIZE 252
 
 typedef struct __attribute__((__packed__)) {
     uint32_t reboot_counter;
