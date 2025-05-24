@@ -666,7 +666,7 @@ void rfm9x_init(rfm9x_t *r)
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     // TODO: Reset the chip
-    // rfm9x_reset(r);
+    rfm9x_reset(r);
 
     /*
      * Calibrate the oscillator
