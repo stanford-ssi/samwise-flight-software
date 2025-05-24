@@ -26,20 +26,3 @@ typedef struct
  * @return true if the HMAC matches (authenticated), false otherwise.
  */
 bool is_packet_authenticated(packet_t *packet);
-
-/*
-
-Here is where we will define all of the structs that hold arguments for calling
-certain tasks.
-
-*/
-typedef struct
-{
-
-} TASK1_DATA;
-
-typedef struct
-{
-    bool yes_no;
-    uint16_t number;
-} TASK2_DATA;

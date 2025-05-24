@@ -12,7 +12,6 @@
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/utils.h>
 
-#define PACKET_HMAC_PSK "StanfordSSIUMoJBTXpnXoZX3bQrNm5f"
 #define PACKET_HMAC_PSK_LEN 32
 
 _Static_assert(offsetof(packet_t, hmac) ==
@@ -22,6 +21,7 @@ _Static_assert(sizeof(packet_t) == 256, "packet_t size must be 256 bytes");
 
 bool is_packet_authenticated(packet_t *packet)
 {
+#ifdef PACKET_HMAC_PSK
     if (packet == NULL)
     {
         LOG_ERROR("is_packet_authenticated: NULL packet pointer");
@@ -39,4 +39,8 @@ bool is_packet_authenticated(packet_t *packet)
     tc_hmac_final(out_hmac, TC_SHA256_DIGEST_SIZE, &hmac);
 
     return _compare(out_hmac, packet->hmac, TC_SHA256_DIGEST_SIZE) == 0;
+#else // If PACKET_HMAC_PSK is not defined, skip authentication
+    return true;
+
+#endif // PACKET_HMAC_PSK
 }
