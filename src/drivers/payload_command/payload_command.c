@@ -13,15 +13,21 @@
 
 static int write_count = 0;
 
-char *ping_cmd()
-{
-    char *command = "[\"ping\", [], {}]";
-    return command;
-}
+char *ping_cmd();
 
 static const command_t commands[] = {
     {"ping", ping_cmd},
 };
+
+bool ping_cmd(char *command, int buf_size)
+{
+    const char *command_str = "[\"ping\", [], {}]";
+    if (buf_size > sizeof(command_str) - 1)
+    {
+        command = memcpy(command, command_str, buf_size);
+    }
+    return false;
+}
 
 bool init_payload(slate_t *slate)
 {

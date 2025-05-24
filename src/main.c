@@ -41,7 +41,6 @@ int main()
     /*
      * Initialize everything.
      */
-    sleep_ms(5000);
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));

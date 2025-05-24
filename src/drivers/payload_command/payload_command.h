@@ -5,12 +5,30 @@
  */
 #include "slate.h"
 
-typedef char *(*command_fn_t)();
+typedef bool (*command_fn_t)();
+
+enum
+{
+
+};
+
+typedef struct
+{
+    char argument_name;
+
+} command_arg_t;
+
+typedef struct
+{
+    int num_args;
+    command_arg_t *args;
+} command_args_list_t;
 
 typedef struct
 {
     const char *name;
     command_fn_t fn;
+    command_args_t *args;
 } command_t;
 
 bool init_payload(slate_t *slate);
