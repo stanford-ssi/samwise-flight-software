@@ -5,10 +5,12 @@ on:
     paths:
       - "src/**"
       - "CMakeLists.txt"
+      - ".github/workflows/*.yaml"
   pull_request:
     paths:
       - "src/**"
       - "CMakeLists.txt"
+      - ".github/workflows/*.yaml"
   workflow_dispatch:
 
 jobs:
@@ -25,7 +27,6 @@ jobs:
             cmake_args: "-DPROFILE=PICUBED-FLIGHT"
             build_dir: "build-2350"
             artifact: "samwise-products-picubed-flight"
-            needs_psk: true
           - name: PICUBED-BRINGUP
             cmake_args: "-DPROFILE=PICUBED-BRINGUP"
             build_dir: "build-2350"
