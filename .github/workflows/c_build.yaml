@@ -13,53 +13,54 @@ on:
 
 jobs:
   Build:
-    # Run on one of Joseph's self hosted runners
-    # TODO: The next satellite should NOT inherit this!
-    # runs-on: [self-hosted, linux, x64]
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        include:
+          - name: PICO
+            cmake_args: "-DPROFILE=PICO"
+            build_dir: "build-2040"
+            artifact: "samwise-products-pico"
+          - name: PICUBED-FLIGHT
+            cmake_args: "-DPROFILE=PICUBED-FLIGHT"
+            build_dir: "build-2350"
+            artifact: "samwise-products-picubed-flight"
+            needs_psk: true
+          - name: PICUBED-BRINGUP
+            cmake_args: "-DPROFILE=PICUBED-BRINGUP"
+            build_dir: "build-2350"
+            artifact: "samwise-products-picubed-bringup"
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Project
-      run: ./configure.sh
+      - uses: actions/checkout@v4
 
-    - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      - name: Setup Project
+        run: ./configure.sh
 
-    - name: Configure PICO profile
-      run: cmake -B ${{github.workspace}}/build-2040 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICO
+      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
 
-    - name: Build PICO profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2040 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-pico
-        path: |
-          build-2040/src/samwise*.uf2
+      - name: Cache build
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.build_dir }}
+          key: ${{ runner.os }}-cmake-${{ matrix.name }}-${{ hashFiles('src/**', 'CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-${{ matrix.name }}-
 
-    - name: Configure PICUBED-FLIGHT profile
-      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPACKET_HMAC_PSK=${{ secrets.PACKET_HMAC_PSK }} -DPROFILE=PICUBED-FLIGHT
-    - name: Build PICUBED-FLIGHT profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-picubed-flight
-        path: |
-          build-2350/src/samwise*.uf2
+      - name: Configure profile
+        run: |
+          if [ "${{ matrix.name }}" = "PICUBED-FLIGHT" ]; then
+            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} -DPACKET_HMAC_PSK=${{ secrets.PACKET_HMAC_PSK }} ${{ matrix.cmake_args }}
+          else
+            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} ${{ matrix.cmake_args }}
+          fi
 
-    - name: Configure PICUBED-BRINGUP profile
-      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP
-    - name: Build PICUBED-BRINGUP profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-picubed-bringup
-        path: |
-          build-2350/src/samwise*.uf2
+      - name: Build profile
+        run: cmake --build ${{ github.workspace }}/${{ matrix.build_dir }} --parallel 4
+
+      - name: Archive Build Products
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.build_dir }}/src/samwise*.uf2
