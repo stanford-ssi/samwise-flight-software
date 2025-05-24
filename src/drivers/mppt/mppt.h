@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "macros.h"
 #include "pins.h"
+#include "utils.h"
 
 // LT8491 I2C Address (0x10)
 #define LT8491_I2C_ADDR 0x10

@@ -76,7 +76,7 @@ uint16_t mppt_send_instruction_and_read_2_byte(mppt_t *device, uint8_t inst)
 {
     if (!device->i2c)
     {
-        return 0xFFFFFF; // No-op for mock device - simulate error code
+        return 0xFFFF; // No-op for mock device - simulate error code
     }
     uint8_t result_2_bytes[2];
     i2c_write_then_read(device->address, &inst, 1, result_2_bytes, 2);
@@ -158,7 +158,7 @@ uint16_t mppt_get_battery_voltage(mppt_t *device)
     // Voltage values are read as 100*V (so 10mV increments)
     uint16_t tele_value_16 =
         mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VBAT);
-    uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
+    uint16_t voltage_mV = safe_mult(tele_value_16, 10); // Convert to mV
     LOG_DEBUG("TELE_VBAT: %u\n", tele_value_16);
     device->battery_mV = voltage_mV; // Store in device struct
     return device->battery_mV;
@@ -189,7 +189,7 @@ uint16_t mppt_get_voltage(mppt_t *device)
     // Voltage values are read in 100*V (so 10mV increments)
     uint16_t tele_value_16 =
         mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VINR);
-    uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
+    uint16_t voltage_mV = safe_mult(tele_value_16, 10); // Convert to mV
     LOG_DEBUG("TELE_VINR: %u\n", tele_value_16);
     device->charging_mV = voltage_mV; // Store in device struct
     return device->charging_mV;
@@ -208,7 +208,7 @@ uint16_t mppt_get_vin_voltage(mppt_t *device)
     // Voltage values are read in 100*V (so 10mV increments)
     uint16_t tele_value_16 =
         mppt_send_instruction_and_read_2_byte(device, LT8491_TELE_VIN);
-    uint16_t voltage_mV = tele_value_16 * 10; // Convert to mV
+    uint16_t voltage_mV = safe_mult(tele_value_16, 10); // Convert to mV
     LOG_DEBUG("TELE_VIN: %u\n", tele_value_16);
     device->VIN_mV = voltage_mV; // Store in device struct
     return device->VIN_mV;
