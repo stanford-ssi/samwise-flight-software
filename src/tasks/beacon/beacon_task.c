@@ -1,104 +1,56 @@
 /**
- * @author  Yao Yiheng
- * @date    2025-01-18
+ * @author  Thomas Haile 
+ * @date    2025-05-17
  *
  * Task to emit telemetry packet to the radio TX queue.
  */
 
 #include "beacon_task.h"
+#include "beacon_stats.h"
 
 // Some limits on the data types
 // Total of 64 chars reserved for name field.
-//   - 1 byte for initial length
-#define MAX_STR_LEN 63
+#define MAX_STR_LEN 64 
 #define MAX_DATA_SIZE 252
 
-// Statically allocat a local byte array to serialize the slate into.
-uint8_t tmp_data[MAX_DATA_SIZE];
-
-// Write a single uint64_t into a byte array from a starting byte
-// and return the new length.
-size_t write_uint64(uint8_t *data, size_t pkt_len, uint64_t value)
-{
-    memcpy(&data[pkt_len], &value, sizeof(uint64_t));
-    return pkt_len + sizeof(uint64_t);
-}
-
-// Recover a single uint64_t from a byte array from a starting byte.
-void read_uint64(uint8_t *data, size_t pkt_len, uint64_t *value)
-{
-    memcpy(value, &data[pkt_len], sizeof(uint64_t));
-}
-
-// Write a single uint32_t into a byte array from a starting byte
-// and return the new length.
-size_t write_uint32(uint8_t *data, size_t pkt_len, uint32_t value)
-{
-    memcpy(&data[pkt_len], &value, sizeof(uint32_t));
-    return pkt_len + sizeof(uint32_t);
-}
-
-// Recover a single uint64_t from a byte array from a starting byte.
-void read_uint32(uint8_t *data, size_t pkt_len, uint32_t *value)
-{
-    memcpy(value, &data[pkt_len], sizeof(uint32_t));
-}
-
-// Write a string as a series of single-characters into a byte array.
-// First uint8_t is the length of the encoded string.
-size_t write_string(uint8_t *data, size_t pkt_len, const char *str)
-{
-    size_t str_len = strlen(str);
-    if (str_len > MAX_STR_LEN)
-    {
-        LOG_ERROR("String: %s too long to encode", str);
-        return pkt_len;
-    }
-    data[pkt_len++] = (uint8_t)str_len;
-    for (size_t i = 0; i < str_len; ++i)
-    {
-        data[pkt_len++] = str[i];
-    }
-    return pkt_len;
-}
+typedef struct __attribute__((__packed__)) {
+    uint32_t reboot_counter;
+    uint64_t time;
+    uint32_t rx_bytes;
+    uint32_t rx_packets;
+    uint32_t rx_backpressure_drops;
+    uint32_t rx_bad_packet_drops;
+    uint32_t tx_bytes;
+    uint32_t tx_packets;
+} beacon_stats;
 
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
-    size_t pkt_len = 0;
-    memset(data, 0, sizeof(data));
-
-    // [64] Write the current state name
-    pkt_len = write_string(data, pkt_len, slate->current_state->name);
-
-    // [64 + 8 = 72] Write the current time
-    pkt_len = write_uint64(data, pkt_len, slate->time_in_current_state_ms);
-
-    // [72 + 4 = 76] Write the current rx_bytes
-    pkt_len = write_uint32(data, pkt_len, slate->rx_bytes);
-
-    // [76 + 4 = 80] Write the current rx_packets
-    pkt_len = write_uint32(data, pkt_len, slate->rx_packets);
-
-    // [80 + 4 = 84] Write the current rx_backpressure_drops
-    pkt_len = write_uint32(data, pkt_len, slate->rx_backpressure_drops);
-
-    // [84 + 4 = 88] Write the current rx_bad_packet_drops
-    pkt_len = write_uint32(data, pkt_len, slate->rx_bad_packet_drops);
-
-    // [88 + 4 = 92] Write the current tx_bytes
-    pkt_len = write_uint32(data, pkt_len, slate->tx_bytes);
-
-    // [92 + 4 = 96] Write the current tx_packets
-    pkt_len = write_uint32(data, pkt_len, slate->tx_packets);
-
-    if (pkt_len > MAX_DATA_SIZE)
+    if (strlen(slate->current_state->name) + sizeof(beacon_stats) > MAX_DATA_SIZE) 
     {
         LOG_ERROR("Serialized data too long: %d", pkt_len);
         return 0;
     }
 
-    return pkt_len;
+    // copy name to buffer (up to MAX_STR_LEN)
+    size_t name_len = strnlen(slate->name, MAX_STR_LEN);
+    data[name_len - 1] = '\0';
+    memcpy(data, slate->current_state->name, name_len);
+
+    beacon_stats stats = {
+        .reboot_counter = slate->reboot_counter,
+        .time = slate->time,
+        .rx_bytes = slate->rx_bytes,
+        .rx_packets = slate->rx_packets,
+        .rx_backpressure_drops = slate->rx_backpressure_drops,
+        .rx_bad_packet_drops = slate->rx_bad_packet_drops,
+        .tx_bytes = slate->tx_bytes,
+        .tx_packets = slate->tx_packets
+    };
+
+    memcpy(data + name_len, &stats, sizeof(stats));
+    return name_len + sizeof(beacon_stats);
 }
 
 void beacon_task_init(slate_t *slate)
