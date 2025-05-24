@@ -1,7 +1,10 @@
-name: C/C++ Build
+name: C/C++ Build and Release
 
 on:
   push:
+    branches:
+      - main # Trigger only on pushes to the main branch
+      - create-releases # Trigger also on the new testing branch
     paths:
       - "src/**"
       - "CMakeLists.txt"
@@ -13,53 +16,74 @@ on:
 
 jobs:
   Build:
-    # Run on one of Joseph's self hosted runners
-    # TODO: The next satellite should NOT inherit this!
-    # runs-on: [self-hosted, linux, x64]
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Project
-      run: ./configure.sh
+      - uses: actions/checkout@v4
 
-    - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      - name: Setup Project
+        run: ./configure.sh
 
-    - name: Configure PICO profile
-      run: cmake -B ${{github.workspace}}/build-2040 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICO
+      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
 
-    - name: Build PICO profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2040 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-pico
-        path: |
-          build-2040/src/samwise*.uf2
+      # Build PICO profile
+      - name: Configure PICO profile
+        run: cmake -B ${{github.workspace}}/build-2040 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICO
+      - name: Build PICO profile
+        run: cmake --build ${{github.workspace}}/build-2040 --parallel 4
 
-    - name: Configure PICUBED-FLIGHT profile
-      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
-    - name: Build PICUBED-FLIGHT profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-picubed-flight
-        path: |
-          build-2350/src/samwise*.uf2
+      # Build PICUBED-FLIGHT profile
+      - name: Configure PICUBED-FLIGHT profile
+        run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
+      - name: Build PICUBED-FLIGHT profile
+        run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
 
-    - name: Configure PICUBED-BRINGUP profile
-      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP
-    - name: Build PICUBED-BRINGUP profile
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build-2350 --parallel 4
-    - name: Archive Build Products for PICO
-      uses: actions/upload-artifact@v4
-      with:
-        name: samwise-products-picubed-bringup
-        path: |
-          build-2350/src/samwise*.uf2
+      # Build PICUBED-BRINGUP profile
+      - name: Configure PICUBED-BRINGUP profile
+        run: cmake -B ${{github.workspace}}/build-2350-bringup -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-BRINGUP # Use a different build directory to avoid conflicts
+      - name: Build PICUBED-BRINGUP profile
+        run: cmake --build ${{github.workspace}}/build-2350-bringup --parallel 4
+
+      # Create Release and Upload Assets (only on main branch pushes)
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' # Only run this step if the push is to the main branch
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.sha }} # Example tag: v123-abcdef123...
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      - name: Upload PICO UF2 to Release
+        if: github.ref == 'refs/heads/main' # Only run this step if the push is to the main branch
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/build-2040/src/samwise-pico.uf2 # Assuming a specific filename for PICO
+          asset_name: samwise-pico.uf2
+
+      - name: Upload PICUBED-FLIGHT UF2 to Release
+        if: github.ref == 'refs/heads/main' # Only run this step if the push is to the main branch
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/build-2350/src/samwise-picubed-flight.uf2 # Assuming a specific filename
+          asset_name: samwise-picubed-flight.uf2
+
+      - name: Upload PICUBED-BRINGUP UF2 to Release
+        if: github.ref == 'refs/heads/main' # Only run this step if the push is to the main branch
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ github.workspace }}/build-2350-bringup/src/samwise-picubed-bringup.uf2 # Assuming a specific filename
+          asset_name: samwise-picubed-bringup.uf2
