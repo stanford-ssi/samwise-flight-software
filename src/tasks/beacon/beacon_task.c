@@ -12,6 +12,8 @@
 #define MAX_STR_LEN 64 
 #define MAX_DATA_SIZE 252
 
+uint8_t tmp_data[MAX_DATA_LEN];
+
 typedef struct __attribute__((__packed__)) {
     uint32_t reboot_counter;
     uint64_t time;
@@ -26,20 +28,21 @@ typedef struct __attribute__((__packed__)) {
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
-    if (strlen(slate->current_state->name) + sizeof(beacon_stats) > MAX_DATA_SIZE) 
+    size_t pkt_len = strlen(slate->current_state->name) + sizeof(beacon_stats); 
+    if (pkt_len > MAX_DATA_SIZE) 
     {
         LOG_ERROR("Serialized data too long: %d", pkt_len);
         return 0;
     }
 
     // copy name to buffer (up to MAX_STR_LEN)
-    size_t name_len = strnlen(slate->name, MAX_STR_LEN);
+    size_t name_len = strnlen(slate->current_state->name, MAX_STR_LEN);
     data[name_len - 1] = '\0';
     memcpy(data, slate->current_state->name, name_len);
 
     beacon_stats stats = {
         .reboot_counter = slate->reboot_counter,
-        .time = slate->time,
+        .time = slate->time_in_current_state_ms,
         .rx_bytes = slate->rx_bytes,
         .rx_packets = slate->rx_packets,
         .rx_backpressure_drops = slate->rx_backpressure_drops,
