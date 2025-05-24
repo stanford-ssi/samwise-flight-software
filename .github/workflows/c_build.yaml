@@ -42,14 +42,6 @@ jobs:
       - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
         uses: carlosperate/arm-none-eabi-gcc-action@v1
 
-      - name: Cache build
-        uses: actions/cache@v4
-        with:
-          path: ${{ matrix.build_dir }}
-          key: ${{ runner.os }}-cmake-${{ matrix.name }}-${{ hashFiles('src/**', 'CMakeLists.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-cmake-${{ matrix.name }}-
-
       - name: Configure profile
         run: |
           if [ "${{ matrix.name }}" = "PICUBED-FLIGHT" ]; then
