@@ -10,6 +10,7 @@ target_link_libraries(running_state PUBLIC
   command_task
   beacon_task
   watchdog_task
+  telemetry_task
   payload_task
   diagnostics_task
 )

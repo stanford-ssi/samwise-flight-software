@@ -42,6 +42,14 @@ typedef struct samwise_slate
     uint64_t time_in_current_state_ms;
 
     /*
+     * Power Telemetry
+     */
+    uint16_t battery_voltage; // in mV (to 0.001V)
+    uint16_t battery_current; // in mA (to 0.001A)
+    uint16_t solar_voltage;   // in mV (to 0.001V)
+    uint16_t solar_current;   // in mA (to 0.001A)
+
+    /*
      * Watchdog
      */
     watchdog_t watchdog;
