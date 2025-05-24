@@ -1,5 +1,5 @@
 /**
- * @author  Thomas Haile 
+ * @author  Thomas Haile
  * @date    2025-05-17
  *
  * Task to emit telemetry packet to the radio TX queue.
@@ -9,10 +9,8 @@
 
 // Some limits on the data types
 // Total of 64 chars reserved for name field.
-#define MAX_STR_LEN 64 
-#define MAX_DATA_SIZE 252
-
-uint8_t tmp_data[MAX_DATA_SIZE];
+#define MAX_STR_LEN      64
+#define MAX_DATA_SIZE    252
 
 typedef struct __attribute__((__packed__)) {
     uint32_t reboot_counter;
@@ -26,29 +24,27 @@ typedef struct __attribute__((__packed__)) {
 } beacon_stats;
 
 // Serialize the slate into a byte array and return its size.
-size_t serialize_slate(slate_t *slate, uint8_t *data)
-{
-    size_t pkt_len = strlen(slate->current_state->name) + sizeof(beacon_stats); 
-    if (pkt_len > MAX_DATA_SIZE) 
-    {
+size_t serialize_slate(slate_t *slate, uint8_t *data) {
+    size_t pkt_len = strlen(slate->current_state->name) + sizeof(beacon_stats);
+    if (pkt_len > MAX_DATA_SIZE) {
         LOG_ERROR("Serialized data too long: %d", pkt_len);
         return 0;
     }
 
-    // copy name to buffer (up to MAX_STR_LEN)
+    // Copy name to buffer (up to MAX_STR_LEN)
     size_t name_len = strnlen(slate->current_state->name, MAX_STR_LEN);
     data[name_len - 1] = '\0';
     memcpy(data, slate->current_state->name, name_len);
 
     beacon_stats stats = {
-        .reboot_counter = slate->reboot_counter,
-        .time = slate->time_in_current_state_ms,
-        .rx_bytes = slate->rx_bytes,
-        .rx_packets = slate->rx_packets,
-        .rx_backpressure_drops = slate->rx_backpressure_drops,
-        .rx_bad_packet_drops = slate->rx_bad_packet_drops,
-        .tx_bytes = slate->tx_bytes,
-        .tx_packets = slate->tx_packets
+        .reboot_counter          = slate->reboot_counter,
+        .time                    = slate->time_in_current_state_ms,
+        .rx_bytes                = slate->rx_bytes,
+        .rx_packets              = slate->rx_packets,
+        .rx_backpressure_drops   = slate->rx_backpressure_drops,
+        .rx_bad_packet_drops     = slate->rx_bad_packet_drops,
+        .tx_bytes                = slate->tx_bytes,
+        .tx_packets              = slate->tx_packets,
     };
 
     memcpy(data + name_len, &stats, sizeof(stats));
