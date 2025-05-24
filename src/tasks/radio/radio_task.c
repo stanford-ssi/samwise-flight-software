@@ -59,8 +59,14 @@ static void rx_done()
             p.src = p_buf[1];
             p.seq = p_buf[2];
             p.flags = p_buf[3];
-            p.len = n - 4;
-            memcpy(&p.data[0], p_buf + 4, n - 4);
+
+            size_t offset = 4;
+            memcpy(&p.boot_count, p_buf + offset, sizeof(uint32_t));
+            offset += sizeof(uint32_t);
+            memcpy(&p.msg_id, p_buf + offset, sizeof(uint32_t));
+            offset += sizeof(uint32_t);
+            p.len = n - offset - TC_SHA256_DIGEST_SIZE;
+            memcpy(&p.data[0], p_buf + offset, p.len);
 
             if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
             {
