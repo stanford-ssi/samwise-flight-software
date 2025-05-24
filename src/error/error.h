@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "neopixel.h"
 #include "pico/stdlib.h"
 
 void fatal_error();

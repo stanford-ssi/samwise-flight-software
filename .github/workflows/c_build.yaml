@@ -41,7 +41,7 @@ jobs:
           build-2040/src/samwise*.uf2
 
     - name: Configure PICUBED-FLIGHT profile
-      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPROFILE=PICUBED-FLIGHT
+      run: cmake -B ${{github.workspace}}/build-2350 -DCOMMIT_HASH=${{github.sha}} -DPACKET_HMAC_PSK=${{ secrets.PACKET_HMAC_PSK }} -DPROFILE=PICUBED-FLIGHT
     - name: Build PICUBED-FLIGHT profile
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build-2350 --parallel 4

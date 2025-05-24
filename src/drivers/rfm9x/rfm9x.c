@@ -212,13 +212,22 @@ static inline void rfm9x_trigger_osc_calibration(rfm9x_t *r)
  */
 static inline void rfm9x_set_frequency(rfm9x_t *r, uint32_t f)
 {
-    uint32_t frf = (f / _RH_RF95_FSTEP) & 0xFFFFFF;
+// Fix frequency to 438.1 MHz when we're in flight
+#ifdef IN_FLIGHT
+    rfm9x_put8(r, _RH_RF95_REG_06_FRF_MSB, 0x6d);
+    rfm9x_put8(r, _RH_RF95_REG_07_FRF_MID, 0x86);
+    rfm9x_put8(r, _RH_RF95_REG_08_FRF_LSB, 0x66);
+#else
+    uint32_t frf = ((f << 14) / 10) & 0xFFFFFF;
     uint8_t msb = (frf >> 16) & 0xFF;
     uint8_t mid = (frf >> 8) & 0xFF;
     uint8_t lsb = frf & 0xFF;
+    LOG_DEBUG("RFM9X: Setting frequency to %f MHz", (float)f / 10);
+    LOG_DEBUG("frf = %u, msb = %x, mid = %x, lsb = %x", frf, msb, mid, lsb);
     rfm9x_put8(r, _RH_RF95_REG_06_FRF_MSB, msb);
     rfm9x_put8(r, _RH_RF95_REG_07_FRF_MID, mid);
     rfm9x_put8(r, _RH_RF95_REG_08_FRF_LSB, lsb);
+#endif
 }
 
 /*
@@ -657,7 +666,7 @@ void rfm9x_init(rfm9x_t *r)
     spi_set_format(r->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     // TODO: Reset the chip
-    // rfm9x_reset(r);
+    rfm9x_reset(r);
 
     /*
      * Calibrate the oscillator
