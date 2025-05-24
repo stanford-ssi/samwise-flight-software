@@ -12,7 +12,7 @@
 #define MAX_STR_LEN 64 
 #define MAX_DATA_SIZE 252
 
-uint8_t tmp_data[MAX_DATA_LEN];
+uint8_t tmp_data[MAX_DATA_SIZE];
 
 typedef struct __attribute__((__packed__)) {
     uint32_t reboot_counter;
