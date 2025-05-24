@@ -23,6 +23,8 @@ typedef struct __attribute__((__packed__)) {
     uint32_t tx_packets;
 } beacon_stats;
 
+static uint8_t tmp_data[MAX_DATA_SIZE];
+
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data) {
     size_t pkt_len = strlen(slate->current_state->name) + sizeof(beacon_stats);
