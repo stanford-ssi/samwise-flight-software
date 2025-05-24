@@ -31,12 +31,8 @@ jobs:
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           format-review: true
           passive-reviews: true
-          # Only format c and header files, do not format lib
-          globs: |
-            **/*.c
-            **/*.cpp
-            **/*.h
-            !lib/**
+          # do not format external lib folder and subdirectories
+          ignore: 'lib'
       - name: Fail if there are linter errors
         if: ${{steps.linter.outputs.clang-format-checks-failed > 0}}
         run: |
