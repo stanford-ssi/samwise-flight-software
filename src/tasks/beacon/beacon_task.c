@@ -6,10 +6,9 @@
  */
 
 #include "beacon_task.h"
-#include <stdlib.h>
 
 #define MAX_DATA_SIZE 252
-#define MAX_STR_LEN (min(64, MAX_DATA_SIZE - sizeof(beacon_stats)))
+#define MAX_STR_LEN (MAX_DATA_SIZE - sizeof(beacon_stats))
 
 typedef struct
 {
@@ -28,14 +27,15 @@ static uint8_t tmp_data[MAX_DATA_SIZE];
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
-    if (strlen(slate->current_state->name) > MAX_STR_LEN)
+    size_t min_string_capacity = MAX_STR_LEN > 64 ? 64 : MAX_STR_LEN;
+    if (strlen(slate->current_state->name) > min_string_capacity)
     {
         LOG_ERROR("Serialized name too long: %s. Will truncate.",
                   slate->current_state->name);
     }
 
     // Copy name to buffer (up to MAX_STR_LEN)
-    size_t name_len = strnlen(slate->current_state->name, MAX_STR_LEN);
+    size_t name_len = strnlen(slate->current_state->name, min_string_capacity);
     data[name_len - 1] = '\0';
     memcpy(data, slate->current_state->name, name_len);
 
