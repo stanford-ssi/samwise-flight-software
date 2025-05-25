@@ -11,9 +11,12 @@
 #include "pico/stdlib.h"
 #include "slate.h"
 
+#define PACKET_BYTE_LENGTH 251 // in bytes TODO check?/ get from driver mod?
+
 const int RADIO_PACKETS_OUT_MAX_LENGTH = 64;
-const int TASK1_QUEUE_CAPACITY = 32;
-const int TASK2_QUEUE_CAPACITY = 32;
+const int TAKE_PHOTO_QUEUE_CAPACITY = 32;
+const int DOWNLOAD_PHOTO_QUEUE_CAPACITY = 32;
+const int TAKE_AND_SEND_QUEUE_CAPACITY = 32;
 
 /// @brief Initialize the command switch task
 /// @param slate Slate
@@ -24,8 +27,9 @@ void command_task_init(slate_t *slate)
                RADIO_PACKETS_OUT_MAX_LENGTH);
 
     // Initialize queues for storing processed commands
-    queue_init(&slate->task1_data, sizeof(TASK1_DATA), TASK1_QUEUE_CAPACITY);
-    queue_init(&slate->task2_data, sizeof(TASK2_DATA), TASK2_QUEUE_CAPACITY);
+    queue_init(&slate->take_photo_task_data, sizeof(PAYLOAD_COMMAND_DATA), TAKE_PHOTO_QUEUE_CAPACITY);
+    queue_init(&slate->download_photo_task_data, sizeof(PAYLOAD_COMMAND_DATA), DOWNLOAD_PHOTO_QUEUE_CAPACITY);
+    queue_init(&slate->take_and_send_photo_task_data, sizeof(PAYLOAD_COMMAND_DATA), TAKE_AND_SEND_QUEUE_CAPACITY);
 
     slate->num_uploaded_bytes = 0;
     slate->packet_buffer_index = 0;
