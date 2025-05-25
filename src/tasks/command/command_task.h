@@ -1,6 +1,6 @@
 
 /**
- * @author  Thomas Haile 
+ * @author  Thomas Haile
  * @date    2025-05-24
  *
  * Task management for command processing

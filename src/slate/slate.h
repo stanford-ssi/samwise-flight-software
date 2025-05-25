@@ -56,7 +56,7 @@ typedef struct samwise_slate
      */
     queue_t take_photo_task_data;
     queue_t download_photo_task_data;
-    queue_t take_and_send_photo_task_data; 
+    queue_t take_and_send_photo_task_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
@@ -64,7 +64,7 @@ typedef struct samwise_slate
     uint16_t packet_buffer_index;
     uint16_t last_place_on_packet;
     uint8_t uploading_command_id;
-    uint8_t number_commands_processed; 
+    uint8_t number_commands_processed;
 
     /*
      * Radio
