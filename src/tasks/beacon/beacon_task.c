@@ -7,10 +7,8 @@
 
 #include "beacon_task.h"
 
-// Some limits on the data types
-// Total of 64 chars reserved for name field.
-#define MAX_STR_LEN 64
 #define MAX_DATA_SIZE 252
+#define MAX_STR_LEN (MAX_DATA_SIZE - sizeof(beacon_stats))
 
 typedef struct
 {
@@ -29,11 +27,10 @@ static uint8_t tmp_data[MAX_DATA_SIZE];
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
-    size_t pkt_len = strlen(slate->current_state->name) + sizeof(beacon_stats);
-    if (pkt_len > MAX_DATA_SIZE)
+    if (strlen(slate->current_state->name) > MAX_STR_LEN)
     {
-        LOG_ERROR("Serialized data too long: %d", pkt_len);
-        return 0;
+        LOG_ERROR("Serialized name too long: %s. Will truncate.",
+                  slate->current_state->name);
     }
 
     // Copy name to buffer (up to MAX_STR_LEN)

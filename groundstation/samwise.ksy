@@ -7,7 +7,6 @@ seq:
   - id: name
     type: strz
     encoding: UTF-8
-    terminator: 0
 
   - id: reboot_counter
     type: u4
