@@ -24,7 +24,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     case TAKE_AND_SEND_PHOTO: 
     {
       PAYLOAD_COMMAND_DATA task;
-      strncpy(task.serialized_command, packet.data + 1, sizeof(task.serialized_command) - 1);
+      strncpy(task.serialized_command, packet->data + 1, sizeof(task.serialized_command) - 1);
       task.serialized_command[sizeof(task.serialized_command) - 1] = '\0';
 
       if (command_id == TAKE_PHOTO)
@@ -46,7 +46,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
     /* Toggle Commands */
     // TODO: ADD HERE 
-    
+
     default:
       LOG_ERROR("Unknown command ID: %i", command_id);
       break;
