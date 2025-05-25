@@ -8,7 +8,7 @@
 #include "beacon_task.h"
 
 #define MAX_DATA_SIZE 252
-#define MAX_STR_LEN (MAX_DATA_SIZE - sizeof(beacon_stats))
+#define MAX_STR_LEN (min(64, MAX_DATA_SIZE - sizeof(beacon_stats)))
 
 typedef struct
 {
