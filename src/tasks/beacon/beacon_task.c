@@ -6,6 +6,7 @@
  */
 
 #include "beacon_task.h"
+#include <stdlib.h>
 
 #define MAX_DATA_SIZE 252
 #define MAX_STR_LEN (min(64, MAX_DATA_SIZE - sizeof(beacon_stats)))
