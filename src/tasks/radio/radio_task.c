@@ -50,8 +50,8 @@ static void rx_done()
         goto bad_packet;
 
     uint8_t offset = 0;
-    p.src = p_buf[offset++];
     p.dst = p_buf[offset++];
+    p.src = p_buf[offset++];
     p.flags = p_buf[offset++];
     p.seq = p_buf[offset++];
     p.len = p_buf[offset++];
