@@ -48,7 +48,7 @@ void command_task_dispatch(slate_t *slate)
     // Process one packet per dispatch cycle
     if (queue_try_remove(&slate->rx_queue, &packet))
     {
-        if (!is_packet_authenticated(&packet))
+        if (!is_packet_authenticated(&packet, slate->reboot_count))
         {
             LOG_ERROR("Packet authentication failed. Dropping packet.");
             return;
