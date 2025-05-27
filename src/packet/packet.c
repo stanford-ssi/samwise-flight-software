@@ -22,6 +22,35 @@ _Static_assert(sizeof(packet_t) == 256, "packet_t size must be 256 bytes");
 // Track last seen message ID for replay protection
 static uint32_t last_seen_msg_id = 0;
 
+/*
+ * Packet Authentication Requirements & Expectations
+ *
+ * 1. HMAC Authentication:
+ *    - Each packet must be authenticated using HMAC-SHA256.
+ *    - The HMAC is computed over all packet fields except the HMAC field
+ * itself.
+ *    - The pre-shared key (PSK) used for HMAC must be 32 bytes
+ * (PACKET_HMAC_PSK_LEN).
+ *    - The HMAC field must be the last field in the packet_t struct, with no
+ * padding before it.
+ *    - The total size of packet_t must be exactly 256 bytes.
+ *
+ * 2. Replay Protection:
+ *    - Each packet includes a boot_count and msg_id.
+ *    - The boot_count must match the current system boot count.
+ *    - The msg_id must be strictly greater than the last seen msg_id for the
+ * current boot_count.
+ *    - If either check fails, the packet is considered a replay and is
+ * rejected.
+ *
+ * 3. Verification Process:
+ *    - If PACKET_HMAC_PSK is defined, authentication is enforced as above.
+ *    - If PACKET_HMAC_PSK is not defined, authentication is bypassed (all
+ * packets are accepted).
+ *    - On successful authentication, last_seen_msg_id is updated.
+ *    - On failure, an error is logged and the packet is rejected.
+ */
+
 bool is_packet_authenticated(packet_t *packet, uint32_t current_boot_count)
 {
 #ifdef PACKET_HMAC_PSK
