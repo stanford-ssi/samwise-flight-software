@@ -101,7 +101,7 @@ void command_task_dispatch(slate_t *slate)
 
         if (successful_peek)
         {
-            if (!is_packet_authenticated(&packet))
+            if (!is_packet_authenticated(&packet, slate->reboot_counter))
             {
                 // Packet is not authenticated, drop it
                 LOG_ERROR("Packet authentication failed. Dropping packet.");

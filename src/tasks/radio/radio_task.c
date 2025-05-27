@@ -8,6 +8,12 @@
 
 #include "radio_task.h"
 
+static inline uint32_t ntohl(uint32_t net)
+{
+    return ((net & 0xFF) << 24) | ((net & 0xFF00) << 8) |
+           ((net & 0xFF0000) >> 8) | ((net & 0xFF000000) >> 24);
+}
+
 static slate_t *s;
 
 static void tx_done()
@@ -39,38 +45,50 @@ static void tx_done()
 
 static void rx_done()
 {
-    // Copy packet into receive queue and unset interrupt
-    // TODO: Can we do this faster?
     uint8_t p_buf[256];
     packet_t p;
 
-    uint8_t n = rfm9x_packet_from_fifo(&s->radio, &p_buf[0]);
+    uint8_t n = rfm9x_packet_from_fifo(&s->radio, p_buf);
     s->rx_bytes += n;
 
-    if (n > 0)
+    const uint8_t min_packet_size = sizeof(packet_t) - sizeof(p.data);
+    if (n < min_packet_size)
+        goto bad_packet;
+
+    uint8_t offset = 0;
+    p.src = p_buf[offset++];
+    p.dst = p_buf[offset++];
+    p.flags = p_buf[offset++];
+    p.seq = p_buf[offset++];
+    p.len = p_buf[offset++];
+
+    uint8_t data_len = p.len;
+    if (data_len > sizeof(p.data))
+        goto bad_packet;
+
+    memcpy(p.data, p_buf + offset, data_len);
+    offset += data_len;
+    uint32_t net_boot_count, net_msg_id;
+    memcpy(&net_boot_count, p_buf + offset, 4);
+    offset += 4;
+    memcpy(&net_msg_id, p_buf + offset, 4);
+    offset += 4;
+    p.boot_count = ntohl(net_boot_count);
+    p.msg_id = ntohl(net_msg_id);
+    memcpy(p.hmac, p_buf + offset, TC_SHA256_DIGEST_SIZE);
+    offset += TC_SHA256_DIGEST_SIZE;
+
+    if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
     {
-        if (n < 4)
-        {
-            s->rx_bad_packet_drops++;
-        }
-        else
-        {
-            p.dst = p_buf[0];
-            p.src = p_buf[1];
-            p.seq = p_buf[2];
-            p.flags = p_buf[3];
-            p.len = n - 4;
-            memcpy(&p.data[0], p_buf + 4, n - 4);
-
-            if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
-            {
-                s->rx_packets++;
-
-                if (!queue_try_add(&s->rx_queue, &p))
-                    s->rx_backpressure_drops++;
-            }
-        }
+        s->rx_packets++;
+        if (!queue_try_add(&s->rx_queue, &p))
+            s->rx_backpressure_drops++;
     }
+    rfm9x_clear_interrupts(&s->radio);
+    return;
+
+bad_packet:
+    s->rx_bad_packet_drops++;
     rfm9x_clear_interrupts(&s->radio);
 }
 

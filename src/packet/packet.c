@@ -19,7 +19,10 @@ _Static_assert(offsetof(packet_t, hmac) ==
                "hmac must be the last field and no padding before hmac");
 _Static_assert(sizeof(packet_t) == 256, "packet_t size must be 256 bytes");
 
-bool is_packet_authenticated(packet_t *packet)
+// Track last seen message ID for replay protection
+static uint32_t last_seen_msg_id = 0;
+
+bool is_packet_authenticated(packet_t *packet, uint32_t current_boot_count)
 {
 #ifdef PACKET_HMAC_PSK
     if (packet == NULL)
@@ -28,8 +31,22 @@ bool is_packet_authenticated(packet_t *packet)
         return false;
     }
 
-    struct tc_hmac_state_struct hmac;
+    // Replay protection: check boot_count and msg_id
+    if (packet->boot_count != current_boot_count)
+    {
+        LOG_ERROR("Replay detected: packet boot_count %u != current %u",
+                  packet->boot_count, current_boot_count);
+        return false;
+    }
+    if (packet->msg_id <= last_seen_msg_id)
+    {
+        LOG_ERROR("Replay detected: packet msg_id %u <= last seen %u for "
+                  "boot_count %u",
+                  packet->msg_id, last_seen_msg_id, packet->boot_count);
+        return false;
+    }
 
+    struct tc_hmac_state_struct hmac;
     tc_hmac_set_key(&hmac, (const uint8_t *)PACKET_HMAC_PSK,
                     PACKET_HMAC_PSK_LEN);
     tc_hmac_init(&hmac);
@@ -38,9 +55,17 @@ bool is_packet_authenticated(packet_t *packet)
     uint8_t out_hmac[TC_SHA256_DIGEST_SIZE];
     tc_hmac_final(out_hmac, TC_SHA256_DIGEST_SIZE, &hmac);
 
-    return _compare(out_hmac, packet->hmac, TC_SHA256_DIGEST_SIZE) == 0;
-#else // If PACKET_HMAC_PSK is not defined, skip authentication
-    return true;
+    if (_compare(out_hmac, packet->hmac, TC_SHA256_DIGEST_SIZE) != 0)
+    {
+        LOG_ERROR("HMAC mismatch: computed and provided HMACs do not match");
+        return false;
+    }
 
+    // Update last seen msg_id since this packet is authenticated
+    last_seen_msg_id = packet->msg_id;
+
+    return true;
+#else  // If PACKET_HMAC_PSK is not defined, skip authentication
+    return true;
 #endif // PACKET_HMAC_PSK
 }
