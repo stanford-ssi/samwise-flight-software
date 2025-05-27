@@ -194,13 +194,13 @@ static void send_syn()
 void payload_turn_on(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 1);
-    &slate->is_payload_on = 1;
+    slate->is_payload_on = 1;
 }
 
 void payload_turn_off(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 0);
-    &slate->is_payload_on = 0;
+    slate->is_payload_on = 0;
 }
 
 /**

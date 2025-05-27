@@ -21,19 +21,21 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     {
         /* Payload Commands */
         case PAYLOAD_EXEC:
+        {
             PAYLOAD_COMMAND_DATA payload_str;
             strncpy(payload_str.serialized_command, packet->data + 1,
                     sizeof(payload_str.serialized_command) - 1);
             payload_str
-                .serialized_command[sizeof(task.serialized_command) - 1] = '\0';
+                .serialized_command[sizeof(payload_str.serialized_command) -
+                                    1] = '\0';
 
             if (&slate->is_payload_on)
             {
                 payload_uart_write_packet(
                     slate, payload_str.serialized_command,
                     sizeof(payload_str.serialized_command) - 1,
-                    &slate->curr_command_seq_num);
-                &slate->curr_command_seq_num++;
+                    slate->curr_command_seq_num);
+                slate->curr_command_seq_num++;
             }
             else
             {
@@ -43,6 +45,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                           "and then redo the command!");
             }
             break;
+        }
 
         case NO_OP:
         {
@@ -52,15 +55,19 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         }
 
         case PAYLOAD_TURN_ON:
+        {
             payload_turn_on(slate);
             break;
+        }
 
         case PAYLOAD_TURN_OFF:
+        {
             payload_turn_off(slate);
             break;
 
             /* Toggle Commands */
             // TODO: ADD HERE
+        }
 
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
