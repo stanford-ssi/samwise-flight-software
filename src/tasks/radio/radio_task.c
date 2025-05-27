@@ -8,12 +8,6 @@
 
 #include "radio_task.h"
 
-static inline uint32_t ntohl(uint32_t net)
-{
-    return ((net & 0xFF) << 24) | ((net & 0xFF00) << 8) |
-           ((net & 0xFF0000) >> 8) | ((net & 0xFF000000) >> 24);
-}
-
 static slate_t *s;
 
 static void tx_done()
@@ -68,13 +62,10 @@ static void rx_done()
 
     memcpy(p.data, p_buf + offset, data_len);
     offset += data_len;
-    uint32_t net_boot_count, net_msg_id;
-    memcpy(&net_boot_count, p_buf + offset, 4);
+    memcpy(&p.boot_count, p_buf + offset, 4);
     offset += 4;
-    memcpy(&net_msg_id, p_buf + offset, 4);
+    memcpy(&p.msg_id, p_buf + offset, 4);
     offset += 4;
-    p.boot_count = ntohl(net_boot_count);
-    p.msg_id = ntohl(net_msg_id);
     memcpy(p.hmac, p_buf + offset, TC_SHA256_DIGEST_SIZE);
     offset += TC_SHA256_DIGEST_SIZE;
 
