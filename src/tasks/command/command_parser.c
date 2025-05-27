@@ -19,26 +19,30 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     switch (command_id)
     {
         /* Payload Commands */
-        case TAKE_PHOTO:
-        case DOWNLOAD_PHOTO:
-        case TAKE_AND_SEND_PHOTO:
-        {
-            PAYLOAD_COMMAND_DATA task;
-            strncpy(task.serialized_command, packet->data + 1,
-                    sizeof(task.serialized_command) - 1);
-            task.serialized_command[sizeof(task.serialized_command) - 1] = '\0';
+        case PAYLOAD_EXEC:
+            PAYLOAD_COMMAND_DATA payload_str;
+            strncpy(payload_str.serialized_command, packet->data + 1,
+                    sizeof(payload_str.serialized_command) - 1);
+            payload_str
+                .serialized_command[sizeof(task.serialized_command) - 1] = '\0';
 
-            if (command_id == TAKE_PHOTO)
-                queue_try_add(&slate->take_photo_task_data, &task);
-            else if (command_id == DOWNLOAD_PHOTO)
-                queue_try_add(&slate->download_photo_task_data, &task);
-            else if (command_id == TAKE_AND_SEND_PHOTO)
-                queue_try_add(&slate->take_and_send_photo_task_data, &task);
+            if (&slate->is_payload_on)
+            {
+                payload_uart_write_packet(
+                    slate, payload_str.serialized_command,
+                    sizeof(payload_str.serialized_command) - 1,
+                    &slate->curr_command_seq_num);
+                &slate->curr_command_seq_num++;
+            }
+            else
+            {
+                // TODO: A way to let ground station know that Payload is turned
+                // off
+                LOG_DEBUG("Payload is turned off, please turn payload on first "
+                          "and then redo the command!");
+            }
 
-            LOG_INFO("Payload: %s", task.serialized_command);
             break;
-        }
-
         case NO_OP:
         {
             LOG_INFO("Number of Commands Executed: %d",

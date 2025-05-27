@@ -85,6 +85,8 @@ typedef struct samwise_slate
      */
     queue_t rpi_uart_queue;
     absolute_time_t rpi_uart_last_byte_receive_time;
+    int curr_command_seq_num;
+    int is_payload_on;
 
 } slate_t;
 
