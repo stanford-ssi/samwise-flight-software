@@ -42,14 +42,6 @@ typedef struct samwise_slate
     uint64_t time_in_current_state_ms;
 
     /*
-     * Power Telemetry
-     */
-    uint16_t battery_voltage; // in mV (to 0.001V)
-    uint16_t battery_current; // in mA (to 0.001A)
-    uint16_t solar_voltage;   // in mV (to 0.001V)
-    uint16_t solar_current;   // in mA (to 0.001A)
-
-    /*
      * Watchdog
      */
     watchdog_t watchdog;
@@ -62,9 +54,7 @@ typedef struct samwise_slate
     /*
      * Command switch
      */
-    queue_t task1_data; // queues of this kind will exist for each task called
-                        // from radio com
-    queue_t task2_data;
+    queue_t payload_command_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
@@ -72,6 +62,7 @@ typedef struct samwise_slate
     uint16_t packet_buffer_index;
     uint16_t last_place_on_packet;
     uint8_t uploading_command_id;
+    uint8_t number_commands_processed;
 
     /*
      * Radio
