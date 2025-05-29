@@ -62,9 +62,7 @@ typedef struct samwise_slate
     /*
      * Command switch
      */
-    queue_t task1_data; // queues of this kind will exist for each task called
-                        // from radio com
-    queue_t task2_data;
+    queue_t payload_command_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
@@ -72,6 +70,7 @@ typedef struct samwise_slate
     uint16_t packet_buffer_index;
     uint16_t last_place_on_packet;
     uint8_t uploading_command_id;
+    uint8_t number_commands_processed;
 
     /*
      * Radio
