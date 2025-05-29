@@ -83,4 +83,7 @@
 #define SAMWISE_UART_TX (31)
 #define SAMWISE_UART_RX (30)
 
+#define SAMWISE_FIXED_SOLAR_FAULT (33)
+#define SAMWISE_FIXED_SOLAR_CHARGE (34)
+
 #endif
