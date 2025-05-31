@@ -2,7 +2,11 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-option(PROFILE "Build profile to build for" "PICO")
+# option(PROFILE "Build profile to build for" "PICO")
+if(PROFILE STREQUAL "OFF")
+  set(PROFILE PICO)
+endif()
+
 option(COMMIT_HASH "Commit hash" "no-hash")
 if(PROFILE STREQUAL "PICO")
   set(PICO_BOARD pico)
@@ -29,24 +33,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
 
-# == DO NEVER EDIT THE NEXT LINES for Raspberry Pi Pico VS Code Extension to work ==
+# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
 if(WIN32)
     set(USERHOME $ENV{USERPROFILE})
 else()
     set(USERHOME $ENV{HOME})
 endif()
-set(sdkVersion 2.0.0)
-set(toolchainVersion 13_2_Rel1)
-set(picotoolVersion 2.0.0)
+set(sdkVersion 2.1.1)
+set(toolchainVersion 14_2_Rel1)
+set(picotoolVersion 2.1.1)
 include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 # ====================================================================================
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
-include(pico-sdk/pico_sdk_init.cmake)
+set(PICO_BOARD pico2 CACHE STRING "Board Type")
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
-endif()
+# Pull in Raspberry Pi Pico SDK (must be before project)
+# include(pico-sdk/pico_sdk_init.cmake)
+include(pico_sdk_import.cmake)
+
+# if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+#   message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+# endif()
 
 project(samwise C CXX ASM)
 
