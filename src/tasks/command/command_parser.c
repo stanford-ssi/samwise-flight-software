@@ -29,7 +29,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                 .serialized_command[sizeof(payload_str.serialized_command) -
                                     1] = '\0';
 
-            if (&slate->is_payload_on)
+            if (slate->is_payload_on)
             {
                 payload_uart_write_packet(
                     slate, payload_str.serialized_command,
