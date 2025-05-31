@@ -72,25 +72,11 @@ void ping_command_test(slate_t *slate)
     }
 }
 
-void test_ping_payload_command(slate_t *slate)
-{
-    char report[MAX_RECEIVED_LEN];
-    int report_len = payload_send_command(slate, "ping", report);
-
-    for (int i = 0; i < report_len; i++)
-    {
-        printf("%c", report[i]);
-    }
-    printf("\n");
-}
-
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    // beacon_down_command_test(slate);
-    // ping_command_test(slate);
-
-    test_ping_payload_command(slate);
+    beacon_down_command_test(slate);
+    ping_command_test(slate);
 }
 
 sched_task_t payload_task = {.name = "payload",
