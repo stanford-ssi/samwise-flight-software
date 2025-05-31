@@ -6,7 +6,6 @@
 #pragma once
 
 #include "macros.h"
-#include "payload_command.h"
 #include "payload_uart.h"
 #include "scheduler.h"
 #include "slate.h"

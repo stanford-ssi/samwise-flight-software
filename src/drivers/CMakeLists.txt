@@ -1,7 +1,6 @@
 add_subdirectory(adm1176)
 add_subdirectory(burn_wire)
 add_subdirectory(flash)
-add_subdirectory(payload_command)
 add_subdirectory(payload_uart)
 add_subdirectory(logger)
 add_subdirectory(mppt)
