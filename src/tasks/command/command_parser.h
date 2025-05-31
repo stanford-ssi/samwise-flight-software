@@ -13,11 +13,10 @@
 #include <stdint.h>
 #include <string.h>
 
-// Command IDs (must start from 1, as 0 indicates "not uploading")
 typedef enum
 {
-    PAYLOAD_EXEC = 1,
     NO_OP,
+    PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF
     // add more commands here as needed

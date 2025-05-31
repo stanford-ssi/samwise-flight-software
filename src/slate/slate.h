@@ -62,9 +62,7 @@ typedef struct samwise_slate
     /*
      * Command switch
      */
-    queue_t take_photo_task_data;
-    queue_t download_photo_task_data;
-    queue_t take_and_send_photo_task_data;
+    queue_t payload_command_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
