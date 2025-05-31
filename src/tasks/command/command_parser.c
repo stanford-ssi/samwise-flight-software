@@ -15,7 +15,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     slate->number_commands_processed++;
 
     Command command_id = (Command)packet->data[0];
-    char* command_payload = packet->data[1];
+    char *command_payload = packet->data[1];
     LOG_INFO("Command ID Received: %i", command_id);
 
     switch (command_id)
@@ -34,10 +34,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             // TODO: actual execution should be within payload task.
             if (slate->is_payload_on)
             {
-                payload_uart_write_packet(
-                    slate, payload_str.serialized_command,
-                    sizeof(command_payload),
-                    slate->curr_command_seq_num);
+                payload_uart_write_packet(slate, payload_str.serialized_command,
+                                          sizeof(command_payload),
+                                          slate->curr_command_seq_num);
                 slate->curr_command_seq_num++;
             }
             else
