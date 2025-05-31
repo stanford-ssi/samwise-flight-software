@@ -63,6 +63,7 @@ typedef struct samwise_slate
      * Command switch
      */
     queue_t payload_command_data;
+    bool turn_payload_on;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
