@@ -15,7 +15,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     slate->number_commands_processed++;
 
     Command command_id = (Command)packet->data[0];
-    char *command_payload = packet->data[1];
+    char *command_payload = packet->data + COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
 
     switch (command_id)
