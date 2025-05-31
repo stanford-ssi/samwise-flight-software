@@ -87,6 +87,12 @@ void telemetry_task_dispatch(slate_t *slate)
     // Write to slate
     slate->solar_voltage = solar_voltage;
     slate->solar_current = solar_current;
+
+    LOG_INFO("GPIO bits: %16lX", (uint64_t) gpio_get_all64());
+
+    slate->is_rbf_detected = !gpio_get(SAMWISE_RBF_DETECT_PIN);
+    LOG_INFO("RBF_PIN status: %s",
+             slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",

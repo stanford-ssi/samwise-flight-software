@@ -41,6 +41,7 @@ int main()
     /*
      * Initialize everything.
      */
+    LOG_INFO("Setting: #define PICO_RP2350A=%u", PICO_RP2350A);
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
