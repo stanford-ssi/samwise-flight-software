@@ -15,7 +15,8 @@ static slate_t *s;
 
 // Serializes a packet_t into a buffer. Returns the total number of bytes
 // written, or 0 on error.
-static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize)
+static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
+                            bool enable_hmac)
 {
     if (!p || !buf)
         return 0;
@@ -24,7 +25,8 @@ static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize)
 
     size_t total_size;
     if (__builtin_add_overflow(PACKET_HEADER_SIZE, p->len, &total_size) ||
-        __builtin_add_overflow(total_size, PACKET_FOOTER_SIZE, &total_size))
+        (enable_hmac &&
+         __builtin_add_overflow(total_size, PACKET_FOOTER_SIZE, &total_size)))
     {
         return 0; // Integer overflow would occur
     }
@@ -43,12 +45,16 @@ static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize)
 
     memcpy(buf + offset, p->data, p->len);
     offset += p->len;
-    memcpy(buf + offset, &p->boot_count, sizeof(p->boot_count));
-    offset += sizeof(p->boot_count);
-    memcpy(buf + offset, &p->msg_id, sizeof(p->msg_id));
-    offset += sizeof(p->msg_id);
-    memcpy(buf + offset, p->hmac, PACKET_HMAC_SIZE);
-    offset += PACKET_HMAC_SIZE;
+
+    if (enable_hmac) // Typically our downlink is not authenticated
+    {
+        memcpy(buf + offset, &p->boot_count, sizeof(p->boot_count));
+        offset += sizeof(p->boot_count);
+        memcpy(buf + offset, &p->msg_id, sizeof(p->msg_id));
+        offset += sizeof(p->msg_id);
+        memcpy(buf + offset, p->hmac, PACKET_HMAC_SIZE);
+        offset += PACKET_HMAC_SIZE;
+    }
 
     return offset;
 }
@@ -100,11 +106,11 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
 // --- TX ---
 static void tx_done()
 {
-    packet_t p;
+    packet_t p = {0};
     if (queue_try_remove(&s->tx_queue, &p))
     {
         uint8_t p_buf[PACKET_TOTAL_SIZE];
-        size_t pkt_size = encode_packet(&p, p_buf, sizeof(p_buf));
+        size_t pkt_size = encode_packet(&p, p_buf, sizeof(p_buf), false);
         if (pkt_size == 0)
         {
             LOG_ERROR("Failed to encode packet for TX");
@@ -112,7 +118,6 @@ static void tx_done()
             return;
         }
         LOG_INFO("TX packet size: %zu", pkt_size);
-        // TODO: check return value of rfm9x_packet_to_fifo
         rfm9x_packet_to_fifo(&s->radio, p_buf, pkt_size);
         rfm9x_clear_interrupts(&s->radio);
         s->tx_packets++;
@@ -129,8 +134,8 @@ static void tx_done()
 // --- RX ---
 static void rx_done()
 {
-    uint8_t p_buf[256];
-    packet_t p;
+    uint8_t p_buf[PACKET_TOTAL_SIZE] = {0};
+    packet_t p = {0};
     uint8_t n = rfm9x_packet_from_fifo(&s->radio, p_buf);
     s->rx_bytes += n;
     if (!parse_packet(p_buf, n, &p))
