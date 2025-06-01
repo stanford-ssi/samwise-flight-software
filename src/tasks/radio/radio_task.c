@@ -19,20 +19,30 @@ static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
                             bool enable_hmac)
 {
     if (!p || !buf)
+    {
+        LOG_ERROR("encode_packet: NULL pointer provided");
         return 0;
+    }
     if (p->len > PACKET_DATA_SIZE)
+    {
+        LOG_ERROR("encode_packet: Packet length exceeds maximum data size");
         return 0;
+    }
 
     size_t total_size;
     if (__builtin_add_overflow(PACKET_HEADER_SIZE, p->len, &total_size) ||
         (enable_hmac &&
          __builtin_add_overflow(total_size, PACKET_FOOTER_SIZE, &total_size)))
     {
+        LOG_ERROR("encode_packet: Integer overflow in total size calculation");
         return 0; // Integer overflow would occur
     }
 
     if (bufsize < total_size)
+    {
+        LOG_ERROR("encode_packet: Buffer size too small for packet");
         return 0;
+    }
 
     size_t offset = 0;
 
@@ -63,9 +73,15 @@ static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
 static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
 {
     if (!buf || !p)
+    {
+        LOG_ERROR("parse_packet: NULL pointer provided");
         return false;
+    }
     if (n < PACKET_MIN_SIZE)
+    {
+        LOG_ERROR("parse_packet: Buffer too small for a valid packet");
         return false;
+    }
 
     size_t offset = 0;
 
@@ -77,7 +93,10 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
     p->len = buf[offset++];
 
     if (p->len > PACKET_DATA_SIZE)
+    {
+        LOG_ERROR("parse_packet: Packet length exceeds maximum data size");
         return false;
+    }
 
     size_t total_required_size;
     if (__builtin_add_overflow(PACKET_HEADER_SIZE, p->len,
@@ -85,11 +104,16 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
         __builtin_add_overflow(total_required_size, PACKET_FOOTER_SIZE,
                                &total_required_size))
     {
+        LOG_ERROR("parse_packet: Integer overflow in total size calculation");
         return false; // Integer overflow would occur
     }
 
     if (n < total_required_size)
+    {
+        LOG_ERROR("parse_packet: expect packet size %zu, got buffer size %zu",
+                  total_required_size, n);
         return false;
+    }
 
     memcpy(p->data, buf + offset, p->len);
     offset += p->len;
