@@ -2,6 +2,7 @@
 
 #include "pico/types.h"
 #include "tinycrypt/sha256.h"
+#include <stddef.h>
 
 typedef struct
 {
@@ -19,6 +20,20 @@ typedef struct
                                          // struct for is_packet_authenticated
                                          // to work correctly
 } packet_t;
+
+// --- Packet layout constants (derived from struct) ---
+#define PACKET_TOTAL_SIZE (sizeof(packet_t))
+#define PACKET_HEADER_SIZE (offsetof(packet_t, data))
+#define PACKET_DATA_SIZE (sizeof(((packet_t *)0)->data))
+#define PACKET_FOOTER_SIZE                                                     \
+    (PACKET_TOTAL_SIZE - PACKET_HEADER_SIZE - PACKET_DATA_SIZE)
+#define PACKET_HMAC_SIZE (TC_SHA256_DIGEST_SIZE)
+#define PACKET_MIN_SIZE (PACKET_HEADER_SIZE + PACKET_FOOTER_SIZE)
+
+_Static_assert(PACKET_TOTAL_SIZE == 256, "packet_t size must be 256 bytes");
+_Static_assert(offsetof(packet_t, hmac) ==
+                   sizeof(packet_t) - TC_SHA256_DIGEST_SIZE,
+               "hmac must be last");
 
 /**
  * Verifies the authenticity of a packet by computing its HMAC and comparing it
