@@ -11,7 +11,7 @@
 #include "macros.h"
 #include "pins.h"
 
-#define PACKET_SIZE 256
+#define PACKET_SIZE 255
 #define PAYLOAD_SIZE 251
 
 #define RFM9X_SPI_BAUDRATE (1000 * 1000)
@@ -82,9 +82,9 @@ uint32_t rfm9x_version(rfm9x_t *r);
  * per packet.
  * flags:
  */
-uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
-                   uint8_t destination, uint8_t node, uint8_t identifier,
-                   uint8_t flags);
+uint8_t rfm9x_send(rfm9x_t *r, uint8_t *data, uint32_t l,
+                   uint8_t keep_listening, uint8_t destination, uint8_t node,
+                   uint8_t identifier, uint8_t flags);
 
 /*
  * Send a transmission.
@@ -93,13 +93,13 @@ uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
  *
  * Returns 1 if an ack was received, 0 otherwise.
  */
-uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
-                       uint8_t node, uint8_t max_retries);
+uint8_t rfm9x_send_ack(rfm9x_t *r, uint8_t *data, uint32_t l,
+                       uint8_t destination, uint8_t node, uint8_t max_retries);
 
 /*
  * Receive a transmission.
  */
-uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
+uint8_t rfm9x_receive(rfm9x_t *r, uint8_t *packet, uint8_t node,
                       uint8_t keep_listening, uint8_t with_ack,
                       bool blocking_wait_for_packet);
 

@@ -17,7 +17,7 @@
 _Static_assert(offsetof(packet_t, hmac) ==
                    sizeof(packet_t) - TC_SHA256_DIGEST_SIZE,
                "hmac must be the last field and no padding before hmac");
-_Static_assert(sizeof(packet_t) == 256, "packet_t size must be 256 bytes");
+_Static_assert(sizeof(packet_t) == 255, "packet_t size must be 255 bytes");
 
 // Track last seen message ID for replay protection
 static uint32_t last_seen_msg_id = 0;
@@ -33,7 +33,7 @@ static uint32_t last_seen_msg_id = 0;
  * (PACKET_HMAC_PSK_LEN).
  *    - The HMAC field must be the last field in the packet_t struct, with no
  * padding before it.
- *    - The total size of packet_t must be exactly 256 bytes.
+ *    - The total size of packet_t must be exactly 255 bytes.
  *
  * 2. Replay Protection:
  *    - Each packet includes a boot_count and msg_id.

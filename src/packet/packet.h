@@ -4,7 +4,7 @@
 #include "tinycrypt/sha256.h"
 #include <stddef.h>
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     uint8_t dst;
     uint8_t src;
@@ -12,7 +12,7 @@ typedef struct
     uint8_t seq;
     uint8_t len; // this should be the length of the packet structure being sent
                  // over
-    uint8_t data[256 - (sizeof(uint8_t) * 5) - (sizeof(uint32_t) * 2) -
+    uint8_t data[255 - (sizeof(uint8_t) * 5) - (sizeof(uint32_t) * 2) -
                  TC_SHA256_DIGEST_SIZE];
     uint32_t boot_count;
     uint32_t msg_id;
@@ -29,11 +29,6 @@ typedef struct
     (PACKET_TOTAL_SIZE - PACKET_HEADER_SIZE - PACKET_DATA_SIZE)
 #define PACKET_HMAC_SIZE (TC_SHA256_DIGEST_SIZE)
 #define PACKET_MIN_SIZE (PACKET_HEADER_SIZE + PACKET_FOOTER_SIZE)
-
-_Static_assert(PACKET_TOTAL_SIZE == 256, "packet_t size must be 256 bytes");
-_Static_assert(offsetof(packet_t, hmac) ==
-                   sizeof(packet_t) - TC_SHA256_DIGEST_SIZE,
-               "hmac must be last");
 
 /**
  * Verifies the authenticity of a packet by computing its HMAC and comparing it
