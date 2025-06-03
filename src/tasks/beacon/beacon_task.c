@@ -23,7 +23,8 @@ typedef struct
     uint32_t tx_packets;
 } __attribute__((__packed__)) beacon_stats;
 
-_Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE, "beacon packet too large");
+_Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE,
+               "beacon packet too large");
 
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
