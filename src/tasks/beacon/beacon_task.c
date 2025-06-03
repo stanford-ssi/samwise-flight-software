@@ -45,7 +45,7 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
         .tx_packets = slate->tx_packets,
     };
 
-    memcpy(data + name_len + 1, &stats, sizeof(stats));
+    memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
     return name_len + 1 + sizeof(beacon_stats);
 }
 
