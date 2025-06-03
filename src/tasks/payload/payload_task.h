@@ -12,8 +12,10 @@
 #include "slate.h"
 
 #define MAX_PAYLOAD_COMMANDS_PER_DISPATCH 3
+#define MAX_PAYLOAD_RETRY_COUNT 3
 
 void payload_task_init(slate_t *slate);
 void payload_task_dispatch(slate_t *slate);
 
+static uint8_t RETRY_COUNT = 0;
 extern sched_task_t payload_task;

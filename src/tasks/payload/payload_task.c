@@ -84,26 +84,19 @@ bool try_execute_payload_command(slate_t *slate)
         {
             LOG_INFO("Executing Payload Command: %s",
                      payload_command.serialized_command);
-            if (slate->is_payload_on)
+            // First attempt to execute the command but do not throw it away
+            // yet.
+            bool exec_successful = payload_uart_write_packet(
+                slate, payload_command.serialized_command,
+                sizeof(payload_command.serialized_command),
+                payload_command.seq_num);
+            // If the command was successful, remove it from the queue.
+            // Alternatively, if we have already retried the command up to
+            // a maximum number of times, remove it from the queue.
+            if (exec_successful || RETRY_COUNT >= MAX_RETRY_COUNT)
             {
-                LOG_INFO("Payload is ON, executing commands...");
-                // First attempt to execute the command but do not throw it away
-                // yet.
-                bool exec_successful = payload_uart_write_packet(
-                    slate, payload_command.serialized_command,
-                    sizeof(payload_command.serialized_command),
-                    payload_command.seq_num);
-                // If the command was successful, remove it from the queue.
-                if (exec_successful)
-                {
-                    queue_try_remove(&slate->payload_command_data,
-                                     &payload_command);
-                }
-            }
-            else
-            {
-                LOG_INFO("Payload is OFF, not executing commands.");
-                return false;
+                queue_try_remove(&slate->payload_command_data,
+                                    &payload_command);
             }
         }
     }
@@ -135,12 +128,27 @@ void payload_task_dispatch(slate_t *slate)
         return;
     }
 
-    // Attempts to execute k commands per dispatch.
-    for (int k = 0; k < MAX_PAYLOAD_COMMANDS_PER_DISPATCH; k++)
+    if (slate->is_payload_on)
     {
-        // Execute pending payload commands.
-        if (!try_execute_payload_command(slate))
-            break;
+        LOG_INFO("Payload is ON, executing commands...");
+        // Attempts to execute k commands per dispatch.
+        for (int k = 0; k < MAX_PAYLOAD_COMMANDS_PER_DISPATCH; k++)
+        {
+            // Execute pending payload commands.
+            if (!try_execute_payload_command(slate))
+            {
+                RETRY_COUNT++;
+                break;
+            } else {
+                // Reset retry count if command was successfully executed
+                RETRY_COUNT = 0;
+            }
+        }
+    }
+    else
+    {
+        LOG_INFO("Payload is OFF, not executing commands.");
+        return false;
     }
 }
 

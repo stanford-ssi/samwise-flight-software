@@ -28,6 +28,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             strlcpy(payload_command.serialized_command, command_payload,
                     sizeof(command_payload));
             payload_command.seq_num = slate->curr_command_seq_num++;
+            payload_command.command_type = PAYLOAD_EXEC;
 
             // Add command into queue.
             queue_try_add(&slate->payload_command_data, &payload_command);
@@ -43,7 +44,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PAYLOAD_TURN_ON:
         {
             LOG_INFO("Turning on payload...");
-            slate->turn_payload_on = true;
+            // Add command into queue.
+            queue_try_add(&slate->payload_command_data, &payload_command);
+            payload_command.command_type = PAYLOAD_EXEC;
             break;
         }
 
