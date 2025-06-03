@@ -5,6 +5,7 @@
  * This file contains the main entry point for the SAMWISE flight code.
  */
 
+#include "adm1176.h"
 #include "flash.h"
 #include "init.h"
 #include "logger.h"
@@ -60,6 +61,29 @@ int main()
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
+
+    LOG_INFO("ADM1176: Running ADM1176 test..");
+
+    LOG_INFO("ADM1176: Initializing pwm...");
+    adm1176_t pwm;
+    adm1176_init(&pwm, SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
+                 ADM1176_DEFAULT_SENSE_RESISTOR);
+
+    LOG_INFO("ADM1176: Turning on pwm");
+    adm1176_on(&pwm);
+
+    LOG_INFO("ADM1176: Reading voltage and current...");
+
+    int count = 0;
+    while (1)
+    {
+        float current = adm1176_read_current(&pwm);
+        float emf = adm1176_read_voltage(&pwm);
+
+        printf("%d Current: %f, Voltage: %f\n", count, current, emf);
+        count++;
+        sleep_ms(1000);
+    }
 
     while (true)
     {

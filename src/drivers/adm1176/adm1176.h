@@ -62,3 +62,5 @@ float adm1176_read_current(adm1176_t *dev);
 void adm1176_on(adm1176_t *pwm);
 
 void adm1176_off(adm1176_t *pwm);
+
+bool adm1176_read_status(adm1176_t *pwm, uint8_t *status_out);

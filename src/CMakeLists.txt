@@ -22,6 +22,6 @@ target_link_libraries(samwise PRIVATE hardware_spi hardware_i2c
 
 # Samwise
 target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
-  flash neopixel)
+  flash neopixel adm1176)
 
 pico_add_extra_outputs(samwise)
