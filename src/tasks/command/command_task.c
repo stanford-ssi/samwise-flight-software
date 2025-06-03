@@ -42,11 +42,14 @@ void command_task_dispatch(slate_t *slate)
     // Process one packet per dispatch cycle
     if (queue_try_remove(&slate->rx_queue, &packet))
     {
+        LOG_INFO("Received packet with length: %d", packet.len);
+        // rfm9x_print_packet("Command: ", &packet, packet.len + 5);
         if (!is_packet_authenticated(&packet, slate->reboot_counter))
         {
             LOG_ERROR("Packet authentication failed. Dropping packet.");
             return;
         }
+        LOG_INFO("Packet authenticated successfully.");
 
         // Parse and process the command
         dispatch_command(slate, &packet);

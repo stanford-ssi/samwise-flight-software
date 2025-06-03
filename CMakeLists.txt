@@ -76,3 +76,6 @@ add_subdirectory(lib/tinycrypt)
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)
+
+# Enable Werror
+add_compile_options(-Wall -Werror)

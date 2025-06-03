@@ -79,10 +79,22 @@ bool is_packet_authenticated(packet_t *packet, uint32_t current_boot_count)
     tc_hmac_set_key(&hmac, (const uint8_t *)PACKET_HMAC_PSK,
                     PACKET_HMAC_PSK_LEN);
     tc_hmac_init(&hmac);
+    // tc_hmac_update(&hmac, (const void *)"HELLO", 5);
     tc_hmac_update(&hmac, (const void *)packet, offsetof(packet_t, hmac));
+
+    // // print hmac'd data
+    // for (size_t i = 0; i < offsetof(packet_t, hmac); i++)
+    // {
+    //     LOG_DEBUG("%02x", ((uint8_t *)packet)[i]);
+    // }
 
     uint8_t out_hmac[TC_SHA256_DIGEST_SIZE];
     tc_hmac_final(out_hmac, TC_SHA256_DIGEST_SIZE, &hmac);
+
+    for (size_t i = 0; i < TC_SHA256_DIGEST_SIZE; i++)
+    {
+        LOG_DEBUG("%02x", ((uint8_t *)out_hmac)[i]);
+    }
 
     if (_compare(out_hmac, packet->hmac, TC_SHA256_DIGEST_SIZE) != 0)
     {

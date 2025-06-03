@@ -751,25 +751,29 @@ void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l)
     printf("%s", msg);
     printf("\r\n");
     printf("  Size: %d\r\n", l);
-    if (l >= 1)
-        printf("  Destination: %x\r\n", packet[0]);
-    if (l >= 2)
-        printf("  From :%x\r\n", packet[1]);
-    if (l >= 3)
-        printf("  ID: %x\r\n", packet[2]);
-    if (l >= 4)
-        printf("  Flags: %x\r\n", packet[3]);
-    if (l >= 5)
-        printf("  Data Length: %u\r\n", packet[4]);
-    if (l >= 6)
+    for (uint8_t i = 0; i < l; i++)
     {
-        printf("  Payload (ASCII): ");
-        for (uint8_t i = 5; i < l; i++)
-            printf("%c", packet[i]);
-        printf("\r\n  Payload (Hex): ");
-        for (uint8_t i = 5; i < l; i++)
-            printf("%x ", packet[i]);
+        printf("%02x ", packet[i]);
     }
+    // if (l >= 1)
+    //     printf("  Destination: %x\r\n", packet[0]);
+    // if (l >= 2)
+    //     printf("  From :%x\r\n", packet[1]);
+    // if (l >= 3)
+    //     printf("  ID: %x\r\n", packet[2]);
+    // if (l >= 4)
+    //     printf("  Flags: %x\r\n", packet[3]);
+    // if (l >= 5)
+    //     printf("  Data Length: %u\r\n", packet[4]);
+    // if (l >= 6)
+    // {
+    //     printf("  Payload (ASCII): ");
+    //     for (uint8_t i = 5; i < l; i++)
+    //         printf("%c", packet[i]);
+    //     printf("\r\n  Payload (Hex): ");
+    //     for (uint8_t i = 5; i < l; i++)
+    //         printf("%x ", packet[i]);
+    // }
     printf("\r\n");
 }
 
@@ -861,6 +865,7 @@ uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf)
         n_read = fifo_length;
     }
     rfm9x_set_mode(r, old_mode);
+    rfm9x_print_packet("[rfm9x] Received packet", buf, n_read);
     return n_read;
 }
 
