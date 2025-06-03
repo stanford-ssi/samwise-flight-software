@@ -32,7 +32,7 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
     size_t name_len = strnlen(slate->current_state->name, MAX_STR_LENGTH);
-    strlcpy((char *)data, slate->current_state->name, MAX_STR_LENGTH);
+    strlcpy((char *)data, slate->current_state->name, name_len);
 
     beacon_stats stats = {
         .reboot_counter = slate->reboot_counter,
