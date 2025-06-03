@@ -25,6 +25,8 @@ typedef struct
 
 static uint8_t tmp_data[MAX_DATA_SIZE];
 
+_Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE, "beacon packet too large");
+
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
