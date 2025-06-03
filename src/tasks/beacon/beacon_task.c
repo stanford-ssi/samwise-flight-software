@@ -23,8 +23,6 @@ typedef struct
     uint32_t tx_packets;
 } __attribute__((__packed__)) beacon_stats;
 
-static uint8_t tmp_data[MAX_DATA_SIZE];
-
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE, "beacon packet too large");
 
 // Serialize the slate into a byte array and return its size.
@@ -51,7 +49,7 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
 
 void beacon_task_init(slate_t *slate)
 {
-    memset(tmp_data, 0, sizeof(tmp_data));
+    LOG_DEBUG("Beacon task is initializing...");
 }
 
 void beacon_task_dispatch(slate_t *slate)
@@ -64,9 +62,7 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.seq = 0;
 
     // Commit into serialized byte array
-    memset(tmp_data, 0, sizeof(tmp_data));
-    pkt.len = serialize_slate(slate, tmp_data);
-    memcpy(pkt.data, tmp_data, pkt.len);
+    pkt.len = serialize_slate(slate, pkt.data);
 
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))
