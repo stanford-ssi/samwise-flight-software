@@ -26,8 +26,9 @@ typedef struct
     float sense_resistor; // in ohms
 } adm1176_t;
 
-void adm1176_init(adm1176_t *pwm, i2c_inst_t *i2c_bus, uint8_t i2c_addr,
-                  float sense_resistor);
+adm1176_t adm1176_mk_mock();
+
+adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor);
 
 /* Mode configuration:
  * 1 -> V-CONT (LSB, set to convert voltage continuously. If readback is
@@ -54,10 +55,10 @@ pin for an ADC full-scale result is 26.35 V for VRANGE = 0 and 6.65 V for VRANGE
 bool adm1176_config(adm1176_t *dev, int *mode, int mode_len);
 
 // Read raw 16-bit voltage register and convert into volts
-float adm1176_read_voltage(adm1176_t *dev);
+float adm1176_get_voltage(adm1176_t *dev);
 
 // Read raw 16-bit current register and convert into amps
-float adm1176_read_current(adm1176_t *dev);
+float adm1176_get_current(adm1176_t *dev);
 
 void adm1176_on(adm1176_t *pwm);
 

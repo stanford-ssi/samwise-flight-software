@@ -4,14 +4,16 @@
  */
 #include "adm1176.h"
 
-void adm1176_init(adm1176_t *pwm, i2c_inst_t *i2c_bus, uint8_t i2c_addr,
-                  float sense_resistor)
+adm1176_t adm1176_mk_mock()
 {
-    pwm->i2c = i2c_bus;
-    pwm->address = i2c_addr;
-    pwm->sense_resistor = sense_resistor;
+    return (adm1176_t){.i2c = NULL, .address = 0x00, .sense_resistor = 0.1f};
 }
 
+adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor)
+{
+    return (adm1176_t){
+        .i2c = i2c, .address = address, .sense_resistor = sense_resistor};
+}
 bool adm1176_config(adm1176_t *pwm, int *mode, int mode_len)
 {
     _cmd_buf[0] = 0x0;
@@ -53,7 +55,7 @@ static inline void adm1176_print_status(adm1176_t *pwm)
     printf("ADM Status %u\n", status);
 }
 
-float adm1176_read_voltage(adm1176_t *pwm)
+float adm1176_get_voltage(adm1176_t *pwm)
 {
     adm1176_on(pwm);
     sleep_ms(1);
@@ -63,7 +65,7 @@ float adm1176_read_voltage(adm1176_t *pwm)
     return (26.35f / 4096.0f) * raw_volts;
 }
 
-float adm1176_read_current(adm1176_t *pwm)
+float adm1176_get_current(adm1176_t *pwm)
 {
     adm1176_on(pwm);
     sleep_ms(1);
