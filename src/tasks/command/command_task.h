@@ -1,11 +1,12 @@
+
 /**
- * @author  Sasha Luchyn
- * @date    2024-09-11
+ * @author  Thomas Haile
+ * @date    2025-05-24
+ *
+ * Task management for command processing
  */
 
 #pragma once
-
-#include <string.h>
 
 #include "slate.h"
 #include "state_machine.h"

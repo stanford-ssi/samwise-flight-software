@@ -22,6 +22,7 @@ static void tx_done()
         p_buf[3] = p.flags;
         memcpy(p_buf + 4, &p.data[0], p.len);
 
+        LOG_INFO("p size: %d", sizeof(p_buf));
         rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
         rfm9x_clear_interrupts(&s->radio);
 
@@ -36,39 +37,53 @@ static void tx_done()
     }
 }
 
+static bool parse_packet(uint8_t *p_buf, uint8_t n, packet_t *p)
+{
+    const uint8_t min_packet_size = sizeof(packet_t) - sizeof(p->data);
+    if (n < min_packet_size)
+        return false;
+
+    uint8_t offset = 0;
+    p->dst = p_buf[offset++];
+    p->src = p_buf[offset++];
+    p->flags = p_buf[offset++];
+    p->seq = p_buf[offset++];
+    p->len = p_buf[offset++];
+
+    uint8_t data_len = p->len;
+    if (data_len > sizeof(p->data))
+        return false;
+
+    memcpy(p->data, p_buf + offset, data_len);
+    offset += data_len;
+    memcpy(&p->boot_count, p_buf + offset, 4);
+    offset += 4;
+    memcpy(&p->msg_id, p_buf + offset, 4);
+    offset += 4;
+    memcpy(p->hmac, p_buf + offset, TC_SHA256_DIGEST_SIZE);
+    return true;
+}
+
 static void rx_done()
 {
-    // Copy packet into receive queue and unset interrupt
-    // TODO: Can we do this faster?
     uint8_t p_buf[256];
     packet_t p;
 
-    uint8_t n = rfm9x_packet_from_fifo(&s->radio, &p_buf[0]);
+    uint8_t n = rfm9x_packet_from_fifo(&s->radio, p_buf);
     s->rx_bytes += n;
 
-    if (n > 0)
+    if (!parse_packet(p_buf, n, &p))
     {
-        if (n < 4)
-        {
-            s->rx_bad_packet_drops++;
-        }
-        else
-        {
-            p.dst = p_buf[0];
-            p.src = p_buf[1];
-            p.seq = p_buf[2];
-            p.flags = p_buf[3];
-            p.len = n - 4;
-            memcpy(&p.data[0], p_buf + 4, n - 4);
+        s->rx_bad_packet_drops++;
+        rfm9x_clear_interrupts(&s->radio);
+        return;
+    }
 
-            if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
-            {
-                s->rx_packets++;
-
-                if (!queue_try_add(&s->rx_queue, &p))
-                    s->rx_backpressure_drops++;
-            }
-        }
+    if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
+    {
+        s->rx_packets++;
+        if (!queue_try_add(&s->rx_queue, &p))
+            s->rx_backpressure_drops++;
     }
     rfm9x_clear_interrupts(&s->radio);
 }
@@ -93,11 +108,12 @@ void radio_task_init(slate_t *slate)
 
     // Install interrupt handlers
     rfm9x_set_tx_irq(&slate->radio, &tx_done);
+    // rfm9x_set_tx_irq(&slate->radio, 0);
     rfm9x_set_rx_irq(&slate->radio, &rx_done);
 
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
-
+    // rfm9x_transmit(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
 }
 
@@ -110,6 +126,7 @@ void radio_task_dispatch(slate_t *slate)
     if (!queue_is_empty(&slate->tx_queue))
     {
         rfm9x_transmit(&slate->radio);
+        LOG_INFO("Transmitting...");
         // Since the interrupt only fires when done transmitting the last
         // packet, we need to get it started manually
         tx_done();
