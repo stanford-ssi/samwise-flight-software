@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
 #include <slate.h>
+#include <stdint.h>
 
 extern slate_t slate;
 

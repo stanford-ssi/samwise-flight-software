@@ -11,9 +11,9 @@
 #include "macros.h"
 #include "neopixel.h"
 #include "rfm9x.h"
+#include "safe_sleep.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "safe_sleep.h"
 
 /**
  * Main code entry point.
