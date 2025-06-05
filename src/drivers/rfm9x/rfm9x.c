@@ -764,10 +764,10 @@ void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l)
     if (l >= 6)
     {
         printf("  Payload (ASCII): ");
-        for (uint8_t i = 5; i < l; i++)
+        for (size_t i = 5; i < l; i++)
             printf("%c", packet[i]);
         printf("\r\n  Payload (Hex): ");
-        for (uint8_t i = 5; i < l; i++)
+        for (size_t i = 5; i < l; i++)
             printf("%02x ", packet[i]);
     }
     printf("\r\n");
