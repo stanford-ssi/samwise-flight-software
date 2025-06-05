@@ -22,13 +22,10 @@
 int main()
 {
     /*
-     * In debug builds, delay to allow the user to connect to open the serial
-     * port.
+     * Brief delay after reboot/powering up due to power spikes to prevent
+     * deployment when satellite is still within the launch mechanism.
      */
-    if (!IS_FLIGHT)
-    {
-        sleep_ms(5000);
-    }
+    sleep_ms(5000);
 
     /*
      * Initialize persistent data or load existing data if already in flash.
