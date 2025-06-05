@@ -50,6 +50,8 @@ static bool parse_packet(uint8_t *p_buf, uint8_t n, packet_t *p)
     p->seq = p_buf[offset++];
     p->len = p_buf[offset++];
 
+    printf("dst: %u | len: %u\n", p->dst, p->len);
+
     uint8_t data_len = p->len;
     if (data_len > sizeof(p->data))
         return false;
@@ -78,6 +80,8 @@ static void rx_done()
         rfm9x_clear_interrupts(&s->radio);
         return;
     }
+
+    rfm9x_print_packet("Received packet: ", p_buf, n);
 
     if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
     {

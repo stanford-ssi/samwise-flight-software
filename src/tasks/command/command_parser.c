@@ -26,9 +26,10 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         /* Payload Commands */
         case PAYLOAD_EXEC:
         {
+            LOG_INFO(">PAYLOAD_EXEC | %u", packet->len);
             PAYLOAD_COMMAND_DATA payload_str;
             strlcpy(payload_str.serialized_command, command_payload,
-                    sizeof(command_payload));
+                    (packet->len) - 1);
 
             // Add command into queue.
             queue_try_add(&slate->payload_command_data, &payload_str);
@@ -53,6 +54,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         }
         case NO_OP:
         {
+            LOG_INFO(">NO_OP");
             LOG_INFO("Number of Commands Executed: %d",
                      slate->number_commands_processed);
             break;

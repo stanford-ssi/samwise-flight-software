@@ -716,8 +716,8 @@ void rfm9x_init(rfm9x_t *r)
         r, 7); /* Configure to 7 to match Radiohead library */
     ASSERT(rfm9x_get_spreading_factor(r) == 7);
 
-    rfm9x_set_crc(r, 0); /* Disable CRC checking */
-    ASSERT(rfm9x_is_crc_enabled(r) == 0);
+    rfm9x_set_crc(r, 1); /* Disable CRC checking */
+    ASSERT(rfm9x_is_crc_enabled(r) == 1);
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
     rfm9x_set_tx_power(r, 15);                          /* Known good value */
