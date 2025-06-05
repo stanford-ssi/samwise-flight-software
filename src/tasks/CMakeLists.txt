@@ -6,4 +6,4 @@ add_subdirectory(radio)
 add_subdirectory(telemetry)
 add_subdirectory(watchdog)
 add_subdirectory(payload)
-
+add_subdirectory(diagnostics)
