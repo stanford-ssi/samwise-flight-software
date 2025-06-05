@@ -40,7 +40,8 @@ bool adm1176_config(adm1176_t *pwm, int *mode, int mode_len)
         }
     }
 
-    if (i2c_write_blocking(pwm->i2c, pwm->address, _cmd_buf, 1, false) != 1)
+    if (i2c_write_blocking_until(pwm->i2c, pwm->address, _cmd_buf, 1, false,
+                                 make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
     {
         return false;
     }
@@ -50,16 +51,27 @@ bool adm1176_config(adm1176_t *pwm, int *mode, int mode_len)
 
 static inline void adm1176_print_status(adm1176_t *pwm)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return;
+    }
     uint8_t status;
     adm1176_read_status(pwm, &status);
-    printf("ADM Status %u\n", status);
+    LOG_DEBUG("ADM Status %u\n", status);
 }
 
 float adm1176_get_voltage(adm1176_t *pwm)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return 4.2f;
+    }
     adm1176_on(pwm);
     sleep_ms(1);
-    i2c_read_blocking(pwm->i2c, pwm->address, _read_buf, 3, false);
+    i2c_read_blocking_until(pwm->i2c, pwm->address, _read_buf, 3, false,
+                            make_timeout_time_ms(I2C_TIMEOUT_MS));
 
     float raw_volts = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
     return (26.35f / 4096.0f) * raw_volts;
@@ -67,9 +79,15 @@ float adm1176_get_voltage(adm1176_t *pwm)
 
 float adm1176_get_current(adm1176_t *pwm)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return 1.0f;
+    }
     adm1176_on(pwm);
     sleep_ms(1);
-    i2c_read_blocking(pwm->i2c, pwm->address, _read_buf, 3, false);
+    i2c_read_blocking_until(pwm->i2c, pwm->address, _read_buf, 3, false,
+                            make_timeout_time_ms(I2C_TIMEOUT_MS));
 
     float raw_amps = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
     return ((0.10584f / 4096.0f) * raw_amps) / pwm->sense_resistor;
@@ -77,32 +95,52 @@ float adm1176_get_current(adm1176_t *pwm)
 
 void adm1176_on(adm1176_t *pwm)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return;
+    }
     _ext_cmd_buf[0] = 0x83;
     _ext_cmd_buf[1] = 0;
-    i2c_write_blocking(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false);
+    i2c_write_blocking_until(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false,
+                             make_timeout_time_ms(I2C_TIMEOUT_MS));
     int modes[2] = {1, 3};
     adm1176_config(pwm, modes, 2);
-    printf("ADM Cmd: %X\n", _cmd_buf[0]);
+    LOG_DEBUG("ADM Cmd: %X\n", _cmd_buf[0]);
 }
 
 void adm1176_off(adm1176_t *pwm)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return;
+    }
     _ext_cmd_buf[0] = 0x83;
     _ext_cmd_buf[1] = 1;
-    i2c_write_blocking(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false);
+    i2c_write_blocking_until(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false,
+                             make_timeout_time_ms(I2C_TIMEOUT_MS));
 }
 
 // Read the 8-bit STATUS register from the ADM1176.
 bool adm1176_read_status(adm1176_t *pwm, uint8_t *status_out)
 {
+    if (!pwm || !pwm->i2c)
+    {
+        LOG_DEBUG("ADM1176: NULL pointer\n");
+        return true;
+    }
     // 1) Write the command byte with STATUS_RD = 1 (bit 6).
     uint8_t cmd = (1 << 6); // C6 = 1 → STATUS_RD
-    if (i2c_write_blocking(pwm->i2c, pwm->address, &cmd, 1, false) != 1)
+    if (i2c_write_blocking_until(pwm->i2c, pwm->address, &cmd, 1, false,
+                                 make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
     {
         return false;
     }
 
     // 2) Read one byte back from the device.
-    int ret = i2c_read_blocking(pwm->i2c, pwm->address, status_out, 1, false);
+    int ret =
+        i2c_read_blocking_until(pwm->i2c, pwm->address, status_out, 1, false,
+                                make_timeout_time_ms(I2C_TIMEOUT_MS));
     return (ret == 1);
 }

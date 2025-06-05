@@ -1,7 +1,9 @@
 #pragma once
 
+#include "common/config.h"
 #include "common/pins.h"
 #include "hardware/i2c.h"
+#include "macros.h"
 
 // ADM1176 I2C Address (0x94)
 #define ADM1176_I2C_ADDR 0x4A
