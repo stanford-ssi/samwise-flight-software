@@ -117,7 +117,7 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    sched_state_t *const next_state;
+    sched_state_t *next_state;
     if (overridden_state)
     {
         next_state = overridden_state;
