@@ -13,7 +13,7 @@ static void safe_sleep_ms(uint32_t ms)
 
     while (remaining_time > 0)
     {
-        watchdog_feed(&slate->watchdog);
+        watchdog_feed(&slate.watchdog);
         uint32_t time_to_sleep = remaining_time > safe_sleep_interval_ms
                                      ? safe_sleep_interval_ms
                                      : remaining_time;
