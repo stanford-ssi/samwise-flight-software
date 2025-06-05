@@ -9,6 +9,8 @@
 #include "scheduler.h"
 #include "states.h"
 
+sched_state_t *overridden_state = NULL;
+
 /*
  * Include the actual state machine
  */
@@ -115,7 +117,17 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    sched_state_t *const next_state = current_state_info->get_next_state(slate);
+    sched_state_t *const next_state;
+    if (overridden_state)
+    {
+        next_state = overridden_state;
+        overridden_state = NULL;
+    }
+    else
+    {
+        next_state = current_state_info->get_next_state(slate);
+    }
+
     if (next_state != current_state_info)
     {
         LOG_DEBUG("sched: Transitioning to state %s", next_state->name);

@@ -9,6 +9,8 @@
 #include "macros.h"
 #include "payload_uart.h"
 
+extern sched_state_t *overridden_state;
+
 /// @brief Parse packet and dispatch command to appropriate queue
 void dispatch_command(slate_t *slate, packet_t *packet)
 {
@@ -67,6 +69,27 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             /* Toggle Commands */
             // TODO: ADD HERE
+        }
+        case MANUAL_STATE_OVERRIDE:
+        {
+            if (strcmp(command_payload, "running_state"))
+            {
+                overridden_state = &running_state;
+            }
+            else if (strcmp(command_payload, "bringup_state"))
+            {
+                overridden_state = &bringup_state;
+            }
+            else if (strcmp(command_payload, "init_state"))
+            {
+                overridden_state = &init_state;
+            }
+            else
+            {
+                overridden_state = NULL;
+            }
+
+            break;
         }
 
         default:
