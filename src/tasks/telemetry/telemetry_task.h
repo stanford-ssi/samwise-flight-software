@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adm1176.h"
+#include "common/config.h"
 #include "hardware/i2c.h"
 #include "logger.h"
 #include "macros.h"

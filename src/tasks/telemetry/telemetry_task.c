@@ -21,8 +21,9 @@ void telemetry_task_init(slate_t *slate)
         // see if we get an ACK. The SDK functions return PICO_ERROR_GENERIC if
         // no device responds.
         LOG_INFO("Scanning MPPT_I2C address 0x%02X\n", addr);
-        int ret = i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1,
-                                          false, make_timeout_time_ms(100));
+        int ret =
+            i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
+                                    make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("MPPT Device found at 0x%02X\n", addr);
@@ -30,7 +31,8 @@ void telemetry_task_init(slate_t *slate)
         }
         LOG_INFO("Scanning POWER_I2C address 0x%02X\n", addr);
         ret = i2c_read_blocking_until(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
-                                      1, false, make_timeout_time_ms(100));
+                                      1, false,
+                                      make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("Power Monitor Device found at 0x%02X\n", addr);
