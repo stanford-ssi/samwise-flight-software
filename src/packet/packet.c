@@ -17,7 +17,12 @@
 _Static_assert(offsetof(packet_t, hmac) ==
                    sizeof(packet_t) - TC_SHA256_DIGEST_SIZE,
                "hmac must be the last field and no padding before hmac");
-_Static_assert(sizeof(packet_t) == 256, "packet_t size must be 256 bytes");
+_Static_assert(sizeof(packet_t) == 255, "packet_t size must be 255 bytes");
+
+// Offsets for HMAC calculation
+static const size_t PACKET_OFFSET_DATA = offsetof(packet_t, data);
+static const size_t PACKET_OFFSET_AFTER_DATA = offsetof(packet_t, boot_count);
+static const size_t PACKET_OFFSET_HMAC = offsetof(packet_t, hmac);
 
 // Track last seen message ID for replay protection
 static uint32_t last_seen_msg_id = 0;
@@ -33,7 +38,7 @@ static uint32_t last_seen_msg_id = 0;
  * (PACKET_HMAC_PSK_LEN).
  *    - The HMAC field must be the last field in the packet_t struct, with no
  * padding before it.
- *    - The total size of packet_t must be exactly 256 bytes.
+ *    - The total size of packet_t must be exactly 255 bytes.
  *
  * 2. Replay Protection:
  *    - Each packet includes a boot_count and msg_id.
@@ -79,7 +84,14 @@ bool is_packet_authenticated(packet_t *packet, uint32_t current_boot_count)
     tc_hmac_set_key(&hmac, (const uint8_t *)PACKET_HMAC_PSK,
                     PACKET_HMAC_PSK_LEN);
     tc_hmac_init(&hmac);
-    tc_hmac_update(&hmac, (const void *)packet, offsetof(packet_t, hmac));
+
+    tc_hmac_update(&hmac, (const void *)packet, PACKET_OFFSET_DATA);
+    tc_hmac_update(&hmac, (const void *)(packet->data), packet->len);
+    size_t after_data_len = PACKET_OFFSET_HMAC - PACKET_OFFSET_AFTER_DATA;
+    tc_hmac_update(
+        &hmac,
+        (const void *)((const uint8_t *)packet + PACKET_OFFSET_AFTER_DATA),
+        after_data_len);
 
     uint8_t out_hmac[TC_SHA256_DIGEST_SIZE];
     tc_hmac_final(out_hmac, TC_SHA256_DIGEST_SIZE, &hmac);

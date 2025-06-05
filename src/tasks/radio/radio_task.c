@@ -10,24 +10,142 @@
 
 static slate_t *s;
 
+// --- PACKET ENCODER/DECODER ---
+// p.len is always the length of p.data (payload), not including header fields.
+
+// Serializes a packet_t into a buffer. Returns the total number of bytes
+// written, or 0 on error.
+static size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
+                            bool enable_hmac)
+{
+    if (!p || !buf)
+    {
+        LOG_ERROR("encode_packet: NULL pointer provided");
+        return 0;
+    }
+    if (p->len > PACKET_DATA_SIZE)
+    {
+        LOG_ERROR("encode_packet: Packet length exceeds maximum data size");
+        return 0;
+    }
+
+    size_t total_size;
+    if (__builtin_add_overflow(PACKET_HEADER_SIZE, p->len, &total_size) ||
+        (enable_hmac &&
+         __builtin_add_overflow(total_size, PACKET_FOOTER_SIZE, &total_size)))
+    {
+        LOG_ERROR("encode_packet: Integer overflow in total size calculation");
+        return 0; // Integer overflow would occur
+    }
+
+    if (bufsize < total_size)
+    {
+        LOG_ERROR("encode_packet: Buffer size too small for packet");
+        return 0;
+    }
+
+    size_t offset = 0;
+
+    // Write header fields
+    buf[offset++] = p->dst;
+    buf[offset++] = p->src;
+    buf[offset++] = p->flags;
+    buf[offset++] = p->seq;
+    buf[offset++] = p->len;
+
+    memcpy(buf + offset, p->data, p->len);
+    offset += p->len;
+
+    if (enable_hmac) // Typically our downlink is not authenticated
+    {
+        memcpy(buf + offset, &p->boot_count, sizeof(p->boot_count));
+        offset += sizeof(p->boot_count);
+        memcpy(buf + offset, &p->msg_id, sizeof(p->msg_id));
+        offset += sizeof(p->msg_id);
+        memcpy(buf + offset, p->hmac, PACKET_HMAC_SIZE);
+        offset += PACKET_HMAC_SIZE;
+    }
+
+    return offset;
+}
+
+// Parses a buffer into a packet_t. Returns true on success, false on error.
+static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
+{
+    if (!buf || !p)
+    {
+        LOG_ERROR("parse_packet: NULL pointer provided");
+        return false;
+    }
+    if (n < PACKET_MIN_SIZE)
+    {
+        LOG_ERROR("parse_packet: Buffer too small for a valid packet");
+        return false;
+    }
+
+    size_t offset = 0;
+
+    // Parse header fields
+    p->dst = buf[offset++];
+    p->src = buf[offset++];
+    p->flags = buf[offset++];
+    p->seq = buf[offset++];
+    p->len = buf[offset++];
+
+    if (p->len > PACKET_DATA_SIZE)
+    {
+        LOG_ERROR("parse_packet: Packet length exceeds maximum data size");
+        return false;
+    }
+
+    size_t total_required_size;
+    if (__builtin_add_overflow(PACKET_HEADER_SIZE, p->len,
+                               &total_required_size) ||
+        __builtin_add_overflow(total_required_size, PACKET_FOOTER_SIZE,
+                               &total_required_size))
+    {
+        LOG_ERROR("parse_packet: Integer overflow in total size calculation");
+        return false; // Integer overflow would occur
+    }
+
+    if (n != total_required_size)
+    {
+        LOG_ERROR("parse_packet: expect packet size %zu, got buffer size %zu",
+                  total_required_size, n);
+        return false;
+    }
+
+    memcpy(p->data, buf + offset, p->len);
+    offset += p->len;
+    memcpy(&p->boot_count, buf + offset, sizeof(p->boot_count));
+    offset += sizeof(p->boot_count);
+    memcpy(&p->msg_id, buf + offset, sizeof(p->msg_id));
+    offset += sizeof(p->msg_id);
+    memcpy(p->hmac, buf + offset, PACKET_HMAC_SIZE);
+    offset += PACKET_HMAC_SIZE;
+
+    return true;
+}
+
+// --- TX ---
 static void tx_done()
 {
-    packet_t p;
+    packet_t p = {0};
     if (queue_try_remove(&s->tx_queue, &p))
     {
-        uint8_t p_buf[p.len + 4];
-        p_buf[0] = p.dst;
-        p_buf[1] = p.src;
-        p_buf[2] = p.seq;
-        p_buf[3] = p.flags;
-        memcpy(p_buf + 4, &p.data[0], p.len);
-
-        LOG_INFO("p size: %d", sizeof(p_buf));
-        rfm9x_packet_to_fifo(&s->radio, p_buf, sizeof(p_buf));
+        uint8_t p_buf[PACKET_SIZE];
+        size_t pkt_size = encode_packet(&p, p_buf, sizeof(p_buf), false);
+        if (pkt_size == 0)
+        {
+            LOG_ERROR("Failed to encode packet for TX");
+            rfm9x_clear_interrupts(&s->radio);
+            return;
+        }
+        LOG_INFO("TX packet size: %zu", pkt_size);
+        rfm9x_packet_to_fifo(&s->radio, p_buf, pkt_size);
         rfm9x_clear_interrupts(&s->radio);
-
         s->tx_packets++;
-        s->tx_bytes += sizeof(p_buf);
+        s->tx_bytes += pkt_size;
     }
     else
     {
@@ -37,48 +155,19 @@ static void tx_done()
     }
 }
 
-static bool parse_packet(uint8_t *p_buf, uint8_t n, packet_t *p)
-{
-    const uint8_t min_packet_size = sizeof(packet_t) - sizeof(p->data);
-    if (n < min_packet_size)
-        return false;
-
-    uint8_t offset = 0;
-    p->dst = p_buf[offset++];
-    p->src = p_buf[offset++];
-    p->flags = p_buf[offset++];
-    p->seq = p_buf[offset++];
-    p->len = p_buf[offset++];
-
-    uint8_t data_len = p->len;
-    if (data_len > sizeof(p->data))
-        return false;
-
-    memcpy(p->data, p_buf + offset, data_len);
-    offset += data_len;
-    memcpy(&p->boot_count, p_buf + offset, 4);
-    offset += 4;
-    memcpy(&p->msg_id, p_buf + offset, 4);
-    offset += 4;
-    memcpy(p->hmac, p_buf + offset, TC_SHA256_DIGEST_SIZE);
-    return true;
-}
-
+// --- RX ---
 static void rx_done()
 {
-    uint8_t p_buf[256];
-    packet_t p;
-
+    uint8_t p_buf[PACKET_SIZE] = {0};
+    packet_t p = {0};
     uint8_t n = rfm9x_packet_from_fifo(&s->radio, p_buf);
     s->rx_bytes += n;
-
     if (!parse_packet(p_buf, n, &p))
     {
         s->rx_bad_packet_drops++;
         rfm9x_clear_interrupts(&s->radio);
         return;
     }
-
     if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
     {
         s->rx_packets++;

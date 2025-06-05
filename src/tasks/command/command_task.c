@@ -11,19 +11,12 @@
 #include "pico/stdlib.h"
 #include "slate.h"
 
-#define PACKET_BYTE_LENGTH 251 // in bytes TODO check?/ get from driver mod?
-
-const int RADIO_PACKETS_OUT_MAX_LENGTH = 64;
 const int PAYLOAD_DATA_CAPACITY = 32;
 
 /// @brief Initialize the command switch task
 /// @param slate Slate
 void command_task_init(slate_t *slate)
 {
-    // Initialize queue for radio input data
-    queue_init(&slate->rx_queue, PACKET_BYTE_LENGTH * sizeof(uint8_t),
-               RADIO_PACKETS_OUT_MAX_LENGTH);
-
     // Initialize queues for storing processed commands
     queue_init(&slate->payload_command_data, sizeof(PAYLOAD_COMMAND_DATA),
                PAYLOAD_DATA_CAPACITY);
@@ -37,7 +30,7 @@ void command_task_init(slate_t *slate)
 /// @brief Process incoming radio packets and dispatch commands
 void command_task_dispatch(slate_t *slate)
 {
-    packet_t packet;
+    packet_t packet = {0};
 
     // Process one packet per dispatch cycle
     if (queue_try_remove(&slate->rx_queue, &packet))
