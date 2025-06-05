@@ -6,9 +6,9 @@
  */
 
 #include "command_parser.h"
-#include "states.h"
 #include "macros.h"
 #include "payload_uart.h"
+#include "states.h"
 
 extern sched_state_t *overridden_state;
 
@@ -77,10 +77,12 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 overridden_state = &running_state;
             }
+#ifdef BRINGUP
             else if (strcmp(command_payload, "bringup_state"))
             {
                 overridden_state = &bringup_state;
             }
+#endif
             else if (strcmp(command_payload, "init_state"))
             {
                 overridden_state = &init_state;
