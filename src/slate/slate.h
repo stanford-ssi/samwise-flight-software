@@ -52,8 +52,8 @@ typedef struct samwise_slate
     /*
      * Structure status readouts
      */
-    bool is_rbf_detected; // true if the RBF is still attached, false if it has been
-                          // removed
+    bool is_rbf_detected; // true if the RBF is still attached, false if it has
+                          // been removed
 
     /*
      * Watchdog
