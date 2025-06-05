@@ -9,10 +9,11 @@
 #include "bit-support.h"
 #include "logger.h"
 #include "macros.h"
+#include "packet.h"
 #include "pins.h"
 
-#define PACKET_SIZE 255
-#define PAYLOAD_SIZE 251
+#define PAYLOAD_SIZE                                                           \
+    PACKET_SIZE - 4 // 4 bytes for header (destination, node, identifier, flags)
 
 #define RFM9X_SPI_BAUDRATE (1000 * 1000)
 #define RFM9X_FREQUENCY 4381 // In .1 MHz, so 438.1 MHz

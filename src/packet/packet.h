@@ -22,11 +22,10 @@ typedef struct __attribute__((packed))
 } packet_t;
 
 // --- Packet layout constants (derived from struct) ---
-#define PACKET_TOTAL_SIZE (sizeof(packet_t))
+#define PACKET_SIZE (sizeof(packet_t))
 #define PACKET_HEADER_SIZE (offsetof(packet_t, data))
 #define PACKET_DATA_SIZE (sizeof(((packet_t *)0)->data))
-#define PACKET_FOOTER_SIZE                                                     \
-    (PACKET_TOTAL_SIZE - PACKET_HEADER_SIZE - PACKET_DATA_SIZE)
+#define PACKET_FOOTER_SIZE (PACKET_SIZE - PACKET_HEADER_SIZE - PACKET_DATA_SIZE)
 #define PACKET_HMAC_SIZE (TC_SHA256_DIGEST_SIZE)
 #define PACKET_MIN_SIZE (PACKET_HEADER_SIZE + PACKET_FOOTER_SIZE)
 

@@ -29,7 +29,7 @@ rfm9x.spreading_factor = 7
 rfm9x.coding_rate = 5
 
 # Packet constants
-PACKET_HMAC_PSK = b""
+PACKET_HMAC_PSK = b"0M09De7LOHdzMVPIYpYo4NsFOI9rTUz1"
 CURRENT_BOOT_COUNT = 474
 STARTING_MSG_ID = 1
 PACKET_HEADER_SIZE = 5  # dst, src, flags, seq, len

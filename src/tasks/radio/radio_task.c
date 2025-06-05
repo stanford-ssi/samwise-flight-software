@@ -133,7 +133,7 @@ static void tx_done()
     packet_t p = {0};
     if (queue_try_remove(&s->tx_queue, &p))
     {
-        uint8_t p_buf[PACKET_TOTAL_SIZE];
+        uint8_t p_buf[PACKET_SIZE];
         size_t pkt_size = encode_packet(&p, p_buf, sizeof(p_buf), false);
         if (pkt_size == 0)
         {
@@ -158,7 +158,7 @@ static void tx_done()
 // --- RX ---
 static void rx_done()
 {
-    uint8_t p_buf[PACKET_TOTAL_SIZE] = {0};
+    uint8_t p_buf[PACKET_SIZE] = {0};
     packet_t p = {0};
     uint8_t n = rfm9x_packet_from_fifo(&s->radio, p_buf);
     s->rx_bytes += n;
