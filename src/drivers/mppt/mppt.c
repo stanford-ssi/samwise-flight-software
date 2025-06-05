@@ -44,15 +44,17 @@ mppt_t mppt_mk(i2c_inst_t *i2c, uint8_t address)
 int i2c_write_then_read(uint8_t device_addr, uint8_t *cmd_buf, size_t cmd_len,
                         uint8_t *read_buf, size_t read_len)
 {
-    int ret = i2c_write_blocking(SAMWISE_MPPT_I2C, device_addr, cmd_buf,
-                                 cmd_len, true); // true for nostop
+    int ret = i2c_write_blocking_until(SAMWISE_MPPT_I2C, device_addr, cmd_buf,
+                                       cmd_len, true,
+                                       make_timeout_time_ms(I2C_TIMEOUT_MS));
     if (ret < 0)
     {
         LOG_ERROR("Error writing command: %d\n", ret);
         return ret;
     }
-    ret = i2c_read_blocking(SAMWISE_MPPT_I2C, device_addr, read_buf, read_len,
-                            false);
+    ret = i2c_read_blocking_until(SAMWISE_MPPT_I2C, device_addr, read_buf,
+                                  read_len, false,
+                                  make_timeout_time_ms(I2C_TIMEOUT_MS));
     if (ret < 0)
     {
         LOG_ERROR("Error reading data: %d\n", ret);
@@ -63,8 +65,9 @@ int i2c_write_then_read(uint8_t device_addr, uint8_t *cmd_buf, size_t cmd_len,
 // Writes a command buffer (e.g. register address + data)
 int i2c_write_data(uint8_t device_addr, uint8_t *write_buf, size_t write_len)
 {
-    int ret = i2c_write_blocking(SAMWISE_MPPT_I2C, device_addr, write_buf,
-                                 write_len, false);
+    int ret = i2c_write_blocking_until(SAMWISE_MPPT_I2C, device_addr, write_buf,
+                                       write_len, false,
+                                       make_timeout_time_ms(I2C_TIMEOUT_MS));
     if (ret < 0)
     {
         LOG_ERROR("Error writing data: %d\n", ret);

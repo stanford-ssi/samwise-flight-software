@@ -20,7 +20,8 @@ typedef enum
     NO_OP,
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
-    PAYLOAD_TURN_OFF
+    PAYLOAD_TURN_OFF,
+    MANUAL_STATE_OVERRIDE
     // add more commands here as needed
 } Command;
 
