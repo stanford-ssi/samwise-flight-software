@@ -14,6 +14,14 @@
 #include "scheduler.h"
 #include "slate.h"
 
+#ifndef PICO
+// Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
+// boards/samwise_picubed.h should define it to 0.
+// The CMakeLists.txt file points to this file for the board definition.
+static_assert(PICO_RP2350A == 0,
+              "PICO_RP2350A must be defined to 0 for PICUBED builds.");
+#endif
+
 /**
  * Main code entry point.
  *
@@ -45,6 +53,7 @@ int main()
     static_assert(PICO_RP2350A == 0,
                   "PICO_RP2350A must be defined to 0 for PICUBED builds.");
 #endif
+
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
