@@ -747,9 +747,9 @@ void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
 /*
  * Print a raw packet. L includes all bytes, even header.
  */
-void rfm9x_print_packet(char *msg, char *packet, uint8_t l)
+void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l)
 {
-    printf(msg);
+    printf("%s", msg);
     printf("\r\n");
     printf("  Size: %d\r\n", l);
     if (l >= 1)
@@ -761,13 +761,15 @@ void rfm9x_print_packet(char *msg, char *packet, uint8_t l)
     if (l >= 4)
         printf("  Flags: %x\r\n", packet[3]);
     if (l >= 5)
+        printf("  Data Length: %u\r\n", packet[4]);
+    if (l >= 6)
     {
         printf("  Payload (ASCII): ");
-        for (int i = 4; i < l; i++)
+        for (uint8_t i = 5; i < l; i++)
             printf("%c", packet[i]);
         printf("\r\n  Payload (Hex): ");
-        for (int i = 4; i < l; i++)
-            printf("%x ", packet[i]);
+        for (uint8_t i = 5; i < l; i++)
+            printf("%02x ", packet[i]);
     }
     printf("\r\n");
 }
@@ -868,7 +870,7 @@ void rfm9x_clear_interrupts(rfm9x_t *r)
     rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
 }
 
-uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
+uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, uint8_t *buf)
 {
     while (1)
     {
@@ -896,7 +898,7 @@ uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
 }
 
 // my pointer stuff with packet is almost definitely wrong!
-uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
+uint8_t rfm9x_receive(rfm9x_t *r, uint8_t *packet, uint8_t node,
                       uint8_t keep_listening, uint8_t with_ack,
                       bool blocking_wait_for_packet)
 {
@@ -979,8 +981,8 @@ uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
             if (r->debug)
                 printf("[rfm9x] Sender requested ACK\r\n");
 
-            rfm9x_send(r, "!", 1, keep_listening, packet[1], packet[0],
-                       packet[2], (packet[3] | _RH_FLAGS_ACK));
+            rfm9x_send(r, (uint8_t *)"!", 1, keep_listening, packet[1],
+                       packet[0], packet[2], (packet[3] | _RH_FLAGS_ACK));
 
             if (r->debug)
                 printf("[rfm9x] Sent ACK to %d\r\n", packet[1]);
@@ -1000,9 +1002,9 @@ uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
     return n_bytes;
 }
 
-uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
-                   uint8_t destination, uint8_t node, uint8_t identifier,
-                   uint8_t flags)
+uint8_t rfm9x_send(rfm9x_t *r, uint8_t *data, uint32_t l,
+                   uint8_t keep_listening, uint8_t destination, uint8_t node,
+                   uint8_t identifier, uint8_t flags)
 {
     // check that length of data is greater than 0 and less than or equal to
     // PAYLOAD_SIZE using an assert
@@ -1028,9 +1030,9 @@ uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
         payloadLength = l;
     }
 
-    printf("l = %d, payloadLength = %d\r\n", l, payloadLength);
+    printf("l = %lu, payloadLength = %lu\r\n", l, payloadLength);
 
-    char payload[payloadLength];
+    uint8_t payload[payloadLength];
 
     payload[0] = destination;
     payload[1] = node;
@@ -1075,13 +1077,13 @@ uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
     return 0;
 }
 
-uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
-                       uint8_t node, uint8_t max_retries)
+uint8_t rfm9x_send_ack(rfm9x_t *r, uint8_t *data, uint32_t l,
+                       uint8_t destination, uint8_t node, uint8_t max_retries)
 {
     uint8_t acked = 0;
     uint8_t retries = 0;
     uint8_t flags = _SAP_FLAGS_ACK_REQUEST;
-    char ack_buffer[256];
+    uint8_t ack_buffer[PACKET_SIZE];
     while (!acked && retries < max_retries)
     {
         rfm9x_send(r, data, l, 0, /* Don't keep listening, we do that */

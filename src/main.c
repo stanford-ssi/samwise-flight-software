@@ -21,11 +21,12 @@ extern slate_t slate;
 #ifndef PICO
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
 // This is to enable full 48pin GPIO support on the RP2350A chip.
-// You'll have to overwrite this in your local pico-sdk directory.
-// samwise-flight-software/pico-sdk/src/boards/include/boards/pico2.h
+// boards/samwise_picubed.h should define it to 0.
+// The CMakeLists.txt file points to this file for the board definition.
 static_assert(PICO_RP2350A == 0,
               "PICO_RP2350A must be defined to 0 for PICUBED builds.");
 #endif
+
 /**
  * Main code entry point.
  *
