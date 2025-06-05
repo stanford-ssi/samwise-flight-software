@@ -2,7 +2,10 @@
  * @author  Thomas Haile
  * @date    2025-05-24
  *
- * Command parsing implementation
+ * Command parsing implementation.
+ * Commands are received as raw packets from rfm9x radio, the command parser
+ * decodes the command ID and payload, and dispatches the command to the
+ * appropriate queue for downstream processing.
  */
 
 #include "command_parser.h"
@@ -26,29 +29,15 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         /* Payload Commands */
         case PAYLOAD_EXEC:
         {
-            PAYLOAD_COMMAND_DATA payload_str;
-            strlcpy(payload_str.serialized_command, command_payload,
+            PAYLOAD_COMMAND_DATA payload_command;
+            strlcpy(payload_command.serialized_command, command_payload,
                     sizeof(command_payload));
+            payload_command.seq_num = slate->curr_command_seq_num++;
+            payload_command.command_type = PAYLOAD_EXEC;
 
             // Add command into queue.
-            queue_try_add(&slate->payload_command_data, &payload_str);
-            LOG_INFO("Payload: %s", payload_str.serialized_command);
-
-            // TODO: actual execution should be within payload task.
-            if (slate->is_payload_on)
-            {
-                payload_uart_write_packet(slate, payload_str.serialized_command,
-                                          sizeof(command_payload),
-                                          slate->curr_command_seq_num);
-                slate->curr_command_seq_num++;
-            }
-            else
-            {
-                // TODO: A way to let ground station know that Payload is turned
-                // off
-                LOG_DEBUG("Payload is turned off, please turn payload on first "
-                          "and then redo the command!");
-            }
+            queue_try_add(&slate->payload_command_data, &payload_command);
+            LOG_INFO("Payload: %s", payload_command.serialized_command);
             break;
         }
         case NO_OP:
@@ -59,18 +48,19 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         }
         case PAYLOAD_TURN_ON:
         {
+            LOG_INFO("Turning on payload...");
             payload_turn_on(slate);
             break;
         }
 
         case PAYLOAD_TURN_OFF:
         {
+            LOG_INFO("Turning off payload...");
             payload_turn_off(slate);
             break;
-
-            /* Toggle Commands */
-            // TODO: ADD HERE
         }
+        /* Toggle Commands */
+        // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:
         {
             if (strcmp(command_payload, "running_state"))
@@ -88,7 +78,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
-
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
