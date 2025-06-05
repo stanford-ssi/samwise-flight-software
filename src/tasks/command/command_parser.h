@@ -9,6 +9,7 @@
 
 #include "macros.h"
 #include "packet.h"
+#include "payload_uart.h"
 #include "slate.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -40,7 +41,7 @@ typedef struct
 {
     char serialized_command[sizeof(((packet_t *)0)->data) -
                             COMMAND_MNEMONIC_SIZE];
-    uint16_t seq_num; // Sequence number for command execution
+    uint16_t seq_num;     // Sequence number for command execution
     Command command_type; // Command type
 } PAYLOAD_COMMAND_DATA;
 

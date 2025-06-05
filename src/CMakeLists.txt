@@ -1,6 +1,5 @@
 add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
-add_subdirectory(command_parser)
 add_subdirectory(common)
 add_subdirectory(drivers)
 add_subdirectory(error)

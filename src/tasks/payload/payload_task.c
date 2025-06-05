@@ -93,13 +93,27 @@ bool try_execute_payload_command(slate_t *slate)
             // If the command was successful, remove it from the queue.
             // Alternatively, if we have already retried the command up to
             // a maximum number of times, remove it from the queue.
-            if (exec_successful || RETRY_COUNT >= MAX_RETRY_COUNT)
+            if (exec_successful || RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
             {
-                queue_try_remove(&slate->payload_command_data,
-                                    &payload_command);
+                // Return success when the command is removed.
+                return queue_try_remove(&slate->payload_command_data,
+                                        &payload_command);
+            }
+            else
+            {
+                LOG_DEBUG("Payload command execution failed, retrying...");
+                // If the command was not successful, we will not remove it
+                // from the queue and will try again next time.
+                return false;
             }
         }
+        else
+        {
+            LOG_DEBUG("Failed to peek payload command from queue.");
+            return false;
+        }
     }
+    // No payload commands to execute
     return true;
 }
 
@@ -108,25 +122,6 @@ void payload_task_dispatch(slate_t *slate)
     LOG_INFO("Sending an Info Request Command to the RPI...");
     beacon_down_command_test(slate);
     ping_command_test(slate);
-
-    if (slate->is_payload_on != slate->turn_payload_on)
-    {
-        if (slate->turn_payload_on)
-        {
-            // TODO: this should be replaced with a init fn call.
-            LOG_INFO("Turning on payload...");
-            payload_turn_on(slate);
-            slate->is_payload_on = true;
-        }
-        else
-        {
-            LOG_INFO("Turning off payload...");
-            payload_turn_off(slate);
-            slate->is_payload_on = false;
-        }
-        // Give it some time to turn on or off before executing commands.
-        return;
-    }
 
     if (slate->is_payload_on)
     {
@@ -139,7 +134,9 @@ void payload_task_dispatch(slate_t *slate)
             {
                 RETRY_COUNT++;
                 break;
-            } else {
+            }
+            else
+            {
                 // Reset retry count if command was successfully executed
                 RETRY_COUNT = 0;
             }
@@ -148,7 +145,6 @@ void payload_task_dispatch(slate_t *slate)
     else
     {
         LOG_INFO("Payload is OFF, not executing commands.");
-        return false;
     }
 }
 

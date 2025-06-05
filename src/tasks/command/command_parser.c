@@ -44,16 +44,14 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PAYLOAD_TURN_ON:
         {
             LOG_INFO("Turning on payload...");
-            // Add command into queue.
-            queue_try_add(&slate->payload_command_data, &payload_command);
-            payload_command.command_type = PAYLOAD_EXEC;
+            payload_turn_on(slate);
             break;
         }
 
         case PAYLOAD_TURN_OFF:
         {
             LOG_INFO("Turning off payload...");
-            slate->turn_payload_on = false;
+            payload_turn_off(slate);
             break;
         }
         /* Toggle Commands */
