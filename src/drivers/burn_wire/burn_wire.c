@@ -8,6 +8,8 @@
 #include "hardware/pwm.h"
 #include "pico/stdlib.h"
 
+#include "sleep.h"
+
 static uint burn_a_slice_num;
 static uint burn_b_slice_num;
 
@@ -56,14 +58,14 @@ void burn_wire_activate(slate_t *slate, uint32_t burn_ms, uint32_t pwm_level,
                            pwm_level);
     }
 
-    sleep_ms(100);
+    safe_sleep_ms(100);
 
     // Activate relay
     gpio_put(SAMWISE_BURN_RELAY, 1);
-    sleep_ms(burn_ms);
+    safe_sleep_ms(burn_ms);
     gpio_put(SAMWISE_BURN_RELAY, 0);
 
-    sleep_ms(100);
+    safe_sleep_ms(100);
 
     // Turn off MOSFET
     if (activate_A)

@@ -1,4 +1,5 @@
 #include "rfm9x.h"
+#include "sleep.h"
 
 rfm9x_t rfm9x_mk()
 {
@@ -121,7 +122,7 @@ void rfm9x_reset(rfm9x_t *r)
     // set reset pin to input
     gpio_set_dir(r->reset_pin, GPIO_IN);
 
-    sleep_ms(5);
+    safe_sleep_ms(5);
 }
 
 /*
@@ -672,15 +673,15 @@ void rfm9x_init(rfm9x_t *r)
      * Calibrate the oscillator
      */
     rfm9x_set_mode(r, STANDBY_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_trigger_osc_calibration(r);
-    sleep_ms(1000); // 1 second
+    safe_sleep_ms(1000); // 1 second
 
     /*
      * Configure LoRa
      */
     rfm9x_set_mode(r, SLEEP_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_set_lora(r, 1);
 
     /*
@@ -973,7 +974,7 @@ uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
             (packet[0] != _RH_BROADCAST_ADDRESS))
         {
             // delay before sending Ack to give receiver a chance to get ready
-            sleep_ms(100);
+            safe_sleep_ms(100);
 
             if (r->debug)
                 printf("[rfm9x] Sender requested ACK\r\n");
@@ -1126,7 +1127,7 @@ uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
         // If we didn't receive an ACK, wait to retransmit
         if (!acked)
         {
-            sleep_ms(1000); // 1 second
+            safe_sleep_ms(1000); // 1 second
         }
 
         flags |= _RH_FLAGS_RETRY;

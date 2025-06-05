@@ -13,6 +13,7 @@
 #include "rfm9x.h"
 #include "scheduler.h"
 #include "slate.h"
+#include "sleep.h"
 
 /**
  * Main code entry point.
@@ -25,7 +26,7 @@ int main()
      * Brief delay after reboot/powering up due to power spikes to prevent
      * deployment when satellite is still within the launch mechanism.
      */
-    sleep_ms(5000);
+    safe_sleep_ms(5000);
 
     /*
      * Initialize persistent data or load existing data if already in flash.
