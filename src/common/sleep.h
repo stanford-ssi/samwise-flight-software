@@ -5,7 +5,7 @@
 
 extern slate_t slate;
 
-static void safe_sleep(uint32_t ms)
+static void safe_sleep_ms(uint32_t ms)
 {
     const uint32_t safe_sleep_interval_ms = 10000; // 10 sec
     uint32_t remaining_time = ms;
