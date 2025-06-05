@@ -4,12 +4,12 @@
 #include <slate.h>
 
 extern slate_t slate;
- 
+
 static void safe_sleep(uint32_t ms)
 {
     const uint32_t safe_sleep_interval_ms = 10000; // 10 sec
     uint32_t remaining_time = ms;
-    watchdog_feed(&slate->watchdog);
+    watchdog_feed(&slate.watchdog);
 
     while (remaining_time > 0)
     {
