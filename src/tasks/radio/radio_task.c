@@ -108,7 +108,7 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
         return false; // Integer overflow would occur
     }
 
-    if (n < total_required_size)
+    if (n != total_required_size)
     {
         LOG_ERROR("parse_packet: expect packet size %zu, got buffer size %zu",
                   total_required_size, n);

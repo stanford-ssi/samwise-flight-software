@@ -42,7 +42,8 @@ int main()
     // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
     // You'll have to overwrite this in your local pico-sdk directory.
     // samwise-flight-software/pico-sdk/src/boards/include/boards/pico2.h
-    assert(PICO_RP2350A == 0);
+    static_assert(PICO_RP2350A == 0,
+                  "PICO_RP2350A must be defined to 0 for PICUBED builds.");
 #endif
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");

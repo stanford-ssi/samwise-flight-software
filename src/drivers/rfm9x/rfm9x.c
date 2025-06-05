@@ -768,7 +768,7 @@ void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l)
             printf("%c", packet[i]);
         printf("\r\n  Payload (Hex): ");
         for (uint8_t i = 5; i < l; i++)
-            printf("%x ", packet[i]);
+            printf("%02x ", packet[i]);
     }
     printf("\r\n");
 }
