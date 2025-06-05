@@ -66,7 +66,7 @@ void diagnostics_task_dispatch(slate_t *slate)
     LOG_INFO("I2C Bus Scan %d", I2C_NUM(SAMWISE_MPPT_I2C));
     LOG_INFO("\n0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 
-    for (int addr = 0; addr < (1 << 7); ++addr)
+    for (size_t addr = 0; addr < (1 << 7); ++addr)
     {
         if (addr % 16 == 0)
         {
@@ -95,7 +95,7 @@ void diagnostics_task_dispatch(slate_t *slate)
     LOG_INFO("I2C Bus Scan %d", I2C_NUM(SAMWISE_POWER_MONITOR_I2C));
     LOG_INFO("\n0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 
-    for (int addr = 0; addr < (1 << 7); ++addr)
+    for (size_t addr = 0; addr < (1 << 7); ++addr)
     {
         if (addr % 16 == 0)
         {
