@@ -3,6 +3,8 @@
 #include <inttypes.h>
 #include <slate.h>
 
+extern slate_t slate;
+ 
 static void safe_sleep(uint32_t ms)
 {
     const uint32_t safe_sleep_interval_ms = 10000; // 10 sec
