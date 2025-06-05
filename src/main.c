@@ -63,7 +63,6 @@ int main()
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
-
     while (true)
     {
         sched_dispatch(&slate);
