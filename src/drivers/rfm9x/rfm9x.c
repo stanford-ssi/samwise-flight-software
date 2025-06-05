@@ -1,4 +1,5 @@
 #include "rfm9x.h"
+#include "safe_sleep.h"
 
 rfm9x_t rfm9x_mk()
 {
@@ -121,7 +122,7 @@ void rfm9x_reset(rfm9x_t *r)
     // set reset pin to input
     gpio_set_dir(r->reset_pin, GPIO_IN);
 
-    sleep_ms(5);
+    safe_sleep_ms(5);
 }
 
 /*
@@ -672,15 +673,15 @@ void rfm9x_init(rfm9x_t *r)
      * Calibrate the oscillator
      */
     rfm9x_set_mode(r, STANDBY_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_trigger_osc_calibration(r);
-    sleep_ms(1000); // 1 second
+    safe_sleep_ms(1000); // 1 second
 
     /*
      * Configure LoRa
      */
     rfm9x_set_mode(r, SLEEP_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_set_lora(r, 1);
 
     /*

@@ -1,6 +1,7 @@
 add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
 add_subdirectory(common)
+add_subdirectory(utils)
 add_subdirectory(slate)
 add_subdirectory(packet)
 add_subdirectory(error)
