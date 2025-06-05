@@ -50,6 +50,12 @@ typedef struct samwise_slate
     uint16_t solar_current;   // in mA (to 0.001A)
 
     /*
+     * Structure status readouts
+     */
+    bool is_rbf_detected; // true if the RBF is still attached, false if it has
+                          // been removed
+
+    /*
      * Watchdog
      */
     watchdog_t watchdog;

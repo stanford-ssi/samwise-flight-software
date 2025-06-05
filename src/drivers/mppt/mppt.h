@@ -2,10 +2,12 @@
 
 #pragma once
 
+#include "common/config.h"
 #include "common/pins.h"
 #include "hardware/i2c.h"
 #include "logger.h"
 #include "macros.h"
+#include "pico/time.h"
 #include "pins.h"
 #include "utils.h"
 

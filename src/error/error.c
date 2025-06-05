@@ -22,7 +22,7 @@
  * Note: We do not use the pico's built-in panic function to allow for
  * customized behavior.
  */
-void fatal_error()
+void fatal_error(char *msg)
 {
 #ifdef FLIGHT
     return;
@@ -43,6 +43,7 @@ void fatal_error()
             safe_sleep_ms(100);
 #endif
         }
+        printf("ERROR: %s", msg);
         safe_sleep_ms(500);
     }
 #endif

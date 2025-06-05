@@ -36,6 +36,9 @@
 #define SAMWISE_UART_TX (11)
 #define SAMWISE_UART_RX (12)
 
+// Mocked RBF pin
+#define SAMWISE_RBF_DETECT_PIN (42)
+
 #else
 
 /*
@@ -82,5 +85,8 @@
 #define SAMWISE_RPI_ENAB (29)
 #define SAMWISE_UART_TX (31)
 #define SAMWISE_UART_RX (30)
+
+// RBF_DETECT pin
+#define SAMWISE_RBF_DETECT_PIN (42)
 
 #endif
