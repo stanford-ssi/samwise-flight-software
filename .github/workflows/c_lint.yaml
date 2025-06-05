@@ -3,15 +3,15 @@ on:
   push:
     paths:
       # only when a .c, .cpp, or .h file is changed
-      - "**.c"
-      - "**.cpp"
-      - "**.h"
+      - "src/**.c"
+      - "src/**.cpp"
+      - "src/**.h"
   pull_request:
     paths:
       # only when a .c, .cpp, or .h file is changed
-      - "**.c"
-      - "**.cpp"
-      - "**.h"
+      - "src/**.c"
+      - "src/**.cpp"
+      - "src/**.h"
   workflow_dispatch:
 
 jobs:
@@ -31,8 +31,6 @@ jobs:
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           format-review: true
           passive-reviews: true
-          # do not format external lib folder and subdirectories
-          ignore: 'lib'
       - name: Fail if there are linter errors
         if: ${{steps.linter.outputs.clang-format-checks-failed > 0}}
         run: |
