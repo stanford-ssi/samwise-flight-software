@@ -59,7 +59,7 @@ static void uart_rx_callback()
 // (not using fast version because we want small binary size)
 unsigned int crc32(const uint8_t *message, uint16_t len)
 {
-    int i, j;
+    size_t i, j;
     unsigned int byte, crc, mask;
 
     i = 0;
@@ -187,7 +187,7 @@ static void send_ack()
 
 static void send_syn()
 {
-    for (int i = 0; i < SYN_COUNT; i++)
+    for (size_t i = 0; i < SYN_COUNT; i++)
     {
         uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
     }
@@ -274,9 +274,9 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
 
     // Write sync packet and wait for ack
     bool syn_acknowledged = false;
-    for (int i = 0; i < SYN_RETRIES; i++)
+    for (size_t i = 0; i < SYN_RETRIES; i++)
     {
-        for (int j = 0; j < SYN_COUNT; j++)
+        for (size_t j = 0; j < SYN_COUNT; j++)
         {
             uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }

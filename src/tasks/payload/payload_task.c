@@ -40,7 +40,7 @@ void beacon_down_command_test(slate_t *slate)
     else
     {
         LOG_INFO("Received something:");
-        for (int i = 0; i < received_len; i++)
+        for (uint16_t i = 0; i < received_len; i++)
         {
             printf("%c", received[i]);
         }
@@ -66,7 +66,7 @@ void ping_command_test(slate_t *slate)
     {
         LOG_INFO("ACK received!");
         LOG_INFO("ACK:");
-        for (int i = 0; i < received_len; i++)
+        for (uint16_t i = 0; i < received_len; i++)
         {
             printf("%c", received[i]);
         }
