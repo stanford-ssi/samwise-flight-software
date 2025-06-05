@@ -22,8 +22,7 @@ void diagnostics_task_init(slate_t *slate)
 
     // Initialize power monitor
     power_monitor = adm1176_mk(SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
-                               ADM1176_DEFAULT_SENSE_RESISTOR,
-                               ADM1176_DEFAULT_VOLTAGE_RANGE);
+                               ADM1176_DEFAULT_SENSE_RESISTOR);
 }
 
 void diagnostics_task_dispatch(slate_t *slate)

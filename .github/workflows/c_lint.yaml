@@ -31,8 +31,9 @@ jobs:
           thread-comments: ${{ github.event_name == 'pull_request' && 'update' }}
           format-review: true
           passive-reviews: true
-          # do not format external lib folder and subdirectories
+          # do not format external lib folder and board header files
           ignore: 'lib'
+          ignore: 'boards'
       - name: Fail if there are linter errors
         if: ${{steps.linter.outputs.clang-format-checks-failed > 0}}
         run: |
