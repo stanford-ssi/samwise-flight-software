@@ -1,5 +1,5 @@
 #include "rfm9x.h"
-#include "sleep.h"
+#include "safe_sleep.h"
 
 rfm9x_t rfm9x_mk()
 {

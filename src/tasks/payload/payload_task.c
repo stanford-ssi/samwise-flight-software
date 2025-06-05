@@ -4,7 +4,7 @@
  */
 
 #include "payload_task.h"
-#include "sleep.h"
+#include "safe_sleep.h"
 
 #define MAX_RECEIVED_LEN 1024
 

@@ -11,7 +11,7 @@
  */
 
 #include "error.h"
-#include "sleep.h"
+#include "safe_sleep.h"
 
 /**
  * This function should be called if we encounter an unrecoverable error. In

@@ -14,7 +14,7 @@
 #include "pins.h"
 #include "slate.h"
 
-#include "sleep.h"
+#include "safe_sleep.h"
 
 #define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
 
