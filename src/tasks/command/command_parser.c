@@ -6,13 +6,11 @@
  */
 
 #include "command_parser.h"
+#include "states.h"
 #include "macros.h"
 #include "payload_uart.h"
 
 extern sched_state_t *overridden_state;
-extern sched_state_t running_state;
-extern sched_state_t bringup_state;
-extern sched_state_t init_state;
 
 /// @brief Parse packet and dispatch command to appropriate queue
 void dispatch_command(slate_t *slate, packet_t *packet)
