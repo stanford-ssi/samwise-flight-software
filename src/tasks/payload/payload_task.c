@@ -50,13 +50,9 @@ void ping_command_test(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
-
-    printf("I ran 1\n");
-
     payload_uart_write_packet(slate, packet, len, 999);
 
     sleep_ms(1000);
-    printf("I ran 2\n");
 
     char received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
@@ -75,6 +71,19 @@ void ping_command_test(slate_t *slate)
         printf("\n");
     }
 }
+
+void payload_task_dispatch(slate_t *slate)
+{
+    LOG_INFO("Sending an Info Request Command to the RPI...");
+    beacon_down_command_test(slate);
+    ping_command_test(slate);
+}
+
+sched_task_t payload_task = {.name = "payload",
+                             .dispatch_period_ms = 1000,
+                             .task_init = &payload_task_init,
+                             .task_dispatch = &payload_task_dispatch,
+                             .next_dispatch = 0};
 
 /*
 void take_photo_test(slate_t *slate)
@@ -103,17 +112,3 @@ packet, len, 999);
     }
 }
 */
-
-void payload_task_dispatch(slate_t *slate)
-{
-    LOG_INFO("Sending an Info Request Command to the RPI...");
-    // beacon_down_command_test(slate);
-    ping_command_test(slate);
-    // take_photo_test(slate);
-}
-
-sched_task_t payload_task = {.name = "payload",
-                             .dispatch_period_ms = 500,
-                             .task_init = &payload_task_init,
-                             .task_dispatch = &payload_task_dispatch,
-                             .next_dispatch = 0};

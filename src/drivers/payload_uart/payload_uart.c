@@ -57,32 +57,23 @@ static void uart_rx_callback()
 // (not using fast version because we want small binary size)
 unsigned int crc32(const uint8_t *message, uint16_t len)
 {
-    uint16_t i;
+    size_t i;
     int j;
     unsigned int byte, crc, mask;
 
     i = 0;
     crc = 0xFFFFFFFF;
-    printf("before crc\n");
-    printf("len: %d\n", (uint16_t)len);
-    bool bruh = i < len;
-    printf("Is i less than length: %d\n", bruh);
     while (i < len)
     {
         byte = message[i]; // Get next byte.
         crc = crc ^ byte;
-        printf("For loop\n");
         for (j = 7; j >= 0; j--)
         { // Do eight times.
-            printf("j value: %d\n", j);
             mask = -(crc & 1);
             crc = (crc >> 1) ^ (0xEDB88320 & mask);
         }
-        printf("Bool: %d\n", bruh);
-        printf("What is i: %d\n", i);
         i = i + 1;
     }
-    printf("aftrer crc\n");
     return ~crc;
 }
 
@@ -92,9 +83,8 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
 static packet_header_t compute_packet_header(const uint8_t *packet,
                                              uint16_t len, uint16_t seq_num)
 {
-    printf("computing packet header\n");
     packet_header_t header = {len, seq_num, crc32(packet, len)};
-    printf("returning packet header\n");
+
     return header;
 }
 
@@ -109,8 +99,6 @@ static uint16_t receive_into(slate_t *slate, void *dest, uint16_t num_bytes,
     absolute_time_t start = get_absolute_time();
     uint8_t *dest_ptr = (uint8_t *)dest; // Convert to char* for arithmetic
     uint16_t bytes_received = 0;
-
-    printf("About to go into while loop\n");
     while (absolute_time_diff_us(start, get_absolute_time()) <
            timeout_ms * 1000)
     {
@@ -133,9 +121,7 @@ static bool receive_ack(slate_t *slate)
 {
     // Receive a single byte
     uint8_t received_byte;
-    printf("Going into receive_into\n");
     uint16_t received = receive_into(slate, &received_byte, 1, 1000);
-    printf("out of receive_into\n");
 
     return received && received_byte == ACK_BYTE;
 }
@@ -278,33 +264,27 @@ bool payload_uart_init(slate_t *slate)
 bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
                                uint16_t len, uint16_t seq_num)
 {
-    printf("I ran 3\n");
     // Check packet length
     if (len > MAX_PACKET_LEN)
     {
         LOG_DEBUG("Packet is too long!\n");
         return false;
     }
-    printf("I ran 4\n");
 
     // Write sync packet and wait for ack
     bool syn_acknowledged = false;
     for (size_t i = 0; i < SYN_RETRIES; i++)
     {
-        printf("I ran 5\n");
         for (size_t j = 0; j < SYN_COUNT; j++)
         {
             uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }
 
-        printf("I ran 6\n");
         if (receive_ack(slate))
         {
-            printf("Inside receive ack\n");
             syn_acknowledged = true;
             break;
         }
-        printf("Outside receive ack\n");
 
         sleep_ms(100);
     }
@@ -314,19 +294,11 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
         LOG_DEBUG("Payload did not respond to sync!\n");
         return false;
     }
-    printf("Breaked out of receive ack\n");
-    // Blocking call, dumb ass error that has never happened before is making
-    // this hang. This works if rpi is not there
-    // TODO: If it hangs, just give it an error
-    // Pete Notes: Look at uart_is_writeable
-    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
 
-    printf("Passed uart_putc_raw\n");
+    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
 
     // Calculate the header
     packet_header_t header = compute_packet_header(packet, len, seq_num);
-
-    printf("I ran 7\n");
 
     // Send header and receive ACK
     uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
