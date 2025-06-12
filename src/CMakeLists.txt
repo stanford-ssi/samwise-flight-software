@@ -1,15 +1,15 @@
 add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
 add_subdirectory(common)
-add_subdirectory(utils)
-add_subdirectory(slate)
-add_subdirectory(packet)
-add_subdirectory(error)
 add_subdirectory(drivers)
+add_subdirectory(error)
+add_subdirectory(init)
+add_subdirectory(packet)
 add_subdirectory(scheduler)
+add_subdirectory(slate)
 add_subdirectory(states)
 add_subdirectory(tasks)
-add_subdirectory(init)
+add_subdirectory(utils)
 
 add_executable(samwise main.c)
 
