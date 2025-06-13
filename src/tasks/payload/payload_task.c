@@ -72,25 +72,13 @@ void ping_command_test(slate_t *slate)
     }
 }
 
-void payload_task_dispatch(slate_t *slate)
-{
-    LOG_INFO("Sending an Info Request Command to the RPI...");
-    beacon_down_command_test(slate);
-    ping_command_test(slate);
-}
-
-sched_task_t payload_task = {.name = "payload",
-                             .dispatch_period_ms = 1000,
-                             .task_init = &payload_task_init,
-                             .task_dispatch = &payload_task_dispatch,
-                             .next_dispatch = 0};
-
-/*
 void take_photo_test(slate_t *slate)
 {
-    char packet[] = "[\"take_photo\", [\"test1\"], {\“w\”: 1024, \“h\”: 768,
-\“cell\”: 128}]"; int len = sizeof(packet) - 1; payload_uart_write_packet(slate,
-packet, len, 999);
+    char packet[] = "[\"take_photo\", [\"test2\"], {\"w\": 1024, \"h\": 768, "
+                    "\"camera_name\": \"C\"}]";
+
+    int len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, packet, len, 999);
 
     sleep_ms(1000);
 
@@ -111,4 +99,46 @@ packet, len, 999);
         printf("\n");
     }
 }
-*/
+
+void get_photo_config_test(slate_t *slate)
+{
+    char packet[] = "[\"get_photo_config\", [], {}]";
+
+    int len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, packet, len, 999);
+
+    sleep_ms(1000);
+
+    char received[MAX_RECEIVED_LEN];
+    uint16_t received_len = payload_uart_read_packet(slate, received);
+    if (received_len == 0)
+    {
+        LOG_INFO("ACK was not received!");
+    }
+    else
+    {
+        LOG_INFO("ACK received!");
+        LOG_INFO("ACK:");
+        for (uint16_t i = 0; i < received_len; i++)
+        {
+            printf("%c", received[i]);
+        }
+        printf("\n");
+    }
+}
+
+void payload_task_dispatch(slate_t *slate)
+{
+    LOG_INFO("Sending an Info Request Command to the RPI...");
+    // beacon_down_command_test(slate);
+    // ping_command_test(slate);
+    take_photo_test(slate);
+    sleep_ms(1000);
+    get_photo_config_test(slate);
+}
+
+sched_task_t payload_task = {.name = "payload",
+                             .dispatch_period_ms = 1000,
+                             .task_init = &payload_task_init,
+                             .task_dispatch = &payload_task_dispatch,
+                             .next_dispatch = 0};

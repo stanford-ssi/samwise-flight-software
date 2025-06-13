@@ -67,7 +67,7 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
     {
         byte = message[i]; // Get next byte.
         crc = crc ^ byte;
-        for (j = 7; j >= 0; j--)
+        for (int j = 0; j < 8; j++)
         { // Do eight times.
             mask = -(crc & 1);
             crc = (crc >> 1) ^ (0xEDB88320 & mask);
