@@ -21,6 +21,7 @@
 #define DATA_BITS 8
 #define STOP_BITS 1
 #define PARITY UART_PARITY_NONE
+#define WRITE_MAX_TIMEOUT 10000
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
@@ -78,7 +79,7 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
 }
 
 /**
- * Return the header for a gien message packet
+ * Return the header for a given message packet
  */
 static packet_header_t compute_packet_header(const uint8_t *packet,
                                              uint16_t len, uint16_t seq_num)
@@ -253,6 +254,29 @@ bool payload_uart_init(slate_t *slate)
     return true;
 }
 
+bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
+{
+    uint32_t start = time_us_32();
+    size_t written = 0;
+
+    while (written < len)
+    {
+        // If there’s room in the FIFO, push the next byte
+        if (uart_is_writable(PAYLOAD_UART_ID))
+        {
+            uart_putc_raw(PAYLOAD_UART_ID, packet[written++]);
+        }
+        // Else, check if we’ve run out of time
+        else if (time_us_32() - start >= timeout_us)
+        {
+            return false; // timeout
+        }
+        // Otherwise, spin until either writable or timeout
+    }
+
+    return true; // all bytes enqueued within time budget
+}
+
 /**
  * Write a packet to the RPi over UART
  *
@@ -301,8 +325,10 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     packet_header_t header = compute_packet_header(packet, len, seq_num);
 
     // Send header and receive ACK
-    uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
-                        sizeof(packet_header_t));
+    uart_write_timeout((uint8_t *)&header, sizeof(packet_header_t),
+                       WRITE_MAX_TIMEOUT);
+    // uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
+    // sizeof(packet_header_t));
 
     if (!receive_ack(slate))
     {
@@ -311,7 +337,8 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     }
 
     // Send actual packet
-    uart_write_blocking(PAYLOAD_UART_ID, packet, len);
+    uart_write_timeout(packet, len, WRITE_MAX_TIMEOUT);
+    // uart_write_blocking(PAYLOAD_UART_ID, packet, len);
 
     // Wait for ACK
     return receive_ack(slate);

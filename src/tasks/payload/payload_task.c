@@ -131,10 +131,10 @@ void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
     // beacon_down_command_test(slate);
-    // ping_command_test(slate);
-    take_photo_test(slate);
-    sleep_ms(1000);
-    get_photo_config_test(slate);
+    ping_command_test(slate);
+    // take_photo_test(slate);
+    // sleep_ms(1000);
+    // get_photo_config_test(slate);
 }
 
 sched_task_t payload_task = {.name = "payload",
