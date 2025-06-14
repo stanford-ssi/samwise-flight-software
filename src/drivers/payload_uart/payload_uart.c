@@ -14,6 +14,8 @@
 #include "pins.h"
 #include "slate.h"
 
+#include "safe_sleep.h"
+
 #define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
 
 // UART parameters
@@ -285,7 +287,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
             break;
         }
 
-        sleep_ms(100);
+        safe_sleep_ms(100);
     }
 
     if (!syn_acknowledged)

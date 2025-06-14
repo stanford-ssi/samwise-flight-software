@@ -4,6 +4,8 @@
  */
 
 #include "payload_task.h"
+#include "safe_sleep.h"
+
 #define MAX_RECEIVED_LEN 1024
 
 void payload_task_init(slate_t *slate)
@@ -20,7 +22,7 @@ void payload_task_init(slate_t *slate)
     // init is only executed once, but we should toggle RPi on only when
     // commands need to be executed.
     LOG_INFO("Waiting for Pi to boot up...");
-    sleep_ms(10000);
+    safe_sleep_ms(10000);
 }
 
 void beacon_down_command_test(slate_t *slate)
@@ -29,7 +31,7 @@ void beacon_down_command_test(slate_t *slate)
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
 
-    sleep_ms(1000);
+    safe_sleep_ms(1000);
 
     char received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
@@ -55,7 +57,7 @@ void ping_command_test(slate_t *slate)
     int len = sizeof(packet) - 1;
     payload_uart_write_packet(slate, packet, len, 999);
 
-    sleep_ms(1000);
+    safe_sleep_ms(1000);
 
     char received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
