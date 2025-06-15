@@ -59,7 +59,6 @@ static void uart_rx_callback()
 unsigned int crc32(const uint8_t *message, uint16_t len)
 {
     size_t i;
-    int j;
     unsigned int byte, crc, mask;
 
     i = 0;
