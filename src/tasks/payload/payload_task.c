@@ -16,8 +16,9 @@ void payload_task_init(slate_t *slate)
     LOG_INFO("Turning on Payload...");
     payload_turn_on(slate);
 
-    LOG_INFO("Waiting for Pi to boot up...");
-    sleep_ms(10000);
+    LOG_INFO("Payload has been instructed to turn on...");
+    LOG_INFO("Before running a command, please poll the RPi and confirm it's "
+             "on status...");
 }
 
 void beacon_down_command_test(slate_t *slate)
