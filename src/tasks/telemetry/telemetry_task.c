@@ -78,15 +78,47 @@ void telemetry_task_dispatch(slate_t *slate)
         mppt_get_battery_voltage(&solar_charger_monitor);
     uint16_t solar_battery_current =
         mppt_get_battery_current(&solar_charger_monitor);
+    bool solar_charge = read_fixed_solar_charge();
+    bool solar_fault = read_fixed_solar_fault();
+
+    bool panel_A = read_panel_A();
+    bool panel_B = read_panel_B();
+
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
              solar_battery_current);
     LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
+    if (!solar_charge) {
+        LOG_INFO("Solar panels status: on");
+    } else {
+        LOG_INFO("Solar panels status: off");
+    }
+    if (!solar_fault) {
+        LOG_INFO("Solar panels faulty");
+    } else {
+        LOG_INFO("Solar panels not faulty");
+    }
+
+    if (panel_A) {
+        LOG_INFO("Panel A deployed");
+    } else {
+        LOG_INFO("Panel A NOT deployed");
+    }
+    if (panel_B) {
+        LOG_INFO("Panel B deployed");
+    } else {
+        LOG_INFO("Panel B NOT deployed");
+    }
 
     // Write to slate
     slate->solar_voltage = solar_voltage;
     slate->solar_current = solar_current;
+    slate->fixed_solar_charge = solar_charge;
+    slate->fixed_solar_fault = solar_fault;
+    slate->panel_A_deployed = panel_A;
+    slate->panel_B_deployed = panel_B;
+
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",

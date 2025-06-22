@@ -49,6 +49,12 @@ typedef struct samwise_slate
     uint16_t solar_voltage;   // in mV (to 0.001V)
     uint16_t solar_current;   // in mA (to 0.001A)
 
+    /* c
+    * Solar panels A and B
+    */
+    bool panel_A_deployed; // 1 for deployed
+    bool panel_B_deployed; // 1 for deployed
+
     /*
      * Watchdog
      */
