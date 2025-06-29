@@ -88,14 +88,20 @@ void telemetry_task_dispatch(slate_t *slate)
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
              solar_battery_current);
     LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
-    if (!solar_charge) {
+    if (!solar_charge)
+    {
         LOG_INFO("Solar panels status: on");
-    } else {
+    }
+    else
+    {
         LOG_INFO("Solar panels status: off");
     }
-    if (!solar_fault) {
+    if (!solar_fault)
+    {
         LOG_INFO("Solar panels faulty");
-    } else {
+    }
+    else
+    {
         LOG_INFO("Solar panels not faulty");
     }
 
