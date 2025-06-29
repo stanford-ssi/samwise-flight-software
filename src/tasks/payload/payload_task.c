@@ -23,6 +23,49 @@ void payload_task_init(slate_t *slate)
     sleep_ms(10000);
 }
 
+bool try_execute_payload_command(slate_t *slate)
+{
+    if (!queue_is_empty(&slate->payload_command_data))
+    {
+        PAYLOAD_COMMAND_DATA payload_command;
+        if (queue_try_peek(&slate->payload_command_data, &payload_command))
+        {
+            LOG_INFO("Executing Payload Command: %s",
+                     payload_command.serialized_command);
+            // First attempt to execute the command but do not throw it away
+            // yet.
+            bool exec_successful = payload_uart_write_packet(
+                slate, payload_command.serialized_command,
+                sizeof(payload_command.serialized_command),
+                payload_command.seq_num);
+            // If the command was successful, remove it from the queue.
+            // Alternatively, if we have already retried the command up to
+            // a maximum number of times, remove it from the queue.
+            if (exec_successful || RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
+            {
+                // Return success when the command is removed.
+                return queue_try_remove(&slate->payload_command_data,
+                                        &payload_command);
+            }
+            else
+            {
+                LOG_DEBUG("Payload command execution failed, retrying...");
+                // If the command was not successful, we will not remove it
+                // from the queue and will try again next time.
+                return false;
+            }
+        }
+        else
+        {
+            LOG_DEBUG("Failed to peek payload command from queue.");
+            return false;
+        }
+    }
+    // No payload commands to execute
+    return true;
+}
+
+/*** TESTS ***/
 void beacon_down_command_test(slate_t *slate)
 {
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
@@ -73,48 +116,6 @@ void ping_command_test(slate_t *slate)
         }
         printf("\n");
     }
-}
-
-bool try_execute_payload_command(slate_t *slate)
-{
-    if (!queue_is_empty(&slate->payload_command_data))
-    {
-        PAYLOAD_COMMAND_DATA payload_command;
-        if (queue_try_peek(&slate->payload_command_data, &payload_command))
-        {
-            LOG_INFO("Executing Payload Command: %s",
-                     payload_command.serialized_command);
-            // First attempt to execute the command but do not throw it away
-            // yet.
-            bool exec_successful = payload_uart_write_packet(
-                slate, payload_command.serialized_command,
-                sizeof(payload_command.serialized_command),
-                payload_command.seq_num);
-            // If the command was successful, remove it from the queue.
-            // Alternatively, if we have already retried the command up to
-            // a maximum number of times, remove it from the queue.
-            if (exec_successful || RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
-            {
-                // Return success when the command is removed.
-                return queue_try_remove(&slate->payload_command_data,
-                                        &payload_command);
-            }
-            else
-            {
-                LOG_DEBUG("Payload command execution failed, retrying...");
-                // If the command was not successful, we will not remove it
-                // from the queue and will try again next time.
-                return false;
-            }
-        }
-        else
-        {
-            LOG_DEBUG("Failed to peek payload command from queue.");
-            return false;
-        }
-    }
-    // No payload commands to execute
-    return true;
 }
 
 void payload_task_dispatch(slate_t *slate)

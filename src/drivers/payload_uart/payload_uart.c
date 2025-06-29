@@ -284,14 +284,16 @@ bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
  * @param seq_num   Sequence number (useful for sending multiple packets, ignore
  * otherwise)
  */
-bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
-                               uint16_t len, uint16_t seq_num)
+payload_write_error_code payload_uart_write_packet(slate_t *slate,
+                                                   const uint8_t *packet,
+                                                   uint16_t len,
+                                                   uint16_t seq_num)
 {
     // Check packet length
     if (len > MAX_PACKET_LEN)
     {
         LOG_DEBUG("Packet is too long!\n");
-        return false;
+        return PACKET_TOO_BIG;
     }
 
     // Write sync packet and wait for ack
@@ -315,7 +317,7 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     if (!syn_acknowledged)
     {
         LOG_DEBUG("Payload did not respond to sync!\n");
-        return false;
+        return SYN_UNSUCCESSFUL;
     }
 
     uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
@@ -324,23 +326,27 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     packet_header_t header = compute_packet_header(packet, len, seq_num);
 
     // Send header and receive ACK
-    uart_write_timeout((uint8_t *)&header, sizeof(packet_header_t),
-                       WRITE_MAX_TIMEOUT);
-    // uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
-    // sizeof(packet_header_t));
+    if (!uart_write_timeout((uint8_t *)&header, sizeof(packet_header_t),
+                            WRITE_MAX_TIMEOUT))
+    {
+        return UART_WRITE_TIMEDOUT;
+    }
 
     if (!receive_ack(slate))
     {
         LOG_DEBUG("Header was not acknowledged!\n");
-        return false;
+        return HEADER_UNACKNOWLEDGED;
     }
 
     // Send actual packet
     uart_write_timeout(packet, len, WRITE_MAX_TIMEOUT);
-    // uart_write_blocking(PAYLOAD_UART_ID, packet, len);
 
     // Wait for ACK
-    return receive_ack(slate);
+    if (receive_ack(slate))
+    {
+        return SUCCESSFUL;
+    }
+    return FINAL_WRITE_UNSUCCESSFUL;
 }
 
 /**
