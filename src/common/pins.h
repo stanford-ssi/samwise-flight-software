@@ -36,6 +36,12 @@
 #define SAMWISE_UART_TX (11)
 #define SAMWISE_UART_RX (12)
 
+// Mocked Fixed Solar pins
+#define SAMWISE_FIXED_SOLAR_FAULT (33)
+#define SAMWISE_FIXED_SOLAR_CHARGE (34)
+// Mocked RBF pin
+#define SAMWISE_RBF_DETECT_PIN (42)
+
 #else
 
 /*
@@ -85,5 +91,7 @@
 
 #define SAMWISE_FIXED_SOLAR_FAULT (33)
 #define SAMWISE_FIXED_SOLAR_CHARGE (34)
+// RBF_DETECT pin
+#define SAMWISE_RBF_DETECT_PIN (42)
 
 #endif

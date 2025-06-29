@@ -14,6 +14,14 @@
 #include "scheduler.h"
 #include "slate.h"
 
+#ifndef PICO
+// Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
+// boards/samwise_picubed.h should define it to 0.
+// The CMakeLists.txt file points to this file for the board definition.
+static_assert(PICO_RP2350A == 0,
+              "PICO_RP2350A must be defined to 0 for PICUBED builds.");
+#endif
+
 /**
  * Main code entry point.
  *
@@ -22,13 +30,10 @@
 int main()
 {
     /*
-     * In debug builds, delay to allow the user to connect to open the serial
-     * port.
+     * Brief delay after reboot/powering up due to power spikes to prevent
+     * deployment when satellite is still within the launch mechanism.
      */
-    if (!IS_FLIGHT)
-    {
-        sleep_ms(5000);
-    }
+    sleep_ms(5000);
 
     /*
      * Initialize persistent data or load existing data if already in flash.
@@ -38,9 +43,17 @@ int main()
     increment_reboot_counter();
     LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
 
-    /*
-     * Initialize everything.
-     */
+/*
+ * Initialize everything.
+ */
+#ifndef PICO
+    // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
+    // You'll have to overwrite this in your local pico-sdk directory.
+    // samwise-flight-software/pico-sdk/src/boards/include/boards/pico2.h
+    static_assert(PICO_RP2350A == 0,
+                  "PICO_RP2350A must be defined to 0 for PICUBED builds.");
+#endif
+
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
@@ -60,7 +73,6 @@ int main()
      * Go state machine!
      */
     LOG_INFO("main: Dispatching the state machine...");
-
     while (true)
     {
         sched_dispatch(&slate);

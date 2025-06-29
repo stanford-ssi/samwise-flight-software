@@ -1,0 +1,1 @@
+#define I2C_TIMEOUT_MS 100

@@ -57,7 +57,7 @@ static void uart_rx_callback()
 // (not using fast version because we want small binary size)
 unsigned int crc32(const uint8_t *message, uint16_t len)
 {
-    int i, j;
+    size_t i;
     unsigned int byte, crc, mask;
 
     i = 0;
@@ -66,7 +66,7 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
     {
         byte = message[i]; // Get next byte.
         crc = crc ^ byte;
-        for (j = 7; j >= 0; j--)
+        for (int j = 0; j < 8; j++)
         { // Do eight times.
             mask = -(crc & 1);
             crc = (crc >> 1) ^ (0xEDB88320 & mask);
@@ -185,7 +185,7 @@ static void send_ack()
 
 static void send_syn()
 {
-    for (int i = 0; i < SYN_COUNT; i++)
+    for (size_t i = 0; i < SYN_COUNT; i++)
     {
         uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
     }
@@ -194,12 +194,13 @@ static void send_syn()
 void payload_turn_on(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 1);
-    LOG_DEBUG("Pulled ENAB high");
+    slate->is_payload_on = true;
 }
 
 void payload_turn_off(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 0);
+    slate->is_payload_on = false;
 }
 
 /**
@@ -271,9 +272,9 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
 
     // Write sync packet and wait for ack
     bool syn_acknowledged = false;
-    for (int i = 0; i < SYN_RETRIES; i++)
+    for (size_t i = 0; i < SYN_RETRIES; i++)
     {
-        for (int j = 0; j < SYN_COUNT; j++)
+        for (size_t j = 0; j < SYN_COUNT; j++)
         {
             uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }

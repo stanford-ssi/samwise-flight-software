@@ -71,7 +71,7 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...);
     do                                                                         \
     {                                                                          \
         LOG_ERROR("%s:%d %s\n", __FILE__, __LINE__, message);                  \
-        fatal_error();                                                         \
+        fatal_error(message);                                                  \
     } while (0)
 
 /**
