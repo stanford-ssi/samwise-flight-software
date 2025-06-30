@@ -200,7 +200,10 @@ void payload_turn_on(slate_t *slate)
 
 void payload_turn_off(slate_t *slate)
 {
+    // NOTE: This does not actually turn off the payload, this just ensures it
+    // doesn't turn on again when it is turned off.
     gpio_put(SAMWISE_RPI_ENAB, 0);
+
     slate->is_payload_on = false;
 }
 
@@ -253,6 +256,15 @@ bool payload_uart_init(slate_t *slate)
     return true;
 }
 
+/**
+ * Writes data via UART with a timeout, ensuring that our writes do not
+ * block infinitely long.
+ *
+ * @param packet        Array of bytes containing the packet
+ * @param len           Number of bytes in the packet
+ * @param timeout_us    Time microseconds that the command will try to write
+ * until doing a timeout
+ */
 bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
 {
     uint32_t start = time_us_32();

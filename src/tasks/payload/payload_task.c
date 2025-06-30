@@ -11,16 +11,19 @@ void payload_task_init(slate_t *slate)
     LOG_INFO("Payload task is initializing...");
 
     LOG_INFO("Initializing UART...");
-    payload_uart_init(slate);
+    if (slate->is_uart_init)
+    {
+        LOG_INFO("UART already initialized...");
+    }
+    else
+    {
+        payload_uart_init(slate);
+        slate->is_uart_init = true;
+        LOG_INFO("UART has been initialized, please turn on Payload separately "
+                 "before doing any payload commands...");
+    }
 
-    LOG_INFO("Turning on Payload...");
-    payload_turn_on(slate);
-
-    // TODO: initialization needs to be moved into a separate function
-    // init is only executed once, but we should toggle RPi on only when
-    // commands need to be executed.
-    LOG_INFO("Waiting for Pi to boot up...");
-    sleep_ms(10000);
+    // NOTE: Turning on payload is handled by command_parser
 }
 
 bool try_execute_payload_command(slate_t *slate)
