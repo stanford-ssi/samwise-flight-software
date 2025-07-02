@@ -359,7 +359,7 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
     // Wait for ACK
     if (receive_ack(slate))
     {
-        return SUCCESSFUL;
+        return SUCCESSFUL_WRITE;
     }
     return FINAL_WRITE_UNSUCCESSFUL;
 }

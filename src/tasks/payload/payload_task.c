@@ -37,18 +37,46 @@ bool try_execute_payload_command(slate_t *slate)
                      payload_command.serialized_command);
             // First attempt to execute the command but do not throw it away
             // yet.
-            bool exec_successful = payload_uart_write_packet(
-                slate, payload_command.serialized_command,
-                sizeof(payload_command.serialized_command),
-                payload_command.seq_num);
+            payload_write_error_code exec_successful =
+                payload_uart_write_packet(
+                    slate, payload_command.serialized_command,
+                    sizeof(payload_command.serialized_command),
+                    payload_command.seq_num);
             // If the command was successful, remove it from the queue.
             // Alternatively, if we have already retried the command up to
             // a maximum number of times, remove it from the queue.
-            if (exec_successful || RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
+            if (exec_successful == SUCCESSFUL_WRITE ||
+                RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
             {
                 // Return success when the command is removed.
                 return queue_try_remove(&slate->payload_command_data,
                                         &payload_command);
+            }
+            else if (exec_successful == PACKET_TOO_BIG)
+            {
+                LOG_DEBUG("Packet exceeds 4096 bytes...");
+                return false;
+            }
+            else if (exec_successful == SYN_UNSUCCESSFUL)
+            {
+                LOG_DEBUG("PiCubed was unable to sync with the Payload...");
+                return false;
+            }
+            else if (exec_successful == UART_WRITE_TIMEDOUT)
+            {
+                LOG_DEBUG("The transmission took too long and the write timed "
+                          "out...");
+                return false;
+            }
+            else if (exec_successful == HEADER_UNACKNOWLEDGED)
+            {
+                LOG_DEBUG("Payload did not acknowledge the header...");
+                return false;
+            }
+            else if (exec_successful == FINAL_WRITE_UNSUCCESSFUL)
+            {
+                LOG_DEBUG("Final packet transmission timed out...");
+                return false;
             }
             else
             {
@@ -72,6 +100,8 @@ bool try_execute_payload_command(slate_t *slate)
  * Types of tests:
  *      - Singular Payload commands
  *      - Bringup
+ *      - Functionality
+ *      - Error handling
  */
 
 /*** PAYLOAD COMMANDS TESTS ***/

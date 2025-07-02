@@ -7,7 +7,7 @@
 
 typedef enum
 {
-    SUCCESSFUL = 0,
+    SUCCESSFUL_WRITE = 0,
     PACKET_TOO_BIG,
     SYN_UNSUCCESSFUL,
     UART_WRITE_TIMEDOUT,
