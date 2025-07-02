@@ -68,7 +68,13 @@ bool try_execute_payload_command(slate_t *slate)
     return true;
 }
 
-/*** TESTS ***/
+/* ASSOCIATED PAYLOAD TESTS
+ * Types of tests:
+ *      - Singular Payload commands
+ *      - Bringup
+ */
+
+/*** PAYLOAD COMMANDS TESTS ***/
 void beacon_down_command_test(slate_t *slate)
 {
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
@@ -119,6 +125,55 @@ void ping_command_test(slate_t *slate)
         }
         printf("\n");
     }
+}
+
+/*** BRINGUP TESTS ***/
+void power_on_off_payload_test(slate_t *slate)
+{
+    LOG_INFO("Turning Payload on...");
+    payload_turn_on(slate);
+
+    LOG_INFO("Checking to see if slate variable was changed properly...");
+    if (slate->is_payload_on)
+    {
+        LOG_INFO("Slate, is_payload_on, variable was changed properly!");
+    }
+    else
+    {
+        LOG_INFO("Slate, is_payload_on, variable was not changed properly, "
+                 "ending the test...");
+        return;
+    }
+
+    LOG_INFO("Sleeping for 10 seconds to let Payload boot up, do not do this "
+             "for flight ready version of the software...");
+    sleep_ms(10000);
+
+    LOG_INFO("Payload was turned on successfully...");
+    LOG_INFO("Testing Payload turning off...");
+
+    LOG_INFO("Turning off Payload...");
+    payload_turn_off(slate);
+
+    LOG_INFO("Checking to see if slate variable was changed properly...");
+    if (!slate->is_payload_on)
+    {
+        LOG_INFO("Slate, is_payload_on, variable was changed properly!");
+    }
+    else
+    {
+        LOG_INFO("Slate, is_payload_on, variable was not changed properly, "
+                 "ending the test...");
+        return;
+    }
+
+    LOG_INFO("Checking RPI_ENAB pin to see if it reads 0...");
+    if (!gpio_get_out_level(SAMWISE_RPI_ENAB))
+    {
+        LOG_INFO("RPI_ENAB is pulled low...");
+    }
+
+    LOG_INFO("Test ran successfully, exiting test...");
 }
 
 void payload_task_dispatch(slate_t *slate)
