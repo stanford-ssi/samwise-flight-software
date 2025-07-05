@@ -200,6 +200,12 @@ void payload_turn_on(slate_t *slate)
 
 void payload_turn_off(slate_t *slate)
 {
+    // To prevent from writing and hanging
+    if (!slate->is_payload_on)
+    {
+        return;
+    }
+
     char packet[] = "[\"shutdown\",  [], {\"immediate\"}]";
     payload_uart_write_packet(slate, packet, (sizeof(packet) - 1), 0);
 
