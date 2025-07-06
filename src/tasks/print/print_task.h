@@ -11,6 +11,9 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+// LED Color for print task - Cyan
+#define PRINT_TASK_COLOR 0, 255, 255
+
 void print_task_init(slate_t *slate);
 void print_task_dispatch(slate_t *slate);
 

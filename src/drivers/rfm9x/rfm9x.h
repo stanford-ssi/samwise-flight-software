@@ -85,6 +85,9 @@ void rfm9x_clear_interrupts(rfm9x_t *r);
 void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 
+void rfm9x_print_parameters(rfm9x_t *r);
+void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l);
+
 typedef enum
 {
     _RH_RF95_REG_00_FIFO = 0x00,

@@ -11,6 +11,9 @@
 #include "scheduler.h"
 #include "slate.h"
 
+// LED Color for payload task - Purple
+#define PAYLOAD_TASK_COLOR 128, 0, 128
+
 #define MAX_PAYLOAD_COMMANDS_PER_DISPATCH 3
 #define MAX_PAYLOAD_RETRY_COUNT 3
 
