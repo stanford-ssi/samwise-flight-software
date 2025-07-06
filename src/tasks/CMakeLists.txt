@@ -1,5 +1,6 @@
 add_subdirectory(beacon)
 add_subdirectory(blink)
+add_subdirectory(burn_wire)
 add_subdirectory(command)
 add_subdirectory(print)
 add_subdirectory(radio)
