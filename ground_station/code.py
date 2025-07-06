@@ -55,7 +55,7 @@ def get_board_pins(board_type):
 
 # Detect board and configure pins
 BOARD_TYPE = detect_board()
-print(f"Detected board: {BOARD_TYPE}")
+print("Detected board: {}".format(BOARD_TYPE))
 
 pins = get_board_pins(BOARD_TYPE)
 MOSI_PIN = pins['MOSI']
@@ -65,12 +65,12 @@ CS_PIN = pins['CS']
 RESET_PIN = pins['RESET']
 LED_PIN = pins['LED']
 
-print(f"Pin configuration:")
-print(f"  MOSI: {MOSI_PIN}")
-print(f"  MISO: {MISO_PIN}")
-print(f"  SCK: {SCK_PIN}")
-print(f"  CS: {CS_PIN}")
-print(f"  RESET: {RESET_PIN}")
+print("Pin configuration:")
+print("  MOSI: {}".format(MOSI_PIN))
+print("  MISO: {}".format(MISO_PIN))
+print("  SCK: {}".format(SCK_PIN))
+print("  CS: {}".format(CS_PIN))
+print("  RESET: {}".format(RESET_PIN))
 
 led = digitalio.DigitalInOut(LED_PIN)
 led.direction = digitalio.Direction.OUTPUT
@@ -130,7 +130,7 @@ class PacketBuilder:
         # Pack header fields
         packet = struct.pack("BBBBB", dst, src, flags, seq, len(data))
 
-        print(f"Data length: {len(data)}, Data: {data}")
+        print("Data length: {}, Data: {}".format(len(data), data))
 
         # Add data
         packet += data
@@ -144,9 +144,9 @@ class PacketBuilder:
         packet += h.digest()
 
         # Debug packet contents
-        print(f"Total packet size: {len(packet)} bytes (min required: 45)")
+        print("Total packet size: {} bytes (min required: 45)".format(len(packet)))
         for i, byte in enumerate(packet):
-            print(f"[DEBUG] {i:02d}: {byte:02x}")
+            print("[DEBUG] {:02d}: {:02x}".format(i, byte))
 
         self.msg_id += 1
         
@@ -171,10 +171,11 @@ class PacketBuilder:
             received_hmac = packet_bytes[-PACKET_HMAC_SIZE:]
             packet_without_hmac = packet_bytes[:-PACKET_HMAC_SIZE]
 
-            # Verify HMAC
-            h = hmac.new(config['packet_hmac_psk'], packet_without_hmac, sha256)
-            if not hmac.compare_digest(h.digest(), received_hmac):
-                raise ValueError("HMAC verification failed")
+            # Currently broken, no hmac.compare_digest in CircuitPython lib
+            # # Verify HMAC
+            # h = hmac.new(config['packet_hmac_psk'], packet_without_hmac, sha256)
+            # if not hmac.compare_digest(h.digest(), received_hmac):
+            #     raise ValueError("HMAC verification failed")
 
             # Unpack footer
             footer_start = len(packet_bytes) - PACKET_FOOTER_SIZE
@@ -202,6 +203,50 @@ class PacketBuilder:
 packet_builder = PacketBuilder()
 
 
+def decode_beacon_data(data):
+    """Decode beacon data payload from beacon_task.c format"""
+    try:
+        # Find the null terminator for the state name
+        null_pos = data.find(b'\x00')
+        if null_pos == -1:
+            # No null terminator found, assume entire data is state name
+            state_name = data.decode('utf-8', errors='replace')
+            return {"state_name": state_name, "stats": None}
+        
+        # Extract state name (null-terminated string)
+        state_name = data[:null_pos].decode('utf-8', errors='replace')
+        
+        # Extract beacon statistics starting after null terminator
+        stats_start = null_pos + 1
+        if len(data) >= stats_start + 32:  # 32 bytes for beacon_stats struct
+            stats_data = data[stats_start:stats_start + 32]
+            
+            # Unpack beacon_stats struct (all little-endian)
+            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values
+            unpacked_stats = struct.unpack('<L Q 6L', stats_data)
+            
+            beacon_stats = {
+                "reboot_counter": unpacked_stats[0],
+                "time_in_state_ms": unpacked_stats[1],
+                "rx_bytes": unpacked_stats[2],
+                "rx_packets": unpacked_stats[3],
+                "rx_backpressure_drops": unpacked_stats[4],
+                "rx_bad_packet_drops": unpacked_stats[5],
+                "tx_bytes": unpacked_stats[6],
+                "tx_packets": unpacked_stats[7]
+            }
+            
+            return {
+                "state_name": state_name,
+                "stats": beacon_stats
+            }
+        else:
+            return {"state_name": state_name, "stats": None}
+            
+    except Exception as e:
+        print(f"Error decoding beacon data: {e}")
+        return {"state_name": "decode_error", "stats": None}
+
 def try_get_packet(timeout=0.1):
     """Check for incoming packets with short timeout"""
     packet = rfm9x.receive(timeout=timeout)
@@ -213,7 +258,25 @@ def try_get_packet(timeout=0.1):
             print(f"  Source: {unpacked['src']}")
             print(f"  Flags: {unpacked['flags']}")
             print(f"  Sequence: {unpacked['seq']}")
-            print(f"  Data: {unpacked['data']}")
+            
+            # Check if this looks like a beacon packet (source = 0, flags = 0, seq = 0)
+            if unpacked['src'] == 0 and unpacked['flags'] == 0 and unpacked['seq'] == 0:
+                print(f"  Type: BEACON PACKET")
+                beacon_data = decode_beacon_data(unpacked['data'])
+                print(f"  State: {beacon_data['state_name']}")
+                
+                if beacon_data['stats']:
+                    stats = beacon_data['stats']
+                    print(f"  === Telemetry ===")
+                    print(f"    Reboots: {stats['reboot_counter']}")
+                    print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
+                    print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
+                    print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
+                    print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
+            else:
+                print(f"  Type: COMMAND RESPONSE")
+                print(f"  Data: {unpacked['data']}")
+            
             if 'boot_count' in unpacked:
                 print(f"  Boot Count: {unpacked['boot_count']}")
                 print(f"  Message ID: {unpacked['msg_id']}")
@@ -221,6 +284,7 @@ def try_get_packet(timeout=0.1):
             return True
         except Exception as e:
             print(f"\n>>> ERROR unpacking packet: {e} <<<")
+            print(f"Raw packet data: {packet.hex() if hasattr(packet, 'hex') else packet}")
             return False
     return False
 
@@ -257,16 +321,37 @@ def create_cmd_payload(cmd_id, cmd_payload=""):
 def send_command(cmd_id, cmd_payload="", dst=0xFF):
     """Send a command packet to the flight software"""
     data = create_cmd_payload(cmd_id, cmd_payload)
-    packet = packet_builder.create_packet(
-        dst=dst,  # Destination address
-        src=0xFF,  # Source address (ground station)
+    
+    # Create our packet payload (without RadioHead headers)
+    # Flight software expects: dst, src, flags, seq, len, data, boot_count, msg_id, hmac
+    packet_payload = packet_builder.create_packet(
+        dst=dst,  # Our destination address
+        src=0xFF,  # Our source address (ground station)
         flags=0x00,  # No special flags
         seq=0x00,  # Sequence number
         data=data,  # Command data
     )
-    print(f"Packet dump: " + " ".join(f"{byte:02x}" for byte in packet))
-    rfm9x.send(packet)
-    print(f"Sent packet with message ID: {packet_builder.msg_id - 1}, {len(packet) + 4=}")
+    
+    # But we need to extract just the payload part (skip our header since RadioHead will handle addressing)
+    # Our create_packet returns: dst(1) + src(1) + flags(1) + seq(1) + len(1) + data + boot_count(4) + msg_id(4) + hmac(32)
+    # We want to send just: len(1) + data + boot_count(4) + msg_id(4) + hmac(32)
+    # So skip the first 4 bytes (dst, src, flags, seq)
+    payload_to_send = packet_payload[4:]
+    
+    print("Packet dump: " + " ".join("{:02x}".format(byte) for byte in payload_to_send))
+    
+    # Use adafruit_rfm9x library's RadioHead headers
+    rfm9x.send(
+        payload_to_send,
+        destination=255,     # RadioHead TO field
+        node=255,          # RadioHead FROM field (ground station)
+        identifier=0x00,    # RadioHead ID field 
+        flags=0x00          # RadioHead FLAGS field
+    )
+    
+    print("Sent packet with RadioHead headers: TO={}, FROM={}, ID={}, FLAGS={}".format(
+        dst, 0xFF, 0x00, 0x00))
+    print("Payload length: {} bytes".format(len(payload_to_send)))
 
 def send_no_op():
     """Send a NO_OP ping command"""
@@ -472,28 +557,151 @@ def interactive_command_loop():
             print(f"Error: {e}")
             time.sleep(0.1)
 
+def debug_listen_mode():
+    """Simple debug mode - just listen and report any packets"""
+    print("\n=== DEBUG LISTENER MODE ===")
+    print("Listening for ANY packets and attempting beacon decode...")
+    print("Press Ctrl+C to stop\n")
+    
+    packet_count = 0
+    start_time = time.monotonic()
+    
+    try:
+        while True:
+            # Blink LED to show we're alive
+            led.value = True
+            
+            # Check for any packet with short timeout
+            packet = rfm9x.receive(timeout=0.1)
+            
+            if packet is not None:
+                packet_count += 1
+                current_time = time.monotonic()
+                elapsed = current_time - start_time
+                
+                print("\n*** PACKET #{} at {:.1f}s ***".format(packet_count, elapsed))
+                print("Length: {} bytes".format(len(packet)))
+                
+                # Convert to hex string
+                if hasattr(packet, 'hex'):
+                    hex_str = packet.hex()
+                else:
+                    hex_str = ''.join('{:02x}'.format(b) for b in packet)
+                print("Raw hex: {}".format(hex_str))
+                
+                # Use adafruit_rfm9x library properties to get RadioHead header fields
+                try:
+                    # Get RadioHead header fields from the library
+                    rh_destination = getattr(rfm9x, 'destination', None)
+                    rh_node = getattr(rfm9x, 'node', None) 
+                    rh_identifier = getattr(rfm9x, 'identifier', None)
+                    rh_flags = getattr(rfm9x, 'flags', None)
+                    
+                    print("ADAFRUIT RFM9X HEADER FIELDS:")
+                    print("  RadioHead TO (destination): {}".format(rh_destination))
+                    print("  RadioHead FROM (node): {}".format(rh_node))
+                    print("  RadioHead ID (identifier): {}".format(rh_identifier))
+                    print("  RadioHead FLAGS: {}".format(rh_flags))
+                    
+                    # RadioHead stripped dst, src, flags, seq
+                    # Beacon packets after RadioHead processing: len(1) + beacon_data(len)
+                    # (boot_count, msg_id, hmac are handled at packet layer, not beacon layer)
+                    if len(packet) >= 1:
+                        # First byte is the beacon data length
+                        data_len = packet[0]
+                        print("BEACON PACKET STRUCTURE:")
+                        print("  beacon_data_len={}".format(data_len))
+                        print("  expected_total_size={} bytes".format(1 + data_len))
+                        print("  actual_packet_size={} bytes".format(len(packet)))
+                        
+                        # Extract beacon data payload
+                        if len(packet) >= 1 + data_len:
+                            beacon_payload = packet[1:1+data_len]
+                            
+                            # Check RadioHead headers to determine if this is from satellite
+                            if rh_node == 0:  # FROM satellite (beacon source)
+                                print("  >>> BEACON DETECTED (from satellite) <<<")
+                                beacon_data = decode_beacon_data(beacon_payload)
+                                print("  State: {}".format(beacon_data['state_name']))
+                                
+                                if beacon_data['stats']:
+                                    stats = beacon_data['stats']
+                                    print("  Reboots: {}".format(stats['reboot_counter']))
+                                    print("  Time in State: {} ms".format(stats['time_in_state_ms']))
+                                    print("  RX: {} pkts, {} bytes".format(stats['rx_packets'], stats['rx_bytes']))
+                                    print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
+                                else:
+                                    print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
+                            else:
+                                print("  Command response or other packet from node {}".format(rh_node))
+                                print("  Data: {}".format(beacon_payload[:20]))
+                        else:
+                            print("  Packet too short: need {} bytes, got {}".format(1 + data_len, len(packet)))
+                    
+                except Exception as e:
+                    print("DECODE ERROR: {}".format(e))
+                    # Fallback to raw display
+                    if len(packet) >= 5:
+                        print("Raw first 5 bytes: {}, {}, {}, {}, {}".format(
+                            packet[0], packet[1], packet[2], packet[3], packet[4]))
+                
+                # Show signal strength
+                try:
+                    rssi = rfm9x.last_rssi
+                    print("RSSI: {} dBm".format(rssi))
+                except:
+                    pass
+                
+                print("*** END PACKET ***\n")
+            
+            led.value = False
+            time.sleep(0.1)
+            
+            # Periodic status
+            current_time = time.monotonic()
+            if current_time - start_time > 30:
+                print("[{:.0f}s] Listening... ({} packets so far)".format(current_time - start_time, packet_count))
+                start_time = current_time
+                
+    except KeyboardInterrupt:
+        print("\n=== SUMMARY ===")
+        print("Total packets: {}".format(packet_count))
+        print("Returning to main menu...")
+
 def main():
     """Main program entry point"""
     print("=== Samwise Ground Station ===")
     print("Interactive LoRA Communication System")
     
-    # Interactive configuration
-    configure_authentication()
-    configure_lora_settings()
+    # Quick setup with defaults for debug mode
+    print("\nQuick setup for debugging...")
+    config['auth_enabled'] = True
+    config['frequency'] = 438.1
+    config['bandwidth'] = 125000
+    config['spreading_factor'] = 7
+    config['coding_rate'] = 5
+    config['crc'] = True
     
     # Initialize radio with configured settings
     initialize_radio()
     
-    # Create packet builder with current config
+    # Create packet builder
     global packet_builder
     packet_builder = PacketBuilder()
     
-    print("\n=== Starting Interactive Command Loop ===")
-    print("The system will continuously check for incoming packets.")
-    print("Type commands to send packets to the flight software.")
+    print("\nSelect mode:")
+    print("1. Debug Listen Mode (watch for any packets)")
+    print("2. Interactive Command Mode")
     
-    # Start interactive command loop
-    interactive_command_loop()
+    try:
+        choice = input("Enter choice (1 or 2): ").strip()
+        if choice == "1":
+            debug_listen_mode()
+        else:
+            print("\n=== Starting Interactive Command Loop ===")
+            interactive_command_loop()
+    except KeyboardInterrupt:
+        print("\nGoodbye!")
 
 if __name__ == "__main__":
     main()

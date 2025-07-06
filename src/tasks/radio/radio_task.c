@@ -147,6 +147,7 @@ static void tx_done()
             return;
         }
         LOG_INFO("TX packet size: %zu", pkt_size);
+        rfm9x_print_packet("TX packet:", p_buf, pkt_size);
         rfm9x_packet_to_fifo(&s->radio, p_buf, pkt_size);
         rfm9x_clear_interrupts(&s->radio);
         s->tx_packets++;
@@ -208,7 +209,11 @@ void radio_task_init(slate_t *slate)
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
     // rfm9x_transmit(&slate->radio);
+
+    // Print out the LoRA parameters
+    rfm9x_print_parameters(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
+    LOG_INFO("  Node: %d", &slate->radio_node);
 }
 
 // When it sees something in the transmit queue, switches into transmit mode and
