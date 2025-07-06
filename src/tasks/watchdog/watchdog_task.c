@@ -6,6 +6,7 @@
  */
 
 #include "watchdog_task.h"
+#include "neopixel.h"
 
 void watchdog_task_init(slate_t *slate)
 {
@@ -13,7 +14,9 @@ void watchdog_task_init(slate_t *slate)
 
 void watchdog_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(WATCHDOG_TASK_COLOR);
     watchdog_feed(&slate->watchdog);
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t watchdog_task = {

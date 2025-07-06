@@ -4,6 +4,7 @@
  */
 
 #include "payload_task.h"
+#include "neopixel.h"
 #include "safe_sleep.h"
 
 #define MAX_RECEIVED_LEN 1024
@@ -121,6 +122,7 @@ bool try_execute_payload_command(slate_t *slate)
 
 void payload_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(PAYLOAD_TASK_COLOR);
     LOG_INFO("Sending an Info Request Command to the RPI...");
     beacon_down_command_test(slate);
     ping_command_test(slate);
@@ -148,6 +150,7 @@ void payload_task_dispatch(slate_t *slate)
     {
         LOG_INFO("Payload is OFF, not executing commands.");
     }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t payload_task = {.name = "payload",

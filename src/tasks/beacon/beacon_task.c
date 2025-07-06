@@ -6,6 +6,7 @@
  */
 
 #include "beacon_task.h"
+#include "neopixel.h"
 #include <stdlib.h>
 
 #define MAX_DATA_SIZE 252
@@ -55,6 +56,7 @@ void beacon_task_init(slate_t *slate)
 
 void beacon_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(BEACON_TASK_COLOR);
     // Create a new packet for radio TX
     packet_t pkt;
     pkt.src = 0;
@@ -74,6 +76,7 @@ void beacon_task_dispatch(slate_t *slate)
     {
         LOG_ERROR("Beacon pkt failed to commit to tx_queue");
     }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t beacon_task = {.name = "beacon",

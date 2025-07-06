@@ -14,4 +14,7 @@
 #include "slate.h"
 #include "state_machine.h"
 
+// LED Color for telemetry task - Blue
+#define TELEMETRY_TASK_COLOR 0, 0, 255
+
 extern sched_task_t telemetry_task;

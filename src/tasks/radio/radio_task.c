@@ -7,6 +7,7 @@
  */
 
 #include "radio_task.h"
+#include "neopixel.h"
 
 static slate_t *s;
 
@@ -211,6 +212,7 @@ void radio_task_init(slate_t *slate)
 // inturrupts the CPU to immediately recieve.
 void radio_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(RADIO_TASK_COLOR);
     // Switch to transmit mode if queue is not empty
     if (!queue_is_empty(&slate->tx_queue))
     {
@@ -224,6 +226,7 @@ void radio_task_dispatch(slate_t *slate)
     {
         rfm9x_listen(&slate->radio);
     }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t radio_task = {.name = "radio",

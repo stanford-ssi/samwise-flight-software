@@ -11,6 +11,7 @@ target_link_libraries(telemetry_task PUBLIC
   rfm9x
   adm1176
   mppt
+  neopixel
 )
 
 # Specify directories with relevant header files

@@ -12,6 +12,9 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+// LED Color for burn_wire task - Bright White
+#define BURN_WIRE_TASK_COLOR 255, 255, 255
+
 void burn_wire_task_init(slate_t *slate);
 void burn_wire_task_dispatch(slate_t *slate);
 
