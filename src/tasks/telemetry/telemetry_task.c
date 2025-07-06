@@ -101,7 +101,7 @@ void telemetry_task_dispatch(slate_t *slate)
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",
-                               .dispatch_period_ms = 1000,
+                               .dispatch_period_ms = 5000,
                                .task_init = &telemetry_task_init,
                                .task_dispatch = &telemetry_task_dispatch,
                                /* Set to an actual value on init */

@@ -80,7 +80,9 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
     }
     if (n < PACKET_MIN_SIZE)
     {
-        LOG_ERROR("parse_packet: Buffer too small for a valid packet");
+        LOG_ERROR("parse_packet: Buffer too small for a valid packet, "
+                  "PACKET_MIN_SIZE: %u",
+                  PACKET_MIN_SIZE);
         return false;
     }
 
@@ -95,7 +97,9 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
 
     if (p->len > PACKET_DATA_SIZE)
     {
-        LOG_ERROR("parse_packet: Packet length exceeds maximum data size");
+        LOG_ERROR("parse_packet: Packet length exceeds maximum data size, "
+                  "PACKET_DATA_SIZE: %u",
+                  PACKET_DATA_SIZE);
         return false;
     }
 
