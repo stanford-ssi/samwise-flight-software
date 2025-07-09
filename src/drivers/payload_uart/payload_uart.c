@@ -24,6 +24,7 @@
 #define STOP_BITS 1
 #define PARITY UART_PARITY_NONE
 #define WRITE_MAX_TIMEOUT 10000
+#define MAX_WRITE_TRIES 3
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
@@ -216,6 +217,35 @@ void payload_turn_off(slate_t *slate)
     gpio_put(SAMWISE_RPI_ENAB, 0);
 
     slate->is_payload_on = false;
+}
+
+void ping_payload(slate_t *slate)
+{
+    // Check the actual status of the payload
+    char ping_packet[] = "[\"ping\", [], {}]";
+    payload_write_error_code write_status;
+    int num_ping_write_tries = 0;
+    do
+    {
+        write_status = payload_uart_write_packet(slate, ping_packet,
+                                                 (sizeof(ping_packet) - 1), 0);
+    } while (num_ping_write_tries < MAX_WRITE_TRIES &&
+             write_status != SUCCESSFUL_WRITE);
+
+    // Edge case: Write won't finish
+    if (write_status != SUCCESSFUL_WRITE && slate->is_payload_on)
+    {
+        slate->is_payload_on = false;
+        return;
+    }
+
+    // Check if it pong'd
+    char rand_buf[MAX_PACKET_LEN];
+    int read_msg_len = payload_uart_read_packet(slate, rand_buf);
+    if (read_msg_len > 0 && !slate->is_payload_on)
+    {
+        slate->is_payload_on = true;
+    }
 }
 
 /**

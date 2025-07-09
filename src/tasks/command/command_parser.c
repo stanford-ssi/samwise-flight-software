@@ -82,6 +82,22 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
+
+        case PAYLOAD_PING_STATUS:
+        {
+            LOG_INFO("Pinging to see if Payload is alive...");
+
+            ping_payload(slate);
+            if (slate->is_payload_on)
+            {
+                LOG_INFO("Payload is on...");
+            }
+            else
+            {
+                LOG_INFO("Payload is off...");
+            }
+        }
+
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
