@@ -254,8 +254,12 @@ void payload_uart_write_on_test(slate_t *slate)
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    beacon_down_command_test(slate);
-    ping_command_test(slate);
+    // beacon_down_command_test(slate);
+    // ping_command_test(slate);
+
+    payload_uart_write_on_test(slate);
+
+    return;
 
     if (slate->is_payload_on)
     {

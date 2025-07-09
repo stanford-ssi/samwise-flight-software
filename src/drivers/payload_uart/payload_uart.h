@@ -25,4 +25,3 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
 
 void payload_turn_on(slate_t *slate);
 void payload_turn_off(slate_t *slate);
-void ping_payload(slate_t *slate);
