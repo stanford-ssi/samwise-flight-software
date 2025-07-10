@@ -1,9 +1,20 @@
 #pragma once
 
 #include "common/config.h"
+#ifndef TEST_MODE
 #include "common/pins.h"
-#include "hardware/i2c.h"
-#include "macros.h"
+#endif
+#include "common/macros.h"
+#include "drivers/logger/logger.h"
+
+#ifdef TEST_MODE
+    #include "hal_interface.h"
+    // Mock I2C type for testing
+    typedef hal_i2c_t i2c_inst_t;
+#else
+    #include "hal_interface.h"
+    #include "hardware/i2c.h"
+#endif
 
 // ADM1176 I2C Address (0x94)
 #define ADM1176_I2C_ADDR 0x4A
@@ -23,14 +34,14 @@ static uint8_t _status_buf[1];
 
 typedef struct
 {
-    i2c_inst_t *i2c;
+    hal_i2c_t i2c;
     uint8_t address;
     float sense_resistor; // in ohms
 } adm1176_t;
 
 adm1176_t adm1176_mk_mock();
 
-adm1176_t adm1176_mk(i2c_inst_t *i2c, uint8_t address, float sense_resistor);
+adm1176_t adm1176_mk(hal_i2c_t i2c, uint8_t address, float sense_resistor);
 
 /* Mode configuration:
  * 1 -> V-CONT (LSB, set to convert voltage continuously. If readback is

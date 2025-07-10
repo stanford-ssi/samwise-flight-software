@@ -1,6 +1,13 @@
 #pragma once
-#include "hardware/pwm.h"
 #include "macros.h"
+
+#ifndef TEST_MODE
+    #include "hardware/pwm.h"
+#else
+    // Mock PWM constants for testing
+    #define PWM_CHAN_A 0
+    #define PWM_CHAN_B 1
+#endif
 
 #ifdef PICO
 /*

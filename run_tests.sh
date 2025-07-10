@@ -103,6 +103,13 @@ else
     echo -e "${YELLOW}Flash tests not found, skipping...${NC}"
 fi
 
+# ADM1176 Driver Tests
+if [ -x "src/drivers/adm1176/test/adm1176_test" ]; then
+    run_test "ADM1176 Driver Tests" "./src/drivers/adm1176/test/adm1176_test"
+else
+    echo -e "${YELLOW}ADM1176 tests not found, skipping...${NC}"
+fi
+
 # Task tests (currently excluded from TEST builds)
 if [ -x "src/tasks/beacon/test/beacon_task_test" ]; then
     run_test "Beacon Task Tests" "./src/tasks/beacon/test/beacon_task_test"

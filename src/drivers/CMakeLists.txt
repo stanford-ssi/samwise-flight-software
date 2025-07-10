@@ -4,10 +4,10 @@ add_subdirectory(logger)
 # HAL-abstracted drivers that can be tested
 add_subdirectory(onboard_led)
 add_subdirectory(flash)
+add_subdirectory(adm1176)
 
 # Only build hardware drivers for embedded targets
 if(NOT PROFILE STREQUAL "TEST")
-    add_subdirectory(adm1176)
     add_subdirectory(burn_wire)
     add_subdirectory(payload_uart)
     add_subdirectory(mppt)
