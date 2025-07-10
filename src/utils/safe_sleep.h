@@ -1,10 +1,20 @@
 #pragma once
 
+#include <stdint.h>
+
+#ifdef TEST_MODE
+// Simple mock for tests - just use HAL sleep without watchdog
+#include "hal_interface.h"
+
+static void safe_sleep_ms(uint32_t ms)
+{
+    hal.sleep_ms(ms);
+}
+#else
 #include "common/config.h"
 #include "drivers/watchdog/watchdog.h"
-#include "pico/time.h"
+#include "hal_interface.h"
 #include <slate.h>
-#include <stdint.h>
 
 extern slate_t slate;
 
@@ -18,7 +28,8 @@ static void safe_sleep_ms(uint32_t ms)
         // This together with the while loop condition ensures
         // there will be no integer overflow.
         remaining_time -= MIN_WATCHDOG_INTERVAL_MS;
-        sleep_ms(MIN_WATCHDOG_INTERVAL_MS);
+        hal.sleep_ms(MIN_WATCHDOG_INTERVAL_MS);
     }
-    sleep_ms(remaining_time);
+    hal.sleep_ms(remaining_time);
 }
+#endif

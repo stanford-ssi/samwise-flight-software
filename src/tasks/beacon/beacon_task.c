@@ -26,6 +26,15 @@ typedef struct
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE,
                "beacon packet too large");
 
+size_t send_boot_count(slate_t *slate, uint8_t *data)
+{
+    // Copy reboot counter into the data buffer
+    uint32_t reboot_counter = slate->reboot_counter;
+    memcpy(data, &reboot_counter, sizeof(reboot_counter));
+
+    return sizeof(reboot_counter);
+}
+
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
@@ -55,6 +64,7 @@ void beacon_task_init(slate_t *slate)
 
 void beacon_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(0xff, 0xaa, 0xaa);
     // Create a new packet for radio TX
     packet_t pkt;
     pkt.src = 0;
@@ -63,7 +73,7 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.seq = 0;
 
     // Commit into serialized byte array
-    pkt.len = serialize_slate(slate, pkt.data);
+    pkt.len = send_boot_count(slate, pkt.data);
 
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))
@@ -74,10 +84,12 @@ void beacon_task_dispatch(slate_t *slate)
     {
         LOG_ERROR("Beacon pkt failed to commit to tx_queue");
     }
+    sleep_ms(50);
+    neopixel_set_color_rgb(0, 0xff, 0xff);
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 30000,
+                            .dispatch_period_ms = 2000,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */
