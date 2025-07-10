@@ -19,6 +19,8 @@
 #include "hardware/uart.h"
 #include "hardware/pwm.h"
 #include "hardware/gpio.h"
+#include "hardware/flash.h"
+#include "hardware/sync.h"
 #include "pico/time.h"
 
 // Global HAL instance
@@ -186,6 +188,24 @@ static int64_t hal_pico_absolute_time_diff_us(uint64_t from, uint64_t to) {
     return absolute_time_diff_us(from_time, to_time);
 }
 
+// Flash wrapper functions
+static void hal_pico_flash_range_erase(uint32_t flash_offs, size_t count) {
+    flash_range_erase(flash_offs, count);
+}
+
+static void hal_pico_flash_range_program(uint32_t flash_offs, const uint8_t *data, size_t count) {
+    flash_range_program(flash_offs, data, count);
+}
+
+// Interrupt control wrapper functions
+static uint32_t hal_pico_save_and_disable_interrupts(void) {
+    return save_and_disable_interrupts();
+}
+
+static void hal_pico_restore_interrupts(uint32_t status) {
+    restore_interrupts(status);
+}
+
 void hal_init(void) {
     // Initialize GPIO function pointers
     hal.gpio_init = hal_pico_gpio_init;
@@ -236,6 +256,14 @@ void hal_init(void) {
     hal.time_us_32 = hal_pico_time_us_32;
     hal.make_timeout_time_ms = hal_pico_make_timeout_time_ms;
     hal.absolute_time_diff_us = hal_pico_absolute_time_diff_us;
+    
+    // Initialize flash function pointers
+    hal.flash_range_erase = hal_pico_flash_range_erase;
+    hal.flash_range_program = hal_pico_flash_range_program;
+    
+    // Initialize interrupt control function pointers
+    hal.save_and_disable_interrupts = hal_pico_save_and_disable_interrupts;
+    hal.restore_interrupts = hal_pico_restore_interrupts;
 }
 
 #endif // !TEST_MODE

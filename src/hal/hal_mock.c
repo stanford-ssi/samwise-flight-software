@@ -342,6 +342,34 @@ static int64_t hal_mock_absolute_time_diff_us(uint64_t from, uint64_t to) {
     return (int64_t)(to - from);
 }
 
+// Flash mock functions
+static void hal_mock_flash_range_erase(uint32_t flash_offs, size_t count) {
+    // Mock implementation - just track the operation
+    (void)flash_offs;
+    (void)count;
+    // Could store flash operations for verification in tests
+}
+
+static void hal_mock_flash_range_program(uint32_t flash_offs, const uint8_t *data, size_t count) {
+    // Mock implementation - just track the operation
+    (void)flash_offs;
+    (void)data;
+    (void)count;
+    // Could store flash operations for verification in tests
+}
+
+// Interrupt control mock functions
+static uint32_t hal_mock_save_and_disable_interrupts(void) {
+    // Mock implementation - return a dummy status
+    return 0xDEADBEEF;
+}
+
+static void hal_mock_restore_interrupts(uint32_t status) {
+    // Mock implementation - just verify the status is what we returned
+    (void)status;
+    assert(status == 0xDEADBEEF);
+}
+
 void hal_mock_init(void) {
     // Initialize GPIO function pointers
     hal.gpio_init = hal_mock_gpio_init;
@@ -392,6 +420,14 @@ void hal_mock_init(void) {
     hal.time_us_32 = hal_mock_time_us_32;
     hal.make_timeout_time_ms = hal_mock_make_timeout_time_ms;
     hal.absolute_time_diff_us = hal_mock_absolute_time_diff_us;
+    
+    // Initialize flash function pointers
+    hal.flash_range_erase = hal_mock_flash_range_erase;
+    hal.flash_range_program = hal_mock_flash_range_program;
+    
+    // Initialize interrupt control function pointers
+    hal.save_and_disable_interrupts = hal_mock_save_and_disable_interrupts;
+    hal.restore_interrupts = hal_mock_restore_interrupts;
 }
 
 void hal_init(void) {

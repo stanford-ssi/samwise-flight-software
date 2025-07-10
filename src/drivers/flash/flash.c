@@ -8,6 +8,12 @@
 
 #include "flash.h"
 
+#ifdef TEST_MODE
+    #define XIP_BASE 0x10000000  // Mock XIP base for testing
+    #define FLASH_SECTOR_SIZE 4096
+    #define FLASH_PAGE_SIZE 256
+#endif
+
 #define FLASH_TARGET_OFFSET (256 * 1024)
 #define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
 
@@ -22,13 +28,13 @@ const persistent_data_t *read_persistent_data()
 // Write the persistent data to flash
 void write_persistent_data(persistent_data_t *data)
 {
-    uint32_t ints = save_and_disable_interrupts();
+    uint32_t ints = hal.save_and_disable_interrupts();
 
-    flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
+    hal.flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
 
-    flash_range_program(FLASH_TARGET_OFFSET, (uint8_t *)data, FLASH_PAGE_SIZE);
+    hal.flash_range_program(FLASH_TARGET_OFFSET, (uint8_t *)data, FLASH_PAGE_SIZE);
 
-    restore_interrupts(ints);
+    hal.restore_interrupts(ints);
 }
 
 // Initialize the persistent data structure or load existing data

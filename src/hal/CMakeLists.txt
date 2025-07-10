@@ -15,6 +15,8 @@ else()
         hardware_uart 
         hardware_pwm 
         hardware_gpio
+        hardware_flash
+        hardware_sync
     )
     target_include_directories(hal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

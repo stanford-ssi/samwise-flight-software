@@ -7,9 +7,13 @@
  */
 #pragma once
 
-#include "hardware/flash.h"
-#include "hardware/sync.h"
-#include "pico/stdlib.h"
+#ifdef TEST_MODE
+    #include "hal_interface.h"
+#else
+    #include "hal_interface.h"
+    #include "hardware/flash.h"
+#endif
+
 #include <stdint.h>
 #include <stdio.h>
 
@@ -24,11 +28,31 @@ typedef struct
 } persistent_data_t;
 
 /**
+ * @brief Read the persistent data from flash.
+ * @return Pointer to the persistent data in flash.
+ */
+const persistent_data_t *read_persistent_data(void);
+
+/**
+ * @brief Write the persistent data to flash.
+ * @param data Pointer to the data to write.
+ */
+void write_persistent_data(persistent_data_t *data);
+
+/**
  * @brief Initialize persistent data structure, setting reboot counter to 1 if
  * uninitialized.
  * @return Pointer to the persistent data.
  */
 persistent_data_t *init_persistent_data(void);
 
-void increment_reboot_counter();
-uint32_t get_reboot_counter();
+/**
+ * @brief Increment the reboot counter and write to flash.
+ */
+void increment_reboot_counter(void);
+
+/**
+ * @brief Get the current reboot counter value.
+ * @return The current reboot counter.
+ */
+uint32_t get_reboot_counter(void);

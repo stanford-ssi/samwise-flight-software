@@ -107,6 +107,14 @@ typedef struct {
     uint64_t (*make_timeout_time_ms)(uint32_t ms);
     int64_t (*absolute_time_diff_us)(uint64_t from, uint64_t to);
     
+    // Flash Interface
+    void (*flash_range_erase)(uint32_t flash_offs, size_t count);
+    void (*flash_range_program)(uint32_t flash_offs, const uint8_t *data, size_t count);
+    
+    // Interrupt Control Interface
+    uint32_t (*save_and_disable_interrupts)(void);
+    void (*restore_interrupts)(uint32_t status);
+    
 } hal_interface_t;
 
 // Global HAL instance
