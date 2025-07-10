@@ -16,6 +16,8 @@
 #ifdef TEST_MODE
 #include <stdlib.h>
 #include <stdio.h>
+#else
+#include "hal_interface.h"
 #endif
 
 /**
@@ -42,9 +44,9 @@ void fatal_error(char *msg)
         for (uint32_t i = 0; i < 3; i++)
         {
 #ifdef PICO
-            gpio_put(PICO_DEFAULT_LED_PIN, 1);
+            hal.gpio_put(PICO_DEFAULT_LED_PIN, 1);
             safe_sleep_ms(100);
-            gpio_put(PICO_DEFAULT_LED_PIN, 0);
+            hal.gpio_put(PICO_DEFAULT_LED_PIN, 0);
             safe_sleep_ms(100);
 #else
             neopixel_set_color_rgb(0xff, 0x33, 0);

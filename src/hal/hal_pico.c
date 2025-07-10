@@ -42,7 +42,7 @@ static bool hal_pico_gpio_get(hal_pin_t pin) {
 }
 
 static void hal_pico_gpio_set_function(hal_pin_t pin, hal_gpio_function_t function) {
-    gpio_set_function(pin, (enum gpio_function)function);
+    gpio_set_function(pin, function);
 }
 
 static void hal_pico_gpio_pull_up(hal_pin_t pin) {
@@ -88,12 +88,12 @@ static unsigned int hal_pico_i2c_init(hal_i2c_t i2c, uint32_t baudrate) {
 }
 
 static int hal_pico_i2c_write_blocking_until(hal_i2c_t i2c, uint8_t addr, const uint8_t *src, size_t len, bool nostop, uint64_t until) {
-    absolute_time_t until_time = {._private_us_since_boot = until};
+    absolute_time_t until_time = from_us_since_boot(until);
     return i2c_write_blocking_until((i2c_inst_t*)i2c, addr, src, len, nostop, until_time);
 }
 
 static int hal_pico_i2c_read_blocking_until(hal_i2c_t i2c, uint8_t addr, uint8_t *dst, size_t len, bool nostop, uint64_t until) {
-    absolute_time_t until_time = {._private_us_since_boot = until};
+    absolute_time_t until_time = from_us_since_boot(until);
     return i2c_read_blocking_until((i2c_inst_t*)i2c, addr, dst, len, nostop, until_time);
 }
 
@@ -181,8 +181,8 @@ static uint64_t hal_pico_make_timeout_time_ms(uint32_t ms) {
 }
 
 static int64_t hal_pico_absolute_time_diff_us(uint64_t from, uint64_t to) {
-    absolute_time_t from_time = {._private_us_since_boot = from};
-    absolute_time_t to_time = {._private_us_since_boot = to};
+    absolute_time_t from_time = from_us_since_boot(from);
+    absolute_time_t to_time = from_us_since_boot(to);
     return absolute_time_diff_us(from_time, to_time);
 }
 

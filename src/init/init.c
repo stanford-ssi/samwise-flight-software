@@ -11,6 +11,7 @@
 #include "init.h"
 
 #include "burn_wire.h"
+#include "hal_interface.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -20,16 +21,16 @@
 static bool init_gpio_pins()
 {
 #ifndef PICO
-    i2c_init(SAMWISE_MPPT_I2C, 100 * 1000);
-    gpio_set_function(SAMWISE_MPPT_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(SAMWISE_MPPT_SCL_PIN, GPIO_FUNC_I2C);
+    hal.i2c_init((hal_i2c_t)SAMWISE_MPPT_I2C, 100 * 1000);
+    hal.gpio_set_function(SAMWISE_MPPT_SDA_PIN, HAL_GPIO_FUNC_I2C);
+    hal.gpio_set_function(SAMWISE_MPPT_SCL_PIN, HAL_GPIO_FUNC_I2C);
 
-    i2c_init(SAMWISE_POWER_MONITOR_I2C, 100 * 1000);
-    gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(SAMWISE_POWER_MONITOR_SCL_PIN, GPIO_FUNC_I2C);
+    hal.i2c_init((hal_i2c_t)SAMWISE_POWER_MONITOR_I2C, 100 * 1000);
+    hal.gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, HAL_GPIO_FUNC_I2C);
+    hal.gpio_set_function(SAMWISE_POWER_MONITOR_SCL_PIN, HAL_GPIO_FUNC_I2C);
 
-    gpio_init(SAMWISE_RBF_DETECT_PIN);
-    gpio_set_dir(SAMWISE_RBF_DETECT_PIN, GPIO_IN);
+    hal.gpio_init(SAMWISE_RBF_DETECT_PIN);
+    hal.gpio_set_dir(SAMWISE_RBF_DETECT_PIN, HAL_GPIO_IN);
 #endif
 
 #ifdef BRINGUP
@@ -48,25 +49,25 @@ static bool init_drivers(slate_t *slate)
 
     slate->radio = rfm9x_mk();
 #ifdef BRINGUP
-    gpio_init(SAMWISE_RF_RST_PIN);
-    gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
-    gpio_put(SAMWISE_RF_RST_PIN, 0);
+    hal.gpio_init(SAMWISE_RF_RST_PIN);
+    hal.gpio_set_dir(SAMWISE_RF_RST_PIN, HAL_GPIO_OUT);
+    hal.gpio_put(SAMWISE_RF_RST_PIN, 0);
 
-    gpio_init(SAMWISE_RF_MISO_PIN);
-    gpio_set_dir(SAMWISE_RF_MISO_PIN, GPIO_OUT);
-    gpio_put(SAMWISE_RF_MISO_PIN, 0);
+    hal.gpio_init(SAMWISE_RF_MISO_PIN);
+    hal.gpio_set_dir(SAMWISE_RF_MISO_PIN, HAL_GPIO_OUT);
+    hal.gpio_put(SAMWISE_RF_MISO_PIN, 0);
 
-    gpio_init(SAMWISE_RF_MOSI_PIN);
-    gpio_set_dir(SAMWISE_RF_MOSI_PIN, GPIO_OUT);
-    gpio_put(SAMWISE_RF_MOSI_PIN, 0);
+    hal.gpio_init(SAMWISE_RF_MOSI_PIN);
+    hal.gpio_set_dir(SAMWISE_RF_MOSI_PIN, HAL_GPIO_OUT);
+    hal.gpio_put(SAMWISE_RF_MOSI_PIN, 0);
 
-    gpio_init(SAMWISE_RF_CS_PIN);
-    gpio_set_dir(SAMWISE_RF_CS_PIN, GPIO_OUT);
-    gpio_put(SAMWISE_RF_CS_PIN, 0);
+    hal.gpio_init(SAMWISE_RF_CS_PIN);
+    hal.gpio_set_dir(SAMWISE_RF_CS_PIN, HAL_GPIO_OUT);
+    hal.gpio_put(SAMWISE_RF_CS_PIN, 0);
 
-    gpio_init(SAMWISE_RF_SCK_PIN);
-    gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
-    gpio_put(SAMWISE_RF_SCK_PIN, 0);
+    hal.gpio_init(SAMWISE_RF_SCK_PIN);
+    hal.gpio_set_dir(SAMWISE_RF_SCK_PIN, HAL_GPIO_OUT);
+    hal.gpio_put(SAMWISE_RF_SCK_PIN, 0);
 #else
     rfm9x_init(&slate->radio);
 #endif
@@ -91,8 +92,8 @@ static bool init_drivers(slate_t *slate)
 bool init(slate_t *slate)
 {
 
-    gpio_init(SAMWISE_WATCHDOG_FEED_PIN);
-    gpio_set_dir(SAMWISE_WATCHDOG_FEED_PIN, GPIO_OUT);
+    hal.gpio_init(SAMWISE_WATCHDOG_FEED_PIN);
+    hal.gpio_set_dir(SAMWISE_WATCHDOG_FEED_PIN, HAL_GPIO_OUT);
     /*
      * Initialize gpio pins
      */

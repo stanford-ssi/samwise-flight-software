@@ -1,4 +1,5 @@
 #include "watchdog.h"
+#include "hal_interface.h"
 
 struct watchdog watchdog_mk()
 {
@@ -14,11 +15,11 @@ struct watchdog watchdog_mk()
 
 void watchdog_init(struct watchdog *wd)
 {
-    gpio_init(wd->pin);
-    gpio_set_dir(wd->pin, GPIO_OUT);
+    hal.gpio_init(wd->pin);
+    hal.gpio_set_dir(wd->pin, HAL_GPIO_OUT);
 
-    gpio_put(wd->pin, 0);
-    wd->last_transition = get_absolute_time();
+    hal.gpio_put(wd->pin, 0);
+    wd->last_transition = hal.get_absolute_time_us();
     wd->set = false;
     wd->is_initialized = true;
 }
@@ -30,18 +31,18 @@ void watchdog_feed(struct watchdog *wd)
     {
         watchdog_init(wd);
     }
-    uint64_t delta =
-        absolute_time_diff_us(get_absolute_time(), wd->last_transition);
+    uint64_t current_time = hal.get_absolute_time_us();
+    uint64_t delta = hal.absolute_time_diff_us(wd->last_transition, current_time);
     if (wd->set && delta > wd->us_high)
     {
-        gpio_put(wd->pin, 0);
+        hal.gpio_put(wd->pin, 0);
         wd->set = false;
-        wd->last_transition = get_absolute_time();
+        wd->last_transition = current_time;
     }
     else if (!wd->set && delta > wd->us_low)
     {
-        gpio_put(wd->pin, 1);
+        hal.gpio_put(wd->pin, 1);
         wd->set = true;
-        wd->last_transition = get_absolute_time();
+        wd->last_transition = current_time;
     }
 }

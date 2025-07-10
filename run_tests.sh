@@ -89,6 +89,13 @@ else
     echo -e "${YELLOW}Packet tests not found, skipping...${NC}"
 fi
 
+# Onboard LED Driver Tests
+if [ -x "src/drivers/onboard_led/test/onboard_led_test" ]; then
+    run_test "Onboard LED Driver Tests" "./src/drivers/onboard_led/test/onboard_led_test"
+else
+    echo -e "${YELLOW}Onboard LED tests not found, skipping...${NC}"
+fi
+
 # Task tests (currently excluded from TEST builds)
 if [ -x "src/tasks/beacon/test/beacon_task_test" ]; then
     run_test "Beacon Task Tests" "./src/tasks/beacon/test/beacon_task_test"

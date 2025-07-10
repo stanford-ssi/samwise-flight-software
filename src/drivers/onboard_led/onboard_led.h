@@ -1,11 +1,17 @@
 #pragma once
 
+#ifdef TEST_MODE
+#include <stdint.h>
+#include <stdbool.h>
+#define PICO_DEFAULT_LED_PIN 25  // Mock LED pin for tests
+#else
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
+#endif
 
 struct onboard_led
 {
-    uint pin;
+    unsigned int pin;
     bool on;
 };
 
