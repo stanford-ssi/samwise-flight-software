@@ -14,8 +14,8 @@
 #include "safe_sleep.h"
 
 #ifdef TEST_MODE
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #else
 #include "hal_interface.h"
 #endif

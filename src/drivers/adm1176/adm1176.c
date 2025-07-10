@@ -40,8 +40,9 @@ bool adm1176_config(adm1176_t *pwm, int *mode, int mode_len)
         }
     }
 
-    if (hal.i2c_write_blocking_until(pwm->i2c, pwm->address, _cmd_buf, 1, false,
-                                 hal.make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
+    if (hal.i2c_write_blocking_until(
+            pwm->i2c, pwm->address, _cmd_buf, 1, false,
+            hal.make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
     {
         return false;
     }
@@ -71,7 +72,7 @@ float adm1176_get_voltage(adm1176_t *pwm)
     adm1176_on(pwm);
     hal.sleep_ms(1);
     hal.i2c_read_blocking_until(pwm->i2c, pwm->address, _read_buf, 3, false,
-                            hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
+                                hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
 
     float raw_volts = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
     return (26.35f / 4096.0f) * raw_volts;
@@ -87,7 +88,7 @@ float adm1176_get_current(adm1176_t *pwm)
     adm1176_on(pwm);
     hal.sleep_ms(1);
     hal.i2c_read_blocking_until(pwm->i2c, pwm->address, _read_buf, 3, false,
-                            hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
+                                hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
 
     float raw_amps = ((_read_buf[0] << 8) | (_read_buf[2] & DATA_V_MASK)) >> 4;
     return ((0.10584f / 4096.0f) * raw_amps) / pwm->sense_resistor;
@@ -103,7 +104,7 @@ void adm1176_on(adm1176_t *pwm)
     _ext_cmd_buf[0] = 0x83;
     _ext_cmd_buf[1] = 0;
     hal.i2c_write_blocking_until(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false,
-                             hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
+                                 hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
     int modes[2] = {1, 3};
     adm1176_config(pwm, modes, 2);
     LOG_DEBUG("ADM Cmd: %X\n", _cmd_buf[0]);
@@ -119,7 +120,7 @@ void adm1176_off(adm1176_t *pwm)
     _ext_cmd_buf[0] = 0x83;
     _ext_cmd_buf[1] = 1;
     hal.i2c_write_blocking_until(pwm->i2c, pwm->address, _ext_cmd_buf, 2, false,
-                             hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
+                                 hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
 }
 
 // Read the 8-bit STATUS register from the ADM1176.
@@ -132,15 +133,16 @@ bool adm1176_read_status(adm1176_t *pwm, uint8_t *status_out)
     }
     // 1) Write the command byte with STATUS_RD = 1 (bit 6).
     uint8_t cmd = (1 << 6); // C6 = 1 → STATUS_RD
-    if (hal.i2c_write_blocking_until(pwm->i2c, pwm->address, &cmd, 1, false,
-                                 hal.make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
+    if (hal.i2c_write_blocking_until(
+            pwm->i2c, pwm->address, &cmd, 1, false,
+            hal.make_timeout_time_ms(I2C_TIMEOUT_MS)) != 1)
     {
         return false;
     }
 
     // 2) Read one byte back from the device.
-    int ret =
-        hal.i2c_read_blocking_until(pwm->i2c, pwm->address, status_out, 1, false,
-                                hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
+    int ret = hal.i2c_read_blocking_until(
+        pwm->i2c, pwm->address, status_out, 1, false,
+        hal.make_timeout_time_ms(I2C_TIMEOUT_MS));
     return (ret == 1);
 }

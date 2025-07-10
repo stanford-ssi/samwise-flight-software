@@ -8,12 +8,12 @@
 #include "drivers/logger/logger.h"
 
 #ifdef TEST_MODE
-    #include "hal_interface.h"
-    // Mock I2C type for testing
-    typedef hal_i2c_t i2c_inst_t;
+#include "hal_interface.h"
+// Mock I2C type for testing
+typedef hal_i2c_t i2c_inst_t;
 #else
-    #include "hal_interface.h"
-    #include "hardware/i2c.h"
+#include "hal_interface.h"
+#include "hardware/i2c.h"
 #endif
 
 // ADM1176 I2C Address (0x94)

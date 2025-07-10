@@ -32,7 +32,8 @@ void watchdog_feed(struct watchdog *wd)
         watchdog_init(wd);
     }
     uint64_t current_time = hal.get_absolute_time_us();
-    uint64_t delta = hal.absolute_time_diff_us(wd->last_transition, current_time);
+    uint64_t delta =
+        hal.absolute_time_diff_us(wd->last_transition, current_time);
     if (wd->set && delta > wd->us_high)
     {
         hal.gpio_put(wd->pin, 0);

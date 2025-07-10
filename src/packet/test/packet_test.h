@@ -6,5 +6,5 @@
 #pragma once
 
 #include "packet.h"
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>

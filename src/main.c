@@ -37,7 +37,7 @@ int main()
 {
     // Initialize HAL before any other operations
     hal_init();
-    
+
     // We need to first initialize watchdog before any sleep is called.
     // Watchdog needs to be fed periodically to prevent rebooting.
     slate.watchdog = watchdog_mk();

@@ -9,9 +9,9 @@
 #include "flash.h"
 
 #ifdef TEST_MODE
-    #define XIP_BASE 0x10000000  // Mock XIP base for testing
-    #define FLASH_SECTOR_SIZE 4096
-    #define FLASH_PAGE_SIZE 256
+#define XIP_BASE 0x10000000 // Mock XIP base for testing
+#define FLASH_SECTOR_SIZE 4096
+#define FLASH_PAGE_SIZE 256
 #endif
 
 #define FLASH_TARGET_OFFSET (256 * 1024)
@@ -32,7 +32,8 @@ void write_persistent_data(persistent_data_t *data)
 
     hal.flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
 
-    hal.flash_range_program(FLASH_TARGET_OFFSET, (uint8_t *)data, FLASH_PAGE_SIZE);
+    hal.flash_range_program(FLASH_TARGET_OFFSET, (uint8_t *)data,
+                            FLASH_PAGE_SIZE);
 
     hal.restore_interrupts(ints);
 }

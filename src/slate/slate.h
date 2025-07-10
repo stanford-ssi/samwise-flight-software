@@ -12,8 +12,8 @@
 #pragma once
 
 #ifdef TEST_MODE
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #else
 #include "pico/types.h"
 #include "pico/util/queue.h"

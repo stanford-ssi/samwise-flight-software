@@ -8,10 +8,10 @@
 #pragma once
 
 #ifdef TEST_MODE
-    #include "hal_interface.h"
+#include "hal_interface.h"
 #else
-    #include "hal_interface.h"
-    #include "hardware/flash.h"
+#include "hal_interface.h"
+#include "hardware/flash.h"
 #endif
 
 #include <stdint.h>

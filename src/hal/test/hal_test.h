@@ -2,7 +2,7 @@
  * @file hal_test.h
  * @author Claude Code
  * @date 2025-01-10
- * 
+ *
  * Header file for HAL tests.
  */
 

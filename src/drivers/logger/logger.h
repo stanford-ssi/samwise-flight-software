@@ -9,10 +9,10 @@
 #pragma once
 
 #ifdef TEST_MODE
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #else
 #include "pico/printf.h"
 #include "pico/stdio.h"
