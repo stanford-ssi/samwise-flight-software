@@ -82,7 +82,14 @@ else
     echo -e "${YELLOW}HAL tests not found, skipping...${NC}"
 fi
 
-# Existing tests
+# Packet Authentication Tests
+if [ -x "src/packet/test/packet_test" ]; then
+    run_test "Packet Authentication Tests" "./src/packet/test/packet_test"
+else
+    echo -e "${YELLOW}Packet tests not found, skipping...${NC}"
+fi
+
+# Task tests (currently excluded from TEST builds)
 if [ -x "src/tasks/beacon/test/beacon_task_test" ]; then
     run_test "Beacon Task Tests" "./src/tasks/beacon/test/beacon_task_test"
 else

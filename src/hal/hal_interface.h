@@ -18,10 +18,10 @@
 #include <stddef.h>
 
 // Forward declarations for hardware types
-typedef uint hal_pin_t;
-typedef uint hal_spi_t;
-typedef uint hal_i2c_t;
-typedef uint hal_uart_t;
+typedef unsigned int hal_pin_t;
+typedef unsigned int hal_spi_t;
+typedef unsigned int hal_i2c_t;
+typedef unsigned int hal_uart_t;
 
 typedef enum {
     HAL_GPIO_IN = 0,
@@ -69,19 +69,19 @@ typedef struct {
     void (*gpio_set_irq_enabled_with_callback)(hal_pin_t pin, uint32_t events, bool enabled, hal_irq_callback_t callback);
     
     // SPI Interface
-    uint (*spi_init)(hal_spi_t spi, uint32_t baudrate);
+    unsigned int (*spi_init)(hal_spi_t spi, uint32_t baudrate);
     void (*spi_set_format)(hal_spi_t spi, uint8_t data_bits, uint8_t cpol, uint8_t cpha, uint8_t order);
     int (*spi_write_blocking)(hal_spi_t spi, const uint8_t *src, size_t len);
     int (*spi_read_blocking)(hal_spi_t spi, uint8_t repeated_tx_data, uint8_t *dst, size_t len);
     int (*spi_write_read_blocking)(hal_spi_t spi, const uint8_t *src, uint8_t *dst, size_t len);
     
     // I2C Interface
-    uint (*i2c_init)(hal_i2c_t i2c, uint32_t baudrate);
+    unsigned int (*i2c_init)(hal_i2c_t i2c, uint32_t baudrate);
     int (*i2c_write_blocking_until)(hal_i2c_t i2c, uint8_t addr, const uint8_t *src, size_t len, bool nostop, uint64_t until);
     int (*i2c_read_blocking_until)(hal_i2c_t i2c, uint8_t addr, uint8_t *dst, size_t len, bool nostop, uint64_t until);
     
     // UART Interface
-    uint (*uart_init)(hal_uart_t uart, uint32_t baudrate);
+    unsigned int (*uart_init)(hal_uart_t uart, uint32_t baudrate);
     void (*uart_set_format)(hal_uart_t uart, uint8_t data_bits, uint8_t stop_bits, uint8_t parity);
     void (*uart_set_hw_flow)(hal_uart_t uart, bool cts, bool rts);
     void (*uart_set_fifo_enabled)(hal_uart_t uart, bool enabled);
@@ -91,11 +91,11 @@ typedef struct {
     bool (*uart_is_writable)(hal_uart_t uart);
     
     // PWM Interface
-    uint (*pwm_gpio_to_slice_num)(hal_pin_t pin);
-    uint (*pwm_gpio_to_channel)(hal_pin_t pin);
-    void (*pwm_set_wrap)(uint slice_num, uint16_t wrap);
-    void (*pwm_set_chan_level)(uint slice_num, uint chan, uint16_t level);
-    void (*pwm_set_enabled)(uint slice_num, bool enabled);
+    unsigned int (*pwm_gpio_to_slice_num)(hal_pin_t pin);
+    unsigned int (*pwm_gpio_to_channel)(hal_pin_t pin);
+    void (*pwm_set_wrap)(unsigned int slice_num, uint16_t wrap);
+    void (*pwm_set_chan_level)(unsigned int slice_num, unsigned int chan, uint16_t level);
+    void (*pwm_set_enabled)(unsigned int slice_num, bool enabled);
     
     // Timing Interface
     void (*sleep_ms)(uint32_t ms);
@@ -119,4 +119,17 @@ void hal_init(void);
 // Test-specific HAL functions
 void hal_mock_init(void);
 void hal_mock_reset(void);
+
+// Mock test helper functions
+void hal_mock_set_pin_value(hal_pin_t pin, bool value);
+bool hal_mock_get_pin_value(hal_pin_t pin);
+void hal_mock_advance_time(uint32_t ms);
+uint32_t hal_mock_get_spi_transaction_count(void);
+uint32_t hal_mock_get_i2c_transaction_count(void);
+uint32_t hal_mock_get_uart_transaction_count(void);
+void hal_mock_set_spi_read_data(const uint8_t *data, size_t len);
+void hal_mock_set_i2c_read_data(const uint8_t *data, size_t len);
+void hal_mock_fail_next_spi(void);
+void hal_mock_fail_next_i2c(void);
+void hal_mock_fail_next_uart(void);
 #endif

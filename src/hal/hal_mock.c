@@ -122,7 +122,7 @@ static void hal_mock_gpio_set_irq_enabled_with_callback(hal_pin_t pin, uint32_t 
 }
 
 // SPI mock functions
-static uint hal_mock_spi_init(hal_spi_t spi, uint32_t baudrate) {
+static unsigned int hal_mock_spi_init(hal_spi_t spi, uint32_t baudrate) {
     (void)spi;
     return baudrate; // Return the requested baudrate
 }
@@ -193,7 +193,7 @@ static int hal_mock_spi_write_read_blocking(hal_spi_t spi, const uint8_t *src, u
 }
 
 // I2C mock functions
-static uint hal_mock_i2c_init(hal_i2c_t i2c, uint32_t baudrate) {
+static unsigned int hal_mock_i2c_init(hal_i2c_t i2c, uint32_t baudrate) {
     (void)i2c;
     return baudrate;
 }
@@ -239,7 +239,7 @@ static int hal_mock_i2c_read_blocking_until(hal_i2c_t i2c, uint8_t addr, uint8_t
 }
 
 // UART mock functions
-static uint hal_mock_uart_init(hal_uart_t uart, uint32_t baudrate) {
+static unsigned int hal_mock_uart_init(hal_uart_t uart, uint32_t baudrate) {
     (void)uart;
     return baudrate;
 }
@@ -285,26 +285,26 @@ static bool hal_mock_uart_is_writable(hal_uart_t uart) {
 }
 
 // PWM mock functions
-static uint hal_mock_pwm_gpio_to_slice_num(hal_pin_t pin) {
+static unsigned int hal_mock_pwm_gpio_to_slice_num(hal_pin_t pin) {
     return pin / 2; // Simple mapping for testing
 }
 
-static uint hal_mock_pwm_gpio_to_channel(hal_pin_t pin) {
+static unsigned int hal_mock_pwm_gpio_to_channel(hal_pin_t pin) {
     return pin % 2; // Simple mapping for testing
 }
 
-static void hal_mock_pwm_set_wrap(uint slice_num, uint16_t wrap) {
+static void hal_mock_pwm_set_wrap(unsigned int slice_num, uint16_t wrap) {
     (void)slice_num;
     (void)wrap;
 }
 
-static void hal_mock_pwm_set_chan_level(uint slice_num, uint chan, uint16_t level) {
+static void hal_mock_pwm_set_chan_level(unsigned int slice_num, unsigned int chan, uint16_t level) {
     (void)slice_num;
     (void)chan;
     (void)level;
 }
 
-static void hal_mock_pwm_set_enabled(uint slice_num, bool enabled) {
+static void hal_mock_pwm_set_enabled(unsigned int slice_num, bool enabled) {
     (void)slice_num;
     (void)enabled;
 }

@@ -8,11 +8,18 @@
  */
 #pragma once
 
+#ifdef TEST_MODE
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdarg.h>
+#else
 #include "pico/printf.h"
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "pico/types.h"
+#endif
 
 // Log levels
 typedef enum

@@ -13,6 +13,11 @@
 #include "error.h"
 #include "safe_sleep.h"
 
+#ifdef TEST_MODE
+#include <stdlib.h>
+#include <stdio.h>
+#endif
+
 /**
  * This function should be called if we encounter an unrecoverable error. In
  * non-flight builds, enter a panic state.
@@ -29,6 +34,11 @@ void fatal_error(char *msg)
 #else
     while (1)
     {
+#ifdef TEST_MODE
+        // In test mode, just print the error and exit
+        printf("FATAL ERROR: %s\n", msg);
+        exit(1);
+#else
         for (uint32_t i = 0; i < 3; i++)
         {
 #ifdef PICO
@@ -45,6 +55,7 @@ void fatal_error(char *msg)
         }
         printf("ERROR: %s", msg);
         safe_sleep_ms(500);
+#endif
     }
 #endif
 }

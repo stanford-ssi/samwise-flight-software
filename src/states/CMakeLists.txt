@@ -1,4 +1,7 @@
-add_subdirectory(init)
-add_subdirectory(running)
-add_subdirectory(bringup)
-add_subdirectory(burn_wire)
+# Only build hardware-dependent states for embedded targets
+if(NOT PROFILE STREQUAL "TEST")
+    add_subdirectory(init)
+    add_subdirectory(running)
+    add_subdirectory(bringup)
+    add_subdirectory(burn_wire)
+endif()

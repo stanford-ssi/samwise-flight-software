@@ -2,7 +2,14 @@
 
 #include <stdlib.h>
 
-#include "slate.h"
+#ifdef TEST_MODE
+#include <stdint.h>
+// Mock absolute_time_t for TEST mode
+typedef uint64_t absolute_time_t;
+#else
+#include "pico/time.h"
+#endif
+
 #include "typedefs.h"
 
 #define MAX_TASKS_PER_STATE 10

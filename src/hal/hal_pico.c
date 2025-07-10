@@ -62,7 +62,7 @@ static void hal_pico_gpio_set_irq_enabled_with_callback(hal_pin_t pin, uint32_t 
 }
 
 // SPI wrapper functions
-static uint hal_pico_spi_init(hal_spi_t spi, uint32_t baudrate) {
+static unsigned int hal_pico_spi_init(hal_spi_t spi, uint32_t baudrate) {
     return spi_init((spi_inst_t*)spi, baudrate);
 }
 
@@ -83,7 +83,7 @@ static int hal_pico_spi_write_read_blocking(hal_spi_t spi, const uint8_t *src, u
 }
 
 // I2C wrapper functions
-static uint hal_pico_i2c_init(hal_i2c_t i2c, uint32_t baudrate) {
+static unsigned int hal_pico_i2c_init(hal_i2c_t i2c, uint32_t baudrate) {
     return i2c_init((i2c_inst_t*)i2c, baudrate);
 }
 
@@ -98,7 +98,7 @@ static int hal_pico_i2c_read_blocking_until(hal_i2c_t i2c, uint8_t addr, uint8_t
 }
 
 // UART wrapper functions
-static uint hal_pico_uart_init(hal_uart_t uart, uint32_t baudrate) {
+static unsigned int hal_pico_uart_init(hal_uart_t uart, uint32_t baudrate) {
     return uart_init((uart_inst_t*)uart, baudrate);
 }
 
@@ -131,23 +131,23 @@ static bool hal_pico_uart_is_writable(hal_uart_t uart) {
 }
 
 // PWM wrapper functions
-static uint hal_pico_pwm_gpio_to_slice_num(hal_pin_t pin) {
+static unsigned int hal_pico_pwm_gpio_to_slice_num(hal_pin_t pin) {
     return pwm_gpio_to_slice_num(pin);
 }
 
-static uint hal_pico_pwm_gpio_to_channel(hal_pin_t pin) {
+static unsigned int hal_pico_pwm_gpio_to_channel(hal_pin_t pin) {
     return pwm_gpio_to_channel(pin);
 }
 
-static void hal_pico_pwm_set_wrap(uint slice_num, uint16_t wrap) {
+static void hal_pico_pwm_set_wrap(unsigned int slice_num, uint16_t wrap) {
     pwm_set_wrap(slice_num, wrap);
 }
 
-static void hal_pico_pwm_set_chan_level(uint slice_num, uint chan, uint16_t level) {
+static void hal_pico_pwm_set_chan_level(unsigned int slice_num, unsigned int chan, uint16_t level) {
     pwm_set_chan_level(slice_num, chan, level);
 }
 
-static void hal_pico_pwm_set_enabled(uint slice_num, bool enabled) {
+static void hal_pico_pwm_set_enabled(unsigned int slice_num, bool enabled) {
     pwm_set_enabled(slice_num, enabled);
 }
 

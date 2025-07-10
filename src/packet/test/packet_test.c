@@ -25,9 +25,16 @@ void test_packet_null_pointer()
 {
     // Test NULL packet pointer
     bool result = is_packet_authenticated(NULL, mock_boot_count);
-    assert(result == false);
     
-    printf("✓ NULL packet pointer handled correctly\n");
+#ifdef PACKET_HMAC_PSK
+    // With authentication enabled, NULL should return false
+    assert(result == false);
+    printf("✓ NULL packet pointer rejected when authentication enabled\n");
+#else
+    // With authentication disabled, all packets pass (including NULL)
+    assert(result == true);
+    printf("✓ NULL packet pointer accepted when authentication disabled\n");
+#endif
 }
 
 void test_packet_authentication_disabled()

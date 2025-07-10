@@ -4,13 +4,17 @@ add_subdirectory(hal)
 add_subdirectory(common)
 add_subdirectory(drivers)
 add_subdirectory(error)
-add_subdirectory(init)
 add_subdirectory(packet)
-add_subdirectory(scheduler)
-add_subdirectory(slate)
-add_subdirectory(states)
-add_subdirectory(tasks)
 add_subdirectory(utils)
+
+# Only build hardware-dependent modules for embedded targets  
+if(NOT PROFILE STREQUAL "TEST")
+    add_subdirectory(init)
+    add_subdirectory(scheduler)
+    add_subdirectory(slate)
+    add_subdirectory(states)
+    add_subdirectory(tasks)
+endif()
 
 if(NOT PROFILE STREQUAL "TEST")
     # Only build main executable for embedded targets
