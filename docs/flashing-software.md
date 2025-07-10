@@ -1,5 +1,9 @@
 # Uploading new Software binaries to PiCubed
 
+Latest binaries will be in the releases page: https://github.com/stanford-ssi/samwise-flight-software/releases
+
+E.g. https://github.com/stanford-ssi/samwise-flight-software/releases/tag/dev-v0.0.3
+
 ## Copying files over using BOOT mode
 
 To put the PiCubed into BOOT mode, you should press and hold down the BOOTSEL button **BEFORE** turning the device on!!!
