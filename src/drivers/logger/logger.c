@@ -8,8 +8,8 @@ static uint8_t enabled_sinks =
 void logger_init(void)
 {
 // Initialize hardware/drivers for FLASH/DISK if needed
-#ifdef TEST
-    // idk do something?
+#ifdef TEST_MODE
+    // Test mode - no hardware initialization needed
 #else
     stdio_usb_init();
     // TODO: Initialize flash logging when ready

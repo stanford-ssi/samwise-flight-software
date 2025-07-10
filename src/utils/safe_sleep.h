@@ -2,7 +2,7 @@
 
 #include "common/config.h"
 #include "drivers/watchdog/watchdog.h"
-#include "pico/time.h"
+#include "hal_interface.h"
 #include <slate.h>
 #include <stdint.h>
 
@@ -18,7 +18,7 @@ static void safe_sleep_ms(uint32_t ms)
         // This together with the while loop condition ensures
         // there will be no integer overflow.
         remaining_time -= MIN_WATCHDOG_INTERVAL_MS;
-        sleep_ms(MIN_WATCHDOG_INTERVAL_MS);
+        hal.sleep_ms(MIN_WATCHDOG_INTERVAL_MS);
     }
-    sleep_ms(remaining_time);
+    hal.sleep_ms(remaining_time);
 }
