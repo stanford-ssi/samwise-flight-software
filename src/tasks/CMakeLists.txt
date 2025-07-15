@@ -8,3 +8,5 @@ add_subdirectory(telemetry)
 add_subdirectory(watchdog)
 add_subdirectory(payload)
 add_subdirectory(diagnostics)
+add_subdirectory(file_transfer)
+
