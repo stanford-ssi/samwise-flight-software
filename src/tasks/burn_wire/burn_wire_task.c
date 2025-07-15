@@ -26,13 +26,15 @@ void burn_wire_task_dispatch(slate_t *slate)
     }
     LOG_INFO("Burn wire task is dispatching... %d", count);
     count++;
-    // Activate burn wire for 100ms at 50% duty cycle
-    // Duty cycle is 31 out of 63 for 5-bit PWM
-    // The maximum value of 63 is set as the WRAP for the PWM slice here
-    // src/drivers/burn_wire/burn_wire.c
-    burn_wire_activate(slate, MAX_BURN_DURATION_MS, 31, true, true);
-    safe_sleep_ms(
-        30000); // Sleep for 30 seconds to simulate wait before retrying
+    safe_sleep_ms(1000); // Sleep for 5 seconds
+    // Activate burn wire for a maximum duration
+    // of MAX_BURN_DURATION_MS milliseconds at max power.
+    // Activate A and B channels one after another.
+    burn_wire_activate(slate, MAX_BURN_DURATION_MS, true,
+                       false); // Activate A channel
+    burn_wire_activate(slate, MAX_BURN_DURATION_MS, false,
+                       true); // Activate B channel
+    safe_sleep_ms(4000);
     neopixel_set_color_rgb(0, 0, 0);
 }
 
