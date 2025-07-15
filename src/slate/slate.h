@@ -101,6 +101,10 @@ typedef struct samwise_slate
     bool is_payload_on;
     bool is_uart_init;
 
+    /*
+     *  File Transfer
+     */
+    queue_t ft_send_queue;
 } slate_t;
 
 extern slate_t slate;
