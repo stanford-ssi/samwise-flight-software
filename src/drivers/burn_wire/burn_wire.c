@@ -52,4 +52,5 @@ void burn_wire_activate(slate_t *slate, uint32_t burn_ms, bool activate_A,
     gpio_put(SAMWISE_BURN_RELAY, 0);
     gpio_put(SAMWISE_ENAB_BURN_A, 0);
     gpio_put(SAMWISE_ENAB_BURN_B, 0);
+    safe_sleep_ms(100); // Give some time for the MOSFET to turn off
 }

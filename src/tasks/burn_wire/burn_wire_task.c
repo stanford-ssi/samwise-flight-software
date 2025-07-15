@@ -26,7 +26,7 @@ void burn_wire_task_dispatch(slate_t *slate)
     }
     LOG_INFO("Burn wire task is dispatching... %d", count);
     count++;
-    safe_sleep_ms(1000); // Sleep for 5 seconds
+    safe_sleep_ms(1000); // Sleep for 1 second
     // Activate burn wire for a maximum duration
     // of MAX_BURN_DURATION_MS milliseconds at max power.
     // Activate A and B channels one after another.
