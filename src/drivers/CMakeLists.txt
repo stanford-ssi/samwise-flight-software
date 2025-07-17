@@ -1,10 +1,17 @@
-add_subdirectory(adm1176)
-add_subdirectory(burn_wire)
-add_subdirectory(flash)
-add_subdirectory(payload_uart)
+# Logger is always needed (has TEST_MODE support)
 add_subdirectory(logger)
-add_subdirectory(mppt)
-add_subdirectory(neopixel)
+
+# HAL-abstracted drivers that can be tested
 add_subdirectory(onboard_led)
-add_subdirectory(rfm9x)
-add_subdirectory(watchdog)
+add_subdirectory(flash)
+add_subdirectory(adm1176)
+
+# Only build hardware drivers for embedded targets
+if(NOT PROFILE STREQUAL "TEST")
+    add_subdirectory(burn_wire)
+    add_subdirectory(payload_uart)
+    add_subdirectory(mppt)
+    add_subdirectory(neopixel)
+    add_subdirectory(rfm9x)
+    add_subdirectory(watchdog)
+endif()

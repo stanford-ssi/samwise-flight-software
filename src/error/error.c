@@ -13,6 +13,13 @@
 #include "error.h"
 #include "safe_sleep.h"
 
+#ifdef TEST_MODE
+#include <stdio.h>
+#include <stdlib.h>
+#else
+#include "hal_interface.h"
+#endif
+
 /**
  * This function should be called if we encounter an unrecoverable error. In
  * non-flight builds, enter a panic state.
@@ -29,12 +36,17 @@ void fatal_error(char *msg)
 #else
     while (1)
     {
+#ifdef TEST_MODE
+        // In test mode, just print the error and exit
+        printf("FATAL ERROR: %s\n", msg);
+        exit(1);
+#else
         for (uint32_t i = 0; i < 3; i++)
         {
 #ifdef PICO
-            gpio_put(PICO_DEFAULT_LED_PIN, 1);
+            hal.gpio_put(PICO_DEFAULT_LED_PIN, 1);
             safe_sleep_ms(100);
-            gpio_put(PICO_DEFAULT_LED_PIN, 0);
+            hal.gpio_put(PICO_DEFAULT_LED_PIN, 0);
             safe_sleep_ms(100);
 #else
             neopixel_set_color_rgb(0xff, 0x33, 0);
@@ -45,6 +57,7 @@ void fatal_error(char *msg)
         }
         printf("ERROR: %s", msg);
         safe_sleep_ms(500);
+#endif
     }
 #endif
 }
