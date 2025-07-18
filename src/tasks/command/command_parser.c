@@ -42,10 +42,18 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Payload: %s", payload_command.serialized_command);
             break;
         }
-        case NO_OP:
+        case PING:
         {
-            LOG_INFO("Number of Commands Executed: %d",
+            LOG_INFO("Retrieving number of commands executed...");
+            char buf[MAX_PACKET_SIZE];
+
+            // Package interger value into a string
+            snprintf(buf, sizeof(buf), "Number commands executed: %d",
                      slate->number_commands_processed);
+
+            // Add to transmit buffer
+            LOG_INFO("Sending to radio transmit queue...");
+            queue_try_add(&slate->tx_queue, &buf);
             break;
         }
         case PAYLOAD_TURN_ON:
@@ -83,20 +91,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
 
             break;
-        }
-
-        case PING:
-        {
-            LOG_INFO("Retrieving number of commands executed...");
-            char buf[MAX_PACKET_SIZE];
-
-            // Package interger value into a string
-            snprintf(buf, sizeof(buf), "Number commands executed: %d",
-                     slate->number_commands_processed);
-
-            // Add to transmit buffer
-            LOG_INFO("Sending to radio transmit queue...");
-            queue_try_add(&slate->tx_queue, &buf);
         }
 
         default:
