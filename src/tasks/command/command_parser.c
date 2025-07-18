@@ -13,6 +13,8 @@
 #include "payload_uart.h"
 #include "states.h"
 
+#define MAX_PACKET_SIZE 1024
+
 extern sched_state_t *overridden_state;
 
 /// @brief Parse packet and dispatch command to appropriate queue
@@ -40,10 +42,18 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Payload: %s", payload_command.serialized_command);
             break;
         }
-        case NO_OP:
+        case PING:
         {
-            LOG_INFO("Number of Commands Executed: %d",
+            LOG_INFO("Retrieving number of commands executed...");
+            char buf[MAX_PACKET_SIZE];
+
+            // Package interger value into a string
+            snprintf(buf, sizeof(buf), "Number commands executed: %d",
                      slate->number_commands_processed);
+
+            // Add to transmit buffer
+            LOG_INFO("Sending to radio transmit queue...");
+            queue_try_add(&slate->tx_queue, &buf);
             break;
         }
         case PAYLOAD_TURN_ON:
@@ -82,6 +92,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
+
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
