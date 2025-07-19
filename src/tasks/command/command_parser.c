@@ -65,21 +65,22 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         {
             if (strcmp(command_payload, "running_state"))
             {
-                overridden_state = &running_state;
+                slate->manual_override_state = &running_state;
             }
             else if (strcmp(command_payload, "init_state"))
             {
-                overridden_state = &init_state;
+                slate->manual_override_state = &init_state;
             }
             else if (strcmp(command_payload, "burn_wire_state"))
             {
-                overridden_state = &burn_wire_state;
+                slate->manual_override_state = &burn_wire_state;
             }
             else
             {
-                overridden_state = NULL;
+                slate->manual_override_state = NULL;
+                LOG_ERROR("Unknown state override command: %s",
+                          command_payload);
             }
-
             break;
         }
         default:
