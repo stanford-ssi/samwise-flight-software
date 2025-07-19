@@ -57,6 +57,12 @@ typedef struct samwise_slate
     bool is_rbf_detected; // true if the RBF is still attached, false if it has
                           // been removed
 
+    /* c
+    * Solar panels A and B
+    */
+    bool panel_A_deployed; // 1 for deployed
+    bool panel_B_deployed; // 1 for deployed
+
     /*
      * Watchdog
      */

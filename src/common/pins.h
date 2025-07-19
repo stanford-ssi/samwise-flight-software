@@ -39,6 +39,10 @@
 // Mocked Fixed Solar pins
 #define SAMWISE_FIXED_SOLAR_FAULT (33)
 #define SAMWISE_FIXED_SOLAR_CHARGE (34)
+
+#define SAMWISE_PANEL_A (10)
+#define SAMWISE_PANEL_B (9)
+
 // Mocked RBF pin
 #define SAMWISE_RBF_DETECT_PIN (42)
 
@@ -91,6 +95,10 @@
 
 #define SAMWISE_FIXED_SOLAR_FAULT (33)
 #define SAMWISE_FIXED_SOLAR_CHARGE (34)
+
+#define SAMWISE_PANEL_A (10)
+#define SAMWISE_PANEL_B (9)
+
 // RBF_DETECT pin
 #define SAMWISE_RBF_DETECT_PIN (42)
 

@@ -80,14 +80,20 @@ void telemetry_task_dispatch(slate_t *slate)
         mppt_get_battery_voltage(&solar_charger_monitor);
     uint16_t solar_battery_current =
         mppt_get_battery_current(&solar_charger_monitor);
+  
     bool solar_charge = read_fixed_solar_charge();
     bool solar_fault = read_fixed_solar_fault();
-
+    bool panel_A = read_panel_A();
+    bool panel_B = read_panel_B();
+  
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
              solar_battery_current);
     LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
+
+    LOG_INFO("Panel A status: %s", panel_A ? "deployed" : "closed");
+    LOG_INFO("Panel B status: %s", panel_B ? "deployed" : "closed");
     LOG_INFO("Fixed solar charging: %s", solar_charge ? "on" : "off");
     LOG_INFO("Fixed solar status: %s", solar_fault ? "faulty" : "okay");
 
@@ -96,6 +102,8 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->solar_current = solar_current;
     slate->fixed_solar_charge = solar_charge;
     slate->fixed_solar_fault = solar_fault;
+    slate->panel_A_deployed = panel_A;
+    slate->panel_B_deployed = panel_B;
 
     LOG_INFO("GPIO bits: %16lX", (uint64_t)gpio_get_all64());
 
