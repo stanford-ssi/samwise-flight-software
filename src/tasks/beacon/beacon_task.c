@@ -73,7 +73,7 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.seq = 0;
 
     // Commit into serialized byte array
-    pkt.len = send_boot_count(slate, pkt.data);
+    pkt.len = serialize_slate(slate, pkt.data);
 
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))
@@ -89,7 +89,7 @@ void beacon_task_dispatch(slate_t *slate)
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 2000,
+                            .dispatch_period_ms = 5000,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */

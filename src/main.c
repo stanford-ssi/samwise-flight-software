@@ -57,7 +57,6 @@ int main()
      */
     persistent_data_t *data = init_persistent_data();
     increment_reboot_counter();
-    LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
 
     /*
      * Initialize everything.
@@ -66,6 +65,16 @@ int main()
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
     slate.reboot_counter = data->reboot_counter;
+
+    LOG_INFO("main: Starting SAMWISE flight software...");
+    LOG_INFO("Current reboot count: %d\n", data->reboot_counter);
+
+#ifdef PACKET_HMAC_PSK
+    LOG_INFO("main: HMAC_PSK <ENABLED>");
+#else
+    LOG_INFO("main: HMAC_PSK <OFF>");
+#endif
+
     LOG_INFO("main: Initialized successfully!\n\n\n");
 
     /*

@@ -63,6 +63,8 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:
         {
+            LOG_INFO("Manual state override command received");
+            LOG_INFO("  requested state -> %s", command_payload);
             if (strcmp(command_payload, "running_state"))
             {
                 overridden_state = &running_state;

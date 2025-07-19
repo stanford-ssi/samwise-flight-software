@@ -92,6 +92,9 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
     p->seq = buf[offset++];
     p->len = buf[offset++];
 
+    LOG_INFO("parse_packet [RECEIVED PACKER]: dst=%d, src=%d, flags=0x%02x, seq=%d, len=%d",
+             p->dst, p->src, p->flags, p->seq, p->len);
+
     if (p->len > PACKET_DATA_SIZE)
     {
         LOG_ERROR("parse_packet: Packet length exceeds maximum data size");
