@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-void init_device_status_drivers();
+void device_status_init();
 bool is_fixed_solar_charging();
 bool is_fixed_solar_faulty();
-
+bool is_flex_panel_A_deployed();
+bool is_flex_panel_B_deployed();

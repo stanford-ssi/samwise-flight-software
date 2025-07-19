@@ -58,8 +58,8 @@ typedef struct samwise_slate
                           // been removed
 
     /* c
-    * Solar panels A and B
-    */
+     * Solar panels A and B
+     */
     bool panel_A_deployed; // 1 for deployed
     bool panel_B_deployed; // 1 for deployed
 

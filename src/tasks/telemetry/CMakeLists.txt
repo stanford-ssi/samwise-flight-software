@@ -4,8 +4,8 @@ add_library(telemetry_task telemetry_task.c)
 target_link_libraries(telemetry_task PUBLIC
   adm1176
   common
+  device_status
   error
-  fixed_solar
   hardware_i2c
   logger
   mppt

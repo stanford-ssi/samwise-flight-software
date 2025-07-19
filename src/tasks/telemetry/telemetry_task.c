@@ -80,12 +80,13 @@ void telemetry_task_dispatch(slate_t *slate)
         mppt_get_battery_voltage(&solar_charger_monitor);
     uint16_t solar_battery_current =
         mppt_get_battery_current(&solar_charger_monitor);
-  
-    bool solar_charge = read_fixed_solar_charge();
-    bool solar_fault = read_fixed_solar_fault();
-    bool panel_A = read_panel_A();
-    bool panel_B = read_panel_B();
-  
+
+    bool solar_charge = is_fixed_solar_charging();
+    bool solar_fault = is_fixed_solar_faulty();
+    bool panel_A = is_flex_panel_A_deployed();
+    bool panel_B = is_flex_panel_B_deployed();
+    bool rbf_detected = is_rbf_pin_detected();
+
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
@@ -107,9 +108,9 @@ void telemetry_task_dispatch(slate_t *slate)
 
     LOG_INFO("GPIO bits: %16lX", (uint64_t)gpio_get_all64());
 
-    slate->is_rbf_detected = !gpio_get(SAMWISE_RBF_DETECT_PIN);
+    slate->is_rbf_detected = rbf_detected;
     LOG_INFO("RBF_PIN status: %s",
-             slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
+             rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",
