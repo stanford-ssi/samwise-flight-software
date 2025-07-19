@@ -2,15 +2,16 @@ add_library(telemetry_task telemetry_task.c)
 
 # Specify targets to link compiled binaries
 target_link_libraries(telemetry_task PUBLIC
-  pico_stdlib
-  hardware_i2c
-  logger
-  slate
+  adm1176
   common
   error
-  rfm9x
-  adm1176
+  fixed_solar
+  hardware_i2c
+  logger
   mppt
+  pico_stdlib
+  rfm9x
+  slate
 )
 
 # Specify directories with relevant header files
