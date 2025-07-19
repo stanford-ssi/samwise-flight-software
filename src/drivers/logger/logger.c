@@ -42,7 +42,7 @@ void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...)
     }
 
     // Format the message
-    char buffer[256];
+    char buffer[1000];
     va_list args;
     va_start(args, fmt);
     vsnprintf(buffer, sizeof(buffer), fmt, args);

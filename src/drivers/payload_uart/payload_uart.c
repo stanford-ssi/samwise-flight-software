@@ -14,6 +14,8 @@
 #include "pins.h"
 #include "slate.h"
 
+#include "safe_sleep.h"
+
 #define PAYLOAD_UART_ID uart0 // Required to use pins 30 and 31 (see datasheet)
 
 // UART parameters
@@ -21,6 +23,7 @@
 #define DATA_BITS 8
 #define STOP_BITS 1
 #define PARITY UART_PARITY_NONE
+#define WRITE_MAX_TIMEOUT 10000
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
@@ -57,7 +60,7 @@ static void uart_rx_callback()
 // (not using fast version because we want small binary size)
 unsigned int crc32(const uint8_t *message, uint16_t len)
 {
-    int i, j;
+    size_t i;
     unsigned int byte, crc, mask;
 
     i = 0;
@@ -66,7 +69,7 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
     {
         byte = message[i]; // Get next byte.
         crc = crc ^ byte;
-        for (j = 7; j >= 0; j--)
+        for (int j = 0; j < 8; j++)
         { // Do eight times.
             mask = -(crc & 1);
             crc = (crc >> 1) ^ (0xEDB88320 & mask);
@@ -77,7 +80,7 @@ unsigned int crc32(const uint8_t *message, uint16_t len)
 }
 
 /**
- * Return the header for a gien message packet
+ * Return the header for a given message packet
  */
 static packet_header_t compute_packet_header(const uint8_t *packet,
                                              uint16_t len, uint16_t seq_num)
@@ -185,7 +188,7 @@ static void send_ack()
 
 static void send_syn()
 {
-    for (int i = 0; i < SYN_COUNT; i++)
+    for (size_t i = 0; i < SYN_COUNT; i++)
     {
         uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
     }
@@ -194,12 +197,25 @@ static void send_syn()
 void payload_turn_on(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 1);
-    LOG_DEBUG("Pulled ENAB high");
+    slate->is_payload_on = true;
 }
 
 void payload_turn_off(slate_t *slate)
 {
+    // To prevent from writing and hanging
+    if (!slate->is_payload_on)
+    {
+        return;
+    }
+
+    char packet[] = "[\"shutdown\",  [], {\"immediate\"}]";
+    payload_uart_write_packet(slate, packet, (sizeof(packet) - 1), 0);
+
+    // NOTE: This does not actually turn off the payload, this just ensures it
+    // doesn't turn on again when it is turned off.
     gpio_put(SAMWISE_RPI_ENAB, 0);
+
+    slate->is_payload_on = false;
 }
 
 /**
@@ -252,6 +268,38 @@ bool payload_uart_init(slate_t *slate)
 }
 
 /**
+ * Writes data via UART with a timeout, ensuring that our writes do not
+ * block infinitely long.
+ *
+ * @param packet        Array of bytes containing the packet
+ * @param len           Number of bytes in the packet
+ * @param timeout_us    Time microseconds that the command will try to write
+ * until doing a timeout
+ */
+bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
+{
+    uint32_t start = time_us_32();
+    size_t written = 0;
+
+    while (written < len)
+    {
+        // If there’s room in the FIFO, push the next byte
+        if (uart_is_writable(PAYLOAD_UART_ID))
+        {
+            uart_putc_raw(PAYLOAD_UART_ID, packet[written++]);
+        }
+        // Else, check if we’ve run out of time
+        else if (time_us_32() - start >= timeout_us)
+        {
+            return false; // timeout
+        }
+        // Otherwise, spin until either writable or timeout
+    }
+
+    return true; // all bytes enqueued within time budget
+}
+
+/**
  * Write a packet to the RPi over UART
  *
  * @param packet    Array of bytes containing the packet
@@ -259,21 +307,23 @@ bool payload_uart_init(slate_t *slate)
  * @param seq_num   Sequence number (useful for sending multiple packets, ignore
  * otherwise)
  */
-bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
-                               uint16_t len, uint16_t seq_num)
+payload_write_error_code payload_uart_write_packet(slate_t *slate,
+                                                   const uint8_t *packet,
+                                                   uint16_t len,
+                                                   uint16_t seq_num)
 {
     // Check packet length
     if (len > MAX_PACKET_LEN)
     {
         LOG_DEBUG("Packet is too long!\n");
-        return false;
+        return PACKET_TOO_BIG;
     }
 
     // Write sync packet and wait for ack
     bool syn_acknowledged = false;
-    for (int i = 0; i < SYN_RETRIES; i++)
+    for (size_t i = 0; i < SYN_RETRIES; i++)
     {
-        for (int j = 0; j < SYN_COUNT; j++)
+        for (size_t j = 0; j < SYN_COUNT; j++)
         {
             uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }
@@ -284,13 +334,13 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
             break;
         }
 
-        sleep_ms(100);
+        safe_sleep_ms(100);
     }
 
     if (!syn_acknowledged)
     {
         LOG_DEBUG("Payload did not respond to sync!\n");
-        return false;
+        return SYN_UNSUCCESSFUL;
     }
 
     uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
@@ -299,20 +349,27 @@ bool payload_uart_write_packet(slate_t *slate, const uint8_t *packet,
     packet_header_t header = compute_packet_header(packet, len, seq_num);
 
     // Send header and receive ACK
-    uart_write_blocking(PAYLOAD_UART_ID, (uint8_t *)&header,
-                        sizeof(packet_header_t));
+    if (!uart_write_timeout((uint8_t *)&header, sizeof(packet_header_t),
+                            WRITE_MAX_TIMEOUT))
+    {
+        return UART_WRITE_TIMEDOUT;
+    }
 
     if (!receive_ack(slate))
     {
         LOG_DEBUG("Header was not acknowledged!\n");
-        return false;
+        return HEADER_UNACKNOWLEDGED;
     }
 
     // Send actual packet
-    uart_write_blocking(PAYLOAD_UART_ID, packet, len);
+    uart_write_timeout(packet, len, WRITE_MAX_TIMEOUT);
 
     // Wait for ACK
-    return receive_ack(slate);
+    if (receive_ack(slate))
+    {
+        return SUCCESSFUL_WRITE;
+    }
+    return FINAL_WRITE_UNSUCCESSFUL;
 }
 
 /**

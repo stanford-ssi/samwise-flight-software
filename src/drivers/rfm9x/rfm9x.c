@@ -1,4 +1,5 @@
 #include "rfm9x.h"
+#include "safe_sleep.h"
 
 rfm9x_t rfm9x_mk()
 {
@@ -121,7 +122,7 @@ void rfm9x_reset(rfm9x_t *r)
     // set reset pin to input
     gpio_set_dir(r->reset_pin, GPIO_IN);
 
-    sleep_ms(5);
+    safe_sleep_ms(5);
 }
 
 /*
@@ -672,15 +673,15 @@ void rfm9x_init(rfm9x_t *r)
      * Calibrate the oscillator
      */
     rfm9x_set_mode(r, STANDBY_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_trigger_osc_calibration(r);
-    sleep_ms(1000); // 1 second
+    safe_sleep_ms(1000); // 1 second
 
     /*
      * Configure LoRa
      */
     rfm9x_set_mode(r, SLEEP_MODE);
-    sleep_ms(10);
+    safe_sleep_ms(10);
     rfm9x_set_lora(r, 1);
 
     /*
@@ -746,9 +747,9 @@ void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
 /*
  * Print a raw packet. L includes all bytes, even header.
  */
-void rfm9x_print_packet(char *msg, char *packet, uint8_t l)
+void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l)
 {
-    printf(msg);
+    printf("%s", msg);
     printf("\r\n");
     printf("  Size: %d\r\n", l);
     if (l >= 1)
@@ -760,13 +761,15 @@ void rfm9x_print_packet(char *msg, char *packet, uint8_t l)
     if (l >= 4)
         printf("  Flags: %x\r\n", packet[3]);
     if (l >= 5)
+        printf("  Data Length: %u\r\n", packet[4]);
+    if (l >= 6)
     {
         printf("  Payload (ASCII): ");
-        for (int i = 4; i < l; i++)
+        for (size_t i = 5; i < l; i++)
             printf("%c", packet[i]);
         printf("\r\n  Payload (Hex): ");
-        for (int i = 4; i < l; i++)
-            printf("%x ", packet[i]);
+        for (size_t i = 5; i < l; i++)
+            printf("%02x ", packet[i]);
     }
     printf("\r\n");
 }
@@ -865,272 +868,4 @@ uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf)
 void rfm9x_clear_interrupts(rfm9x_t *r)
 {
     rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
-}
-
-uint8_t rfm9x_receive_packet(rfm9x_t *r, uint8_t node, char *buf)
-{
-    while (1)
-    {
-        while (!rfm9x_await_rx(r))
-            ; // spin until RX done
-        uint8_t fifo_length = rfm9x_get8(r, _RH_RF95_REG_13_RX_NB_BYTES);
-        if (r->debug)
-            printf("FIFO length: %d\r\n", fifo_length);
-
-        // keep listening, no ack, yes debug, no view
-        rfm9x_receive(r, buf, node, 1, 0, 1);
-
-        if (fifo_length > 0)
-        {
-            if (r->debug)
-                printf("Received packet: %s\r\n", buf);
-            return fifo_length;
-        }
-        else
-        {
-            if (r->debug)
-                printf("No packet received\r\n");
-        }
-    }
-}
-
-// my pointer stuff with packet is almost definitely wrong!
-uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack,
-                      bool blocking_wait_for_packet)
-{
-    uint8_t n_bytes = 0;
-
-    // Spin until we have a packet
-    // while(!rfm9x_rx_done(r));
-    if (blocking_wait_for_packet)
-    {
-        rfm9x_await_rx(r);
-    }
-
-    // enter idle mode so that we don't receive other packets
-    rfm9x_set_mode(r, STANDBY_MODE);
-
-    if (rfm9x_is_crc_enabled(r) && rfm9x_crc_error(r))
-    {
-        if (r->debug)
-            printf("[rfm9x] CRC error\r\n");
-    }
-    else
-    {
-        if (r->debug)
-            printf("[rfm9x] No CRC error\r\n");
-
-        /* FIFO length */
-        uint8_t fifo_length = rfm9x_get8(r, _RH_RF95_REG_13_RX_NB_BYTES);
-
-        if (fifo_length > 0)
-        {
-            // read and clear the FIFO if there is a packet in it
-            if (r->debug)
-                printf("[rfm9x] FIFO length: %d\r\n", fifo_length);
-
-            uint8_t current_addr =
-                rfm9x_get8(r, _RH_RF95_REG_10_FIFO_RX_CURRENT_ADDR);
-            rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, current_addr);
-
-            // read the packet
-            rfm9x_get_buf(r, _RH_RF95_REG_00_FIFO, (uint8_t *)packet,
-                          fifo_length);
-        }
-        else
-        {
-            if (r->debug)
-                printf("[rfm9x] FIFO is empty\r\n");
-            return 0;
-        }
-
-        // Clear interrupt
-        rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
-
-        if (fifo_length < 5)
-        {
-            if (r->debug)
-                printf("[rfm9x] Missing packet header\r\n");
-            return 0;
-        }
-
-        if (r->debug)
-            rfm9x_print_packet("[rfm9x] Received packet", packet, fifo_length);
-
-        /* Check if addressed to us */
-        if (node != _RH_BROADCAST_ADDRESS &&
-            packet[0] != _RH_BROADCAST_ADDRESS && packet[0] != node)
-        {
-            if (r->debug)
-                printf("[rfm9x] Packet not for us\r\n");
-            return 0;
-        }
-
-        /* Check if requesting ACK */
-        if ((with_ack || (packet[3] & _SAP_FLAGS_ACK_REQUEST)) &&
-            (packet[3] & _RH_FLAGS_ACK) == 0 &&
-            (packet[0] != _RH_BROADCAST_ADDRESS))
-        {
-            // delay before sending Ack to give receiver a chance to get ready
-            sleep_ms(100);
-
-            if (r->debug)
-                printf("[rfm9x] Sender requested ACK\r\n");
-
-            rfm9x_send(r, "!", 1, keep_listening, packet[1], packet[0],
-                       packet[2], (packet[3] | _RH_FLAGS_ACK));
-
-            if (r->debug)
-                printf("[rfm9x] Sent ACK to %d\r\n", packet[1]);
-        }
-
-        n_bytes = fifo_length;
-    }
-
-    if (keep_listening)
-    {
-        rfm9x_listen(r);
-    }
-
-    // Clear interrupt
-    // rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
-
-    return n_bytes;
-}
-
-uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
-                   uint8_t destination, uint8_t node, uint8_t identifier,
-                   uint8_t flags)
-{
-    // check that length of data is greater than 0 and less than or equal to
-    // PAYLOAD_SIZE using an assert
-    assert(l > 0 && l <= PAYLOAD_SIZE);
-
-    // set mode to standby
-    rfm9x_set_mode(
-        r, STANDBY_MODE); // Stop receiving to clear FIFO and keep it clear
-    l += 4;               // add 4 bytes for the header
-
-    // Fill the FIFO with a packet to send
-    rfm9x_put8(r, _RH_RF95_REG_0D_FIFO_ADDR_PTR, 0x00);
-
-    uint32_t payloadLength = 0;
-
-    // combine header and data to form payload
-    if (l == 1 && data[0] == '!')
-    {
-        payloadLength = 5;
-    }
-    else
-    {
-        payloadLength = l;
-    }
-
-    printf("l = %d, payloadLength = %d\r\n", l, payloadLength);
-
-    char payload[payloadLength];
-
-    payload[0] = destination;
-    payload[1] = node;
-    payload[2] = identifier;
-    payload[3] = flags;
-
-    // copy the data into the payload
-    for (int i = 4; i < payloadLength; i++)
-    {
-        payload[i] = data[i - 4];
-    }
-
-    // write payload
-    rfm9x_put_buf(r, _RH_RF95_REG_00_FIFO, (uint8_t *)payload, payloadLength);
-
-    // write payload and header length
-    rfm9x_put8(r, _RH_RF95_REG_22_PAYLOAD_LENGTH, payloadLength);
-
-    if (r->debug)
-        rfm9x_print_packet("[rfm9x] Transmitting packet", payload,
-                           payloadLength);
-
-    // set mode to transmit to send the packet
-    rfm9x_transmit(r);
-
-    // wait for tx done interrupt with explicit polling
-    while (!rfm9x_tx_done(r))
-        ;
-
-    if (keep_listening)
-    {
-        rfm9x_listen(r);
-    }
-    else
-    {
-        rfm9x_set_mode(r, STANDBY_MODE);
-    }
-
-    // clear the interrupt
-    rfm9x_put8(r, _RH_RF95_REG_12_IRQ_FLAGS, 0xFF);
-
-    return 0;
-}
-
-uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
-                       uint8_t node, uint8_t max_retries)
-{
-    uint8_t acked = 0;
-    uint8_t retries = 0;
-    uint8_t flags = _SAP_FLAGS_ACK_REQUEST;
-    char ack_buffer[256];
-    while (!acked && retries < max_retries)
-    {
-        rfm9x_send(r, data, l, 0, /* Don't keep listening, we do that */
-                   destination, node, r->seq, flags);
-
-        // If set we must've sent a retry
-        if (flags & _RH_FLAGS_RETRY)
-            retries++;
-
-        if (destination == _RH_BROADCAST_ADDRESS)
-        {
-            if (r->debug)
-                printf("[rfm9x] Skipping ACK for broadcast...\r\n");
-            // No ack for broadcast
-            acked = 1;
-        }
-        else
-        {
-            // Wait for ack
-            uint16_t l = rfm9x_receive(r, ack_buffer, node, 0, 0, 1);
-            if (l > 0)
-            { /* Received something */
-                if (ack_buffer[3] & _RH_FLAGS_ACK)
-                { /* Was an ACK */
-                    if (ack_buffer[2] == r->seq)
-                    { /* Was an ACK for this message */
-                        acked = 1;
-                    }
-                    else
-                    {
-                        if (r->debug)
-                            printf("[rfm9x] Not for this message\r\n");
-                    }
-                }
-                else
-                {
-                    if (r->debug)
-                        printf("[rfm9x] Not an ACK\r\n");
-                }
-            }
-        }
-
-        // If we didn't receive an ACK, wait to retransmit
-        if (!acked)
-        {
-            sleep_ms(1000); // 1 second
-        }
-
-        flags |= _RH_FLAGS_RETRY;
-    }
-
-    return acked;
 }

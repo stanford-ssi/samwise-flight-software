@@ -21,15 +21,18 @@ void telemetry_task_init(slate_t *slate)
         // see if we get an ACK. The SDK functions return PICO_ERROR_GENERIC if
         // no device responds.
         LOG_INFO("Scanning MPPT_I2C address 0x%02X\n", addr);
-        int ret = i2c_read_blocking(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false);
+        int ret =
+            i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
+                                    make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("MPPT Device found at 0x%02X\n", addr);
             found_device = true;
         }
         LOG_INFO("Scanning POWER_I2C address 0x%02X\n", addr);
-        ret = i2c_read_blocking(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata, 1,
-                                false);
+        ret = i2c_read_blocking_until(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
+                                      1, false,
+                                      make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("Power Monitor Device found at 0x%02X\n", addr);
@@ -43,8 +46,7 @@ void telemetry_task_init(slate_t *slate)
 
     // Initialize power monitor
     power_monitor = adm1176_mk(SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
-                               ADM1176_DEFAULT_SENSE_RESISTOR,
-                               ADM1176_DEFAULT_VOLTAGE_RANGE);
+                               ADM1176_DEFAULT_SENSE_RESISTOR);
 
     // Initialize MPPT
     solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
@@ -78,38 +80,22 @@ void telemetry_task_dispatch(slate_t *slate)
         mppt_get_battery_voltage(&solar_charger_monitor);
     uint16_t solar_battery_current =
         mppt_get_battery_current(&solar_charger_monitor);
+  
     bool solar_charge = read_fixed_solar_charge();
     bool solar_fault = read_fixed_solar_fault();
-
     bool panel_A = read_panel_A();
     bool panel_B = read_panel_B();
-
+  
     LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
              solar_current);
     LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
              solar_battery_current);
     LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
-    if (!solar_charge) {
-        LOG_INFO("Solar panels status: on");
-    } else {
-        LOG_INFO("Solar panels status: off");
-    }
-    if (!solar_fault) {
-        LOG_INFO("Solar panels faulty");
-    } else {
-        LOG_INFO("Solar panels not faulty");
-    }
 
-    if (panel_A) {
-        LOG_INFO("Panel A deployed");
-    } else {
-        LOG_INFO("Panel A NOT deployed");
-    }
-    if (panel_B) {
-        LOG_INFO("Panel B deployed");
-    } else {
-        LOG_INFO("Panel B NOT deployed");
-    }
+    LOG_INFO("Panel A status: %s", panel_A ? "deployed" : "closed");
+    LOG_INFO("Panel B status: %s", panel_B ? "deployed" : "closed");
+    LOG_INFO("Fixed solar charging: %s", solar_charge ? "on" : "off");
+    LOG_INFO("Fixed solar status: %s", solar_fault ? "faulty" : "okay");
 
     // Write to slate
     slate->solar_voltage = solar_voltage;
@@ -119,6 +105,11 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->panel_A_deployed = panel_A;
     slate->panel_B_deployed = panel_B;
 
+    LOG_INFO("GPIO bits: %16lX", (uint64_t)gpio_get_all64());
+
+    slate->is_rbf_detected = !gpio_get(SAMWISE_RBF_DETECT_PIN);
+    LOG_INFO("RBF_PIN status: %s",
+             slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",
