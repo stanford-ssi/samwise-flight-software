@@ -83,7 +83,7 @@ reset = digitalio.DigitalInOut(RESET_PIN)
 DEFAULT_PACKET_HMAC_PSK = b"0M09De7LOHdzMVPIYpYo4NsFOI9rTUz1"
 DEFAULT_BOOT_COUNT = 474
 STARTING_MSG_ID = 1
-PACKET_HEADER_SIZE = 5  # dst, src, flags, seq, len
+PACKET_HEADER_SIZE = 1  # len
 PACKET_HMAC_SIZE = 32  # SHA256 size
 PACKET_FOOTER_SIZE = 8 + PACKET_HMAC_SIZE  # boot_count (4) + msg_id (4) + hmac
 PACKET_MAX_DATA_SIZE = 255 - PACKET_HEADER_SIZE - PACKET_FOOTER_SIZE
@@ -252,38 +252,63 @@ def try_get_packet(timeout=0.1):
     packet = rfm9x.receive(timeout=timeout)
     if packet is not None:
         try:
-            unpacked = packet_builder.unpack_packet(packet)
+            # Get RadioHead header fields from the library like diagnostics mode
+            rh_destination = getattr(rfm9x, 'destination', None)
+            rh_node = getattr(rfm9x, 'node', None) 
+            rh_identifier = getattr(rfm9x, 'identifier', None)
+            rh_flags = getattr(rfm9x, 'flags', None)
+            
             print(f"\n>>> PACKET RECEIVED <<<")
-            print(f"  Destination: {unpacked['dst']}")
-            print(f"  Source: {unpacked['src']}")
-            print(f"  Flags: {unpacked['flags']}")
-            print(f"  Sequence: {unpacked['seq']}")
+            print(f"  RadioHead TO (destination): {rh_destination}")
+            print(f"  RadioHead FROM (node): {rh_node}")
+            print(f"  RadioHead ID (identifier): {rh_identifier}")
+            print(f"  RadioHead FLAGS: {rh_flags}")
             
-            # Check if this looks like a beacon packet (source = 0, flags = 0, seq = 0)
-            if unpacked['src'] == 0 and unpacked['flags'] == 0 and unpacked['seq'] == 0:
+            # Check if this is from satellite (beacon source)
+            if rh_node == 0:  # FROM satellite
                 print(f"  Type: BEACON PACKET")
-                beacon_data = decode_beacon_data(unpacked['data'])
-                print(f"  State: {beacon_data['state_name']}")
                 
-                if beacon_data['stats']:
-                    stats = beacon_data['stats']
-                    print(f"  === Telemetry ===")
-                    print(f"    Reboots: {stats['reboot_counter']}")
-                    print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
-                    print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
-                    print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
-                    print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
+                # RadioHead stripped headers, beacon packets: len(1) + beacon_data(len)
+                if len(packet) >= 1:
+                    data_len = packet[0]
+                    print(f"  beacon_data_len={data_len}")
+                    
+                    # Extract beacon data payload
+                    if len(packet) >= 1 + data_len:
+                        beacon_payload = packet[1:1+data_len]
+                        beacon_data = decode_beacon_data(beacon_payload)
+                        print(f"  State: {beacon_data['state_name']}")
+                        
+                        if beacon_data['stats']:
+                            stats = beacon_data['stats']
+                            print(f"  === Telemetry ===")
+                            print(f"    Reboots: {stats['reboot_counter']}")
+                            print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
+                            print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
+                            print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
+                            print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
+                        else:
+                            print(f"    Beacon decode failed, raw data: {beacon_payload[:20]}")
+                    else:
+                        print(f"  Packet too short: need {1 + data_len} bytes, got {len(packet)}")
+                else:
+                    print(f"  Packet too short for beacon format")
             else:
-                print(f"  Type: COMMAND RESPONSE")
-                print(f"  Data: {unpacked['data']}")
+                print(f"  Type: RESPONSE from node {rh_node}")
+                # For command responses, try the old packet format
+                try:
+                    unpacked = packet_builder.unpack_packet(packet)
+                    print(f"  Data: {unpacked['data']}")
+                    if 'boot_count' in unpacked:
+                        print(f"  Boot Count: {unpacked['boot_count']}")
+                        print(f"  Message ID: {unpacked['msg_id']}")
+                except:
+                    print(f"  Raw Data: {packet[:20]}")
             
-            if 'boot_count' in unpacked:
-                print(f"  Boot Count: {unpacked['boot_count']}")
-                print(f"  Message ID: {unpacked['msg_id']}")
             print(">>> END PACKET <<<\n")
             return True
         except Exception as e:
-            print(f"\n>>> ERROR unpacking packet: {e} <<<")
+            print(f"\n>>> ERROR processing packet: {e} <<<")
             print(f"Raw packet data: {packet.hex() if hasattr(packet, 'hex') else packet}")
             return False
     return False
@@ -343,8 +368,8 @@ def send_command(cmd_id, cmd_payload="", dst=0xFF):
     # Use adafruit_rfm9x library's RadioHead headers
     rfm9x.send(
         payload_to_send,
-        destination=255,     # RadioHead TO field
-        node=255,          # RadioHead FROM field (ground station)
+        destination=0xFF,    # RadioHead TO field
+        node=0x00,          # RadioHead FROM field (ground station)
         identifier=0x00,    # RadioHead ID field 
         flags=0x00          # RadioHead FLAGS field
     )
@@ -372,6 +397,35 @@ def send_payload_turn_off():
 def send_manual_state_override(state_name):
     """Send manual state override command"""
     send_command(MANUAL_STATE_OVERRIDE, state_name)
+
+
+def send_packet_ping():
+    # Create a NO_OP packet (command 0x04)
+    data = create_cmd_payload(0, "")
+    packet = packet_builder.create_packet(
+        dst=0xFF,  # Destination address
+        src=0xFF,  # Source address (ground station)
+        flags=0x00,  # No special flags
+        seq=0x00,  # Sequence number
+        data=data,  # Command data
+    )
+    print(f"Packet dump:" + " ".join(f"{byte:02x}" for byte in packet))
+    rfm9x.send(packet)
+    print(
+        f"Sent packet with message ID: {packet_builder.msg_id - 1}, {len(packet) + 4=}"
+    )
+
+
+def send_payload_pkt():
+    data = create_cmd_payload(
+        0x01, '["take_photo", ["test1"], {"w": 1024, "h": 768, "cell": 128}]'
+    )
+    packet = packet_builder.create_packet(dst=255, src=0, flags=0, seq=0, data=data)
+    print("Packet dump:" + " ".join(f"{byte:02x}" for byte in packet))
+    rfm9x.send(packet, destination=0xFF, node=0x00, flags=0x00, identifier=0x00)
+    print(
+        f"Sent packet with message ID: {packet_builder.msg_id - 1}, {len(packet) + 4=}"
+    )
 
 
 def get_user_input(prompt, default=None):
