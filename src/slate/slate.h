@@ -48,12 +48,20 @@ typedef struct samwise_slate
     uint16_t battery_current; // in mA (to 0.001A)
     uint16_t solar_voltage;   // in mV (to 0.001V)
     uint16_t solar_current;   // in mA (to 0.001A)
+    bool fixed_solar_charge;  // 0 for off status, 1 for on status
+    bool fixed_solar_fault;   // 0 for no fault, 1 for faulty
 
     /*
      * Structure status readouts
      */
     bool is_rbf_detected; // true if the RBF is still attached, false if it has
                           // been removed
+
+    /* c
+     * Solar panels A and B
+     */
+    bool panel_A_deployed; // 1 for deployed
+    bool panel_B_deployed; // 1 for deployed
 
     /*
      * Watchdog
