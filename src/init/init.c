@@ -42,7 +42,6 @@ static bool init_drivers(slate_t *slate)
     onboard_led_init(&slate->onboard_led);
 
     logger_init();
-    device_status_init();
 
     slate->radio = rfm9x_mk();
 #ifdef BRINGUP
