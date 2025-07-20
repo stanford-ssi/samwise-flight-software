@@ -13,8 +13,6 @@
 #include "payload_uart.h"
 #include "states.h"
 
-#define MAX_PACKET_SIZE 1024
-
 extern sched_state_t *overridden_state;
 
 /// @brief Parse packet and dispatch command to appropriate queue
@@ -45,7 +43,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PING:
         {
             LOG_INFO("Retrieving number of commands executed...");
-            uint8_t data[MAX_PACKET_SIZE];
+            uint8_t data[PACKET_DATA_SIZE];
 
             // Package interger value into a string
             int len =
