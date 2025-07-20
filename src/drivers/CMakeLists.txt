@@ -1,6 +1,7 @@
 add_subdirectory(adcs)
 add_subdirectory(adm1176)
 add_subdirectory(burn_wire)
+add_subdirectory(device_status)
 add_subdirectory(flash)
 add_subdirectory(logger)
 add_subdirectory(mppt)
