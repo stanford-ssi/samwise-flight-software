@@ -6,6 +6,8 @@ E.g. https://github.com/stanford-ssi/samwise-flight-software/releases/tag/dev-v0
 
 ## Copying files over using BOOT mode
 
+**NOTE:** _There may be an issue today when using this method wherein the copy fails if the binary is not named "samwise.uf2". To resolve this and still know which version the binary is, one good practice is to create folders for different versions of the program and move the program into separate folders before renaming them (all to "samwise.uf2")._
+
 To put the PiCubed into BOOT mode, you should press and hold down the BOOTSEL button **BEFORE** turning the device on!!!
 - This means **before you plug the PiCubed into your computer**
 - Also means **you should NOT plug in the battery board to the PiCubed yet**

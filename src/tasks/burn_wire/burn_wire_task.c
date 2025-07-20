@@ -12,7 +12,7 @@ static uint32_t count = 0;
 
 void burn_wire_task_init(slate_t *slate)
 {
-    LOG_INFO("Test task is initializing...");
+    LOG_INFO("Burn wire task is initializing...");
 }
 
 void burn_wire_task_dispatch(slate_t *slate)
