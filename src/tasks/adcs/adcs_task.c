@@ -34,6 +34,9 @@ void adcs_task_dispatch(slate_t *slate)
         //     // Process telemetry data for main telemetry packet
         // }
     }
+    // Maybe also check if the device is on in the first place.
+    // See device status driver: src/drivers/device_status/device_status.c
+    //   All that does is read some GPIO pins.
     else if (absolute_time_diff_us(last_telemetry_time, current_time) >
              (ADCS_HEALTH_CHECK_TIMEOUT_MS * 1000))
     {
@@ -41,17 +44,12 @@ void adcs_task_dispatch(slate_t *slate)
         adcs_driver_reset(slate);
         last_telemetry_time = current_time;
     }
-
-    // TODO: Implement ADCS command logic based on satellite state
-    // Example: Send specific commands based on mission phase, attitude
-    // requirements, etc. if (should_execute_attitude_command()) {
-    //     uint8_t command[] = {...};
-    //     adcs_driver_send_command(slate, command, sizeof(command));
-    // }
 }
 
 sched_task_t adcs_task = {.name = "adcs",
-                          .dispatch_period_ms = 60000,
+                          // We can dispatch more frequently than telemetry is available
+                          // and certainly more frequently than 60s timeout.
+                          .dispatch_period_ms = 5000,
                           .task_init = &adcs_task_init,
                           .task_dispatch = &adcs_task_dispatch,
 

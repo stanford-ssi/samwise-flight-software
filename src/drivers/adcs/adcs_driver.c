@@ -206,12 +206,16 @@ adcs_result_t adcs_driver_init(slate_t *slate)
     return ADCS_SUCCESS;
 }
 
+// Claude generated this, but I think we should probably send a packet to ADCS
+// then timeout if we don't get a response after a while (10ms)?
 bool adcs_driver_telemetry_available(slate_t *slate)
 {
-    if (!slate)
-    {
-        return false;
-    }
+    // Send some command to the ADCS to trigger telemetry
+    adcs_driver_send_command(/* get telemetry */);
+    // Parse output somehow, here we wait for ADCS to respond with some timeout?
+    receive_into(slate_t *slate, void *dest, uint16_t num_bytes,
+                             uint32_t timeout_ms) // --> see payload_uart.c
+    slate->is_adcs_telem_valid = ...; // Set to true if we received a valid packet
     return slate->adcs_telem_valid;
 }
 
@@ -227,21 +231,31 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
         return ADCS_ERROR_UART_FAILED;
     }
 
-    *packet = slate->adcs_telem;
+    // Talk with the ADCS to get telemetry
+
+    *packet = receive_into ...; // Read the telemetry packet from the queue
+    slate->adcs_telemetry = ...; // Copy the telemetry packet to the output
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_send_command(slate_t *slate, const uint8_t *command,
-                                       size_t length)
+// Send some command string? to adcs for commands.
+adcs_result_t adcs_driver_send_command(slate_t *slate, const char *command, size_t length)
 {
     if (!slate || !command || length == 0)
     {
         return ADCS_ERROR_INVALID_PARAM;
     }
 
+    // Probably should check if the ADCS is on before sending commands
+    if (!slate->is_adcs_on)
+    {
+        return ADCS_ERROR_UART_FAILED;
+    }
+
     // TODO: Implement SLIP encoding and UART transmission for commands
     // For now, just return success as the original code didn't have command
     // sending
+    uart_write_timeout(/* Look at payload_uart.c */);
     return ADCS_SUCCESS;
 }
 

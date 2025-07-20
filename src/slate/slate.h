@@ -105,9 +105,9 @@ typedef struct samwise_slate
     /*
      * Telemetry packet from the ADCS board
      */
-    adcs_packet_t adcs_telem;
+    adcs_packet_t adcs_telemetry;
     queue_t adcs_telemetry_queue;
-    bool adcs_telem_valid;
+    bool is_adcs_telem_valid;
 
 } slate_t;
 

@@ -46,8 +46,7 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet);
  * @param length Length of command data
  * @return ADCS_SUCCESS if command sent successfully
  */
-adcs_result_t adcs_driver_send_command(slate_t *slate, const uint8_t *command,
-                                       size_t length);
+adcs_result_t adcs_driver_send_command(slate_t *slate, const char *command, size_t length);
 
 /**
  * Reset ADCS hardware and communication state
