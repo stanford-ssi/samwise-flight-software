@@ -2,7 +2,7 @@
 
 sched_state_t *running_get_next_state(slate_t *slate)
 {
-    return &burn_wire_state;
+    return &running_state;
 }
 
 #ifdef BRINGUP
@@ -13,10 +13,10 @@ sched_state_t running_state = {
     .task_list = {&print_task, &watchdog_task, &diagnostics_task},
     .get_next_state = &running_get_next_state};
 #else
-sched_state_t running_state = {.name = "running",
-                               .num_tasks = 6,
-                               .task_list = {&print_task, &watchdog_task,
-                                             &blink_task, &telemetry_task,
-                                             &beacon_task, &radio_task},
-                               .get_next_state = &running_get_next_state};
+sched_state_t running_state = {
+    .name = "running",
+    .num_tasks = 7,
+    .task_list = {&print_task, &watchdog_task, &blink_task, &telemetry_task,
+                  &beacon_task, &radio_task, &command_task},
+    .get_next_state = &running_get_next_state};
 #endif

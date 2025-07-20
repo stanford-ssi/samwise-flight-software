@@ -13,7 +13,6 @@ target_link_libraries(running_state PUBLIC
   telemetry_task
   payload_task
   diagnostics_task
-  burn_wire_state
 )
 
 # Specify directories with relevant header files

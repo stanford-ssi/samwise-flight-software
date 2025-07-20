@@ -7,7 +7,7 @@ sched_state_t *init_get_next_state(slate_t *slate)
 #ifdef BRINGUP
     return &bringup_state;
 #else
-    return &burn_wire_state;
+    return &running_state;
 #endif
 }
 
