@@ -63,7 +63,7 @@ int count_missing_packets_bool_arr(bool *packets_status, int length)
     return missing_packets;
 }
 
-void ft_parse_packet(uint8_t *pkt_data)
+void ft_prelim_parse_packet(uint8_t *pkt_data)
 {
 }
 

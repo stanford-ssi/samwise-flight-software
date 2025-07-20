@@ -21,7 +21,8 @@ typedef enum
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
-    MANUAL_STATE_OVERRIDE
+    MANUAL_STATE_OVERRIDE,
+    FILE_TRANSFER
     // add more commands here as needed
 } Command;
 
@@ -45,5 +46,13 @@ typedef struct
     uint16_t seq_num;     // Sequence number for command execution
     Command command_type; // Command type
 } PAYLOAD_COMMAND_DATA;
+
+typedef struct
+{
+    char *file_name;
+    int chunk_size;      // In bytes
+    int total_file_size; // In bytes
+    int forced_index;
+} FILE_TRANSFER_DATA;
 
 void dispatch_command(slate_t *slate, packet_t *packet);

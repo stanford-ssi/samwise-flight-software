@@ -12,8 +12,30 @@
 #include "macros.h"
 #include "payload_uart.h"
 #include "states.h"
+#include <stdlib.h>
 
 extern sched_state_t *overridden_state;
+
+char *isolate_argument(char *payload_data, char *res_string,
+                       size_t *isolated_size)
+{
+    int curr_ind = 0;
+    while (payload_data[curr_ind] != ',')
+    {
+        curr_ind++;
+    }
+
+    char isolated_str[curr_ind + 1];
+    strlcpy(isolated_str, payload_data, curr_ind);
+
+    res_string = &payload_data[curr_ind + 2]; // We start at the next argument
+    *isolated_size = curr_ind;
+
+    // TODO: We cannot just return this because this is stack memory, find
+    // another way of returning it without malloc. Probably force user to pass a
+    // pointer.
+    return isolated_str;
+}
 
 /// @brief Parse packet and dispatch command to appropriate queue
 void dispatch_command(slate_t *slate, packet_t *packet)
@@ -107,7 +129,33 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         {
             LOG_INFO("Parsing data packet and transitioning to file transfer "
                      "state...");
-            FILE_TRANSFER_DATA
+            FILE_TRANSFER_DATA ft_prelim_data;
+            int str_len_buf;
+
+            // Get file name
+            char file_name[PACKET_DATA_SIZE];
+            strlcpy(file_name,
+                    isolate_argument(command_payload, command_payload,
+                                     &str_len_buf),
+                    str_len_buf);
+            ft_prelim_data.file_name = file_name;
+
+            // Get chunk size
+            char *str_chunk_size = isolate_argument(
+                command_payload, command_payload, &str_len_buf);
+            ft_prelim_data.chunk_size = atoi(str_chunk_size);
+
+            // Get total file size
+            char *str_total_file_size = isolate_argument(
+                command_payload, command_payload, &str_len_buf);
+            ft_prelim_data.total_file_size = atoi(str_total_file_size);
+
+            // Get forced index
+            char *str_forced_index = isolate_argument(
+                command_payload, command_payload, &str_len_buf);
+            ft_prelim_data.total_file_size = atoi(str_forced_index);
+
+            LOG_INFO("Transitioning to file_transfer state...");
         }
 
         default:
