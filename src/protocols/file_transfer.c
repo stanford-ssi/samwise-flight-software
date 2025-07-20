@@ -63,6 +63,10 @@ int count_missing_packets_bool_arr(bool *packets_status, int length)
     return missing_packets;
 }
 
+void ft_parse_packet(uint8_t *pkt_data)
+{
+}
+
 // Convert bool* array to char* so it can be sent as a packet
 packet_t bool_to_packet(bool *bool_array, int length)
 {

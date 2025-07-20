@@ -82,6 +82,13 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
+
+        case FILE_TRANSFER:
+        {
+            LOG_INFO("Parsing data packet and transitioning to file transfer "
+                     "state...");
+            FILE_TRANSFER_DATA
+        }
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;

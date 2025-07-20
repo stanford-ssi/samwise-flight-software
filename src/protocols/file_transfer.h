@@ -59,6 +59,8 @@ bool *initialize_packet_status_bool_arr(int length);
 // Create new packet_status packet.
 packet_t initialize_packet_status_arr(int num_packets);
 
+void ft_parse_packet(uint8_t *pkt_data);
+
 // Count number of missing_packets (zero bits elements in packet status data)
 int count_missing_packets(packet_t status);
 
