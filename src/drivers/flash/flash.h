@@ -19,8 +19,9 @@
  */
 typedef struct
 {
-    uint32_t marker;         // Marker to verify initialization
-    uint32_t reboot_counter; // Actual counter
+    uint32_t marker;             // Marker to verify initialization
+    uint32_t reboot_counter;     // Actual counter
+    uint32_t burn_wire_attempts; // Number of burn wire attempts
 } persistent_data_t;
 
 /**
