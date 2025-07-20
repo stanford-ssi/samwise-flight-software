@@ -24,6 +24,7 @@
 #define STOP_BITS 1
 #define PARITY UART_PARITY_NONE
 #define WRITE_MAX_TIMEOUT 100
+#define MAX_WRITE_TRIES 3
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
