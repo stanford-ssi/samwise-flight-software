@@ -82,7 +82,6 @@ void beacon_task_init(slate_t *slate)
 
 void beacon_task_dispatch(slate_t *slate)
 {
-    neopixel_set_color_rgb(0xff, 0xaa, 0xaa);
     // Create a new packet for radio TX
     packet_t pkt;
     pkt.src = 0;   // TODO Put in Samwise's node ID
@@ -102,8 +101,6 @@ void beacon_task_dispatch(slate_t *slate)
     {
         LOG_ERROR("Beacon pkt failed to commit to tx_queue");
     }
-    sleep_ms(50);
-    neopixel_set_color_rgb(0, 0xff, 0xff);
 }
 
 sched_task_t beacon_task = {.name = "beacon",
