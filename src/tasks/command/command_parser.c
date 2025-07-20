@@ -45,15 +45,31 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PING:
         {
             LOG_INFO("Retrieving number of commands executed...");
-            char buf[MAX_PACKET_SIZE];
+            char data[MAX_PACKET_SIZE];
 
             // Package interger value into a string
             snprintf(buf, sizeof(buf), "Number commands executed: %d",
                      slate->number_commands_processed);
 
+            // Create the packet
+            packet_t pkt;
+            pkt.src = 0;
+            pkt.dst = 0;
+            pkt.flags = 0;
+            pkt.seq = 0;
+            pkt.len = sizeof(data);
+            pkt.data = data;
+
             // Add to transmit buffer
             LOG_INFO("Sending to radio transmit queue...");
-            queue_try_add(&slate->tx_queue, &buf);
+            if (queue_try_add(&slate->tx_queue, &pkt))
+            {
+                LOG_INFO("Ping info was sent...");
+            }
+            else
+            {
+                LOG_ERROR("Ping info failed to send...");
+            }
             break;
         }
         case PAYLOAD_TURN_ON:
