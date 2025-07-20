@@ -39,6 +39,11 @@ int main()
     slate.watchdog = watchdog_mk();
     watchdog_init(&slate.watchdog);
 
+    // Initialize hardware status GPIO pins.
+    // This is used to read the status of the solar panels, RBF, etc.
+    // Primarily at this point in time, we need to verify the RBF status.
+    device_status_init();
+
 /*
  * Brief delay after reboot/powering up due to power spikes to prevent
  * deployment when satellite is still within the launch mechanism.
@@ -84,7 +89,8 @@ int main()
     LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
 #endif
 
-    neopixel_set_color_rgb(0, 0xff, 0xff);
+    // At this point, all initialization is done.
+    neopixel_set_color_rgb(0, 0xf, 0xf);
 
     /*
      * Go state machine!
