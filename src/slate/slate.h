@@ -40,6 +40,8 @@ typedef struct samwise_slate
     sched_state_t *current_state;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
+    // Manually set next state to transition to
+    sched_state_t *manual_override_state;
 
     /*
      * Power Telemetry

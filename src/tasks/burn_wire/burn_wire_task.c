@@ -12,12 +12,12 @@ static uint32_t count = 0;
 
 void burn_wire_task_init(slate_t *slate)
 {
-    LOG_INFO("Test task is initializing...");
+    LOG_INFO("Burn wire task is initializing...");
 }
 
 void burn_wire_task_dispatch(slate_t *slate)
 {
-    LOG_INFO("Test task is dispatching... %d", count);
+    LOG_INFO("Burn wire task is dispatching... %d", count);
     count++;
     // Activate burn wire for 100ms at 50% duty cycle
     // Duty cycle is 31 out of 63 for 5-bit PWM
