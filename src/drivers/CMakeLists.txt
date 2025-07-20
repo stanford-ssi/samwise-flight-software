@@ -1,3 +1,4 @@
+add_subdirectory(adcs)
 add_subdirectory(adm1176)
 add_subdirectory(burn_wire)
 add_subdirectory(flash)

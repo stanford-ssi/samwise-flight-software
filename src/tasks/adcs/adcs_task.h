@@ -2,8 +2,7 @@
  * @author Niklas Vainio
  * @date 2025-05-24
  *
- * This file contains functions for receiving telemetry over UART from the ADCS
- * board
+ * ADCS task for high-level ADCS control and command logic
  */
 #pragma once
 
