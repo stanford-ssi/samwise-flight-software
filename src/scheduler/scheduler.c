@@ -9,8 +9,6 @@
 #include "scheduler.h"
 #include "states.h"
 
-sched_state_t *overridden_state = NULL;
-
 /*
  * Include the actual state machine
  */
@@ -118,10 +116,10 @@ void sched_dispatch(slate_t *slate)
      * Transition to the next state, if required.
      */
     sched_state_t *next_state;
-    if (overridden_state)
+    if (slate->manual_override_state != NULL)
     {
-        next_state = overridden_state;
-        overridden_state = NULL;
+        next_state = slate->manual_override_state;
+        slate->manual_override_state = NULL;
     }
     else
     {
