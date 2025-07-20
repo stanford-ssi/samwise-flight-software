@@ -30,9 +30,9 @@ void burn_wire_task_dispatch(slate_t *slate)
     // Activate burn wire for a maximum duration
     // of MAX_BURN_DURATION_MS milliseconds at max power.
     // Activate A and B channels one after another.
-    burn_wire_activate(slate, MAX_BURN_DURATION_MS, true,
+    burn_wire_activate(slate, 800, true,
                        false); // Activate A channel
-    burn_wire_activate(slate, MAX_BURN_DURATION_MS, false,
+    burn_wire_activate(slate, 800, false,
                        true); // Activate B channel
     safe_sleep_ms(4000);
     neopixel_set_color_rgb(0, 0, 0);
