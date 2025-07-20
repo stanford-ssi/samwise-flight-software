@@ -12,6 +12,7 @@
 #include "pins.h"
 #include "slate.h"
 
+#include "device_status.h"
 #include "logger.h"
 #include "neopixel.h"
 #include "onboard_led.h"
