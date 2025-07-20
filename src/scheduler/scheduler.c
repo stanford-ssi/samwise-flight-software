@@ -118,6 +118,8 @@ void sched_dispatch(slate_t *slate)
     sched_state_t *next_state;
     if (slate->manual_override_state != NULL)
     {
+        LOG_INFO("sched: Manual state override to %s",
+                 slate->manual_override_state->name);
         next_state = slate->manual_override_state;
         slate->manual_override_state = NULL;
     }
