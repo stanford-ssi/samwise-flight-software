@@ -29,9 +29,9 @@ void burn_wire_task_dispatch(slate_t *slate)
     // Activate burn wire for a maximum duration
     // of MAX_BURN_DURATION_MS milliseconds at max power.
     // Activate A and B channels one after another.
-    burn_wire_activate(slate, 800, true,
+    burn_wire_activate(slate, BURN_DURATION_MS, true,
                        false); // Activate A channel
-    burn_wire_activate(slate, 800, false,
+    burn_wire_activate(slate, BURN_DURATION_MS, false,
                        true); // Activate B channel
     safe_sleep_ms(4000);
     increment_burn_wire_attempts();
