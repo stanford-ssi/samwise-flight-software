@@ -45,20 +45,16 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PING:
         {
             LOG_INFO("Retrieving number of commands executed...");
-            char data[MAX_PACKET_SIZE];
+            uint8_t data[MAX_PACKET_SIZE];
 
             // Package interger value into a string
-            snprintf(buf, sizeof(buf), "Number commands executed: %d",
-                     slate->number_commands_processed);
+            int len =
+                snprintf(data, sizeof(data), "Number commands executed: %d",
+                         slate->number_commands_processed);
 
             // Create the packet
             packet_t pkt;
-            pkt.src = 0;
-            pkt.dst = 0;
-            pkt.flags = 0;
-            pkt.seq = 0;
-            pkt.len = sizeof(data);
-            pkt.data = data;
+            rfm9x_format_packet(&pkt, 0, 0, 0, 0, len, &data[0]);
 
             // Add to transmit buffer
             LOG_INFO("Sending to radio transmit queue...");
