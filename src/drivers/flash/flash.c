@@ -43,6 +43,7 @@ persistent_data_t *init_persistent_data()
         // If uninitialized, set initial values
         data.marker = INIT_MARKER;
         data.reboot_counter = 0;
+        data.burn_wire_attempts = 0;
     }
     else
     {
@@ -67,4 +68,28 @@ uint32_t get_reboot_counter()
 {
     const persistent_data_t *flash_data = read_persistent_data();
     return flash_data->reboot_counter;
+}
+
+void increment_burn_wire_attempts()
+{
+    static persistent_data_t data;
+    const persistent_data_t *flash_data = read_persistent_data();
+    data = *flash_data;
+    data.burn_wire_attempts++;
+    write_persistent_data(&data);
+}
+
+uint32_t get_burn_wire_attempts()
+{
+    const persistent_data_t *flash_data = read_persistent_data();
+    return flash_data->burn_wire_attempts;
+}
+
+void reset_burn_wire_attempts()
+{
+    static persistent_data_t data;
+    const persistent_data_t *flash_data = read_persistent_data();
+    data = *flash_data;
+    data.burn_wire_attempts = 0;
+    write_persistent_data(&data);
 }

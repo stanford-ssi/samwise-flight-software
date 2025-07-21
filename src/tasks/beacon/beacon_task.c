@@ -32,6 +32,15 @@ typedef struct
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE,
                "beacon packet too large");
 
+size_t send_boot_count(slate_t *slate, uint8_t *data)
+{
+    // Copy reboot counter into the data buffer
+    uint32_t reboot_counter = slate->reboot_counter;
+    memcpy(data, &reboot_counter, sizeof(reboot_counter));
+
+    return sizeof(reboot_counter);
+}
+
 uint8_t get_device_status(slate_t *slate)
 {
     // Return the device status (0 for off, 1 for on)
@@ -90,6 +99,8 @@ void beacon_task_dispatch(slate_t *slate)
     // Commit into serialized byte array
     pkt.len = serialize_slate(slate, pkt.data);
 
+    LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
+
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))
     {
@@ -102,7 +113,7 @@ void beacon_task_dispatch(slate_t *slate)
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 30000,
+                            .dispatch_period_ms = 5000,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */
