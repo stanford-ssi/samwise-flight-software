@@ -113,10 +113,11 @@ typedef struct samwise_slate
     bool is_uart_init;
 
     /*
-     * Telemetry packet from the ADCS board
+     * ADCS board status and telemetry
      */
+    bool is_adcs_on;
+    uint32_t adcs_num_failed_checks;
     adcs_packet_t adcs_telemetry;
-    queue_t adcs_telemetry_queue;
     bool is_adcs_telem_valid;
 
 } slate_t;

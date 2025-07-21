@@ -6,6 +6,7 @@
  */
 
 #include "beacon_task.h"
+#include "adcs_packet.h"
 #include <stdlib.h>
 
 #define MAX_DATA_SIZE 252
@@ -37,7 +38,8 @@ uint8_t get_device_status(slate_t *slate)
     // Packed into a 8-bit int field
     return (slate->is_rbf_detected << 0) | (slate->fixed_solar_charge << 1) |
            (slate->fixed_solar_fault << 2) | (slate->panel_A_deployed << 3) |
-           (slate->panel_B_deployed << 4) | (slate->is_payload_on << 5);
+           (slate->panel_B_deployed << 4) | (slate->is_payload_on << 5) |
+           (slate->is_adcs_on << 6) | (slate->is_adcs_telem_valid << 7);
 }
 
 // Serialize the slate into a byte array and return its size.
@@ -63,7 +65,12 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
 
     // 2 Extra bytes: 1 for length of string, 1 for \0 terminator
     memcpy(data + name_len + 2, &stats, sizeof(beacon_stats));
-    return name_len + 2 + sizeof(beacon_stats);
+
+    // Copy adcs packet - device status will indicate if this is invalid
+    memcpy(data + name_len + 2 + sizeof(beacon_stats), &slate->adcs_telemetry,
+           sizeof(adcs_packet_t));
+
+    return name_len + 2 + sizeof(beacon_stats) + sizeof(adcs_packet_t);
 }
 
 void beacon_task_init(slate_t *slate)
