@@ -242,53 +242,34 @@ def decode_beacon_data(data):
             print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
             
             print("DEBUG: About to call struct.unpack...")
+
+            print("DEBUG: Boot bytes: {}".format(
+                ' '.join('{:02x}'.format(b) for b in stats_data[:4])
+            ))
+
             # Unpack new beacon_stats struct (all little-endian)
             # CircuitPython struct may not support all format codes, let's try simpler ones
             # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 1x uint8_t
             # L=uint32, Q=uint64, H=uint16, B=uint8 - try using I for uint32 instead of L
-            try:
-                unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
-            except:
-                # If Q (uint64) isn't supported, try splitting it into two uint32s
-                print("DEBUG: Trying alternative format without Q...")
-                unpacked_stats = struct.unpack('<L2L6L4HB', stats_data)
+            unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
             print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
             
-            if len(unpacked_stats) == 13:
-                # Q format worked (uint64 for time)
-                beacon_stats = {
-                    "reboot_counter": unpacked_stats[0],
-                    "time_in_state_ms": unpacked_stats[1],
-                    "rx_bytes": unpacked_stats[2],
-                    "rx_packets": unpacked_stats[3],
-                    "rx_backpressure_drops": unpacked_stats[4],
-                    "rx_bad_packet_drops": unpacked_stats[5],
-                    "tx_bytes": unpacked_stats[6],
-                    "tx_packets": unpacked_stats[7],
-                    "battery_voltage": unpacked_stats[8],
-                    "battery_current": unpacked_stats[9],
-                    "solar_voltage": unpacked_stats[10],
-                    "solar_current": unpacked_stats[11],
-                    "device_status": unpacked_stats[12]
-                }
-            else:
-                # Had to split uint64 into two uint32s
-                beacon_stats = {
-                    "reboot_counter": unpacked_stats[0],
-                    "time_in_state_ms": unpacked_stats[1] | (unpacked_stats[2] << 32),  # Reconstruct uint64
-                    "rx_bytes": unpacked_stats[3],
-                    "rx_packets": unpacked_stats[4],
-                    "rx_backpressure_drops": unpacked_stats[5],
-                    "rx_bad_packet_drops": unpacked_stats[6],
-                    "tx_bytes": unpacked_stats[7],
-                    "tx_packets": unpacked_stats[8],
-                    "battery_voltage": unpacked_stats[9],
-                    "battery_current": unpacked_stats[10],
-                    "solar_voltage": unpacked_stats[11],
-                    "solar_current": unpacked_stats[12],
-                    "device_status": unpacked_stats[13]
-                }
-            
+            # Q format worked (uint64 for time)
+            beacon_stats = {
+                "reboot_counter": unpacked_stats[0],
+                "time_in_state_ms": unpacked_stats[1],
+                "rx_bytes": unpacked_stats[2],
+                "rx_packets": unpacked_stats[3],
+                "rx_backpressure_drops": unpacked_stats[4],
+                "rx_bad_packet_drops": unpacked_stats[5],
+                "tx_bytes": unpacked_stats[6],
+                "tx_packets": unpacked_stats[7],
+                "battery_voltage": unpacked_stats[8],
+                "battery_current": unpacked_stats[9],
+                "solar_voltage": unpacked_stats[10],
+                "solar_current": unpacked_stats[11],
+                "device_status": unpacked_stats[12]
+            }
             return {
                 "state_name": state_name,
                 "stats": beacon_stats
