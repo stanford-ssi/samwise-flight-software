@@ -70,8 +70,7 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .solar_current = slate->solar_current,
                           .device_status = get_device_status(slate)};
 
-    // 2 Extra bytes: 1 for length of string, 1 for \0 terminator
-    memcpy(data + name_len + 2, &stats, sizeof(beacon_stats));
+    memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
     return name_len + 2 + sizeof(beacon_stats);
 }
 
