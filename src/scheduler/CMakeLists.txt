@@ -6,6 +6,7 @@ target_link_libraries(scheduler PUBLIC
   running_state
   bringup_state
   burn_wire_state
+  burn_wire_reset_state
   slate
   common
   error

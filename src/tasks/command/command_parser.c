@@ -77,6 +77,10 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 slate->manual_override_state = &burn_wire_state;
             }
+            else if (strcmp(command_payload, "burn_wire_reset_state") == 0)
+            {
+                slate->manual_override_state = &burn_wire_reset_state;
+            }
             else
             {
                 slate->manual_override_state = NULL;
