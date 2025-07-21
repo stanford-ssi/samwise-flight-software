@@ -63,23 +63,26 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:
         {
-            if (strcmp(command_payload, "running_state"))
+            LOG_INFO("Manual state override command received: %s",
+                     command_payload);
+            if (strcmp(command_payload, "running_state") == 0)
             {
-                overridden_state = &running_state;
+                slate->manual_override_state = &running_state;
             }
-            else if (strcmp(command_payload, "init_state"))
+            else if (strcmp(command_payload, "init_state") == 0)
             {
-                overridden_state = &init_state;
+                slate->manual_override_state = &init_state;
             }
-            else if (strcmp(command_payload, "burn_wire_state"))
+            else if (strcmp(command_payload, "burn_wire_state") == 0)
             {
-                overridden_state = &burn_wire_state;
+                slate->manual_override_state = &burn_wire_state;
             }
             else
             {
-                overridden_state = NULL;
+                slate->manual_override_state = NULL;
+                LOG_ERROR("Unknown state override command: %s",
+                          command_payload);
             }
-
             break;
         }
         default:

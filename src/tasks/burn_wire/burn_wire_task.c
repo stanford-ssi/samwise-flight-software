@@ -6,26 +6,35 @@
 
 #include "burn_wire_task.h"
 #include "neopixel.h"
+#include "safe_sleep.h"
 
 static uint32_t count = 0;
 
 void burn_wire_task_init(slate_t *slate)
 {
-    LOG_INFO("Test task is initializing...");
+    LOG_INFO("Burn wire task is initializing...");
 }
 
 void burn_wire_task_dispatch(slate_t *slate)
 {
-    neopixel_set_color_rgb(BURN_WIRE_TASK_COLOR);
-    LOG_INFO("Test task is dispatching... %d", count);
+    neopixel_set_color_rgb(0xf, 0xf, 0xf);
+    // Stop dispatching after 5 attempts
+    if (count >= 5)
+    {
+        LOG_INFO("Burn wire has completed its execution. 5 Attempts made.");
+        return;
+    }
+    LOG_INFO("Burn wire task is dispatching... %d", count);
     count++;
-    // Activate burn wire for 100ms at 50% duty cycle
-    // 0 -> off
-    // 1 -> 25% duty cycle
-    // 2 -> 50% duty cycle
-    // 3 -> 75% duty cycle
-    // 4 -> 100% duty cycle
-    burn_wire_activate(slate, MAX_BURN_DURATION_MS, 2, true, true);
+    safe_sleep_ms(1000); // Sleep for 1 second
+    // Activate burn wire for a maximum duration
+    // of MAX_BURN_DURATION_MS milliseconds at max power.
+    // Activate A and B channels one after another.
+    burn_wire_activate(slate, 800, true,
+                       false); // Activate A channel
+    burn_wire_activate(slate, 800, false,
+                       true); // Activate B channel
+    safe_sleep_ms(4000);
     neopixel_set_color_rgb(0, 0, 0);
 }
 
