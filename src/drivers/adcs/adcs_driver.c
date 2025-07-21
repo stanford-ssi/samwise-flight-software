@@ -90,9 +90,9 @@ adcs_result_t adcs_driver_init(slate_t *slate)
 
 adcs_result_t adcs_driver_power_on(slate_t *slate)
 {
-    // Set power enable low to turn on the board and allow time to settle
+    // Set power enable high to turn on the board and allow time to settle
     slate->is_adcs_on = true;
-    gpio_put(SAMWISE_ADCS_EN, 0);
+    gpio_put(SAMWISE_ADCS_EN, 1);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
@@ -100,9 +100,9 @@ adcs_result_t adcs_driver_power_on(slate_t *slate)
 
 adcs_result_t adcs_driver_power_off(slate_t *slate)
 {
-    // Set power enable high to turn on the board and allow time to settle
+    // Set power enable low to turn on the board and allow time to settle
     slate->is_adcs_on = false;
-    gpio_put(SAMWISE_ADCS_EN, 1);
+    gpio_put(SAMWISE_ADCS_EN, 0);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
