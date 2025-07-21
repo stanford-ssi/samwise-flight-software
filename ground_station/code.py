@@ -206,45 +206,100 @@ packet_builder = PacketBuilder()
 def decode_beacon_data(data):
     """Decode beacon data payload from beacon_task.c format"""
     try:
+        print("DEBUG: decode_beacon_data called with {} bytes".format(len(data)))
+        print("DEBUG: data = {}".format(' '.join('{:02x}'.format(b) for b in data)))
+        
         # Find the null terminator for the state name
         null_pos = data.find(b'\x00')
+        print("DEBUG: null_pos = {}".format(null_pos))
+        
         if null_pos == -1:
             # No null terminator found, assume entire data is state name
-            state_name = data.decode('utf-8', errors='replace')
+            print("DEBUG: No null terminator found")
+            try:
+                state_name = data.decode('utf-8')
+            except UnicodeDecodeError:
+                # Fallback for invalid UTF-8
+                state_name = str(data)
             return {"state_name": state_name, "stats": None}
         
         # Extract state name (null-terminated string)
-        state_name = data[:null_pos].decode('utf-8', errors='replace')
+        try:
+            state_name = data[:null_pos].decode('utf-8')
+        except UnicodeDecodeError:
+            # Fallback for invalid UTF-8
+            state_name = str(data[:null_pos])
+        print("DEBUG: Decoded state name: '{}'".format(state_name))
         
         # Extract beacon statistics starting after null terminator
         stats_start = null_pos + 1
-        if len(data) >= stats_start + 32:  # 32 bytes for beacon_stats struct
-            stats_data = data[stats_start:stats_start + 32]
+        print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
+        
+        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1 = 45 bytes
+        if len(data) >= stats_start + 45:  # 45 bytes for new beacon_stats struct
+            print("DEBUG: Extracting stats data...")
+            stats_data = data[stats_start:stats_start + 45]
+            print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
             
-            # Unpack beacon_stats struct (all little-endian)
-            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values
-            unpacked_stats = struct.unpack('<L Q 6L', stats_data)
+            print("DEBUG: About to call struct.unpack...")
+            # Unpack new beacon_stats struct (all little-endian)
+            # CircuitPython struct may not support all format codes, let's try simpler ones
+            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 1x uint8_t
+            # L=uint32, Q=uint64, H=uint16, B=uint8 - try using I for uint32 instead of L
+            try:
+                unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
+            except:
+                # If Q (uint64) isn't supported, try splitting it into two uint32s
+                print("DEBUG: Trying alternative format without Q...")
+                unpacked_stats = struct.unpack('<L2L6L4HB', stats_data)
+            print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
             
-            beacon_stats = {
-                "reboot_counter": unpacked_stats[0],
-                "time_in_state_ms": unpacked_stats[1],
-                "rx_bytes": unpacked_stats[2],
-                "rx_packets": unpacked_stats[3],
-                "rx_backpressure_drops": unpacked_stats[4],
-                "rx_bad_packet_drops": unpacked_stats[5],
-                "tx_bytes": unpacked_stats[6],
-                "tx_packets": unpacked_stats[7]
-            }
+            if len(unpacked_stats) == 13:
+                # Q format worked (uint64 for time)
+                beacon_stats = {
+                    "reboot_counter": unpacked_stats[0],
+                    "time_in_state_ms": unpacked_stats[1],
+                    "rx_bytes": unpacked_stats[2],
+                    "rx_packets": unpacked_stats[3],
+                    "rx_backpressure_drops": unpacked_stats[4],
+                    "rx_bad_packet_drops": unpacked_stats[5],
+                    "tx_bytes": unpacked_stats[6],
+                    "tx_packets": unpacked_stats[7],
+                    "battery_voltage": unpacked_stats[8],
+                    "battery_current": unpacked_stats[9],
+                    "solar_voltage": unpacked_stats[10],
+                    "solar_current": unpacked_stats[11],
+                    "device_status": unpacked_stats[12]
+                }
+            else:
+                # Had to split uint64 into two uint32s
+                beacon_stats = {
+                    "reboot_counter": unpacked_stats[0],
+                    "time_in_state_ms": unpacked_stats[1] | (unpacked_stats[2] << 32),  # Reconstruct uint64
+                    "rx_bytes": unpacked_stats[3],
+                    "rx_packets": unpacked_stats[4],
+                    "rx_backpressure_drops": unpacked_stats[5],
+                    "rx_bad_packet_drops": unpacked_stats[6],
+                    "tx_bytes": unpacked_stats[7],
+                    "tx_packets": unpacked_stats[8],
+                    "battery_voltage": unpacked_stats[9],
+                    "battery_current": unpacked_stats[10],
+                    "solar_voltage": unpacked_stats[11],
+                    "solar_current": unpacked_stats[12],
+                    "device_status": unpacked_stats[13]
+                }
             
             return {
                 "state_name": state_name,
                 "stats": beacon_stats
             }
         else:
+            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(45, len(data) - stats_start))
             return {"state_name": state_name, "stats": None}
             
     except Exception as e:
-        print(f"Error decoding beacon data: {e}")
+        print("[decode_beacon_data] Error decoding beacon data: {}".format(e))
+        print("DEBUG: Full traceback:")
         return {"state_name": "decode_error", "stats": None}
 
 def try_get_packet(timeout=0.1):
@@ -287,6 +342,18 @@ def try_get_packet(timeout=0.1):
                             print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
                             print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
                             print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
+                            print(f"    Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
+                            print(f"    Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+                            # Decode device status bits
+                            status = stats['device_status']
+                            status_flags = []
+                            if status & 0x01: status_flags.append("RBF_detected")
+                            if status & 0x02: status_flags.append("fixed_solar_charge")
+                            if status & 0x04: status_flags.append("fixed_solar_fault")
+                            if status & 0x08: status_flags.append("panel_A_deployed")
+                            if status & 0x10: status_flags.append("panel_B_deployed")
+                            if status & 0x20: status_flags.append("payload_on")
+                            print(f"    Device Status: 0x{status:02x} ({', '.join(status_flags) if status_flags else 'none'})")
                         else:
                             print(f"    Beacon decode failed, raw data: {beacon_payload[:20]}")
                     else:
@@ -673,9 +740,9 @@ def debug_listen_mode():
                             beacon_payload = packet[1:1+data_len]
                             
                             # Check RadioHead headers to determine if this is from satellite
-                            if rh_node == 0:  # FROM satellite (beacon source)
-                                print("  >>> BEACON DETECTED (from satellite) <<<")
+                            try:
                                 beacon_data = decode_beacon_data(beacon_payload)
+                                print("  >>> BEACON DETECTED (from satellite) <<<")
                                 print("  State: {}".format(beacon_data['state_name']))
                                 
                                 if beacon_data['stats']:
@@ -684,11 +751,24 @@ def debug_listen_mode():
                                     print("  Time in State: {} ms".format(stats['time_in_state_ms']))
                                     print("  RX: {} pkts, {} bytes".format(stats['rx_packets'], stats['rx_bytes']))
                                     print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
+                                    print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
+                                    print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
+                                    # Decode device status bits
+                                    status = stats['device_status']
+                                    status_flags = []
+                                    if status & 0x01: status_flags.append("RBF")
+                                    if status & 0x02: status_flags.append("solar_charge")
+                                    if status & 0x04: status_flags.append("solar_fault")
+                                    if status & 0x08: status_flags.append("panel_A")
+                                    if status & 0x10: status_flags.append("panel_B")
+                                    if status & 0x20: status_flags.append("payload")
+                                    print("  Status: 0x{:02x} ({})".format(status, ','.join(status_flags) if status_flags else 'none'))
                                 else:
                                     print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
-                            else:
-                                print("  Command response or other packet from node {}".format(rh_node))
-                                print("  Data: {}".format(beacon_payload[:20]))
+                            except Exception as e:
+                                print("  Error decoding beacon data: {}".format(e))
+                            finally:
+                                print("  Data: {}".format(beacon_payload))
                         else:
                             print("  Packet too short: need {} bytes, got {}".format(1 + data_len, len(packet)))
                     
