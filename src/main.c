@@ -39,6 +39,9 @@ int main()
     slate.watchdog = watchdog_mk();
     watchdog_init(&slate.watchdog);
 
+    // Potentially dangerous? What if we block here indefinitely?
+    neopixel_set_color_rgb(0, 0, 0);
+
 /*
  * Brief delay after reboot/powering up due to power spikes to prevent
  * deployment when satellite is still within the launch mechanism.

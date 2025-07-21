@@ -240,7 +240,7 @@ static inline uint32_t rfm9x_get_frequency(rfm9x_t *r)
     uint32_t mid = rfm9x_get8(r, _RH_RF95_REG_07_FRF_MID);
     uint32_t lsb = rfm9x_get8(r, _RH_RF95_REG_08_FRF_LSB);
     uint32_t frf = ((msb << 16) | (mid << 8) | lsb) & 0xFFFFFF;
-    return (frf * _RH_RF95_FSTEP);
+    return (frf * 10) >> 14;
 }
 
 /*
@@ -742,6 +742,25 @@ void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
 void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
 {
     r->tx_irq = irq;
+}
+
+/*
+ * Print LoRA parameters for debugging.
+ */
+void rfm9x_print_parameters(rfm9x_t *r)
+{
+    printf("RFM9X Radio Parameters:\n");
+    printf("  Frequency: %d Hz\n", rfm9x_get_frequency(r));
+    printf("  Spreading Factor: %d\n", rfm9x_get_spreading_factor(r));
+    printf("  Bandwidth: %d Hz\n", rfm9x_get_bandwidth(r));
+    printf("  Coding Rate: %d\n", rfm9x_get_coding_rate(r));
+    printf("  Preamble Length: %d\n", rfm9x_get_preamble_length(r));
+    printf("  TX Power: %d dBm\n", rfm9x_get_tx_power(r));
+    printf("  LNA Boost: %d\n", rfm9x_get_lna_boost(r));
+    printf("  CRC Enabled: %s\n", rfm9x_is_crc_enabled(r) ? "Yes" : "No");
+    printf("  PA Ramp: %d\n", rfm9x_get_pa_ramp(r));
+    printf("  Version: %d\n", rfm9x_version(r));
+    printf("  Mode: %s\n", rfm9x_get_lora(r) ? "LoRa" : "FSK");
 }
 
 /*

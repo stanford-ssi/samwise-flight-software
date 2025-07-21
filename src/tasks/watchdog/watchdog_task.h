@@ -11,6 +11,9 @@
 #include "pico/stdlib.h"
 #include "slate.h"
 
+// LED Color for watchdog task - Red
+#define WATCHDOG_TASK_COLOR 255, 0, 0
+
 void watchdog_task_init(slate_t *slate);
 void watchdog_task_dispatch(slate_t *slate);
 

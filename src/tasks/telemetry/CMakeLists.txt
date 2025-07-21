@@ -9,6 +9,7 @@ target_link_libraries(telemetry_task PUBLIC
   hardware_i2c
   logger
   mppt
+  neopixel
   pico_stdlib
   rfm9x
   slate
