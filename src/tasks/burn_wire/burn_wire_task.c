@@ -22,7 +22,8 @@ void burn_wire_task_dispatch(slate_t *slate)
     LOG_INFO("Burn wire task is dispatching... %d", burn_wire_attempts);
     if (burn_wire_attempts >= MAX_BURN_WIRE_ATTEMPTS)
     {
-        LOG_ERROR("Maximum burn wire attempts reached. Not activating burn wire.");
+        LOG_ERROR(
+            "Maximum burn wire attempts reached. Not activating burn wire.");
         return;
     }
     safe_sleep_ms(1000); // Sleep for 1 second

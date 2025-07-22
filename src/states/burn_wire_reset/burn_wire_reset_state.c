@@ -13,4 +13,5 @@ sched_state_t *burn_wire_reset_get_next_state(slate_t *slate)
 sched_state_t burn_wire_reset_state = {.name = "burn_wire_reset",
                                        .num_tasks = 0,
                                        .task_list = {},
-                                       .get_next_state = &burn_wire_reset_get_next_state};
+                                       .get_next_state =
+                                           &burn_wire_reset_get_next_state};

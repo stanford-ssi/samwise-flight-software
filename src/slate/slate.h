@@ -17,6 +17,7 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+#include "adcs_packet.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "watchdog.h"
@@ -110,6 +111,14 @@ typedef struct samwise_slate
     int curr_command_seq_num;
     bool is_payload_on;
     bool is_uart_init;
+
+    /*
+     * ADCS board status and telemetry
+     */
+    bool is_adcs_on;
+    uint32_t adcs_num_failed_checks;
+    adcs_packet_t adcs_telemetry;
+    bool is_adcs_telem_valid;
 
 } slate_t;
 
