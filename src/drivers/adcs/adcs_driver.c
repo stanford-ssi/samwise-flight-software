@@ -24,8 +24,8 @@
 #define ADCS_HEALTH_CHECK_SUCCESS ('!')
 
 // Timeout between bytes in microseconds
-// currently set to 100ms (faily generous)
-#define ADCS_BYTE_TIMEOUT_US (100000)
+// currently set to 500ms (faily generous)
+#define ADCS_BYTE_TIMEOUT_US (500000)
 
 /**
  * @brief Helper function to read up to num_bytes bytes from ADCS uart with a
