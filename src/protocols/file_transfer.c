@@ -1,5 +1,18 @@
 #include "file_transfer.h"
 
+bool initialize_file(char *local_path)
+{
+}
+
+bool write_packet(char *local_path, slate_t *slate)
+{
+}
+
+void ft_prelim_parse_packet(uint8_t *pkt_data)
+{
+}
+
+/*
 int min(int num1, int num2)
 {
     if (num1 <= num2)
@@ -63,9 +76,6 @@ int count_missing_packets_bool_arr(bool *packets_status, int length)
     return missing_packets;
 }
 
-void ft_prelim_parse_packet(uint8_t *pkt_data)
-{
-}
 
 // Convert bool* array to char* so it can be sent as a packet
 packet_t bool_to_packet(bool *bool_array, int length)
@@ -151,7 +161,9 @@ bool add_data_to_packet(uint8_t *data, int data_size, packet_t *packet)
 }
 
 struct FileTransferProtocol FTP;
+*/
 
+/*
 // Receive a file
 bool receive_file(char *local_path, slate_t *slate)
 {
@@ -302,8 +314,10 @@ bool receive_file(char *local_path, slate_t *slate)
 
     return false;
 }
+*/
 
 // Send a file
+/*
 bool send_file(char *filename)
 {
     // printf("Sending file: %s", filename);
@@ -398,8 +412,10 @@ bool send_file(char *filename)
 
     return false;
 }
+*/
 
 // Send missing packets
+/*
 bool send_missing_packets(FILE *fptr, int cur_group, slate_t *slate)
 {
     for (int i = 0; i < MAX_RESEND_CYCLES; i++)
@@ -468,8 +484,10 @@ bool send_missing_packets(FILE *fptr, int cur_group, slate_t *slate)
 
     return false;
 }
+*/
 
 // Obtain what packets are missing
+/*
 bool *request_missing_packets(slate_t *slate)
 {
     bool received_successfully = false;
@@ -501,3 +519,4 @@ bool *request_missing_packets(slate_t *slate)
 
     return NULL;
 }
+*/

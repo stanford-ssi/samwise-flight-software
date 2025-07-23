@@ -155,7 +155,11 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                 command_payload, command_payload, &str_len_buf);
             ft_prelim_data.total_file_size = atoi(str_forced_index);
 
+            LOG_INFO("Adding initial command packet to queue...");
+            queue_try_add(&slate->ft_header_data, &ft_prelim_data);
+
             LOG_INFO("Transitioning to file_transfer state...");
+            overridden_state = &file_transfer_state;
         }
 
         default:

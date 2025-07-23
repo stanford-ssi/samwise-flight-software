@@ -69,6 +69,9 @@ typedef struct samwise_slate
      * Command switch
      */
     queue_t payload_command_data;
+    char curr_file[MAX_DATASTRUCTURE_SIZE];
+    queue_t ft_header_data;
+    queue_t ft_file_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 

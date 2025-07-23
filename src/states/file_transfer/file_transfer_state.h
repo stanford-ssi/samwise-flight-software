@@ -1,0 +1,15 @@
+#pragma once
+
+#include "slate.h"
+#include "state_machine.h"
+#include "typedefs.h"
+
+#include "beacon_task.h"
+#include "command_task.h"
+#include "file_transfer_task.h"
+#include "radio_task.h"
+#include "watchdog_task.h"
+
+sched_state_t *file_transfer_get_next_state(slate_t *slate);
+
+extern sched_state_t file_transfer_state;
