@@ -11,8 +11,9 @@
     32 // Number of packets to send before the sender requests an ACK
 #define MAX_ACK_RETRIES                                                        \
     6 // Number of times the sender will ask for an ACK before giving up
-#define MAX_RESEND_CYCLES 6 // Number of times the sender will resend missing
-                            // packets before giving up
+#define MAX_RESEND_CYCLES                                                      \
+    6 // Number of times the sender will resend missing
+      // packets before giving up
 #define MAX_BAD_PACKETS                                                        \
     6 // Number of consecutive bad packets before the receiver aborts
 
