@@ -1,14 +1,30 @@
 #include "file_transfer.h"
 
-bool initialize_file(char *local_path)
+ft_file_t lookup_file(char *file_name)
 {
 }
 
-bool write_packet(char *local_path, slate_t *slate)
+bool record_file(char *file_name, int file_index)
 {
 }
 
-void ft_prelim_parse_packet(uint8_t *pkt_data)
+bool ft_initialize_file(char *local_path, FILE *fptr)
+{
+}
+
+bool ft_write_packet(char *local_path, slate_t *slate)
+{
+}
+
+void ft_send_packet(slate_t *slate)
+{
+}
+
+bool ft_check_file_states(char *file_name)
+{
+}
+
+bool ft_send_initial_resp_packet(char *file_name, bool file_status)
 {
 }
 

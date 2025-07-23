@@ -53,12 +53,29 @@ struct responseStruct
     int num_packets;
     int file_size;
 };
+
+typedef struct
+{
+    int curr_index;
+    int curr_file_size;
+    int slated_file_size;
+    char *file_name;
+} ft_file_t;
+
 /** NEW COMMANDS, NEED TO BE DOCUMENTED SOON **/
-// void ft_parse_packet(uint8_t *pkt_data);
+ft_file_t lookup_file(char *file_name);
 
-// bool check_file_status(char *file_name);
+bool record_file(char *file_name, int file_index);
 
-// bool send_initial_resp_packet(bool file_status);
+bool ft_initialize_file(char *local_path)
+
+    bool ft_write_packet(char *local_path, slate_t *slate);
+
+void ft_send_packet(slate_t *slate);
+
+bool ft_check_file_status(char *file_name);
+
+bool ft_send_initial_resp_packet(char *file_name, bool file_status);
 
 // int min(int num1, int num2);
 

@@ -69,7 +69,6 @@ typedef struct samwise_slate
      * Command switch
      */
     queue_t payload_command_data;
-    char curr_file[MAX_DATASTRUCTURE_SIZE];
     queue_t ft_header_data;
     queue_t ft_file_data;
 
@@ -108,6 +107,7 @@ typedef struct samwise_slate
      *  File Transfer
      */
     queue_t ft_send_queue;
+    char curr_file[MAX_DATASTRUCTURE_SIZE];
 } slate_t;
 
 extern slate_t slate;

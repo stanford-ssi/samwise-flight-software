@@ -21,13 +21,11 @@ void file_transfer_task_init(slate_t *slate)
     FILE_TRANSFER_DATA ft_init_packet;
     if (queue_try_peek(&slate->ft_header_data, &ft_init_packet))
     {
-        /*
-        is_file_created = check_file_status(ft_init_packet.file_name);
-        if (!send_initial_resp_packet(is_file_created))
+        is_file_created = ft_check_file_status(ft_init_packet.file_name);
+        if (!ft_send_initial_resp_packet(is_file_created))
         {
             LOG_DEBUG("Failed to send response packet...");
         }
-        */
     }
     else
     {
