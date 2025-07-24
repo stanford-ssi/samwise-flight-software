@@ -91,8 +91,7 @@ void beacon_task_dispatch(slate_t *slate)
     // Commit into serialized byte array
     pkt.len = serialize_slate(slate, pkt.data);
 
-    LOG_INFO("[beacon_task] Boot count: %d",
-             slate->reboot_counter);
+    LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
 
     // Write into tx_queue
     if (queue_try_add(&slate->tx_queue, &pkt))

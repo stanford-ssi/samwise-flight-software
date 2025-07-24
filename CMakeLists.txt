@@ -74,6 +74,7 @@ pico_sdk_init()
 
 # Add the library directories
 add_subdirectory(lib/tinycrypt)
+add_subdirectory(lib/no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
 
 # Include src
 # Executable `samwise` built under src/
