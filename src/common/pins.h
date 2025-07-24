@@ -99,6 +99,12 @@
 #define SAMWISE_PANEL_A (10)
 #define SAMWISE_PANEL_B (9)
 
+#define SAMWISE_SD_SPI (0)
+#define SAMWISE_SD_MISO_PIN (16)
+#define SAMWISE_SD_CS_PIN (17)
+#define SAMWISE_SD_SCK_PIN (18)
+#define SAMWISE_SD_MOSI_PIN (19)
+
 // RBF_DETECT pin
 #define SAMWISE_RBF_DETECT_PIN (42)
 
