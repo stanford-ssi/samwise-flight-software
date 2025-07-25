@@ -40,3 +40,20 @@ void micro_sd_init(sd_card_t *s)
     spi_set_format(s->spi, SPI_DATA_TRANSFER, SPI_CPOL_0, SPI_CPHA_0,
                    SPI_MSD_FIRST);
 }
+
+bool micro_sd_write_packet(sd_card_t *s, char *ptf, uint8_t *buf)
+{
+    // Ensures that the file exists
+    FRESULT fr = f_mkdir(ptf);
+    if (FR_OK != fr && FR_EXIST != fr)
+    {
+        LOG_ERROR("f_mkdir error: %s (%d)", FRESULT_str(fr), fr);
+        return false;
+    }
+
+    // Opens the file
+
+    // Writes the packet onto the file
+
+    return true;
+}
