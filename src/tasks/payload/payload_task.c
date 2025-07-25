@@ -25,6 +25,9 @@ void payload_task_init(slate_t *slate)
                  "before doing any payload commands...");
     }
 
+    payload_turn_on(slate);
+    sleep_ms(10000);
+
     // NOTE: Turning on payload is handled by command_parser
 }
 
@@ -159,6 +162,59 @@ void ping_command_test(slate_t *slate)
     }
 }
 
+void take_picture_command_test(slate_t *slate)
+{
+    char packet[] =
+        "[\"take_photo\", [\"test_july25\"], {\"w\": 1024, \"h\": 768}]";
+    int len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, packet, len, 999);
+
+    safe_sleep_ms(1000);
+
+    char received[MAX_RECEIVED_LEN];
+    uint16_t received_len = payload_uart_read_packet(slate, received);
+    if (received_len == 0)
+    {
+        LOG_INFO("ACK was not received!");
+    }
+    else
+    {
+        LOG_INFO("ACK received!");
+        LOG_INFO("ACK:");
+        for (uint16_t i = 0; i < received_len; i++)
+        {
+            printf("%c", received[i]);
+        }
+        printf("\n");
+    }
+}
+
+void send_2400_command_test(slate_t *slate)
+{
+    char packet[] = "[\"send_file_2400\", [\"/home/pi/images/bruh.jpg\"], {}]";
+    int len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, packet, len, 999);
+
+    safe_sleep_ms(1000);
+
+    char received[MAX_RECEIVED_LEN];
+    uint16_t received_len = payload_uart_read_packet(slate, received);
+    if (received_len == 0)
+    {
+        LOG_INFO("ACK was not received!");
+    }
+    else
+    {
+        LOG_INFO("ACK received!");
+        LOG_INFO("ACK:");
+        for (uint16_t i = 0; i < received_len; i++)
+        {
+            printf("%c", received[i]);
+        }
+        printf("\n");
+    }
+}
+
 /*** BRINGUP TESTS ***/
 void power_on_off_payload_test(slate_t *slate)
 {
@@ -211,8 +267,12 @@ void power_on_off_payload_test(slate_t *slate)
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    beacon_down_command_test(slate);
     ping_command_test(slate);
+    sleep_ms(1000);
+    // take_picture_command_test(slate);
+    // sleep_ms(5000);
+    send_2400_command_test(slate);
+    return;
 
     if (slate->is_payload_on)
     {

@@ -1,7 +1,7 @@
 #include "init_state.h"
 #include "device_status.h"
-#include "neopixel.h"
 #include "logger.h"
+#include "neopixel.h"
 
 extern sched_state_t bringup_state;
 
