@@ -24,10 +24,6 @@ void payload_task_init(slate_t *slate)
         LOG_INFO("UART has been initialized, please turn on Payload separately "
                  "before doing any payload commands...");
     }
-
-    payload_turn_on(slate);
-    sleep_ms(10000);
-
     // NOTE: Turning on payload is handled by command_parser
 }
 
@@ -267,13 +263,23 @@ void power_on_off_payload_test(slate_t *slate)
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
+
+    // NOTE: If you want to isolate the 2400 test, please uncomment this section.
+    /*
+    if (!slate->is_payload_on)
+    {
+        LOG_ERROR("Turn the payload on first before starting the test.");
+    }
+    
     ping_command_test(slate);
     sleep_ms(1000);
-    // take_picture_command_test(slate);
-    // sleep_ms(5000);
+    take_picture_command_test(slate);
+    sleep_ms(1000);
     send_2400_command_test(slate);
+    
     return;
-
+    */
+    
     if (slate->is_payload_on)
     {
         LOG_INFO("Payload is ON, executing commands...");
