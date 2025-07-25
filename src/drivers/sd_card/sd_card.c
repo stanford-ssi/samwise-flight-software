@@ -2,30 +2,38 @@
 
 #define SPI_DATA_TRANSFER 8
 
-micro_sd_t micro_sd_mk()
+#define MOUNT_NAME "C:"
+
+sd_card_t micro_sd_mk()
 {
-    micro_sd_t s = {.spi_clk_pin = SAMWISE_SD_SCK_PIN,
-                    .spi_cs_pin = SAMWISE_SD_CS_PIN,
-                    .spi_tx_pin = SAMWISE_SD_MOSI_PIN,
-                    .spi_rx_pin = SAMWISE_SD_MISO_PIN,
-                    .spi = SPI_INSTANCE(SAMWISE_SD_SPI)};
+    sd_card_t s = {.pcName = MOUNT_NAME,
+                   .spi = &(spi_t){.hw_inst = SPI_INSTANCE(SAMWISE_SD_SPI),
+                                   .miso_gpio = SAMWISE_SD_MISO_PIN,
+                                   .mosi_gpio = SAMWISE_SD_MOSI_PIN,
+                                   .sck_gpio = SAMWISE_SD_SCK_PIN,
+                                   .baud_rate = MICRO_SD_INIT_BAUDRATE},
+                   .ss_gpio = SAMWISE_SD_CS_PIN,
+                   .use_card_detect = false,
+                   .card_detect_gpio = 0,
+                   .card_detected_true = -1};
 
     return s;
 }
 
-void micro_sd_init(micro_sd_t *s)
+void micro_sd_init(sd_card_t *s)
 {
     // Setup CS line
-    gpio_init(s->spi_cs_pin);
-    gpio_set_dir(s->spi_cs_pin, GPIO_OUT);
-    gpio_disable_pulls(s->spi_cs_pin);
-    gpio_set_function(s->spi_cs_pin, GPIO_FUNC_SIO); // Explicit just in case
-    gpio_put(s->spi_cs_pin, 1);
+    gpio_init(SAMWISE_SD_CS_PIN);
+    gpio_set_dir(SAMWISE_SD_CS_PIN, GPIO_OUT);
+    gpio_disable_pulls(SAMWISE_SD_CS_PIN);
+    gpio_set_function(SAMWISE_SD_CS_PIN,
+                      GPIO_FUNC_SIO); // Explicit just in case
+    gpio_put(SAMWISE_SD_CS_PIN, 1);
 
     // SPI
-    gpio_set_function(s->spi_clk_pin, GPIO_FUNC_SPI); // CLK
-    gpio_set_function(s->spi_tx_pin, GPIO_FUNC_SPI);  // MOSI
-    gpio_set_function(s->spi_rx_pin, GPIO_FUNC_SPI);  // MISO
+    gpio_set_function(SAMWISE_SD_SCK_PIN, GPIO_FUNC_SPI);  // CLK
+    gpio_set_function(SAMWISE_SD_MOSI_PIN, GPIO_FUNC_SPI); // MOSI
+    gpio_set_function(SAMWISE_SD_MISO_PIN, GPIO_FUNC_SPI); // MISO
 
     // Initialize SPI for the Micro SD Card
     spi_init(s->spi, MICRO_SD_SPI_BAUDRATE);

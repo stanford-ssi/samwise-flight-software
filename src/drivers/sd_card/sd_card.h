@@ -1,5 +1,8 @@
 #pragma once
 
+#include "diskio.h"
+#include "ff.h"
+
 #include "hardware/reset.h"
 #include "hardware/spi.h"
 
@@ -14,22 +17,75 @@
 #define MICRO_SD_INIT_BAUDRATE 400 * 1000   // 400 Khz
 #define MICRO_SD_SPI_BAUDRATE 125 * 1000000 // 12.5 Mhz
 
-typedef struct _micro_sd
-{
-    uint spi_cs_pin;
-    uint spi_clk_pin;
-    uint spi_tx_pin;
-    uint spi_rx_pin;
-
-    spi_inst_t *spi;
-} micro_sd_t;
-
 /*
  * Creates a Micro SD Card helper struct. Uninitialized.
  */
-micro_sd_t micro_sd_mk();
+sd_card_t micro_sd_mk();
 
 /*
  * Initializes an Micro SD Card Instance
  */
-void micro_sd_init(micro_sd_t *s);
+void micro_sd_init(sd_card_t *s);
+
+/*
+ * Writes a packet of information
+ * onto a File on the Micro SD Card
+ */
+bool micro_sd_write_packet();
+
+/*
+ * Mounts the Micro SD card
+ */
+bool micro_sd_mount();
+
+/*
+ * Unmounts the Micro SD card
+ */
+bool micro_sd_unmount();
+
+/*
+ * Changes to the given directory
+ */
+bool micro_sd_cd(char *ptd);
+
+/*
+ * Creates a new directory
+ */
+bool micro_sd_mkdir(char *ptd);
+
+/*
+ * Creates an empty file
+ */
+bool micro_sd_touch(char *ptd);
+
+/*
+ * Moves a singular file from an given
+ * path, and moves it to another path
+ */
+bool micro_sd_mv(char *ptf, char *ptd);
+
+/*
+ * Copies a singular file from a given
+ * path, and copies it to another path
+ */
+bool micro_sd_cp(char *ptf, char *ptd);
+
+/*
+ * Outputs the file contents onto a buffer
+ */
+void micro_sd_cat(char *ptf, uint8_t *buf);
+
+/*
+ * Removes a singular file
+ */
+bool micro_sd_rm(char *ptf);
+
+/*
+ * Removes a singular directory and its contents
+ */
+bool micro_sd_rm_dir(char *ptd);
+
+/*
+ * Outputs the current directory absolute path into a buffer
+ */
+void micro_sd_pwd(uint8_t *buf);
