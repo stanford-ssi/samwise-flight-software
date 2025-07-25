@@ -36,6 +36,18 @@ Copy `ground_station/code.py` to the root of your CircuitPython device as `code.
 
 ## Running the Ground Station
 
+### Using `tio`
+
+1. **Install cli tool**: (MacOS) `brew install tio`
+2. Look for the device plugged in:
+   - **Windows**: Usually `COM3`, `COM4`, etc.
+   - **Mac**: Usually `/dev/cu.usbmodem*` or `/dev/tty.usbmodem*`
+   - **Linux**: Usually `/dev/ttyACM0` or `/dev/ttyUSB0`
+3. Connect to it using:
+   - `tio /dev/tty.usbmodem1101 -t`: Make sure you change the name of the device appropriately
+
+**Note: If it's not responding, you don't see anything printing, use CTRL+C to interrupt it and follow on-screen instructions**
+
 ### Setting Up Serial Monitor in VSCode
 
 1. **Install Extension**: Install Microsoft's "Serial Monitor" extension in VSCode
