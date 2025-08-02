@@ -87,6 +87,8 @@ void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 
 void rfm9x_print_parameters(rfm9x_t *r);
 void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l);
+void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
+                         uint8_t seq, uint8_t len, uint8_t *data);
 
 typedef enum
 {

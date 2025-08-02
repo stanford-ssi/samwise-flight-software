@@ -1,5 +1,6 @@
 #include "rfm9x.h"
 #include "safe_sleep.h"
+#include <string.h>
 
 rfm9x_t rfm9x_mk()
 {
@@ -614,6 +615,17 @@ static void rfm9x_interrupt_received(uint gpio, uint32_t events)
             }
         }
     }
+}
+
+void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
+                         uint8_t seq, uint8_t len, uint8_t *data)
+{
+    pkt->dst = dst;
+    pkt->src = src;
+    pkt->flags = flags;
+    pkt->seq = seq;
+    pkt->len = len;
+    memcpy(pkt->data, data, len);
 }
 
 void rfm9x_init(rfm9x_t *r)

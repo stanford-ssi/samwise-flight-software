@@ -46,6 +46,12 @@
 // Mocked RBF pin
 #define SAMWISE_RBF_DETECT_PIN (42)
 
+// Mocked ADCS pins
+#define SAMWISE_UART_TX_TO_ADCS (24)
+#define SAMWISE_UART_RX_FROM_ADCS (25)
+#define SAMWISE_ADCS_EN (26)
+#define SAMWISE_ADCS_UART 0
+
 #else
 
 /*
@@ -92,6 +98,11 @@
 #define SAMWISE_RPI_ENAB (29)
 #define SAMWISE_UART_TX (31)
 #define SAMWISE_UART_RX (30)
+
+#define SAMWISE_UART_TX_TO_ADCS (24)
+#define SAMWISE_UART_RX_FROM_ADCS (25)
+#define SAMWISE_ADCS_EN (26)
+#define SAMWISE_ADCS_UART (uart1)
 
 #define SAMWISE_FIXED_SOLAR_FAULT (33)
 #define SAMWISE_FIXED_SOLAR_CHARGE (34)
