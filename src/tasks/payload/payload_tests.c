@@ -17,7 +17,7 @@ int format_command(char *dst, int dst_len, char *cmd, FORMAT_RES res, ...)
     return 0;
 }
 
-bool run_test(slate_t *slate, char *packet, int packet_len)
+bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose)
 {
     payload_uart_write_packet(slate, packet, len, 999);
 
@@ -25,15 +25,21 @@ bool run_test(slate_t *slate, char *packet, int packet_len)
 
     char received_packet[MAX_BUF_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
+
+    if (!verbose)
+    {
+        return received_len;
+    }
+
     if (received_len == 0)
     {
         LOG_ERROR("ACK was not received!");
+        return false;
     }
-    else
-    {
-        LOG_INFO("ACK received!");
-        LOG_INFO("ACK out: %s", received);
-    }
+
+    LOG_INFO("ACK received!");
+    LOG_INFO("ACK out: %s", received);
+    return true;
 }
 
 bool ping_command_test(slate_t *slate)
