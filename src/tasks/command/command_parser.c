@@ -24,8 +24,21 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     char *command_payload = packet->data + COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
 
+#ifdef PAYLOAD_ONLY
+    if (0 < command_id < 4)
+    {
+        slate->command_override = 1;
+    }
+    else
+    {
+        slate->command_override = 0;
+    }
+#endif
+
     switch (command_id)
     {
+        // For Payload only testing
+
         /* Payload Commands */
         case PAYLOAD_EXEC:
         {

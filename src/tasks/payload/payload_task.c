@@ -4,172 +4,10 @@
  */
 
 #include "payload_task.h"
+#include "payload_tests.h"
 #include "safe_sleep.h"
 
 #define MAX_RECEIVED_LEN 1024
-
-/* ASSOCIATED PAYLOAD TESTS
- * Types of tests:
- *      - Singular Payload commands
- *      - Bringup
- *      - Functionality
- *      - Error handling
- */
-
-/*** PAYLOAD COMMANDS TESTS ***/
-void beacon_down_command_test(slate_t *slate)
-{
-    char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
-
-    char received[MAX_RECEIVED_LEN];
-    uint16_t received_len = payload_uart_read_packet(slate, received);
-
-    if (received_len == 0)
-    {
-        LOG_INFO("Did not received anything!");
-    }
-    else
-    {
-        LOG_INFO("Received something:");
-        for (uint16_t i = 0; i < received_len; i++)
-        {
-            printf("%c", received[i]);
-        }
-        printf("\n");
-    }
-}
-
-void ping_command_test(slate_t *slate)
-{
-    char packet[] = "[\"ping\", [], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
-
-    char received[MAX_RECEIVED_LEN];
-    uint16_t received_len = payload_uart_read_packet(slate, received);
-    if (received_len == 0)
-    {
-        LOG_INFO("ACK was not received!");
-    }
-    else
-    {
-        LOG_INFO("ACK received!");
-        LOG_INFO("ACK:");
-        for (uint16_t i = 0; i < received_len; i++)
-        {
-            printf("%c", received[i]);
-        }
-        printf("\n");
-    }
-}
-
-void take_picture_command_test(slate_t *slate)
-{
-    char packet[] =
-        "[\"take_photo\", [\"test_july25\"], {\"w\": 1024, \"h\": 768}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
-
-    char received[MAX_RECEIVED_LEN];
-    uint16_t received_len = payload_uart_read_packet(slate, received);
-    if (received_len == 0)
-    {
-        LOG_INFO("ACK was not received!");
-    }
-    else
-    {
-        LOG_INFO("ACK received!");
-        LOG_INFO("ACK:");
-        for (uint16_t i = 0; i < received_len; i++)
-        {
-            printf("%c", received[i]);
-        }
-        printf("\n");
-    }
-}
-
-void send_2400_command_test(slate_t *slate)
-{
-    char packet[] = "[\"send_file_2400\", [\"/home/pi/images/bruh.jpg\"], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
-
-    char received[MAX_RECEIVED_LEN];
-    uint16_t received_len = payload_uart_read_packet(slate, received);
-    if (received_len == 0)
-    {
-        LOG_INFO("ACK was not received!");
-    }
-    else
-    {
-        LOG_INFO("ACK received!");
-        LOG_INFO("ACK:");
-        for (uint16_t i = 0; i < received_len; i++)
-        {
-            printf("%c", received[i]);
-        }
-        printf("\n");
-    }
-}
-
-/*** BRINGUP TESTS ***/
-void power_on_off_payload_test(slate_t *slate)
-{
-    LOG_INFO("Turning Payload on...");
-    payload_turn_on(slate);
-
-    LOG_INFO("Checking to see if slate variable was changed properly...");
-    if (slate->is_payload_on)
-    {
-        LOG_INFO("Slate, is_payload_on, variable was changed properly!");
-    }
-    else
-    {
-        LOG_INFO("Slate, is_payload_on, variable was not changed properly, "
-                 "ending the test...");
-        return;
-    }
-
-    LOG_INFO("Sleeping for 10 seconds to let Payload boot up, do not do this "
-             "for flight ready version of the software...");
-    sleep_ms(10000);
-
-    LOG_INFO("Payload was turned on successfully...");
-    LOG_INFO("Testing Payload turning off...");
-
-    LOG_INFO("Turning off Payload...");
-    payload_turn_off(slate);
-
-    LOG_INFO("Checking to see if slate variable was changed properly...");
-    if (!slate->is_payload_on)
-    {
-        LOG_INFO("Slate, is_payload_on, variable was changed properly!");
-    }
-    else
-    {
-        LOG_INFO("Slate, is_payload_on, variable was not changed properly, "
-                 "ending the test...");
-        return;
-    }
-
-    LOG_INFO("Checking RPI_ENAB pin to see if it reads 0...");
-    if (!gpio_get_out_level(SAMWISE_RPI_ENAB))
-    {
-        LOG_INFO("RPI_ENAB is pulled low...");
-    }
-
-    LOG_INFO("Test ran successfully, exiting test...");
-}
 
 bool try_execute_payload_command(slate_t *slate)
 {
@@ -272,7 +110,7 @@ void payload_task_dispatch(slate_t *slate)
 
     if (!slate->is_payload_on)
     {
-        LOG_ERROR("Turn the payload on first before starting the test.");
+        LOG_ERROR("Payload is turned off, please force payload to turn on...");
     }
 
     if (slate->command_override && slate->is_payload_on)
