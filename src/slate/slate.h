@@ -111,6 +111,10 @@ typedef struct samwise_slate
     bool is_payload_on;
     bool is_uart_init;
 
+#ifdef PAYLOAD_ONLY
+    int command_override; // Only for testing
+#endif
+
 } slate_t;
 
 extern slate_t slate;

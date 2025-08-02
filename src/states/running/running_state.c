@@ -14,16 +14,18 @@ sched_state_t running_state = {
     .num_tasks = 3,
     .task_list = {&print_task, &watchdog_task, &diagnostics_task},
     .get_next_state = &running_get_next_state};
+#elif PAYLOAD_ONLY
+sched_state_t running_state = {.name = "running",
+                               .num_tasks = 6,
+                               .task_list = {&print_task, &blink_task,
+                                             &watchdog_task, &radio_task,
+                                             &command_task, &payload_task},
+                               .get_next_state = &running_get_next_state};
 #else
 sched_state_t running_state = {
     .name = "running",
     .num_tasks = 8,
     .task_list = {&print_task, &watchdog_task, &blink_task, &telemetry_task,
                   &beacon_task, &radio_task, &command_task, &payload_task},
-    // Uncomment me if you want to isolate the test
-    /*
-    .num_tasks = 4,
-    .task_list = {&print_task, &blink_task, &watchdog_task, &payload_task},
-    */
     .get_next_state = &running_get_next_state};
 #endif
