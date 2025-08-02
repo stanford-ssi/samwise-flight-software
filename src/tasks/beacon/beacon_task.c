@@ -72,14 +72,14 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .solar_current = slate->solar_current,
                           .device_status = get_device_status(slate)};
 
-    // 2 Extra bytes: 1 for length of string, 1 for \0 terminator
-    memcpy(data + name_len + 2, &stats, sizeof(beacon_stats));
+    // 1 Extra byte: 1 for \0 terminator
+    memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
 
     // Copy adcs packet - device status will indicate if this is invalid
-    memcpy(data + name_len + 2 + sizeof(beacon_stats), &slate->adcs_telemetry,
+    memcpy(data + name_len + 1 + sizeof(beacon_stats), &slate->adcs_telemetry,
            sizeof(adcs_packet_t));
 
-    return name_len + 2 + sizeof(beacon_stats) + sizeof(adcs_packet_t);
+    return name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t);
 }
 
 void beacon_task_init(slate_t *slate)
