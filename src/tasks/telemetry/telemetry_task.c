@@ -1,4 +1,5 @@
 #include "telemetry_task.h"
+#include "neopixel.h"
 
 // Add power monitor instance
 static adm1176_t power_monitor;
@@ -62,6 +63,7 @@ void telemetry_task_init(slate_t *slate)
 
 void telemetry_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(TELEMETRY_TASK_COLOR);
     // Read power monitor data from ADM1176
     float voltage = adm1176_get_voltage(&power_monitor);
     float current = adm1176_get_current(&power_monitor);
@@ -110,7 +112,8 @@ void telemetry_task_dispatch(slate_t *slate)
 
     slate->is_rbf_detected = rbf_detected;
     LOG_INFO("RBF_PIN status: %s",
-             rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
+             slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t telemetry_task = {.name = "telemetry",

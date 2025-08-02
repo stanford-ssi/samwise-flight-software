@@ -7,6 +7,7 @@
  */
 
 #include "radio_task.h"
+#include "neopixel.h"
 
 static slate_t *s;
 
@@ -79,7 +80,9 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
     }
     if (n < PACKET_MIN_SIZE)
     {
-        LOG_ERROR("parse_packet: Buffer too small for a valid packet");
+        LOG_ERROR("parse_packet: Buffer too small for a valid packet, "
+                  "PACKET_MIN_SIZE: %u",
+                  PACKET_MIN_SIZE);
         return false;
     }
 
@@ -98,7 +101,9 @@ static bool parse_packet(const uint8_t *buf, size_t n, packet_t *p)
 
     if (p->len > PACKET_DATA_SIZE)
     {
-        LOG_ERROR("parse_packet: Packet length exceeds maximum data size");
+        LOG_ERROR("parse_packet: Packet length exceeds maximum data size, "
+                  "PACKET_DATA_SIZE: %u",
+                  PACKET_DATA_SIZE);
         return false;
     }
 
@@ -146,6 +151,7 @@ static void tx_done()
             return;
         }
         LOG_INFO("TX packet size: %zu", pkt_size);
+        rfm9x_print_packet("TX packet:", p_buf, pkt_size);
         rfm9x_packet_to_fifo(&s->radio, p_buf, pkt_size);
         rfm9x_clear_interrupts(&s->radio);
         s->tx_packets++;
@@ -207,7 +213,11 @@ void radio_task_init(slate_t *slate)
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
     // rfm9x_transmit(&slate->radio);
+
+    // Print out the LoRA parameters
+    rfm9x_print_parameters(&slate->radio);
     LOG_INFO("Brought up RFM9X v%d", rfm9x_version(&slate->radio));
+    LOG_INFO("  Node: %d", &slate->radio_node);
 }
 
 // When it sees something in the transmit queue, switches into transmit mode and
@@ -215,6 +225,7 @@ void radio_task_init(slate_t *slate)
 // inturrupts the CPU to immediately recieve.
 void radio_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(RADIO_TASK_COLOR);
     // Switch to transmit mode if queue is not empty
     if (!queue_is_empty(&slate->tx_queue))
     {
@@ -228,6 +239,7 @@ void radio_task_dispatch(slate_t *slate)
     {
         rfm9x_listen(&slate->radio);
     }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t radio_task = {.name = "radio",
