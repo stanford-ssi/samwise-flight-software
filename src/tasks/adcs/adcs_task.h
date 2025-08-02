@@ -14,3 +14,5 @@
 void adcs_task_init(slate_t *slate);
 
 void adcs_task_dispatch(slate_t *slate);
+
+extern sched_task_t adcs_task;
