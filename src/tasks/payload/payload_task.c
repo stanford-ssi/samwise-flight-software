@@ -208,11 +208,58 @@ void power_on_off_payload_test(slate_t *slate)
     LOG_INFO("Test ran successfully, exiting test...");
 }
 
+/** Functionality Tests **/
+
+void payload_uart_write_off_test(slate_t *slate)
+{
+    // NOTE: Mostly visual, run without RPi harness connected onto RPi
+    char packet[] = "[\"ping\", [], {}]";
+    int len = sizeof(packet) - 1;
+
+    payload_write_error_code res =
+        payload_uart_write_packet(slate, packet, len, 999);
+
+    LOG_INFO("This should print, means it exited properly...");
+
+    if (res != SUCCESSFUL_WRITE)
+    {
+        LOG_INFO("Sucessful exit code...");
+    }
+    else
+    {
+        LOG_INFO("Something is very wrong...");
+    }
+}
+
+void payload_uart_write_on_test(slate_t *slate)
+{
+    char packet[] = "[\"ping\", [], {}]";
+    int len = sizeof(packet) - 1;
+
+    payload_write_error_code res =
+        payload_uart_write_packet(slate, packet, len, 999);
+
+    LOG_INFO("This should print, means it exited properly...");
+
+    if (res == SUCCESSFUL_WRITE)
+    {
+        LOG_INFO("Sucessful exit code...");
+    }
+    else
+    {
+        LOG_INFO("Something is very wrong...");
+    }
+}
+
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    beacon_down_command_test(slate);
-    ping_command_test(slate);
+    // beacon_down_command_test(slate);
+    // ping_command_test(slate);
+
+    payload_uart_write_on_test(slate);
+
+    return;
 
     if (slate->is_payload_on)
     {

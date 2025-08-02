@@ -17,7 +17,7 @@
 
 typedef enum
 {
-    NO_OP,
+    PING,
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
