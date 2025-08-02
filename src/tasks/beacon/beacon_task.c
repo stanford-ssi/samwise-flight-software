@@ -6,8 +6,8 @@
  */
 
 #include "beacon_task.h"
-#include "neopixel.h"
 #include "adcs_packet.h"
+#include "neopixel.h"
 #include <stdlib.h>
 
 #define MAX_DATA_SIZE 252

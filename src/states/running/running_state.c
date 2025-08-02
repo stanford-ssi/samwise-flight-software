@@ -3,7 +3,6 @@
 
 sched_state_t *running_get_next_state(slate_t *slate)
 {
-    neopixel_set_color_rgb(0, 0xf, 0xf);
     return &running_state;
 }
 
@@ -18,7 +17,7 @@ sched_state_t running_state = {
 sched_state_t running_state = {
     .name = "running",
     .num_tasks = 7,
-    .task_list = {&print_task, &watchdog_task, &blink_task, &telemetry_task,
-                  &beacon_task, &radio_task, &command_task},
+    .task_list = {&print_task, &watchdog_task, &blink_task, &adcs_task,
+                  &telemetry_task, &beacon_task, &radio_task, &command_task},
     .get_next_state = &running_get_next_state};
 #endif

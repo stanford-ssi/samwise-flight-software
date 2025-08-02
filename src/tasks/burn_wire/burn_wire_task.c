@@ -16,7 +16,7 @@ void burn_wire_task_init(slate_t *slate)
 
 void burn_wire_task_dispatch(slate_t *slate)
 {
-    neopixel_set_color_rgb(0xf, 0xf, 0xf);
+    neopixel_set_color_rgb(BURN_WIRE_TASK_COLOR);
     // Check if burn wire is already activated
     uint32_t burn_wire_attempts = get_burn_wire_attempts();
     LOG_INFO("Burn wire task is dispatching... %d", burn_wire_attempts);

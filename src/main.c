@@ -90,7 +90,7 @@ int main()
 #endif
 
     // At this point, all initialization is done.
-    neopixel_set_color_rgb(0, 0xf, 0xf);
+    neopixel_set_color_rgb(0, 0xff, 0xff);
 
     /*
      * Go state machine!

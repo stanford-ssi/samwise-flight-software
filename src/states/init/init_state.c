@@ -15,7 +15,7 @@ sched_state_t *init_get_next_state(slate_t *slate)
     {
         // If RBF pin is detected, block and stay in init state
         LOG_INFO("RBF pin detected, staying in init state.");
-        neopixel_set_color_rgb(0x1, 0, 0);
+        neopixel_set_color_rgb(0xff, 0, 0);
         return &init_state;
     }
     return &running_state;

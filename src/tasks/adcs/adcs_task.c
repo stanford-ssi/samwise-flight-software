@@ -7,6 +7,7 @@
 
 #include "adcs_task.h"
 #include "adcs_driver.h"
+#include "neopixel.h"
 #include "slate.h"
 
 #define ADCS_MAX_FAILED_CHECKS_BEFORE_REBOOT (5)
@@ -20,6 +21,8 @@ void adcs_task_init(slate_t *slate)
 
 void adcs_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(ADCS_TASK_COLOR);
+
     // Check if the board is alive
     if (!adcs_driver_is_alive(slate))
     {
@@ -39,6 +42,8 @@ void adcs_task_dispatch(slate_t *slate)
 
     // Board is alive - get telemetry
     adcs_driver_get_telemetry(slate, &slate->adcs_telemetry);
+
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t adcs_task = {.name = "adcs",
