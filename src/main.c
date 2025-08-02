@@ -70,7 +70,8 @@ int main()
     LOG_INFO("main: Initializing...");
     ASSERT(init(&slate));
     slate.reboot_counter = data->reboot_counter;
-    LOG_INFO("main: Initialized successfully!\n\n\n");
+    LOG_INFO("main: Initialized successfully!");
+    LOG_INFO("main: Starting SAMWISE...");
 
     /*
      * Print commit hash
@@ -79,7 +80,7 @@ int main()
     LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
 #endif
 
-    neopixel_set_color_rgb(0, 0xff, 0xff);
+    neopixel_set_color_rgb(0, 0xf, 0xf);
 
     /*
      * Go state machine!
