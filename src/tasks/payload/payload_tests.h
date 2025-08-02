@@ -15,7 +15,7 @@
 #include "payload_uart.h"
 #include "slate.h"
 
-bool run_test(slate_t *slate);
+bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose);
 
 /* ASSOCIATED PAYLOAD TESTS
  * Types of tests
