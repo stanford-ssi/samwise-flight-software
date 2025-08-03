@@ -15,6 +15,7 @@
 #include "payload_uart.h"
 #include "slate.h"
 
+void run_test_sequence();
 bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose);
 
 /* ASSOCIATED PAYLOAD TESTS
@@ -29,12 +30,15 @@ bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose);
 
 /***        PAYLOAD COMMANDS TESTS          ***/
 bool ping_command_test(slate_t *slate);
-bool take_picture_command_test(slate_t *slate, char *file_name, char *args);
-bool send_2400_command_test(slate_t *slate, char *file_path, char *args);
+bool take_picture_command_test(slate_t *slate, char *file_name, char *args,
+                               bool verbose);
+bool send_2400_command_test(slate_t *slate, char *file_path, char *args,
+                            bool verbose);
 
 /***        BRINGUP TESTS       ***/
 bool power_on_off_payload_test(slate_t *slate);
 
 /***        BREADTH TESTS       ***/
 /** Camera Related Breadth Tests **/
-bool payload_camera_breadth_test(slate_t *slate);
+bool payload_camera_breadth_test(slate_t *slate, char *file_name,
+                                 char *photo_args, char *downlink_args);

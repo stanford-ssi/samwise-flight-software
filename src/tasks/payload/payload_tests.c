@@ -2,19 +2,8 @@
 
 #define MAX_BUF_LEN 1024
 
-/**
- * @brief   Formats the command packet into the given dst buffer. Abstracting
- * the command creation and testing process.
- *
- * @param   dst         Where the command will be written to.
- * @param   dst_len     The length of dst.
- * @param   cmd         The specific command to write.
- * @param   res         The exit code of the operation.
- * @param   ...         Command arguments that need to be placed.
- */
-int format_command(char *dst, int dst_len, char *cmd, FORMAT_RES res, ...)
+void run_test_sequence()
 {
-    return 0;
 }
 
 bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose)
@@ -48,7 +37,8 @@ bool ping_command_test(slate_t *slate)
     return run_test(slate, packet, sizeof(packet) - 1);
 }
 
-bool take_photo_command_test(slate_t *slate, char *file_name, char *args)
+bool take_photo_command_test(slate_t *slate, char *file_name, char *args,
+                             bool verbose)
 {
     char packet_buf[MAX_BUF_LEN];
     snprintf(packet_buf, MAX_BUF_LEN, "[\"take_photo\", [\"%s\"], {%s}",
@@ -57,7 +47,8 @@ bool take_photo_command_test(slate_t *slate, char *file_name, char *args)
     return run_test(slate, packet_buf, sizeof(packet_buf) - 1);
 }
 
-bool send_2400_command_test(slate_t *slate, char *file_path, char *args)
+bool send_2400_command_test(slate_t *slate, char *file_path, char *args,
+                            bool verbose)
 {
     char packet_buf[MAX_BUF_LEN];
     snprintf(packet_buf, MAX_BUF_LEN, "[\"send_file_2400\", [\"%s\"], {}",
@@ -114,7 +105,12 @@ bool power_on_off_payload_test(slate_t *slate)
     LOG_INFO("Test ran successfully, exiting test...");
 }
 
-bool payload_camera_breadth_test(slate_t *slate)
+bool payload_camera_breadth_test(slate_t *slate, char *file_name,
+                                 char *photo_args, char *downlink_args)
 {
+    LOG_INFO("Executing test: payload_camera_breadth_test...");
+    LOG_INFO("Task List: take_photo, send_2400_file\n");
+
+    LOG_INFO("Current Task: take_photo");
     return true;
 }
