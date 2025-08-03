@@ -17,6 +17,8 @@ void adcs_task_init(slate_t *slate)
     adcs_driver_init(slate);
 
     slate->adcs_num_failed_checks = 0;
+
+    adcs_driver_power_on(slate);
 }
 
 void adcs_task_dispatch(slate_t *slate)
@@ -39,10 +41,13 @@ void adcs_task_dispatch(slate_t *slate)
             adcs_driver_power_on(slate);
         }
     }
+    else
+    {
+        // Board is alive - get telemetry
+        adcs_driver_get_telemetry(slate, &slate->adcs_telemetry);
+    }
 
-    // Board is alive - get telemetry
-    adcs_driver_get_telemetry(slate, &slate->adcs_telemetry);
-
+    // adcs_driver_power_on(slate);
     neopixel_set_color_rgb(0, 0, 0);
 }
 
