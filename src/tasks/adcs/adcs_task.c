@@ -47,7 +47,6 @@ void adcs_task_dispatch(slate_t *slate)
         adcs_driver_get_telemetry(slate, &slate->adcs_telemetry);
     }
 
-    // adcs_driver_power_on(slate);
     neopixel_set_color_rgb(0, 0, 0);
 }
 

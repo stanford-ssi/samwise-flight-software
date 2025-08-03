@@ -150,8 +150,6 @@ static void tx_done()
             rfm9x_clear_interrupts(&s->radio);
             return;
         }
-        // LOG_INFO("TX packet size: %zu", pkt_size);
-        // rfm9x_print_packet("TX packet:", p_buf, pkt_size);
         rfm9x_packet_to_fifo(&s->radio, p_buf, pkt_size);
         rfm9x_clear_interrupts(&s->radio);
         s->tx_packets++;

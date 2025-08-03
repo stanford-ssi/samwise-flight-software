@@ -50,8 +50,7 @@ void telemetry_task_init(slate_t *slate)
                                ADM1176_DEFAULT_SENSE_RESISTOR);
 
     // Initialize MPPT
-    solar_charger_monitor = mppt_mk_mock();
-    // solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
+    solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
     mppt_init(&solar_charger_monitor);
 #else
     // Initialize mocked PICO power monitor
