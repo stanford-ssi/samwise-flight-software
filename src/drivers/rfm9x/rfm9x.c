@@ -662,7 +662,7 @@ void rfm9x_init(rfm9x_t *r)
     gpio_set_function(r->spi_clk_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_tx_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_rx_pin, GPIO_FUNC_SPI);
-    gpio_set_function(17, GPIO_FUNC_SPI); // ???
+    gpio_set_function(28, GPIO_FUNC_SPI); // ???
 
     // Setup interrupt line
     gpio_init(r->d0_pin);
