@@ -2,8 +2,31 @@
 
 #define MAX_BUF_LEN 1024
 
-void run_test_sequence()
+void run_test_sequence(size_t n, const payload_unit_test_t *fns, char *seq_name)
 {
+    LOG_INFO("Executing test: %s...", seq_name);
+    LOG_INFO("Tasks to Execute: %d\n", n);
+
+    int tasks_successful = 0;
+    for (int i = 0; i < n; i++)
+    {
+        payload_unit_test_t *curr_unit = &fns[i];
+        LOG_INFO("Executing task ID [%d]: %s", i, curr_unit->fn_name);
+        bool ret = curr_unit->fn(curr_unit->p_args, curr_unit->s_args,
+                                 curr_unit->flags);
+
+        if (!ret)
+        {
+            LOG_INFO("Task ID [%d] failed...");
+        }
+
+        tasks_successful++;
+        LOG_INFO("Task ID [%d] successful...\n");
+    }
+
+    LOG_INFO("Test overview: ");
+    LOG_INFO("Tasks successful: %d/%d", tasks_successful, n);
+    LOG_INFO("Test concluding...");
 }
 
 bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose)
@@ -31,30 +54,29 @@ bool run_test(slate_t *slate, char *packet, int packet_len, bool verbose)
     return true;
 }
 
-bool ping_command_test(slate_t *slate)
+bool ping_command_test(slate_t *slate, char *p, char *s, char *f)
 {
+    (void)p;
+    (void)s;
     char packet[] = "[\"ping\", [], {}]";
-    return run_test(slate, packet, sizeof(packet) - 1);
+    return run_test(slate, packet, (sizeof(packet) - 1), f != NULL);
 }
 
-bool take_photo_command_test(slate_t *slate, char *file_name, char *args,
-                             bool verbose)
+bool take_photo_command_test(slate_t *slate, char *p, char *s, char *f)
 {
     char packet_buf[MAX_BUF_LEN];
-    snprintf(packet_buf, MAX_BUF_LEN, "[\"take_photo\", [\"%s\"], {%s}",
-             file_path, args);
+    snprintf(packet_buf, MAX_BUF_LEN, "[\"take_photo\", [%s], {%s}", p, s);
 
-    return run_test(slate, packet_buf, sizeof(packet_buf) - 1);
+    return run_test(slate, packet_buf, (sizeof(packet_buf) - 1), f != NULL);
 }
 
-bool send_2400_command_test(slate_t *slate, char *file_path, char *args,
-                            bool verbose)
+bool send_2400_command_test(slate_t *slate, char *p, char *s, char *f);
 {
+    (void)s;
     char packet_buf[MAX_BUF_LEN];
-    snprintf(packet_buf, MAX_BUF_LEN, "[\"send_file_2400\", [\"%s\"], {}",
-             file_path, args);
+    snprintf(packet_buf, MAX_BUF_LEN, "[\"send_file_2400\", [%s], {}", p);
 
-    return run_test(slate, packet, sizeof(packet) - 1);
+    return run_test(slate, packet, (sizeof(packet) - 1), f != NULL);
 }
 
 bool power_on_off_payload_test(slate_t *slate)
@@ -108,9 +130,5 @@ bool power_on_off_payload_test(slate_t *slate)
 bool payload_camera_breadth_test(slate_t *slate, char *file_name,
                                  char *photo_args, char *downlink_args)
 {
-    LOG_INFO("Executing test: payload_camera_breadth_test...");
-    LOG_INFO("Task List: take_photo, send_2400_file\n");
-
-    LOG_INFO("Current Task: take_photo");
     return true;
 }
