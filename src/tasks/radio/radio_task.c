@@ -229,11 +229,17 @@ void radio_task_dispatch(slate_t *slate)
     // Switch to transmit mode if queue is not empty
     if (!queue_is_empty(&slate->tx_queue))
     {
-        rfm9x_transmit(&slate->radio);
-        LOG_INFO("Transmitting...");
-        // Since the interrupt only fires when done transmitting the last
-        // packet, we need to get it started manually
-        tx_done();
+        // Check if transmission is already in progress to avoid race condition
+        if (rfm9x_tx_done(&slate->radio))
+        {
+            rfm9x_transmit(&slate->radio);
+            LOG_INFO("Transmitting...");
+            // Since the interrupt only fires when done transmitting the last
+            // packet, we need to get it started manually
+            tx_done();
+        }
+        // If transmission is in progress, do nothing and let the interrupt
+        // handle it
     }
     else
     {
