@@ -161,11 +161,33 @@ void payload_task_init(slate_t *slate)
                  "before doing any payload commands...");
     }
     // NOTE: Turning on payload is handled by command_parser
+
+    // Forcing Payload to turn on (Only do this for testing)
+    payload_turn_on(slate);
+
+    LOG_INFO("Forcing Payload to turn on, sleeping for 10 Seconds");
+    sleep_ms(10000);
 }
 
 void payload_task_dispatch(slate_t *slate)
 {
     LOG_INFO("Sending an Info Request Command to the RPI...");
+
+    char packet[] = "[\"ping\", [], {}]";
+    payload_uart_write_packet(slate, packet, sizeof(packet) - 1, 999);
+
+    sleep_ms(100);
+
+    char received_packet[1024];
+    uint16_t received_len = payload_uart_read_packet(slate, received_packet);
+
+    if (received_len != 0)
+    {
+        LOG_INFO("ACK received!");
+        LOG_INFO("ACK out: %s", received_packet);
+    }
+
+    return;
 
     if (!slate->is_payload_on)
     {
