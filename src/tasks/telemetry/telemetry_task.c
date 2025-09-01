@@ -89,16 +89,17 @@ void telemetry_task_dispatch(slate_t *slate)
     bool panel_B = is_flex_panel_B_deployed();
     bool rbf_detected = is_rbf_pin_detected();
 
-    LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
-             solar_current);
-    LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA", solar_battery_voltage,
-             solar_battery_current);
-    LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
+    // LOG_INFO("Solar Charger - Voltage: %umV, Current: %umA", solar_voltage,
+    //          solar_current);
+    // LOG_INFO("Solar Charger - VBAT: %umV, Current: %umA",
+    // solar_battery_voltage,
+    //          solar_battery_current);
+    // LOG_INFO("Solar Charger - VIN: %umV", solar_vin_voltage);
 
-    LOG_INFO("Panel A status: %s", panel_A ? "deployed" : "closed");
-    LOG_INFO("Panel B status: %s", panel_B ? "deployed" : "closed");
-    LOG_INFO("Fixed solar charging: %s", solar_charge ? "on" : "off");
-    LOG_INFO("Fixed solar status: %s", solar_fault ? "faulty" : "okay");
+    // LOG_INFO("Panel A status: %s", panel_A ? "deployed" : "closed");
+    // LOG_INFO("Panel B status: %s", panel_B ? "deployed" : "closed");
+    // LOG_INFO("Fixed solar charging: %s", solar_charge ? "on" : "off");
+    // LOG_INFO("Fixed solar status: %s", solar_fault ? "faulty" : "okay");
 
     // Write to slate
     slate->solar_voltage = solar_voltage;
@@ -108,11 +109,17 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->panel_A_deployed = panel_A;
     slate->panel_B_deployed = panel_B;
 
-    LOG_INFO("GPIO bits: %16lX", (uint64_t)gpio_get_all64());
+    // LOG_INFO("GPIO bits: %16lX", (uint64_t)gpio_get_all64());
 
     slate->is_rbf_detected = rbf_detected;
-    LOG_INFO("RBF_PIN status: %s",
-             slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
+    // LOG_INFO("RBF_PIN status: %s",
+    //          slate->is_rbf_detected ? "STILL ATTACHED!" : "REMOVED!");
+
+    LOG_INFO("ADCS status: %s", slate->is_adcs_on ? "ON" : "OFF");
+    LOG_INFO("ADCS telemetry valid: %s",
+             slate->is_adcs_telem_valid ? "VALID" : "INVALID");
+    LOG_INFO("ADCS num failed checks: %d", slate->adcs_num_failed_checks);
+
     neopixel_set_color_rgb(0, 0, 0);
 }
 
