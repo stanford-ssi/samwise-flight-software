@@ -106,7 +106,7 @@ void adm1176_on(adm1176_t *pwm)
                              make_timeout_time_ms(I2C_TIMEOUT_MS));
     int modes[2] = {1, 3};
     adm1176_config(pwm, modes, 2);
-    LOG_DEBUG("ADM Cmd: %X\n", _cmd_buf[0]);
+    // LOG_DEBUG("ADM Cmd: %X\n", _cmd_buf[0]);
 }
 
 void adm1176_off(adm1176_t *pwm)

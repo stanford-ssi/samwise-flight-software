@@ -4,6 +4,7 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+#include "adcs_task.h"
 #include "beacon_task.h"
 #include "blink_task.h"
 #include "command_task.h"

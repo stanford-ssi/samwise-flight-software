@@ -37,10 +37,27 @@
  *
  * @return Number of bytes reac successfully (between 0 and num_bytes inclusive)
  */
+
+void flush_uart()
+{
+    if (uart_is_readable(SAMWISE_ADCS_UART))
+    {
+        LOG_DEBUG("ADCS UART still readable, flushing...");
+        // Flush out any extra bytes that may be in the buffer
+        while (uart_is_readable(SAMWISE_ADCS_UART))
+        {
+            char c = uart_getc(SAMWISE_ADCS_UART);
+            printf("%02x ", c);
+        }
+        printf("\n");
+    }
+}
+
 static uint32_t adcs_driver_read_uart_with_timeout(char *buf,
                                                    uint32_t num_bytes,
                                                    uint32_t timeout_us)
 {
+    printf("Attempting to read %u bytes from ADCS UART", num_bytes);
     for (uint32_t i = 0; i < num_bytes; i++)
     {
         if (uart_is_readable_within_us(SAMWISE_ADCS_UART, timeout_us))
@@ -115,13 +132,33 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
         return ADCS_ERROR_INVALID_PARAM;
     }
 
+    // Flush any existing data in the UART buffer
+    flush_uart();
+
     // Send a ping to the ADCS board and read back telemetry
+    LOG_INFO("[ACDS] Putting command to ADCS UART: %c", ADCS_SEND_TELEM);
     uart_putc_raw(SAMWISE_ADCS_UART, ADCS_SEND_TELEM);
 
     uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
         (char *)packet, sizeof(adcs_packet_t), ADCS_BYTE_TIMEOUT_US);
 
     slate->is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
+
+    LOG_INFO("[ADCS] state: %02x", packet->state);
+    LOG_INFO("[ADCS] boot_count: %u", packet->boot_count);
+
+    for (int i = 0; i < sizeof(adcs_packet_t); ++i)
+    {
+        LOG_INFO("[ADCS] packet[%d]: %02x", i, ((char *)packet)[i]);
+    }
+
+    if (!slate->is_adcs_telem_valid)
+    {
+        LOG_ERROR("[ADCS] Failed to read full telemetry packet, "
+                  "expected %zu bytes, got %u bytes",
+                  sizeof(adcs_packet_t), num_bytes_read);
+        return ADCS_ERROR_UART_FAILED;
+    }
 
     // Return true if we received all expected bytes
     return slate->is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
@@ -140,12 +177,19 @@ bool adcs_driver_is_alive(slate_t *slate)
         return false;
     }
 
+    // Flush any existing data in the UART buffer
+    flush_uart();
+
     // Send a ping to the ADCS board and expect to read back a known byte
+    LOG_INFO("[ADCS] Sending health check command: %c\n", ADCS_HEALTH_CHECK);
     uart_putc_raw(SAMWISE_ADCS_UART, ADCS_HEALTH_CHECK);
 
     char c;
     uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
         &c, sizeof(char), ADCS_BYTE_TIMEOUT_US);
+
+    LOG_INFO("[ADCS] Received %u bytes: %02x (%c) %s\n", num_bytes_read, c, c,
+             c == ADCS_HEALTH_CHECK_SUCCESS ? "HEALTHY" : "FAILED");
 
     // Return true if we received a byte, and it is the expected value
     return (num_bytes_read > 0) && (c == ADCS_HEALTH_CHECK_SUCCESS);
