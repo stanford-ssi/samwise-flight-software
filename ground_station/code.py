@@ -101,6 +101,7 @@ PAYLOAD_EXEC = 1
 PAYLOAD_TURN_ON = 2
 PAYLOAD_TURN_OFF = 3
 MANUAL_STATE_OVERRIDE = 4
+REPEATER = 5
 
 # Global configuration variables
 config = {
@@ -518,6 +519,21 @@ def send_manual_state_override(state_name):
     """Send manual state override command"""
     send_command(MANUAL_STATE_OVERRIDE, state_name)
 
+def send_repeater_command(target_node, hop_limit):
+    """Send repeater configuration command
+    
+    Args:
+        target_node: Target node address (0 to disable repeater)
+        hop_limit: Maximum number of hops (0 to disable, max 5)
+    """
+    # Pack REPEATER_DATA struct: uint8_t target_node, uint8_t hop_limit
+    repeater_data = struct.pack('BB', target_node, hop_limit)
+    send_command(REPEATER, repeater_data)
+    
+    if target_node == 0 and hop_limit == 0:
+        print("Repeater disabled")
+    else:
+        print(f"Repeater enabled: target_node={target_node}, hop_limit={hop_limit}")
 
 def send_packet_ping():
     # Create a NO_OP packet (command 0x04)

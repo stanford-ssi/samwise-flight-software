@@ -120,6 +120,14 @@ typedef struct samwise_slate
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
 
+    /*
+     * Repeater functionality
+     */
+    bool repeater_enabled;
+    uint8_t repeater_hop_limit;
+    uint32_t repeater_packets_forwarded;
+    uint32_t repeater_cpu_usage_us;
+
 } slate_t;
 
 extern slate_t slate;

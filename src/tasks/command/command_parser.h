@@ -21,7 +21,8 @@ typedef enum
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
-    MANUAL_STATE_OVERRIDE
+    MANUAL_STATE_OVERRIDE,
+    REPEATER
     // add more commands here as needed
 } Command;
 
@@ -45,5 +46,11 @@ typedef struct
     uint16_t seq_num;     // Sequence number for command execution
     Command command_type; // Command type
 } PAYLOAD_COMMAND_DATA;
+
+typedef struct
+{
+    uint8_t target_node;  // Node address to repeat to
+    uint8_t hop_limit;    // Prevent infinite loops (max 5 hops)
+} REPEATER_DATA;
 
 void dispatch_command(slate_t *slate, packet_t *packet);

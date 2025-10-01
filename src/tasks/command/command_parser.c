@@ -109,6 +109,33 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
             break;
         }
+        case REPEATER:
+        {
+            LOG_INFO("Repeater command received");
+            if (packet->len < sizeof(REPEATER_DATA) + COMMAND_MNEMONIC_SIZE)
+            {
+                LOG_ERROR("Invalid repeater command size");
+                break;
+            }
+            
+            REPEATER_DATA *repeater_data = (REPEATER_DATA *)command_payload;
+            
+            if (repeater_data->target_node == 0 && repeater_data->hop_limit == 0)
+            {
+                // Disable repeater
+                slate->repeater_enabled = false;
+                LOG_INFO("Repeater disabled");
+            }
+            else
+            {
+                // Enable repeater with specified parameters
+                slate->repeater_enabled = true;
+                slate->repeater_hop_limit = (repeater_data->hop_limit > 5) ? 5 : repeater_data->hop_limit;
+                LOG_INFO("Repeater enabled: target_node=%d, hop_limit=%d", 
+                         repeater_data->target_node, slate->repeater_hop_limit);
+            }
+            break;
+        }
 
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);

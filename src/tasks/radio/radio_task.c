@@ -163,6 +163,50 @@ static void tx_done()
     }
 }
 
+// Check if packet should be repeated
+static bool should_repeat_packet(const packet_t *p)
+{
+    if (!s->repeater_enabled) return false;
+    
+    // Don't repeat packets addressed directly to us
+    if (p->dst == s->radio_node) return false;
+    
+    // Don't repeat broadcast packets to avoid loops
+    if (p->dst == _RH_BROADCAST_ADDRESS) return false;
+    
+    // Check hop limit in flags field (use upper 4 bits)
+    uint8_t hop_count = (p->flags >> 4) & 0x0F;
+    return hop_count < s->repeater_hop_limit;
+}
+
+// Repeat packet with modified addressing
+static void repeat_packet(packet_t p)
+{
+    absolute_time_t start_time = get_absolute_time();
+    
+    // Increment hop count in flags field (upper 4 bits)
+    uint8_t hop_count = ((p.flags >> 4) & 0x0F) + 1;
+    p.flags = (p.flags & 0x0F) | ((hop_count & 0x0F) << 4);
+    
+    // Update source to this node
+    p.src = s->radio_node;
+    
+    // Add to TX queue if not full
+    if (queue_try_add(&s->tx_queue, &p))
+    {
+        s->repeater_packets_forwarded++;
+        LOG_INFO("Repeated packet: dst=%d, hop_count=%d", p.dst, hop_count);
+    }
+    else
+    {
+        LOG_WARNING("TX queue full, dropping repeated packet");
+    }
+    
+    // Track CPU usage
+    absolute_time_t end_time = get_absolute_time();
+    s->repeater_cpu_usage_us += absolute_time_diff_us(start_time, end_time);
+}
+
 // --- RX ---
 static void rx_done()
 {
@@ -176,12 +220,23 @@ static void rx_done()
         rfm9x_clear_interrupts(&s->radio);
         return;
     }
+    
+    // Check if we should repeat this packet
+    bool should_repeat = should_repeat_packet(&p);
+    
     if ((p.dst == _RH_BROADCAST_ADDRESS || p.dst == s->radio_node))
     {
         s->rx_packets++;
         if (!queue_try_add(&s->rx_queue, &p))
             s->rx_backpressure_drops++;
     }
+    
+    // Repeat packet if conditions are met
+    if (should_repeat)
+    {
+        repeat_packet(p);
+    }
+    
     rfm9x_clear_interrupts(&s->radio);
 }
 
