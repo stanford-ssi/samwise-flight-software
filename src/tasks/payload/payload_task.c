@@ -108,7 +108,7 @@ bool try_execute_payload_command(slate_t *slate)
  */
 
 /*** PAYLOAD COMMANDS TESTS ***/
-void beacon_down_command_test(slate_t *slate)
+void test_beacon_payload_command_successful(slate_t *slate)
 {
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
     int len = sizeof(packet) - 1;
@@ -134,7 +134,7 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-void ping_command_test(slate_t *slate)
+void test_ping_payload_command_successful(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
@@ -161,7 +161,7 @@ void ping_command_test(slate_t *slate)
 }
 
 /*** BRINGUP TESTS ***/
-void power_on_off_payload_test(slate_t *slate)
+void test_payload_power_on_off_successful(slate_t *slate)
 {
     LOG_INFO("Turning Payload on...");
     payload_turn_on(slate);
@@ -211,7 +211,7 @@ void power_on_off_payload_test(slate_t *slate)
 
 /** Functionality Tests **/
 
-void payload_uart_write_off_test(slate_t *slate)
+void test_payload_uart_write_off_successful(slate_t *slate)
 {
     // NOTE: Mostly visual, run without RPi harness connected onto RPi
     char packet[] = "[\"ping\", [], {}]";
@@ -232,7 +232,7 @@ void payload_uart_write_off_test(slate_t *slate)
     }
 }
 
-void payload_uart_write_on_test(slate_t *slate)
+void test_payload_uart_write_on_successful(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
@@ -256,10 +256,10 @@ void payload_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(PAYLOAD_TASK_COLOR);
     LOG_INFO("Sending an Info Request Command to the RPI...");
-    // beacon_down_command_test(slate);
-    // ping_command_test(slate);
+    // test_beacon_payload_command_successful(slate);
+    // test_ping_payload_command_successful(slate);
 
-    payload_uart_write_on_test(slate);
+    test_payload_uart_write_on_successful(slate);
 
     return;
 
