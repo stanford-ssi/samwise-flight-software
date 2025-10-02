@@ -15,6 +15,9 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+// LED Color for beacon task - Yellow
+#define BEACON_TASK_COLOR 255, 255, 0
+
 void beacon_task_init(slate_t *slate);
 void beacon_task_dispatch(slate_t *slate);
 

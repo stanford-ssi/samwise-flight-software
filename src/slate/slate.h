@@ -17,6 +17,7 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
+#include "adcs_packet.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "watchdog.h"
@@ -40,6 +41,30 @@ typedef struct samwise_slate
     sched_state_t *current_state;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
+    // Manually set next state to transition to
+    sched_state_t *manual_override_state;
+
+    /*
+     * Power Telemetry
+     */
+    uint16_t battery_voltage; // in mV (to 0.001V)
+    uint16_t battery_current; // in mA (to 0.001A)
+    uint16_t solar_voltage;   // in mV (to 0.001V)
+    uint16_t solar_current;   // in mA (to 0.001A)
+    bool fixed_solar_charge;  // 0 for off status, 1 for on status
+    bool fixed_solar_fault;   // 0 for no fault, 1 for faulty
+
+    /*
+     * Structure status readouts
+     */
+    bool is_rbf_detected; // true if the RBF is still attached, false if it has
+                          // been removed
+
+    /* c
+     * Solar panels A and B
+     */
+    bool panel_A_deployed; // 1 for deployed
+    bool panel_B_deployed; // 1 for deployed
 
     /*
      * Watchdog
@@ -54,9 +79,7 @@ typedef struct samwise_slate
     /*
      * Command switch
      */
-    queue_t task1_data; // queues of this kind will exist for each task called
-                        // from radio com
-    queue_t task2_data;
+    queue_t payload_command_data;
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
@@ -64,6 +87,7 @@ typedef struct samwise_slate
     uint16_t packet_buffer_index;
     uint16_t last_place_on_packet;
     uint8_t uploading_command_id;
+    uint8_t number_commands_processed;
 
     /*
      * Radio
@@ -78,6 +102,24 @@ typedef struct samwise_slate
     uint32_t rx_bad_packet_drops;
     uint32_t tx_bytes;
     uint32_t tx_packets;
+
+    /*
+     * RPi UART Communication
+     */
+    queue_t rpi_uart_queue;
+    absolute_time_t rpi_uart_last_byte_receive_time;
+    int curr_command_seq_num;
+    bool is_payload_on;
+    bool is_uart_init;
+
+    /*
+     * ADCS board status and telemetry
+     */
+    bool is_adcs_on;
+    uint32_t adcs_num_failed_checks;
+    adcs_packet_t adcs_telemetry;
+    bool is_adcs_telem_valid;
+
 } slate_t;
 
 extern slate_t slate;

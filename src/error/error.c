@@ -11,6 +11,7 @@
  */
 
 #include "error.h"
+#include "safe_sleep.h"
 
 /**
  * This function should be called if we encounter an unrecoverable error. In
@@ -21,7 +22,7 @@
  * Note: We do not use the pico's built-in panic function to allow for
  * customized behavior.
  */
-void fatal_error()
+void fatal_error(char *msg)
 {
 #ifdef FLIGHT
     return;
@@ -32,17 +33,18 @@ void fatal_error()
         {
 #ifdef PICO
             gpio_put(PICO_DEFAULT_LED_PIN, 1);
-            sleep_ms(100);
+            safe_sleep_ms(100);
             gpio_put(PICO_DEFAULT_LED_PIN, 0);
-            sleep_ms(100);
+            safe_sleep_ms(100);
 #else
             neopixel_set_color_rgb(0xff, 0x33, 0);
-            sleep_ms(100);
+            safe_sleep_ms(100);
             neopixel_set_color_rgb(0, 0, 0);
-            sleep_ms(100);
+            safe_sleep_ms(100);
 #endif
         }
-        sleep_ms(500);
+        printf("ERROR: %s", msg);
+        safe_sleep_ms(500);
     }
 #endif
 }

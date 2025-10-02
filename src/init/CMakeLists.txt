@@ -1,6 +1,16 @@
 add_library(init init.c)
 
-target_link_libraries(init PUBLIC burn_wire pico_stdlib scheduler onboard_led watchdog slate neopixel)
+target_link_libraries(init PUBLIC
+  burn_wire
+  device_status
+  hardware_i2c
+  neopixel
+  onboard_led
+  pico_stdlib
+  scheduler
+  slate
+  watchdog
+)
 
 target_include_directories(init PUBLIC
   "${PROJECT_SOURCE_DIR}/src/init"

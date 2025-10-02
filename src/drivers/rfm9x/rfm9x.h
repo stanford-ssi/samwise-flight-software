@@ -9,10 +9,11 @@
 #include "bit-support.h"
 #include "logger.h"
 #include "macros.h"
+#include "packet.h"
 #include "pins.h"
 
-#define PACKET_SIZE 256
-#define PAYLOAD_SIZE 251
+#define PAYLOAD_SIZE                                                           \
+    PACKET_SIZE - 4 // 4 bytes for header (destination, node, identifier, flags)
 
 #define RFM9X_SPI_BAUDRATE (1000 * 1000)
 #define RFM9X_FREQUENCY 4381 // In .1 MHz, so 438.1 MHz
@@ -69,40 +70,6 @@ void rfm9x_init(rfm9x_t *r);
  */
 uint32_t rfm9x_version(rfm9x_t *r);
 
-/*
- * Send a raw transmission from the RFM9X.
- *
- * r: the radio
- * data: the data to send
- * l: the length of the data. Must be less than `PAYLOAD_SIZE`
- * keep_listening: 0 to stop listening after sending, 1 to keep blocking
- * destination: radio to send it to. 255 is broadcast.
- * node: our address
- * identifier: Sequence number — if sending multiple packets, increment by one
- * per packet.
- * flags:
- */
-uint8_t rfm9x_send(rfm9x_t *r, char *data, uint32_t l, uint8_t keep_listening,
-                   uint8_t destination, uint8_t node, uint8_t identifier,
-                   uint8_t flags);
-
-/*
- * Send a transmission.
- *
- * Sends l bytes of data, tagged with the current seq number. Waits for an ack.
- *
- * Returns 1 if an ack was received, 0 otherwise.
- */
-uint8_t rfm9x_send_ack(rfm9x_t *r, char *data, uint32_t l, uint8_t destination,
-                       uint8_t node, uint8_t max_retries);
-
-/*
- * Receive a transmission.
- */
-uint8_t rfm9x_receive(rfm9x_t *r, char *packet, uint8_t node,
-                      uint8_t keep_listening, uint8_t with_ack,
-                      bool blocking_wait_for_packet);
-
 uint32_t rfm9x_version(rfm9x_t *r);
 
 void rfm9x_listen(rfm9x_t *r);
@@ -117,6 +84,11 @@ void rfm9x_clear_interrupts(rfm9x_t *r);
 
 void rfm9x_set_rx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
 void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq);
+
+void rfm9x_print_parameters(rfm9x_t *r);
+void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l);
+void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
+                         uint8_t seq, uint8_t len, uint8_t *data);
 
 typedef enum
 {

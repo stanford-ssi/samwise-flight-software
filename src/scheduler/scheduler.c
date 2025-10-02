@@ -115,7 +115,19 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    sched_state_t *const next_state = current_state_info->get_next_state(slate);
+    sched_state_t *next_state;
+    if (slate->manual_override_state != NULL)
+    {
+        LOG_INFO("sched: Manual state override to %s",
+                 slate->manual_override_state->name);
+        next_state = slate->manual_override_state;
+        slate->manual_override_state = NULL;
+    }
+    else
+    {
+        next_state = current_state_info->get_next_state(slate);
+    }
+
     if (next_state != current_state_info)
     {
         LOG_DEBUG("sched: Transitioning to state %s", next_state->name);
