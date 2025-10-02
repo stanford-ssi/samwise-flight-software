@@ -61,10 +61,14 @@ endif()
 set(sdkVersion 2.1.1)
 set(toolchainVersion 14_2_Rel1)
 set(picotoolVersion 2.1.1)
-include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+if(EXISTS "${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake")
+    include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+else()
+    message(WARNING "VSCode Pico extension not found. Using fallback SDK configuration.")
+endif()
 # ====================================================================================
 
-set(PICO_BOARD pico2 CACHE STRING "Board Type")
+# Board type set by PROFILE above
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 # include(pico-sdk/pico_sdk_init.cmake)
