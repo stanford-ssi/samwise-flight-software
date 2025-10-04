@@ -97,7 +97,17 @@ If gcc can't find header files, try:
 Unfortunately, I have not gotten to fully supporting Windows. The best option is
 to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm) & [CMake](https://cmake.org/download/) according to their respective websites.
 
-# Part 1: Blinking LED
+[WIP] we'll working on getting support via VSCode RPi extension ([PR](https://github.com/stanford-ssi/samwise-flight-software/pull/153))
+
+# Part 1: CMake, Building & Project Structure
+
+Take a look at this minimal CMake project which mirrors the structure of our main software repo.
+
+[Minimal CMake Proj](https://github.com/devYaoYH/cmake_proj_structure/tree/main)
+
+You can try pulling this repo and get yourself familiarized with using CMake to compile code and run tests.
+
+# Part 2: Blinking LED
 
 All microcontrollers come with some pins you can turn on and off, communicate
 over, etc. These pins are called *general purpose input/output pins* or GPIO
@@ -118,7 +128,7 @@ use is the sleeping methods, which are exactly like the ones from Python.
 
 ## Git
 
-You should create a clone of [this tepository](https://github.com/shetaye/ssi-onboarding-24/tree/main) using VSCode
+You should create a clone of [this tepository](https://github.com/devYaoYH/cmake_proj_structure) using VSCode
 (or a git client of your choice). If you are using VSCode, they provide a
 [tutorial](https://code.visualstudio.com/docs/sourcecontrol/intro-to-git) on how
 to do this.
@@ -218,24 +228,7 @@ Unplug your pi, hold the button on your pi, plug it in, then move
 `build/onboarding.uf2` into the drive that shows up. The light should start to
 blink!
 
-# Part 1.5: Github
-
-Now we're going to write code within the actual SSI codebase.
-
-## Git
-
-We will get each of you set up on the GitHub. If you don't already have an
-account, make one [here](https://github.com).
-
-If you have no or little experience with Git, I recommend installing [Github
-Desktop](https://desktop.github.com/download/). We will be running a special
-onboarding session for Git later on.
-
-## Repository
-
-Clone *this* repository via whatever Git client you want
-
-# Part 2: Scheduler
+# Part 3: Scheduler
 
 The flight software is organized into a state machine. The satellite can be in
 any of several states e.g. "running," "low power," etc.
