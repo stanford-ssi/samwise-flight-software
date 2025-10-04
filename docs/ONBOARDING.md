@@ -128,7 +128,7 @@ use is the sleeping methods, which are exactly like the ones from Python.
 
 ## Git
 
-You should create a clone of [this tepository](https://github.com/devYaoYH/cmake_proj_structure) using VSCode
+You should create a clone of [this tepository](https://github.com/shetaye/ssi-onboarding-24/tree/main) using VSCode
 (or a git client of your choice). If you are using VSCode, they provide a
 [tutorial](https://code.visualstudio.com/docs/sourcecontrol/intro-to-git) on how
 to do this.
@@ -228,7 +228,17 @@ Unplug your pi, hold the button on your pi, plug it in, then move
 `build/onboarding.uf2` into the drive that shows up. The light should start to
 blink!
 
-# Part 3: Scheduler
+# Part 3: Samwise Software!
+
+NOTE: If you made it so far, GREAT!
+
+Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `build/src/samwise.uf2` generated (SUCCESS!).
+
+## Code Structure
+
+This [overview](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#code-structure) provides an idea of how our repository is organized.
+
+## Adding new states/tasks
 
 The flight software is organized into a state machine. The satellite can be in
 any of several states e.g. "running," "low power," etc.
@@ -244,17 +254,5 @@ called at most every `dispatch_period_ms` milliseconds. Additionally, its
 You will also see references to a "slate." The slate is a huge block of
 statically allocated memory. 
 
-For this part, you are going to write your own task.
+Moving forward, you are going to write your own tasks and test it!
 
-## Code Navigation
-
-The scheduler code is located in `scheduler/`. It isn't necessary for this part,
-but it might be interesting to you.
-
-The state machine is located in `state_machine/`, with tasks in
-`state_machine/tasks` and states in `state_machine/states`. There is a README in
-`state_machine` that explains how to add new tasks and states.
-
-## Your task
-
-Make it do whatever you want!
