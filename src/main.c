@@ -6,6 +6,7 @@
  */
 
 #include "flash.h"
+#include "hal_interface.h"
 #include "init.h"
 #include "logger.h"
 #include "macros.h"
@@ -34,6 +35,9 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+    // Initialize HAL before any other operations
+    hal_init();
+
     // We need to first initialize watchdog before any sleep is called.
     // Watchdog needs to be fed periodically to prevent rebooting.
     slate.watchdog = watchdog_mk();
@@ -89,8 +93,7 @@ int main()
     LOG_INFO("main: Running samwise-flight-software %s", COMMIT_HASH);
 #endif
 
-    // At this point, all initialization is done.
-    neopixel_set_color_rgb(0, 0xff, 0xff);
+    neopixel_set_color_rgb(0, 0xf, 0xf);
 
     /*
      * Go state machine!

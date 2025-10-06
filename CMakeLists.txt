@@ -2,6 +2,9 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+# Project declaration must come early
+project(samwise C CXX ASM)
+
 option(PROFILE "Build profile to build for" "PICO")
 option(COMMIT_HASH "Commit hash" "no-hash")
 option(PACKET_HMAC_PSK "Packet HMAC PSK")
@@ -45,36 +48,48 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Initialise pico_sdk from installed location
-# (note this can come from environment, CMake cache etc)
+# Project already declared above
 
-# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
-if(WIN32)
-    set(USERHOME $ENV{USERPROFILE})
+if(PROFILE STREQUAL "TEST")
+    # Test build - no Pico SDK needed
+    
+    # Add the library directories
+    add_subdirectory(lib/tinycrypt)
+    
+    # Include src
+    add_subdirectory(src)
 else()
-    set(USERHOME $ENV{HOME})
+    # Embedded build - initialize Pico SDK
+    
+    # Initialise pico_sdk from installed location
+    # (note this can come from environment, CMake cache etc)
+
+    # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+    if(WIN32)
+        set(USERHOME $ENV{USERPROFILE})
+    else()
+        set(USERHOME $ENV{HOME})
+    endif()
+    set(sdkVersion 2.0.0)
+    set(toolchainVersion 13_2_Rel1)
+    set(picotoolVersion 2.0.0)
+    include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+    # ====================================================================================
+
+    # Pull in Raspberry Pi Pico SDK (must be before project)
+    include(pico-sdk/pico_sdk_init.cmake)
+
+    if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+      message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+    endif()
+
+    # Initialise the Raspberry Pi Pico SDK
+    pico_sdk_init()
+
+    # Add the library directories
+    add_subdirectory(lib/tinycrypt)
+
+    # Include src
+    # Executable `samwise` built under src/
+    add_subdirectory(src)
 endif()
-set(sdkVersion 2.0.0)
-set(toolchainVersion 13_2_Rel1)
-set(picotoolVersion 2.0.0)
-include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
-# ====================================================================================
-
-# Pull in Raspberry Pi Pico SDK (must be before project)
-include(pico-sdk/pico_sdk_init.cmake)
-
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
-endif()
-
-project(samwise C CXX ASM)
-
-# Initialise the Raspberry Pi Pico SDK
-pico_sdk_init()
-
-# Add the library directories
-add_subdirectory(lib/tinycrypt)
-
-# Include src
-# Executable `samwise` built under src/
-add_subdirectory(src)

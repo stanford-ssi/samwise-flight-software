@@ -1,8 +1,13 @@
 #pragma once
 
-#include "pico/types.h"
-#include "tinycrypt/sha256.h"
+#ifdef TEST_MODE
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
+#else
+#include "pico/types.h"
+#endif
+#include "tinycrypt/sha256.h"
 
 typedef struct __attribute__((packed))
 {

@@ -11,16 +11,23 @@
 
 #pragma once
 
+#ifdef TEST_MODE
+#include <stdbool.h>
+#include <stdint.h>
+#else
 #include "pico/types.h"
 #include "pico/util/queue.h"
+#endif
 
 #include "state_machine.h"
 #include "typedefs.h"
 
+#ifndef TEST_MODE
 #include "adcs_packet.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "watchdog.h"
+#endif
 
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
