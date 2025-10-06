@@ -8,6 +8,7 @@
 #include "command_task.h"
 #include "command_parser.h"
 #include "macros.h"
+#include "neopixel.h"
 #include "pico/stdlib.h"
 #include "slate.h"
 
@@ -30,6 +31,7 @@ void command_task_init(slate_t *slate)
 /// @brief Process incoming radio packets and dispatch commands
 void command_task_dispatch(slate_t *slate)
 {
+    neopixel_set_color_rgb(COMMAND_TASK_COLOR);
     packet_t packet = {0};
 
     // Process one packet per dispatch cycle
@@ -44,6 +46,7 @@ void command_task_dispatch(slate_t *slate)
         // Parse and process the command
         dispatch_command(slate, &packet);
     }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t command_task = {.name = "command",

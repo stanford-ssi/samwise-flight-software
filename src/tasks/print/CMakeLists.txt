@@ -1,7 +1,7 @@
 add_library(print_task print_task.c)
 
 # Specify targets to link compiled binaries
-target_link_libraries(print_task PUBLIC slate common logger)
+target_link_libraries(print_task PUBLIC slate common logger neopixel)
 
 # Specify directories with relevant header files
 target_include_directories(print_task PUBLIC

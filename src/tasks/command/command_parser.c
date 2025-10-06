@@ -40,10 +40,30 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Payload: %s", payload_command.serialized_command);
             break;
         }
-        case NO_OP:
+        case PING:
         {
-            LOG_INFO("Number of Commands Executed: %d",
-                     slate->number_commands_processed);
+            LOG_INFO("Retrieving number of commands executed...");
+            uint8_t data[PACKET_DATA_SIZE];
+
+            // Package interger value into a string
+            int len =
+                snprintf(data, sizeof(data), "Number commands executed: %d",
+                         slate->number_commands_processed);
+
+            // Create the packet
+            packet_t pkt;
+            rfm9x_format_packet(&pkt, 0, 0, 0, 0, len, &data[0]);
+
+            // Add to transmit buffer
+            LOG_INFO("Sending to radio transmit queue...");
+            if (queue_try_add(&slate->tx_queue, &pkt))
+            {
+                LOG_INFO("Ping info was sent...");
+            }
+            else
+            {
+                LOG_ERROR("Ping info failed to send...");
+            }
             break;
         }
         case PAYLOAD_TURN_ON:
@@ -63,25 +83,33 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:
         {
-            if (strcmp(command_payload, "running_state"))
+            LOG_INFO("Manual state override command received: %s",
+                     command_payload);
+            if (strcmp(command_payload, "running_state") == 0)
             {
-                overridden_state = &running_state;
+                slate->manual_override_state = &running_state;
             }
-            else if (strcmp(command_payload, "init_state"))
+            else if (strcmp(command_payload, "init_state") == 0)
             {
-                overridden_state = &init_state;
+                slate->manual_override_state = &init_state;
             }
-            else if (strcmp(command_payload, "burn_wire_state"))
+            else if (strcmp(command_payload, "burn_wire_state") == 0)
             {
-                overridden_state = &burn_wire_state;
+                slate->manual_override_state = &burn_wire_state;
+            }
+            else if (strcmp(command_payload, "burn_wire_reset_state") == 0)
+            {
+                slate->manual_override_state = &burn_wire_reset_state;
             }
             else
             {
-                overridden_state = NULL;
+                slate->manual_override_state = NULL;
+                LOG_ERROR("Unknown state override command: %s",
+                          command_payload);
             }
-
             break;
         }
+
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;

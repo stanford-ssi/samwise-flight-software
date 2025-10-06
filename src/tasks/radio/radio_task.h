@@ -21,6 +21,9 @@
 #include "packet.h"
 #include "rfm9x.h"
 
+// LED Color for radio task - Magenta
+#define RADIO_TASK_COLOR 255, 0, 255
+
 #define TX_QUEUE_SIZE 16
 #define RX_QUEUE_SIZE 16
 

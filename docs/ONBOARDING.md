@@ -97,7 +97,17 @@ If gcc can't find header files, try:
 Unfortunately, I have not gotten to fully supporting Windows. The best option is
 to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm) & [CMake](https://cmake.org/download/) according to their respective websites.
 
-# Part 1: Blinking LED
+[WIP] we'll working on getting support via VSCode RPi extension ([PR](https://github.com/stanford-ssi/samwise-flight-software/pull/153))
+
+# Part 1: CMake, Building & Project Structure
+
+Take a look at this minimal CMake project which mirrors the structure of our main software repo.
+
+[Minimal CMake Proj](https://github.com/devYaoYH/cmake_proj_structure/tree/main)
+
+You can try pulling this repo and get yourself familiarized with using CMake to compile code and run tests.
+
+# Part 2: Blinking LED
 
 All microcontrollers come with some pins you can turn on and off, communicate
 over, etc. These pins are called *general purpose input/output pins* or GPIO
@@ -218,24 +228,17 @@ Unplug your pi, hold the button on your pi, plug it in, then move
 `build/onboarding.uf2` into the drive that shows up. The light should start to
 blink!
 
-# Part 1.5: Github
+# Part 3: Samwise Software!
 
-Now we're going to write code within the actual SSI codebase.
+NOTE: If you made it so far, GREAT!
 
-## Git
+Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `build/src/samwise.uf2` generated (SUCCESS!).
 
-We will get each of you set up on the GitHub. If you don't already have an
-account, make one [here](https://github.com).
+## Code Structure
 
-If you have no or little experience with Git, I recommend installing [Github
-Desktop](https://desktop.github.com/download/). We will be running a special
-onboarding session for Git later on.
+This [overview](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#code-structure) provides an idea of how our repository is organized.
 
-## Repository
-
-Clone *this* repository via whatever Git client you want
-
-# Part 2: Scheduler
+## Adding new states/tasks
 
 The flight software is organized into a state machine. The satellite can be in
 any of several states e.g. "running," "low power," etc.
@@ -251,17 +254,5 @@ called at most every `dispatch_period_ms` milliseconds. Additionally, its
 You will also see references to a "slate." The slate is a huge block of
 statically allocated memory. 
 
-For this part, you are going to write your own task.
+Moving forward, you are going to write your own tasks and test it!
 
-## Code Navigation
-
-The scheduler code is located in `scheduler/`. It isn't necessary for this part,
-but it might be interesting to you.
-
-The state machine is located in `state_machine/`, with tasks in
-`state_machine/tasks` and states in `state_machine/states`. There is a README in
-`state_machine` that explains how to add new tasks and states.
-
-## Your task
-
-Make it do whatever you want!

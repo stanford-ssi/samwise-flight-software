@@ -236,7 +236,9 @@ def decode_beacon_data(data):
         print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
         
         # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1 = 45 bytes
-        if len(data) >= stats_start + 45:  # 45 bytes for new beacon_stats struct
+        # Plus ADCS packet size: 25 bytes (float w + 4 floats quaternion + char state + uint32_t boot_count)
+        # Total expected: 45 + 25 = 70 bytes after state name
+        if len(data) >= stats_start + 45:  # 45 bytes for beacon_stats struct
             print("DEBUG: Extracting stats data...")
             stats_data = data[stats_start:stats_start + 45]
             print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
@@ -270,9 +272,26 @@ def decode_beacon_data(data):
                 "solar_current": unpacked_stats[11],
                 "device_status": unpacked_stats[12]
             }
+            
+            # Check if ADCS data is appended after beacon stats
+            adcs_start = stats_start + 45
+            adcs_data = None
+            if len(data) >= adcs_start + 25:  # 25 bytes for ADCS packet
+                print("DEBUG: ADCS data detected, extracting...")
+                adcs_payload = data[adcs_start:adcs_start + 25]
+                adcs_data = decode_adcs_data(adcs_payload)
+                if 'error' not in adcs_data:
+                    print("DEBUG: ADCS decode successful")
+                else:
+                    print("DEBUG: ADCS decode failed: {}".format(adcs_data.get('error', 'unknown')))
+                    adcs_data = None
+            else:
+                print("DEBUG: No ADCS data present (need {} bytes, have {})".format(25, len(data) - adcs_start))
+            
             return {
                 "state_name": state_name,
-                "stats": beacon_stats
+                "stats": beacon_stats,
+                "adcs": adcs_data
             }
         else:
             print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(45, len(data) - stats_start))
@@ -282,6 +301,46 @@ def decode_beacon_data(data):
         print("[decode_beacon_data] Error decoding beacon data: {}".format(e))
         print("DEBUG: Full traceback:")
         return {"state_name": "decode_error", "stats": None}
+
+def decode_adcs_data(data):
+    """Decode ADCS telemetry data from adcs_packet.h format"""
+    try:
+        print("DEBUG: decode_adcs_data called with {} bytes".format(len(data)))
+        print("DEBUG: data = {}".format(' '.join('{:02x}'.format(b) for b in data)))
+        
+        # ADCS packet structure from adcs_packet.h:
+        # float w (4 bytes) - Angular velocity
+        # float q0, q1, q2, q3 (16 bytes) - Quaternion estimate
+        # char state (1 byte) - State
+        # uint32_t boot_count (4 bytes) - Boot count
+        # Total: 25 bytes
+        
+        if len(data) < 25:
+            print("DEBUG: ADCS packet too short, need 25 bytes, got {}".format(len(data)))
+            return {"error": "packet_too_short", "expected": 25, "actual": len(data)}
+        
+        # Unpack ADCS data (little-endian floats, char, uint32)
+        # f = float (4 bytes), B = unsigned char (1 byte), L = uint32 (4 bytes)
+        unpacked = struct.unpack('<fffffBL', data[:25])
+        
+        adcs_data = {
+            "angular_velocity": unpacked[0],
+            "quaternion": {
+                "q0": unpacked[1],
+                "q1": unpacked[2], 
+                "q2": unpacked[3],
+                "q3": unpacked[4]
+            },
+            "state": unpacked[5],
+            "boot_count": unpacked[6]
+        }
+        
+        print("DEBUG: ADCS decode successful")
+        return adcs_data
+        
+    except Exception as e:
+        print("[decode_adcs_data] Error decoding ADCS data: {}".format(e))
+        return {"error": "decode_failed", "exception": str(e)}
 
 def try_get_packet(timeout=0.1):
     """Check for incoming packets with short timeout"""
@@ -335,6 +394,19 @@ def try_get_packet(timeout=0.1):
                             if status & 0x10: status_flags.append("panel_B_deployed")
                             if status & 0x20: status_flags.append("payload_on")
                             print(f"    Device Status: 0x{status:02x} ({', '.join(status_flags) if status_flags else 'none'})")
+                            
+                            # Display ADCS data if present
+                            if beacon_data.get('adcs'):
+                                adcs = beacon_data['adcs']
+                                print(f"  === ADCS Telemetry ===")
+                                print(f"    Angular Velocity: {adcs['angular_velocity']:.6f} rad/s")
+                                q = adcs['quaternion']
+                                print(f"    Quaternion: q0={q['q0']:.6f}, q1={q['q1']:.6f}, q2={q['q2']:.6f}, q3={q['q3']:.6f}")
+                                # Calculate quaternion magnitude for validation
+                                q_mag = (q['q0']**2 + q['q1']**2 + q['q2']**2 + q['q3']**2)**0.5
+                                print(f"    Quaternion Magnitude: {q_mag:.6f} (should be ~1.0)")
+                                print(f"    ADCS State: {adcs['state']}")
+                                print(f"    ADCS Boot Count: {adcs['boot_count']}")
                         else:
                             print(f"    Beacon decode failed, raw data: {beacon_payload[:20]}")
                     else:
@@ -734,73 +806,101 @@ def debug_listen_mode():
                                     print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
                                     print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
                                     print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
-                                    print("  Device Status: 0x{:02x}".format(stats['device_status']))
+                                    # Decode device status bits
+                                    status = stats['device_status']
+                                    status_flags = []
+                                    if status & 0x01: status_flags.append("RBF")
+                                    if status & 0x02: status_flags.append("solar_charge")
+                                    if status & 0x04: status_flags.append("solar_fault")
+                                    if status & 0x08: status_flags.append("panel_A")
+                                    if status & 0x10: status_flags.append("panel_B")
+                                    if status & 0x20: status_flags.append("payload")
+                                    print("  Status: 0x{:02x} ({})".format(status, ','.join(status_flags) if status_flags else 'none'))
+                                    
+                                    # Display ADCS data if present
+                                    if beacon_data.get('adcs'):
+                                        adcs = beacon_data['adcs']
+                                        print("  === ADCS Data ===")
+                                        print("  Angular Velocity: {:.6f} rad/s".format(adcs['angular_velocity']))
+                                        q = adcs['quaternion']
+                                        print("  Quaternion: q0={:.6f}, q1={:.6f}, q2={:.6f}, q3={:.6f}".format(q['q0'], q['q1'], q['q2'], q['q3']))
+                                        q_mag = (q['q0']**2 + q['q1']**2 + q['q2']**2 + q['q3']**2)**0.5
+                                        print("  Quat Magnitude: {:.6f}".format(q_mag))
+                                        print("  ADCS State: {}".format(adcs['state']))
+                                        print("  ADCS Boot Count: {}".format(adcs['boot_count']))
                                 else:
-                                    print("  Beacon decode failed")
-                            except Exception as decode_e:
-                                print("  Beacon decode error: {}".format(decode_e))
-                                
+                                    print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
+                            except Exception as e:
+                                print("  Error decoding beacon data: {}".format(e))
+                            finally:
+                                print("  Data: {}".format(beacon_payload))
                         else:
-                            print("  Not enough data for beacon")
+                            print("  Packet too short: need {} bytes, got {}".format(1 + data_len, len(packet)))
                     
-                except Exception as header_e:
-                    print("  Header parsing error: {}".format(header_e))
+                except Exception as e:
+                    print("DECODE ERROR: {}".format(e))
+                    # Fallback to raw display
+                    if len(packet) >= 5:
+                        print("Raw first 5 bytes: {}, {}, {}, {}, {}".format(
+                            packet[0], packet[1], packet[2], packet[3], packet[4]))
+                
+                # Show signal strength
+                try:
+                    rssi = rfm9x.last_rssi
+                    print("RSSI: {} dBm".format(rssi))
+                except:
+                    pass
                 
                 print("*** END PACKET ***\n")
             
             led.value = False
             time.sleep(0.1)
-    
+            
+            # Periodic status
+            current_time = time.monotonic()
+            if current_time - start_time > 30:
+                print("[{:.0f}s] Listening... ({} packets so far)".format(current_time - start_time, packet_count))
+                start_time = current_time
+                
     except KeyboardInterrupt:
-        print("\nStopping debug listener...")
-        led.value = False
-
+        print("\n=== SUMMARY ===")
+        print("Total packets: {}".format(packet_count))
+        print("Returning to main menu...")
 
 def main():
-    """Main entry point with configuration and mode selection"""
-    print("\n=== Samwise Ground Station ===")
-    print("Enhanced Ground Station with Multi-Board Support")
-    print("Version 2.0 - Main Branch")
+    """Main program entry point"""
+    print("=== Samwise Ground Station ===")
+    print("Interactive LoRA Communication System")
+    
+    # Quick setup with defaults for debug mode
+    print("\nQuick setup for debugging...")
+    config['auth_enabled'] = True
+    config['frequency'] = 438.1
+    config['bandwidth'] = 125000
+    config['spreading_factor'] = 7
+    config['coding_rate'] = 5
+    config['crc'] = True
+    
+    # Initialize radio with configured settings
+    initialize_radio()
+    
+    # Create packet builder
+    global packet_builder
+    packet_builder = PacketBuilder()
+    
+    print("\nSelect mode:")
+    print("1. Debug Listen Mode (watch for any packets)")
+    print("2. Interactive Command Mode")
     
     try:
-        # Configuration phase
-        configure_authentication()
-        configure_lora_settings()
-        initialize_radio()
-        
-        print("\n=== Mode Selection ===")
-        print("1. Interactive Command Mode (default)")
-        print("2. Debug Listener Mode")
-        print("3. Legacy Loop Mode")
-        
-        mode = get_user_input("Select mode (1-3)", "1")
-        
-        if mode == "2":
+        choice = input("Enter choice (1 or 2): ").strip()
+        if choice == "1":
             debug_listen_mode()
-        elif mode == "3":
-            print("\n=== Legacy Loop Mode ===")
-            print("Sending periodic test packets...")
-            while True:
-                led.value = True
-                time.sleep(0.5)
-                led.value = False
-                time.sleep(4.5)
-                print("Sending packet")
-                send_payload_pkt()
-                try_get_packet()
         else:
-            # Default to interactive mode
+            print("\n=== Starting Interactive Command Loop ===")
             interactive_command_loop()
-    
     except KeyboardInterrupt:
-        print("\nShutdown requested by user")
-    except Exception as e:
-        print("Fatal error: {}".format(e))
-    finally:
-        led.value = False
-        print("Ground station stopped.")
+        print("\nGoodbye!")
 
-
-# Start the ground station
 if __name__ == "__main__":
     main()
