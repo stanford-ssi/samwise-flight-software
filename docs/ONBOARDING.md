@@ -67,7 +67,7 @@ must manually install. As of this lab, the following works:
 
         wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2
 
-        sudo tar xjf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C /usr/opt/
+        sudo tar xjf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C /usr/local/
 
 We want to get these binaries on our `$PATH` so we don't have to type the
 full path to them every time. There's a fast and messy option, or a slower
@@ -76,9 +76,9 @@ and cleaner option.
 The fast and messy option is to add symlinks to these in your system `bin`
 folder:
 
-        sudo ln -s /usr/opt/gcc-arm-none-eabi-10.3-2021.10/bin/* /usr/bin/
+        sudo ln -s /usr/local/gcc-arm-none-eabi-10.3-2021.10/bin/* /usr/bin/
 
-The cleaner option is to add `/usr/opt/gcc-arm-none-eabi-10.3-2021.10/bin` to
+The cleaner option is to add `/usr/local/gcc-arm-none-eabi-10.3-2021.10/bin` to
 your `$PATH` variable in your shell configuration file (e.g., `.zshrc` or
 `.bashrc`), save it, and `source` the configuration. When you run:
 
