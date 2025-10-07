@@ -20,8 +20,9 @@ elseif(PROFILE STREQUAL "PICUBED-FLIGHT")
 elseif(PROFILE STREQUAL "PICUBED-BRINGUP")
   set(PICO_BOARD samwise_picubed)
   set(SAMWISE_DEFINES BRINGUP)
-elseif(PROFILE STREQUAL "TEST")
+elseif(PROFILE STREQUAL "TESTS" OR PROFILE STREQUAL "TEST")
   set(SAMWISE_DEFINES TEST)
+  set(BUILD_TESTS ON)
 else()
   message(WARNING "Unrecognized build profile ${PROFILE}")
 endif()
@@ -48,33 +49,45 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Initialise pico_sdk from installed location
 # (note this can come from environment, CMake cache etc)
 
-# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
-if(WIN32)
-    set(USERHOME $ENV{USERPROFILE})
-else()
-    set(USERHOME $ENV{HOME})
-endif()
-set(sdkVersion 2.0.0)
-set(toolchainVersion 13_2_Rel1)
-set(picotoolVersion 2.0.0)
-include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
-# ====================================================================================
+# Only initialize Pico SDK for non-test builds
+if(NOT BUILD_TESTS)
+  # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+  if(WIN32)
+      set(USERHOME $ENV{USERPROFILE})
+  else()
+      set(USERHOME $ENV{HOME})
+  endif()
+  set(sdkVersion 2.0.0)
+  set(toolchainVersion 13_2_Rel1)
+  set(picotoolVersion 2.0.0)
+  include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+  # ====================================================================================
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
-include(pico-sdk/pico_sdk_init.cmake)
+  # Pull in Raspberry Pi Pico SDK (must be before project)
+  include(pico-sdk/pico_sdk_init.cmake)
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+  if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+  endif()
 endif()
 
 project(samwise C CXX ASM)
 
-# Initialise the Raspberry Pi Pico SDK
-pico_sdk_init()
+# Initialise the Raspberry Pi Pico SDK for non-test builds
+if(NOT BUILD_TESTS)
+  pico_sdk_init()
+endif()
 
 # Add the library directories
-add_subdirectory(lib/tinycrypt)
+if(NOT BUILD_TESTS)
+  add_subdirectory(lib/tinycrypt)
+endif()
 
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)
+
+# Enable testing if in test mode
+if(BUILD_TESTS)
+  enable_testing()
+endif()
