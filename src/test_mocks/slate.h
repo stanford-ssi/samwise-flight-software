@@ -9,27 +9,22 @@
 // Include pico queue type
 #include "pico/util/queue.h"
 
-// Mock absolute_time_t for tests
+// Mock absolute_time_t for tests (must be before including driver headers)
 typedef uint64_t absolute_time_t;
+
+// Include real driver type definitions
+#include "rfm9x.h"
+#include "onboard_led.h"
+#include "watchdog.h"
 
 // Forward declarations
 typedef struct samwise_slate slate_t;
 typedef struct sched_state sched_state_t;
 typedef struct sched_task sched_task_t;
 
-// Mock types for tests
-
-typedef struct {
-    uint8_t dummy;
-} rfm9x_t;
-
-typedef struct {
-    uint8_t dummy;
-} onboard_led_t;
-
-typedef struct {
-    uint8_t dummy;
-} watchdog_t;
+// Type aliases for slate struct
+typedef struct onboard_led onboard_led_t;
+typedef struct watchdog watchdog_t;
 
 #define MAX_DATASTRUCTURE_SIZE 304
 

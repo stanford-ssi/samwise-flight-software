@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 // Mock SPI types and functions
 typedef struct { uint8_t dummy; } spi_inst_t;

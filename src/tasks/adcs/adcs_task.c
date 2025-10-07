@@ -8,6 +8,7 @@
 #include "adcs_task.h"
 #include "adcs_driver.h"
 #include "neopixel.h"
+#include "pico/stdlib.h"
 #include "slate.h"
 
 #define ADCS_MAX_FAILED_CHECKS_BEFORE_REBOOT (5)
