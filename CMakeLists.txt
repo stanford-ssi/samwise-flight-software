@@ -2,14 +2,18 @@
 
 cmake_minimum_required(VERSION 3.13)
 
-option(PROFILE "Build profile to build for" "PICO")
+# option(PROFILE "Build profile to build for" "PICO")
+if(PROFILE STREQUAL "OFF")
+  set(PROFILE PICO)
+endif()
+
 option(COMMIT_HASH "Commit hash" "no-hash")
 option(PACKET_HMAC_PSK "Packet HMAC PSK")
 
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
 
 if(PROFILE STREQUAL "PICO")
-  set(PICO_BOARD pico)
+  set(PICO_BOARD pico2)
   set(SAMWISE_DEFINES PICO)
 elseif(PROFILE STREQUAL "PICUBED-DEBUG")
   set(PICO_BOARD samwise_picubed)
@@ -54,18 +58,24 @@ if(WIN32)
 else()
     set(USERHOME $ENV{HOME})
 endif()
-set(sdkVersion 2.0.0)
-set(toolchainVersion 13_2_Rel1)
-set(picotoolVersion 2.0.0)
-include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+set(sdkVersion 2.1.1)
+set(toolchainVersion 14_2_Rel1)
+set(picotoolVersion 2.1.1)
+set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+if (EXISTS ${picoVscode})
+    include(${picoVscode})
+endif()
 # ====================================================================================
 
-# Pull in Raspberry Pi Pico SDK (must be before project)
-include(pico-sdk/pico_sdk_init.cmake)
+# Board type set by PROFILE above
 
-if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
-  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
-endif()
+# Pull in Raspberry Pi Pico SDK (must be before project)
+# include(pico-sdk/pico_sdk_init.cmake)
+include(pico_sdk_import.cmake)
+
+# if (PICO_SDK_VERSION_STRING VERSION_LESS "1.4.0")
+#   message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.4.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+# endif()
 
 project(samwise C CXX ASM)
 

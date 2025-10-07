@@ -28,3 +28,11 @@ target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
   flash neopixel)
 
 pico_add_extra_outputs(samwise)
+
+# Set the output directory for the samwise executable
+set_target_properties(samwise PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+
+)
