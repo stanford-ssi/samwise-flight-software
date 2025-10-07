@@ -8,6 +8,7 @@
 
 #include "adcs_packet.h"
 #include "slate.h"
+#include "state_machine.h"
 
 #define ADCS_TASK_COLOR 128, 255, 0
 

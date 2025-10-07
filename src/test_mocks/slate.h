@@ -3,6 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Include real adcs_packet definition
+#include "adcs_packet.h"
+
+// Include pico queue type
+#include "pico/util/queue.h"
+
 // Mock absolute_time_t for tests
 typedef uint64_t absolute_time_t;
 
@@ -12,13 +18,6 @@ typedef struct sched_state sched_state_t;
 typedef struct sched_task sched_task_t;
 
 // Mock types for tests
-typedef struct {
-    uint8_t dummy;
-} queue_t;
-
-typedef struct {
-    uint8_t dummy;
-} adcs_packet_t;
 
 typedef struct {
     uint8_t dummy;

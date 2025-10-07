@@ -2,9 +2,10 @@ add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 
 # Only build subdirectories needed for the current profile
 if(BUILD_TESTS)
-  # For tests, build test mocks and tasks
+  # For tests, build test mocks, tasks, and states
   add_subdirectory(test_mocks)
   add_subdirectory(tasks)
+  add_subdirectory(states)
 else()
   # For normal builds, build everything
   add_subdirectory(common)
