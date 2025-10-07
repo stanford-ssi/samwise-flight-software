@@ -81,3 +81,9 @@ uint8_t rfm9x_packet_to_fifo(rfm9x_t *r, uint8_t *buf, uint8_t n) { return n; }
 uint8_t rfm9x_packet_from_fifo(rfm9x_t *r, uint8_t *buf) { return 0; }
 void rfm9x_set_tx_irq(rfm9x_t *r, void (*callback)(void)) {}
 void rfm9x_set_rx_irq(rfm9x_t *r, void (*callback)(void)) {}
+
+
+// Payload UART stubs
+void payload_uart_init(slate_t *slate) {}
+uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet) { return 0; }
+void payload_uart_write_packet(slate_t *slate, const uint8_t *packet, uint16_t len, uint32_t timeout_ms) {}

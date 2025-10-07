@@ -24,6 +24,7 @@ static inline void gpio_init(uint gpio) {}
 static inline void gpio_set_dir(uint gpio, bool out) {}
 static inline void gpio_put(uint gpio, bool value) {}
 static inline bool gpio_get(uint gpio) { return false; }
+static inline bool gpio_get_out_level(uint gpio) { return false; }
 static inline void gpio_set_function(uint gpio, enum gpio_function fn) {}
 static inline void gpio_pull_up(uint gpio) {}
 static inline void gpio_pull_down(uint gpio) {}
