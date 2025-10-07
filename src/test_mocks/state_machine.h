@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "slate_mock.h"
+#include "slate.h"
 
 #define MAX_TASKS_PER_STATE 10
 

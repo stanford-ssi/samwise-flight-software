@@ -83,11 +83,13 @@ if(NOT BUILD_TESTS)
   add_subdirectory(lib/tinycrypt)
 endif()
 
-# Include src
-# Executable `samwise` built under src/
-add_subdirectory(src)
-
 # Enable testing if in test mode
 if(BUILD_TESTS)
   enable_testing()
+  # Include test helper functions before subdirectories so they're available
+  include(cmake/SamwiseTest.cmake)
 endif()
+
+# Include src
+# Executable `samwise` built under src/
+add_subdirectory(src)

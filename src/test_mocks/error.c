@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "error_mock.h"
+#include "error.h"
 
 void fatal_error()
 {
