@@ -5,7 +5,9 @@
 #include "state_machine.h"
 #include "typedefs.h"
 
-#include "running_state.h"
+// Forward declarations
+extern sched_state_t running_state;
+extern sched_state_t bringup_state;
 
 sched_state_t *init_get_next_state(slate_t *slate);
 

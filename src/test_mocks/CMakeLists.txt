@@ -14,9 +14,11 @@ target_include_directories(test_mocks PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     "${PROJECT_SOURCE_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src/common"
-    "${PROJECT_SOURCE_DIR}/src/packet"
+    "${PROJECT_SOURCE_DIR}/src/slate"
     "${PROJECT_SOURCE_DIR}/src/scheduler"
+    "${PROJECT_SOURCE_DIR}/src/packet"
     "${PROJECT_SOURCE_DIR}/src/tasks/command"
+    "${PROJECT_SOURCE_DIR}/src/drivers/logger"
     "${PROJECT_SOURCE_DIR}/src/drivers/rfm9x"
     "${PROJECT_SOURCE_DIR}/src/drivers/payload_uart"
     "${PROJECT_SOURCE_DIR}/src/drivers/onboard_led"

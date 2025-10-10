@@ -1,3 +1,3 @@
 #pragma once
 
-void fatal_error();
+void fatal_error(char *msg);
