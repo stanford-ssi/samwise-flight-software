@@ -5,6 +5,7 @@ add_library(test_mocks
     error.c
     neopixel.c
     driver_stubs.c
+    pico/time.c
 )
 
 # Make mock headers available - they will shadow real headers when this

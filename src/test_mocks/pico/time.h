@@ -9,7 +9,7 @@
 // Additional time functions
 #define PICO_TIME_DEFAULT_ALARM_POOL_HARDWARE_ALARM_NUM 3
 
-typedef void (*alarm_callback_t)(uint alarm_num);
+typedef void (*alarm_callback_t)(unsigned int alarm_num);
 
 static inline bool alarm_pool_add_alarm_at(void *pool, absolute_time_t time,
                                            alarm_callback_t callback,
