@@ -1,6 +1,6 @@
 #pragma once
 
-// Mock states.h for tests  
+// Mock states.h for tests
 // In tests, we don't need to include all the state headers
 // Just provide the state_machine types
 

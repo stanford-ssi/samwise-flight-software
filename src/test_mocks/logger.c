@@ -1,6 +1,6 @@
-#include <stdio.h>
-#include <stdarg.h>
 #include "logger.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 void log_message(LOG_LEVEL level, uint8_t sink_mask, const char *fmt, ...)
 {

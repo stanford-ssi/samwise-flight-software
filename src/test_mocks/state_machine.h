@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdint.h>
 #include "slate.h"
+#include <stdint.h>
+#include <stdlib.h>
 
 #define MAX_TASKS_PER_STATE 10
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 // Mock pico types for tests
 typedef uint64_t absolute_time_t;

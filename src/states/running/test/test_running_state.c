@@ -8,9 +8,9 @@
  * - State transition behavior
  */
 
-#include "running_state.h"
-#include "logger.h"
 #include "error.h"
+#include "logger.h"
+#include "running_state.h"
 #include <string.h>
 
 slate_t test_slate;
@@ -48,7 +48,8 @@ void test_running_state_tasks_valid()
         ASSERT(task->task_dispatch != NULL);
         ASSERT(task->dispatch_period_ms > 0);
 
-        LOG_DEBUG("  Task %zu: %s (period: %u ms)", i, task->name, task->dispatch_period_ms);
+        LOG_DEBUG("  Task %zu: %s (period: %u ms)", i, task->name,
+                  task->dispatch_period_ms);
     }
 
     LOG_DEBUG("✓ Running state tasks validity test passed");
@@ -172,8 +173,8 @@ void test_running_state_dispatch_periods()
         ASSERT(task->dispatch_period_ms >= 10);
         ASSERT(task->dispatch_period_ms <= 600000);
 
-        LOG_DEBUG("  Task %s: dispatch_period_ms = %u",
-                  task->name, task->dispatch_period_ms);
+        LOG_DEBUG("  Task %s: dispatch_period_ms = %u", task->name,
+                  task->dispatch_period_ms);
     }
 
     LOG_DEBUG("✓ Running state dispatch periods test passed");
@@ -190,7 +191,8 @@ void test_running_state_task_execution_order()
     memset(&test_slate, 0, sizeof(slate_t));
     test_slate.current_state = &running_state;
 
-    // Simulate scheduler behavior - tasks with smaller periods should execute more frequently
+    // Simulate scheduler behavior - tasks with smaller periods should execute
+    // more frequently
     uint32_t min_period = UINT32_MAX;
     size_t fastest_task_idx = 0;
 
@@ -205,8 +207,8 @@ void test_running_state_task_execution_order()
     }
 
     sched_task_t *fastest_task = running_state.task_list[fastest_task_idx];
-    LOG_DEBUG("  Fastest task: %s with period %u ms",
-              fastest_task->name, fastest_task->dispatch_period_ms);
+    LOG_DEBUG("  Fastest task: %s with period %u ms", fastest_task->name,
+              fastest_task->dispatch_period_ms);
 
     ASSERT(min_period > 0);
     ASSERT(min_period <= 10000); // Fastest task should be at most 10 seconds

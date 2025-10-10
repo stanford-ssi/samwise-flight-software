@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // Include real adcs_packet definition
 #include "adcs_packet.h"
@@ -13,8 +13,8 @@
 typedef uint64_t absolute_time_t;
 
 // Include real driver type definitions
-#include "rfm9x.h"
 #include "onboard_led.h"
+#include "rfm9x.h"
 #include "watchdog.h"
 
 // Forward declarations
