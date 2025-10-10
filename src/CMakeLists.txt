@@ -5,6 +5,7 @@ if(BUILD_TESTS)
   # For tests, build test mocks, tasks, and states
   add_subdirectory(test_mocks)
   add_subdirectory(test_infrastructure)
+  add_subdirectory(scheduler)
   add_subdirectory(tasks)
   add_subdirectory(states)
 else()

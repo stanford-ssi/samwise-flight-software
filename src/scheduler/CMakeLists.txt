@@ -19,3 +19,8 @@ target_include_directories(scheduler PUBLIC
 # Debug message to print the list of include directories for state_machine
 get_target_property(INCLUDE_DIRS scheduler INCLUDE_DIRECTORIES)
 message("[state_machine] Include directories: ${INCLUDE_DIRS}")
+
+# Add tests subdirectory if in test mode
+if(BUILD_TESTS)
+  add_subdirectory(test)
+endif()
