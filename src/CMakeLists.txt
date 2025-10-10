@@ -4,6 +4,7 @@ add_compile_definitions(${SAMWISE_DEFINES} COMMIT_HASH="${COMMIT_HASH}")
 if(BUILD_TESTS)
   # For tests, build test mocks, tasks, and states
   add_subdirectory(test_mocks)
+  add_subdirectory(test_infrastructure)
   add_subdirectory(tasks)
   add_subdirectory(states)
 else()

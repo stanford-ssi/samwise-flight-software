@@ -2,5 +2,5 @@
 samwise_add_test(
   NAME running_state_test
   SOURCES test_running_state.c ${PROJECT_SOURCE_DIR}/src/scheduler/scheduler.c
-  LIBRARIES 
+  LIBRARIES test_infrastructure
 )

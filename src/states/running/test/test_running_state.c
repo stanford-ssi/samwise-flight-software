@@ -2,7 +2,7 @@
  * @file test_running_state.c
  * @brief Unit tests for the running state FSM with real scheduler
  *
- * This test defines its own states and tasks to verify scheduler behavior
+ * This test defines custom states and tasks to verify scheduler behavior
  * with different timings and configurations.
  */
 
@@ -10,72 +10,11 @@
 #include "logger.h"
 #include "pico/stdlib.h"
 #include "scheduler.h"
-#include "slate.h"
-#include "state_machine.h"
+#include "test_scheduler_helpers.h"
 #include <stdio.h>
 #include <string.h>
 
-// External mock time variable
-extern uint64_t mock_time_us;
-
 slate_t test_slate;
-FILE *viz_log = NULL;
-
-// Track task executions
-typedef struct
-{
-    const char *task_name;
-    uint32_t init_count;
-    uint32_t dispatch_count;
-    uint32_t last_dispatch_time_ms;
-} task_execution_stats_t;
-
-#define MAX_TASKS 16
-task_execution_stats_t task_stats[MAX_TASKS];
-size_t num_tracked_tasks = 0;
-
-/**
- * Helper function to write JSON log events
- */
-void log_viz_event(const char *event_type, const char *task_name,
-                   const char *details)
-{
-    if (viz_log != NULL)
-    {
-        uint32_t time_ms = (uint32_t)(mock_time_us / 1000);
-        fprintf(viz_log,
-                "{\"time_ms\": %u, \"event\": \"%s\", \"task\": \"%s\", "
-                "\"details\": \"%s\"},\n",
-                time_ms, event_type, task_name ? task_name : "",
-                details ? details : "");
-        fflush(viz_log);
-    }
-}
-
-/**
- * Get or create task stats entry
- */
-task_execution_stats_t *get_task_stats(const char *task_name)
-{
-    for (size_t i = 0; i < num_tracked_tasks; i++)
-    {
-        if (strcmp(task_stats[i].task_name, task_name) == 0)
-        {
-            return &task_stats[i];
-        }
-    }
-
-    if (num_tracked_tasks < MAX_TASKS)
-    {
-        task_stats[num_tracked_tasks].task_name = task_name;
-        task_stats[num_tracked_tasks].init_count = 0;
-        task_stats[num_tracked_tasks].dispatch_count = 0;
-        task_stats[num_tracked_tasks].last_dispatch_time_ms = 0;
-        return &task_stats[num_tracked_tasks++];
-    }
-
-    return NULL;
-}
 
 // =============================================================================
 // TEST TASK DEFINITIONS
@@ -300,65 +239,23 @@ void test_all_tasks_different_periods()
     // Reset
     mock_time_us = 0;
     memset(&test_slate, 0, sizeof(slate_t));
-    memset(task_stats, 0, sizeof(task_stats));
-    num_tracked_tasks = 0;
+    reset_task_stats();
 
     // Set up test state
     test_slate.current_state = &test_state_1;
     test_slate.entered_current_state_time = get_absolute_time();
 
-    // Initialize tasks manually (scheduler would normally do this)
-    for (size_t i = 0; i < test_state_1.num_tasks; i++)
-    {
-        sched_task_t *task = test_state_1.task_list[i];
-        task->task_init(&test_slate);
-        task->next_dispatch = make_timeout_time_ms(task->dispatch_period_ms);
-    }
+    // Initialize tasks
+    test_state_init_tasks(&test_state_1, &test_slate);
 
-    // Log task info
-    for (size_t i = 0; i < test_state_1.num_tasks; i++)
-    {
-        sched_task_t *task = test_state_1.task_list[i];
-        char details[128];
-        snprintf(details, sizeof(details), "period=%u ms, index=%zu",
-                 task->dispatch_period_ms, i);
-        log_viz_event("task_discovered", task->name, details);
-    }
+    // Log discovered tasks
+    log_discovered_tasks(&test_state_1);
 
-    // Simulate 10 seconds
-    const uint32_t simulation_duration_ms = 10000;
-    const uint32_t dispatch_interval_ms = 5;
+    // Simulate 10 seconds with 5ms dispatch interval, log every 2 seconds
+    run_scheduler_simulation(&test_slate, 10000, 5, 2000);
 
-    LOG_DEBUG("Simulating %u ms with dispatch interval %u ms",
-              simulation_duration_ms, dispatch_interval_ms);
-
-    for (uint32_t elapsed_ms = 0; elapsed_ms < simulation_duration_ms;
-         elapsed_ms += dispatch_interval_ms)
-    {
-        mock_time_us += dispatch_interval_ms * 1000ULL;
-        sched_dispatch(&test_slate);
-
-        if (elapsed_ms % 2000 == 0)
-        {
-            char details[64];
-            snprintf(details, sizeof(details), "elapsed=%u ms", elapsed_ms);
-            log_viz_event("simulation_milestone", NULL, details);
-        }
-    }
-
-    // Verify dispatch counts
-    LOG_DEBUG("Task dispatch counts:");
-    for (size_t i = 0; i < num_tracked_tasks; i++)
-    {
-        task_execution_stats_t *stats = &task_stats[i];
-        LOG_DEBUG("  %s: %u dispatches", stats->task_name,
-                  stats->dispatch_count);
-
-        char details[128];
-        snprintf(details, sizeof(details), "dispatches=%u",
-                 stats->dispatch_count);
-        log_viz_event("task_summary", stats->task_name, details);
-    }
+    // Log summary
+    log_task_summary();
 
     // Verify expected counts (with tolerance)
     task_execution_stats_t *fast = get_task_stats("fast_task");
@@ -386,31 +283,17 @@ void test_fast_tasks_only()
     // Reset
     mock_time_us = 0;
     memset(&test_slate, 0, sizeof(slate_t));
-    memset(task_stats, 0, sizeof(task_stats));
-    num_tracked_tasks = 0;
+    reset_task_stats();
 
     // Set up test state 2
     test_slate.current_state = &test_state_2;
     test_slate.entered_current_state_time = get_absolute_time();
 
     // Initialize tasks
-    for (size_t i = 0; i < test_state_2.num_tasks; i++)
-    {
-        sched_task_t *task = test_state_2.task_list[i];
-        task->task_init(&test_slate);
-        task->next_dispatch = make_timeout_time_ms(task->dispatch_period_ms);
-    }
+    test_state_init_tasks(&test_state_2, &test_slate);
 
     // Simulate 5 seconds
-    const uint32_t simulation_duration_ms = 5000;
-    const uint32_t dispatch_interval_ms = 5;
-
-    for (uint32_t elapsed_ms = 0; elapsed_ms < simulation_duration_ms;
-         elapsed_ms += dispatch_interval_ms)
-    {
-        mock_time_us += dispatch_interval_ms * 1000ULL;
-        sched_dispatch(&test_slate);
-    }
+    run_scheduler_simulation(&test_slate, 5000, 5, 0);
 
     // Verify only fast tasks executed
     task_execution_stats_t *fast = get_task_stats("fast_task");
@@ -441,31 +324,17 @@ void test_slow_tasks_only()
     // Reset
     mock_time_us = 0;
     memset(&test_slate, 0, sizeof(slate_t));
-    memset(task_stats, 0, sizeof(task_stats));
-    num_tracked_tasks = 0;
+    reset_task_stats();
 
     // Set up test state 3
     test_slate.current_state = &test_state_3;
     test_slate.entered_current_state_time = get_absolute_time();
 
     // Initialize tasks
-    for (size_t i = 0; i < test_state_3.num_tasks; i++)
-    {
-        sched_task_t *task = test_state_3.task_list[i];
-        task->task_init(&test_slate);
-        task->next_dispatch = make_timeout_time_ms(task->dispatch_period_ms);
-    }
+    test_state_init_tasks(&test_state_3, &test_slate);
 
     // Simulate 15 seconds
-    const uint32_t simulation_duration_ms = 15000;
-    const uint32_t dispatch_interval_ms = 10;
-
-    for (uint32_t elapsed_ms = 0; elapsed_ms < simulation_duration_ms;
-         elapsed_ms += dispatch_interval_ms)
-    {
-        mock_time_us += dispatch_interval_ms * 1000ULL;
-        sched_dispatch(&test_slate);
-    }
+    run_scheduler_simulation(&test_slate, 15000, 10, 0);
 
     // Verify only slow tasks executed
     task_execution_stats_t *fast = get_task_stats("fast_task");
@@ -496,31 +365,17 @@ void test_task_period_accuracy()
     // Reset
     mock_time_us = 0;
     memset(&test_slate, 0, sizeof(slate_t));
-    memset(task_stats, 0, sizeof(task_stats));
-    num_tracked_tasks = 0;
+    reset_task_stats();
 
     // Use all tasks state
     test_slate.current_state = &test_state_1;
     test_slate.entered_current_state_time = get_absolute_time();
 
     // Initialize
-    for (size_t i = 0; i < test_state_1.num_tasks; i++)
-    {
-        sched_task_t *task = test_state_1.task_list[i];
-        task->task_init(&test_slate);
-        task->next_dispatch = make_timeout_time_ms(task->dispatch_period_ms);
-    }
+    test_state_init_tasks(&test_state_1, &test_slate);
 
     // Simulate exactly 10 seconds with fine-grained dispatch
-    const uint32_t test_duration_ms = 10000;
-    const uint32_t dispatch_interval_ms = 1; // 1ms precision
-
-    for (uint32_t elapsed_ms = 0; elapsed_ms < test_duration_ms;
-         elapsed_ms += dispatch_interval_ms)
-    {
-        mock_time_us += dispatch_interval_ms * 1000ULL;
-        sched_dispatch(&test_slate);
-    }
+    run_scheduler_simulation(&test_slate, 10000, 1, 0);
 
     // Check expected dispatch counts
     for (size_t i = 0; i < test_state_1.num_tasks; i++)
@@ -528,11 +383,11 @@ void test_task_period_accuracy()
         sched_task_t *task = test_state_1.task_list[i];
         task_execution_stats_t *stats = get_task_stats(task->name);
 
-        uint32_t expected_dispatches = test_duration_ms / task->dispatch_period_ms;
+        uint32_t expected_dispatches = 10000 / task->dispatch_period_ms;
         uint32_t actual_dispatches = stats ? stats->dispatch_count : 0;
 
-        LOG_DEBUG("  %s: expected ~%u, actual %u", task->name,
-                  expected_dispatches, actual_dispatches);
+        // For very low frequency tasks (<=2 dispatches), allow greater tolerance
+        uint32_t tolerance = (expected_dispatches <= 2) ? expected_dispatches : 5;
 
         char details[128];
         snprintf(details, sizeof(details),
@@ -540,10 +395,7 @@ void test_task_period_accuracy()
                  actual_dispatches, task->dispatch_period_ms);
         log_viz_event("period_accuracy_check", task->name, details);
 
-        // For very low frequency tasks (<=2 dispatches), allow greater tolerance
-        uint32_t tolerance = (expected_dispatches <= 2) ? expected_dispatches : 5;
-        ASSERT(actual_dispatches >= expected_dispatches - tolerance &&
-               actual_dispatches <= expected_dispatches + tolerance);
+        ASSERT(verify_dispatch_count(task->name, expected_dispatches, tolerance));
     }
 
     log_viz_event("test_pass", NULL, "task_period_accuracy");
@@ -556,12 +408,7 @@ int main()
               "===");
 
     // Open visualization log file
-    viz_log = fopen("running_state_viz.json", "w");
-    if (viz_log != NULL)
-    {
-        fprintf(viz_log, "{\n\"events\": [\n");
-        LOG_DEBUG("Visualization log opened: running_state_viz.json");
-    }
+    viz_log_open("running_state_viz.json");
 
     // Initialize mock time
     mock_time_us = 0;
@@ -577,14 +424,7 @@ int main()
               (unsigned long)(mock_time_us / 1000));
 
     // Close visualization log file
-    if (viz_log != NULL)
-    {
-        // Remove trailing comma and close JSON
-        fseek(viz_log, -2, SEEK_CUR);
-        fprintf(viz_log, "\n]\n}\n");
-        fclose(viz_log);
-        LOG_DEBUG("Visualization log closed");
-    }
+    viz_log_close();
 
     return 0;
 }
