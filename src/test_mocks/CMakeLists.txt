@@ -8,6 +8,9 @@ add_library(test_mocks
     pico/time.c
 )
 
+# Define TEST macro for conditional compilation in mocks
+target_compile_definitions(test_mocks PUBLIC TEST)
+
 # Make mock headers available - they will shadow real headers when this
 # directory is added first in the include path
 target_include_directories(test_mocks PUBLIC

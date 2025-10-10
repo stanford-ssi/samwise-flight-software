@@ -12,6 +12,7 @@ const TASK_COLORS = [
 function App() {
   const [logData, setLogData] = useState<LogData | null>(null);
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -46,6 +47,9 @@ function App() {
           (a, b) => a.index - b.index
         );
         setTasks(taskList);
+
+        // Initially select all tasks
+        setSelectedTasks(new Set(taskList.map(t => t.name)));
       } catch (error) {
         console.error('Error parsing log file:', error);
         alert('Error parsing log file. Please ensure it is valid JSON.');
@@ -104,9 +108,21 @@ function App() {
 
         {logData ? (
           <>
-            <TaskList tasks={tasks} />
-            <Timeline events={logData.events} tasks={tasks} />
-            <EventLog events={logData.events} />
+            <TaskList
+              tasks={tasks}
+              selectedTasks={selectedTasks}
+              onToggleTask={(taskName) => {
+                const newSelected = new Set(selectedTasks);
+                if (newSelected.has(taskName)) {
+                  newSelected.delete(taskName);
+                } else {
+                  newSelected.add(taskName);
+                }
+                setSelectedTasks(newSelected);
+              }}
+            />
+            <Timeline events={logData.events} tasks={tasks} selectedTasks={selectedTasks} />
+            <EventLog events={logData.events} selectedTasks={selectedTasks} />
           </>
         ) : (
           <div style={{

@@ -3,9 +3,14 @@ import { LogEvent } from '../types';
 
 interface EventLogProps {
   events: LogEvent[];
+  selectedTasks: Set<string>;
 }
 
-export const EventLog: React.FC<EventLogProps> = ({ events }) => {
+export const EventLog: React.FC<EventLogProps> = ({ events, selectedTasks }) => {
+  // Filter events to only show selected tasks (or events without a task)
+  const filteredEvents = events.filter(
+    (event) => !event.task || selectedTasks.has(event.task)
+  );
   const getEventColor = (eventType: string) => {
     switch (eventType) {
       case 'test_start':
@@ -41,7 +46,7 @@ export const EventLog: React.FC<EventLogProps> = ({ events }) => {
           fontSize: '12px',
         }}
       >
-        {events.map((event, idx) => (
+        {filteredEvents.map((event, idx) => (
           <div
             key={idx}
             style={{

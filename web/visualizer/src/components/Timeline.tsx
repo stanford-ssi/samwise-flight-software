@@ -4,9 +4,10 @@ import { LogEvent, TaskInfo } from '../types';
 interface TimelineProps {
   events: LogEvent[];
   tasks: TaskInfo[];
+  selectedTasks: Set<string>;
 }
 
-export const Timeline: React.FC<TimelineProps> = ({ events, tasks }) => {
+export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks }) => {
   const taskEvents = events.filter(e =>
     e.event === 'task_dispatch' || e.event === 'task_init'
   );
@@ -66,9 +67,11 @@ export const Timeline: React.FC<TimelineProps> = ({ events, tasks }) => {
         {tasks.map((task, idx) => {
           const y = (idx + 1) * rowHeight;
           const taskEvs = taskEvents.filter(e => e.task === task.name);
+          const isSelected = selectedTasks.has(task.name);
+          const rowOpacity = isSelected ? 1 : 0.2;
 
           return (
-            <g key={task.name}>
+            <g key={task.name} opacity={rowOpacity}>
               {/* Task label */}
               <text
                 x={10}

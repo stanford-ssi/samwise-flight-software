@@ -102,6 +102,9 @@ void test_state_init_tasks(sched_state_t *state, slate_t *slate)
         sched_task_t *task = state->task_list[i];
         task->task_init(slate);
         task->next_dispatch = make_timeout_time_ms(task->dispatch_period_ms);
+
+        // Log task initialization for visualization
+        log_viz_event("task_init", task->name, "initialized");
     }
 }
 
@@ -112,10 +115,27 @@ void run_scheduler_simulation(slate_t *slate, uint32_t duration_ms,
     LOG_DEBUG("Simulating %u ms with dispatch interval %u ms", duration_ms,
               dispatch_interval_ms);
 
+    sched_state_t *current_state = slate->current_state;
+
     for (uint32_t elapsed_ms = 0; elapsed_ms < duration_ms;
          elapsed_ms += dispatch_interval_ms)
     {
         mock_time_us += dispatch_interval_ms * 1000ULL;
+
+        // Before dispatching, check which tasks will fire
+        absolute_time_t current_time = get_absolute_time();
+        for (size_t i = 0; i < current_state->num_tasks; i++)
+        {
+            sched_task_t *task = current_state->task_list[i];
+            if (absolute_time_diff_us(task->next_dispatch, current_time) > 0)
+            {
+                // This task is about to dispatch
+                char details[64];
+                snprintf(details, sizeof(details), "time=%u ms", elapsed_ms);
+                log_viz_event("task_dispatch", task->name, details);
+            }
+        }
+
         sched_dispatch(slate);
 
         if (log_interval_ms > 0 && elapsed_ms % log_interval_ms == 0)

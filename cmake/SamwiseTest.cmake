@@ -42,6 +42,9 @@ function(samwise_add_test)
     # Create the test executable
     add_executable(${TEST_NAME} ${TEST_SOURCES})
 
+    # Define TEST macro for conditional compilation
+    target_compile_definitions(${TEST_NAME} PRIVATE TEST)
+
     # Link against test mocks and specified libraries
     target_link_libraries(${TEST_NAME} PRIVATE
         test_mocks
