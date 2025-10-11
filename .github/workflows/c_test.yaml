@@ -37,14 +37,10 @@ jobs:
       - name: Build tests
         run: cmake --build ${{ github.workspace }}/build-tests --parallel 4
 
-      - name: Run scheduler tests
-        run: ${{ github.workspace }}/build-tests/src/scheduler/test/scheduler_test
-
-      - name: Run running_state tests
-        run: ${{ github.workspace }}/build-tests/src/states/running/test/running_state_test
-
-      - name: Run print_task tests
-        run: ${{ github.workspace }}/build-tests/src/tasks/print/test/print_task_test
+      - name: Run all tests
+        run: |
+          cd ${{ github.workspace }}/build-tests
+          ctest --output-on-failure --verbose
 
       - name: Archive test visualization logs
         if: always()
