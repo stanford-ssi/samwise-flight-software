@@ -99,6 +99,20 @@ to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm
 
 [WIP] we'll working on getting support via VSCode RPi extension ([PR](https://github.com/stanford-ssi/samwise-flight-software/pull/153))
 
+Tentative steps:
+
+1. install VSCode RPi extension (https://github.com/raspberrypi/pico-vscode)
+2. import the samwise-flight-software repo folder as a new project using the extension interface
+    - default settings are ok
+3. update `.vscode/settings.json` with the following additional fields:
+```
+    "cmake.configureArgs": [
+        "-DPROFILE=PICUBED-DEBUG" <-- or change to PICO, PICUBED-FLIGHT, etc...
+    ],
+    "raspberry-pi-pico.useCmakeTools": false,
+```
+4. open command palette (ctrl + shift + p) then execute builds with "CMake: Build"
+
 # Part 1: CMake, Building & Project Structure
 
 Take a look at this minimal CMake project which mirrors the structure of our main software repo.
