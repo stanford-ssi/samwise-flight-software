@@ -8,9 +8,32 @@ interface TimelineProps {
 }
 
 export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks }) => {
-  const taskEvents = events.filter(e =>
-    e.event === 'task_dispatch' || e.event === 'task_init'
-  );
+  // Build task execution spans (task_start to task_end pairs)
+  const taskExecutions: Map<string, Array<{start: number, end: number}>> = new Map();
+  const taskInits: Map<string, number> = new Map();
+
+  events.forEach((event) => {
+    if (event.event === 'task_init' && event.task) {
+      taskInits.set(event.task, event.time_ms);
+    } else if (event.event === 'task_start' && event.task) {
+      if (!taskExecutions.has(event.task)) {
+        taskExecutions.set(event.task, []);
+      }
+      // Find matching task_end
+      const endEvent = events.find(e =>
+        e.event === 'task_end' &&
+        e.task === event.task &&
+        e.time_ms >= event.time_ms &&
+        e.time_ms <= event.time_ms + 100 // Within 100ms
+      );
+      if (endEvent) {
+        taskExecutions.get(event.task)!.push({
+          start: event.time_ms,
+          end: endEvent.time_ms
+        });
+      }
+    }
+  });
 
   const maxTime = Math.max(...events.map(e => e.time_ms), 1000);
   const timelineWidth = 1200;
@@ -66,9 +89,10 @@ export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks
         {/* Task rows */}
         {tasks.map((task, idx) => {
           const y = (idx + 1) * rowHeight;
-          const taskEvs = taskEvents.filter(e => e.task === task.name);
           const isSelected = selectedTasks.has(task.name);
           const rowOpacity = isSelected ? 1 : 0.2;
+          const executions = taskExecutions.get(task.name) || [];
+          const initTime = taskInits.get(task.name);
 
           return (
             <g key={task.name} opacity={rowOpacity}>
@@ -101,33 +125,36 @@ export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks
                 strokeWidth="1"
               />
 
-              {/* Task events */}
-              {taskEvs.map((event, eventIdx) => {
-                const x = leftMargin + (event.time_ms / maxTime) * timelineWidth;
-                const isInit = event.event === 'task_init';
+              {/* Task init marker */}
+              {initTime !== undefined && (
+                <rect
+                  x={leftMargin + (initTime / maxTime) * timelineWidth - 3}
+                  y={y + 10}
+                  width={6}
+                  height={20}
+                  fill={getTaskColor(task.name)}
+                  opacity={0.6}
+                />
+              )}
+
+              {/* Task execution spans */}
+              {executions.map((exec, execIdx) => {
+                const x1 = leftMargin + (exec.start / maxTime) * timelineWidth;
+                const x2 = leftMargin + (exec.end / maxTime) * timelineWidth;
+                const width = Math.max(x2 - x1, 2); // Minimum 2px width
 
                 return (
-                  <g key={eventIdx}>
-                    <rect
-                      x={x - 3}
-                      y={y + 10}
-                      width={isInit ? 6 : 8}
-                      height={isInit ? 20 : 20}
-                      fill={getTaskColor(task.name)}
-                      opacity={isInit ? 0.6 : 0.9}
-                    />
-                    {!isInit && (
-                      <rect
-                        x={x - 3}
-                        y={y + 10}
-                        width={8}
-                        height={20}
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth="1"
-                      />
-                    )}
-                  </g>
+                  <rect
+                    key={execIdx}
+                    x={x1}
+                    y={y + 12}
+                    width={width}
+                    height={16}
+                    fill={getTaskColor(task.name)}
+                    opacity={0.7}
+                    stroke={getTaskColor(task.name)}
+                    strokeWidth="1"
+                  />
                 );
               })}
             </g>
