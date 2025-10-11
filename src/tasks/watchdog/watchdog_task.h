@@ -10,6 +10,7 @@
 #include "macros.h"
 #include "pico/stdlib.h"
 #include "slate.h"
+#include "state_machine.h"
 
 // LED Color for watchdog task - Red
 #define WATCHDOG_TASK_COLOR 255, 0, 0

@@ -6,6 +6,7 @@
 #include "payload_task.h"
 #include "neopixel.h"
 #include "safe_sleep.h"
+#include <stdio.h>
 
 #define MAX_RECEIVED_LEN 1024
 

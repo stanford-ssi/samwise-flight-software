@@ -1,4 +1,5 @@
 #include "burn_wire_state.h"
+#include "states.h"
 
 extern sched_state_t burn_wire_state;
 

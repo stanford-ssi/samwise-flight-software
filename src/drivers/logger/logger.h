@@ -8,11 +8,17 @@
  */
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+// Only include Pico SDK headers for non-test builds
+#ifndef TEST
 #include "pico/printf.h"
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "pico/types.h"
+#endif
 
 // Log levels
 typedef enum

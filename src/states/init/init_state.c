@@ -2,8 +2,7 @@
 #include "device_status.h"
 #include "logger.h"
 #include "neopixel.h"
-
-extern sched_state_t bringup_state;
+#include "states.h"
 
 sched_state_t *init_get_next_state(slate_t *slate)
 {
