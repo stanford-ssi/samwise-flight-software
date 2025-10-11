@@ -63,6 +63,11 @@ void reset_task_stats(void);
 extern FILE *viz_log;
 
 /**
+ * Track currently executing task for log capture (defined in test_mocks/logger.c)
+ */
+extern const char *current_executing_task;
+
+/**
  * Open visualization log file for writing
  * @param filename Path to the log file
  * @return 0 on success, -1 on error
@@ -82,13 +87,6 @@ void viz_log_close(void);
  */
 void log_viz_event(const char *event_type, const char *task_name,
                    const char *details);
-
-/**
- * Log a message from a task to the visualization log
- * @param task_name Name of task that generated the log
- * @param log_message The log message content
- */
-void log_viz_task_message(const char *task_name, const char *log_message);
 
 // =============================================================================
 // TEST STATE HELPERS
