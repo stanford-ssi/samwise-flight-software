@@ -50,6 +50,7 @@ void reset_task_stats(void)
 // =============================================================================
 
 FILE *viz_log = NULL;
+const char *current_executing_task = NULL;
 
 int viz_log_open(const char *filename)
 {
@@ -91,6 +92,37 @@ void log_viz_event(const char *event_type, const char *task_name,
     }
 }
 
+void log_viz_task_message(const char *task_name, const char *log_message)
+{
+    if (viz_log != NULL && task_name != NULL && log_message != NULL)
+    {
+        uint32_t time_ms = (uint32_t)(mock_time_us / 1000);
+
+        // Escape quotes in log message
+        char escaped[512];
+        size_t j = 0;
+        for (size_t i = 0; log_message[i] != '\0' && j < sizeof(escaped) - 2; i++)
+        {
+            if (log_message[i] == '"')
+            {
+                escaped[j++] = '\\';
+            }
+            else if (log_message[i] == '\n')
+            {
+                continue; // Skip newlines
+            }
+            escaped[j++] = log_message[i];
+        }
+        escaped[j] = '\0';
+
+        fprintf(viz_log,
+                "{\"time_ms\": %u, \"event\": \"task_log\", \"task\": \"%s\", "
+                "\"details\": \"%s\"},\n",
+                time_ms, task_name, escaped);
+        fflush(viz_log);
+    }
+}
+
 // =============================================================================
 // TEST STATE HELPERS
 // =============================================================================
@@ -108,6 +140,66 @@ void test_state_init_tasks(sched_state_t *state, slate_t *slate)
     }
 }
 
+void test_sched_dispatch(slate_t *slate)
+{
+    sched_state_t *current_state_info = slate->current_state;
+
+    // Loop through all of this state's tasks
+    for (size_t i = 0; i < current_state_info->num_tasks; i++)
+    {
+        sched_task_t *task = current_state_info->task_list[i];
+
+        // Check if this task is due and if so, dispatch it
+        if (absolute_time_diff_us(task->next_dispatch, get_absolute_time()) > 0)
+        {
+            task->next_dispatch =
+                make_timeout_time_ms(task->dispatch_period_ms);
+
+            // Log task start BEFORE dispatching
+            char details[64];
+            snprintf(details, sizeof(details), "time=%u ms",
+                     (uint32_t)(mock_time_us / 1000));
+            log_viz_event("task_start", task->name, details);
+
+            // Set current task context for log capture
+            current_executing_task = task->name;
+
+            // Actually dispatch the task
+            task->task_dispatch(slate);
+
+            // Clear task context
+            current_executing_task = NULL;
+
+            // Log task end AFTER dispatching
+            log_viz_event("task_end", task->name, details);
+        }
+    }
+
+    slate->time_in_current_state_ms =
+        absolute_time_diff_us(slate->entered_current_state_time,
+                              get_absolute_time()) /
+        1000;
+
+    // Handle state transitions (simplified from scheduler.c)
+    sched_state_t *next_state;
+    if (slate->manual_override_state != NULL)
+    {
+        next_state = slate->manual_override_state;
+        slate->manual_override_state = NULL;
+    }
+    else
+    {
+        next_state = current_state_info->get_next_state(slate);
+    }
+
+    if (next_state != current_state_info)
+    {
+        slate->current_state = next_state;
+        slate->entered_current_state_time = get_absolute_time();
+        slate->time_in_current_state_ms = 0;
+    }
+}
+
 void run_scheduler_simulation(slate_t *slate, uint32_t duration_ms,
                                uint32_t dispatch_interval_ms,
                                uint32_t log_interval_ms)
@@ -115,28 +207,13 @@ void run_scheduler_simulation(slate_t *slate, uint32_t duration_ms,
     LOG_DEBUG("Simulating %u ms with dispatch interval %u ms", duration_ms,
               dispatch_interval_ms);
 
-    sched_state_t *current_state = slate->current_state;
-
     for (uint32_t elapsed_ms = 0; elapsed_ms < duration_ms;
          elapsed_ms += dispatch_interval_ms)
     {
         mock_time_us += dispatch_interval_ms * 1000ULL;
 
-        // Before dispatching, check which tasks will fire
-        absolute_time_t current_time = get_absolute_time();
-        for (size_t i = 0; i < current_state->num_tasks; i++)
-        {
-            sched_task_t *task = current_state->task_list[i];
-            if (absolute_time_diff_us(task->next_dispatch, current_time) > 0)
-            {
-                // This task is about to dispatch
-                char details[64];
-                snprintf(details, sizeof(details), "time=%u ms", elapsed_ms);
-                log_viz_event("task_dispatch", task->name, details);
-            }
-        }
-
-        sched_dispatch(slate);
+        // Use test version of dispatcher that logs task start/end
+        test_sched_dispatch(slate);
 
         if (log_interval_ms > 0 && elapsed_ms % log_interval_ms == 0)
         {

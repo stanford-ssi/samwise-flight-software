@@ -83,6 +83,13 @@ void viz_log_close(void);
 void log_viz_event(const char *event_type, const char *task_name,
                    const char *details);
 
+/**
+ * Log a message from a task to the visualization log
+ * @param task_name Name of task that generated the log
+ * @param log_message The log message content
+ */
+void log_viz_task_message(const char *task_name, const char *log_message);
+
 // =============================================================================
 // TEST STATE HELPERS
 // =============================================================================
@@ -93,6 +100,12 @@ void log_viz_event(const char *event_type, const char *task_name,
  * @param slate Test slate
  */
 void test_state_init_tasks(sched_state_t *state, slate_t *slate);
+
+/**
+ * Test version of sched_dispatch that logs task execution
+ * @param slate Test slate
+ */
+void test_sched_dispatch(slate_t *slate);
 
 /**
  * Run scheduler dispatch loop for a duration
