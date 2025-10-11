@@ -142,6 +142,7 @@ static void tx_done()
     packet_t p = {0};
     if (queue_try_remove(&s->tx_queue, &p))
     {
+        LOG_INFO("TX: Sending packet to %d, len %d", p.dst, p.len);
         uint8_t p_buf[PACKET_SIZE];
         size_t pkt_size = encode_packet(&p, p_buf, sizeof(p_buf), false);
         if (pkt_size == 0)
@@ -210,7 +211,7 @@ void radio_task_init(slate_t *slate)
 
     // Switch to receive mode
     rfm9x_listen(&slate->radio);
-    // rfm9x_transmit(&slate->radio);
+    rfm9x_transmit(&slate->radio);
 
     // Print out the LoRA parameters
     rfm9x_print_parameters(&slate->radio);
@@ -228,16 +229,21 @@ void radio_task_dispatch(slate_t *slate)
     if (!queue_is_empty(&slate->tx_queue))
     {
         // Check if transmission is already in progress to avoid race condition
-        if (rfm9x_tx_done(&slate->radio))
+        if (rfm9x_tx_done(&slate->radio) == 0)
         {
+            // If transmission is in progress, do nothing and let the interrupt
+            // handle it
+            LOG_INFO("Transmission already in progress, skipping new TX");
+            neopixel_set_color_rgb(0, 0, 0);
+            return;
+        }
+        else {
             rfm9x_transmit(&slate->radio);
             LOG_INFO("Transmitting...");
             // Since the interrupt only fires when done transmitting the last
             // packet, we need to get it started manually
             tx_done();
         }
-        // If transmission is in progress, do nothing and let the interrupt
-        // handle it
     }
     else
     {
