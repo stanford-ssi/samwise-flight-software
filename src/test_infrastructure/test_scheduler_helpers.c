@@ -49,9 +49,8 @@ void reset_task_stats(void)
 // VISUALIZATION LOGGING
 // =============================================================================
 
-FILE *viz_log = NULL;
-
-// External reference to current_executing_task (defined in test_mocks/logger.c)
+// External references (defined in test_mocks/logger.c)
+extern FILE *viz_log;
 extern const char *current_executing_task;
 
 int viz_log_open(const char *filename)

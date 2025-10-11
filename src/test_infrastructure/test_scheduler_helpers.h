@@ -58,7 +58,7 @@ void reset_task_stats(void);
 // =============================================================================
 
 /**
- * Global visualization log file handle
+ * Global visualization log file handle (defined in test_mocks/logger.c)
  */
 extern FILE *viz_log;
 

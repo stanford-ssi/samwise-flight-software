@@ -6,8 +6,10 @@
 // Track currently executing task for log capture
 const char *current_executing_task = NULL;
 
-// External reference to viz log (from test_scheduler_helpers.c)
-extern FILE *viz_log;
+// Visualization log file handle
+FILE *viz_log = NULL;
+
+// External reference to mock time (from test_mocks/pico/time.c)
 extern uint64_t mock_time_us;
 
 static void log_viz_task_message(const char *task_name, const char *log_message)
