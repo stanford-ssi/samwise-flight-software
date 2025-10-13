@@ -829,6 +829,7 @@ void rfm9x_listen(rfm9x_t *r)
 
 uint8_t rfm9x_tx_done(rfm9x_t *r)
 {
+    /* Outputs 0 when tx is still in progress, 1 otherwise. */
     return (rfm9x_get8(r, _RH_RF95_REG_12_IRQ_FLAGS) & 0x8) >> 3;
 }
 
