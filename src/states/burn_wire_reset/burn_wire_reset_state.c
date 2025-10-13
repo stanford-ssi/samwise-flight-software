@@ -1,5 +1,6 @@
-#include "burn_wire_state.h"
+#include "burn_wire_reset_state.h"
 #include "flash.h"
+#include "states.h"
 
 extern sched_state_t burn_wire_reset_state;
 

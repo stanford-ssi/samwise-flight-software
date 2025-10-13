@@ -1,0 +1,51 @@
+name: C/C++ Tests
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/*.yaml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/*.yaml"
+  workflow_dispatch:
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Project
+        run: ./configure.sh
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Configure tests
+        run: cmake -B ${{ github.workspace }}/build-tests -DPROFILE=TEST -DCOMMIT_HASH=${{ github.sha }}
+
+      - name: Build tests
+        run: cmake --build ${{ github.workspace }}/build-tests --parallel 4
+
+      - name: Run all tests
+        run: |
+          cd ${{ github.workspace }}/build-tests
+          ctest --output-on-failure --verbose
+
+      - name: Archive test visualization logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-visualization-logs
+          path: |
+            ${{ github.workspace }}/build-tests/**/*_viz.json

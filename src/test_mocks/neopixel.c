@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include "neopixel.h"
+#include <stdio.h>
 
 void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
 {

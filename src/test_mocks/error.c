@@ -1,9 +1,9 @@
+#include "error.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "error.h"
 
-void fatal_error()
+void fatal_error(char *msg)
 {
-    fprintf(stderr, "Fatal error occurred\n");
+    fprintf(stderr, "Fatal error occurred: %s\n", msg ? msg : "unknown");
     exit(1);
 }

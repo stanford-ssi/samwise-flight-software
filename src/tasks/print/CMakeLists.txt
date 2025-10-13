@@ -1,23 +1,22 @@
+# Create library (same for both test and embedded builds)
+add_library(print_task print_task.c)
+
+# Link libraries
+target_link_libraries(print_task PUBLIC
+  # tests use test_mocks instead of slate/common/logger/neopixel
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,logger>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,neopixel>
+)
+
+# Include directories: tests include test_mocks to shadow real hardware headers
+target_include_directories(print_task PUBLIC
+  $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
+  "${PROJECT_SOURCE_DIR}/src/tasks/print"
+)
+
+# Add tests (only for test builds)
 if(BUILD_TESTS)
-  # For test builds, create library that links against mocks
-  add_library(print_task print_task.c)
-
-  # Link against test mocks (hardware abstraction for testing)
-  target_link_libraries(print_task PUBLIC test_mocks)
-
-  # Set include paths: test_mocks first to shadow real hardware headers
-  target_include_directories(print_task PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/test_mocks"
-    "${PROJECT_SOURCE_DIR}/src/tasks/print"
-  )
-
-  # Add tests
   add_subdirectory(test)
-else()
-  # For embedded builds, use real hardware dependencies
-  add_library(print_task print_task.c)
-  target_link_libraries(print_task PUBLIC slate common logger neopixel)
-  target_include_directories(print_task PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/tasks/print"
-  )
 endif()

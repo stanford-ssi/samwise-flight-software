@@ -1,20 +1,23 @@
+# Create library (same for both test and embedded builds)
 add_library(diagnostics_task diagnostics_task.c)
 
-# Specify targets to link compiled binaries
+# Link libraries
 target_link_libraries(diagnostics_task PUBLIC
-  pico_stdlib
-  hardware_i2c
-  hardware_spi
-  pico_unique_id
-  logger
-  slate
-  common
-  error
-  rfm9x
-  adm1176
+  # tests use test_mocks instead of pico_stdlib/hardware_i2c/hardware_spi/pico_unique_id/logger/slate/common/error/rfm9x/adm1176
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,pico_stdlib>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,hardware_i2c>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,hardware_spi>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,pico_unique_id>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,logger>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,error>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,rfm9x>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,adm1176>
 )
 
-# Specify directories with relevant header files
+# Include directories: tests include test_mocks to shadow real hardware headers
 target_include_directories(diagnostics_task PUBLIC
+  $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
   "${PROJECT_SOURCE_DIR}/src/tasks/diagnostics"
 )

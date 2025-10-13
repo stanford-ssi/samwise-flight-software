@@ -4,11 +4,13 @@ on:
   push:
     paths:
       - "src/**"
+      - "cmake/**"
       - "CMakeLists.txt"
       - ".github/workflows/*.yaml"
   pull_request:
     paths:
       - "src/**"
+      - "cmake/**"
       - "CMakeLists.txt"
       - ".github/workflows/*.yaml"
   workflow_dispatch:

@@ -11,7 +11,9 @@
 #include "command_parser.h"
 #include "macros.h"
 #include "payload_uart.h"
+#include "rfm9x.h"
 #include "states.h"
+#include <stdio.h>
 
 extern sched_state_t *overridden_state;
 

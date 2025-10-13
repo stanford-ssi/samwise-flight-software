@@ -8,11 +8,17 @@
  */
 #pragma once
 
+// Test builds need standard C types
+#ifdef TEST
+#include <stdbool.h>
+#include <stdint.h>
+#else
 #include "pico/printf.h"
 #include "pico/stdio.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
-#include "pico/types.h"
+#include "pico/types.h" // includes stdbool.h, stdint.h, stddef.h
+#endif
 
 // Log levels
 typedef enum
