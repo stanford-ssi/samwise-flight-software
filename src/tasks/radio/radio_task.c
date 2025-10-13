@@ -237,7 +237,8 @@ void radio_task_dispatch(slate_t *slate)
             neopixel_set_color_rgb(0, 0, 0);
             return;
         }
-        else {
+        else
+        {
             rfm9x_transmit(&slate->radio);
             LOG_INFO("Transmitting...");
             // Since the interrupt only fires when done transmitting the last
