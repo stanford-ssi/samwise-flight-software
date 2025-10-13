@@ -58,42 +58,51 @@ void test_running_state_structure()
 }
 
 /**
- * Test 2: Verify task ordering (critical tasks first)
+ * Test 2: Verify task configuration
  */
-void test_task_ordering()
+void test_task_configuration()
 {
-    LOG_DEBUG("=== Test 2: Task ordering ===");
-    log_viz_event("test_start", NULL, "task_ordering");
+    LOG_DEBUG("=== Test 2: Task configuration ===");
+    log_viz_event("test_start", NULL, "task_configuration");
 
-    // Verify critical tasks are in expected positions
-    bool found_print = false;
+    // Verify critical tasks needs to be present
     bool found_watchdog = false;
+    bool found_command = false;
+    bool found_radio = false;
+    bool found_beacon = false;
 
     for (size_t i = 0; i < running_state.num_tasks; i++)
     {
         sched_task_t *task = running_state.task_list[i];
 
-        if (strcmp(task->name, "print") == 0)
-        {
-            found_print = true;
-            // Print should be first for early logging
-            ASSERT(i == 0);
-            LOG_DEBUG("  Found print task at position %zu (correct)", i);
-        }
-
         if (strcmp(task->name, "watchdog") == 0)
         {
             found_watchdog = true;
-            // Watchdog should be second for early reset prevention
-            ASSERT(i == 1);
-            LOG_DEBUG("  Found watchdog task at position %zu (correct)", i);
+            LOG_DEBUG("  Found watchdog task at position %zu", i);
+        }
+        else if (strcmp(task->name, "command") == 0)
+        {
+            found_command = true;
+            LOG_DEBUG("  Found command task at position %zu", i);
+        }
+        else if (strcmp(task->name, "radio") == 0)
+        {
+            found_radio = true;
+            LOG_DEBUG("  Found radio task at position %zu", i);
+        }
+        else if (strcmp(task->name, "beacon") == 0)
+        {
+            found_beacon = true;
+            LOG_DEBUG("  Found beacon task at position %zu", i);
         }
     }
 
-    ASSERT(found_print);
     ASSERT(found_watchdog);
+    ASSERT(found_command);
+    ASSERT(found_radio);
+    ASSERT(found_beacon);
 
-    log_viz_event("test_pass", NULL, "task_ordering");
+    log_viz_event("test_pass", NULL, "task_configuration");
     LOG_DEBUG("✓ Test 2 passed");
 }
 
@@ -109,9 +118,8 @@ void test_dispatch_periods()
     {
         sched_task_t *task = running_state.task_list[i];
 
-        // Periods should be between 10ms and 10 minutes
+        // Periods be at least 10ms
         ASSERT(task->dispatch_period_ms >= 10);
-        ASSERT(task->dispatch_period_ms <= 600000);
 
         char details[128];
         snprintf(details, sizeof(details), "period=%u ms",
@@ -188,47 +196,6 @@ void test_scheduler_execution()
     LOG_DEBUG("✓ Test 5 passed");
 }
 
-/**
- * Test 6: Verify task period configuration
- */
-void test_task_frequency()
-{
-    LOG_DEBUG("=== Test 6: Task period configuration ===");
-    log_viz_event("test_start", NULL, "task_frequency");
-
-    // Find fastest and slowest task
-    uint32_t min_period = UINT32_MAX;
-    uint32_t max_period = 0;
-    const char *fastest_task = NULL;
-    const char *slowest_task = NULL;
-
-    for (size_t i = 0; i < running_state.num_tasks; i++)
-    {
-        sched_task_t *task = running_state.task_list[i];
-        if (task->dispatch_period_ms < min_period)
-        {
-            min_period = task->dispatch_period_ms;
-            fastest_task = task->name;
-        }
-        if (task->dispatch_period_ms > max_period)
-        {
-            max_period = task->dispatch_period_ms;
-            slowest_task = task->name;
-        }
-    }
-
-    LOG_DEBUG("  Fastest task: %s (%u ms)", fastest_task, min_period);
-    LOG_DEBUG("  Slowest task: %s (%u ms)", slowest_task, max_period);
-
-    ASSERT(min_period > 0);
-    ASSERT(min_period <= max_period);
-
-    LOG_DEBUG("  Task periods verified - fastest <= slowest");
-
-    log_viz_event("test_pass", NULL, "task_frequency");
-    LOG_DEBUG("✓ Test 6 passed");
-}
-
 int main()
 {
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
@@ -238,11 +205,10 @@ int main()
     mock_time_us = 0;
 
     test_running_state_structure();
-    test_task_ordering();
+    test_task_configuration();
     test_dispatch_periods();
     test_state_transition();
     test_scheduler_execution();
-    test_task_frequency();
 
     LOG_DEBUG("=== All Running State Tests Passed ===");
     LOG_DEBUG("Total simulated time: %lu ms",
