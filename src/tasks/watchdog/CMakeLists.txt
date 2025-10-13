@@ -1,25 +1,19 @@
-if(BUILD_TESTS)
-  # For test builds, create library that links against mocks
-  add_library(watchdog_task watchdog_task.c)
+# Create library (same for both test and embedded builds)
+add_library(watchdog_task watchdog_task.c)
 
-  # Link against test mocks
-  target_link_libraries(watchdog_task PUBLIC test_mocks)
+# Link libraries
+target_link_libraries(watchdog_task PUBLIC
+  # tests use test_mocks instead of common/slate/error/pico_stdlib/watchdog/neopixel
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,error>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,pico_stdlib>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,watchdog>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,neopixel>
+)
 
-  # Set include paths: test_mocks first to shadow real hardware headers
-  target_include_directories(watchdog_task PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/test_mocks"
-    "${PROJECT_SOURCE_DIR}/src/tasks/watchdog"
-  )
-else()
-  # For embedded builds, use real hardware dependencies
-  add_library(watchdog_task watchdog_task.c)
-
-  # Specify targets to link compiled binaries
-  target_link_libraries(watchdog_task PUBLIC common slate error pico_stdlib
-    watchdog neopixel)
-
-  # Specify directories with relevant header files
-  target_include_directories(watchdog_task PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/tasks/watchdog"
-  )
-endif()
+# Include directories: tests include test_mocks to shadow real hardware headers
+target_include_directories(watchdog_task PUBLIC
+  $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
+  "${PROJECT_SOURCE_DIR}/src/tasks/watchdog"
+)

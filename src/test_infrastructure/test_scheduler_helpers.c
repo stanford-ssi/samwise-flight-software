@@ -171,8 +171,8 @@ void test_sched_dispatch(slate_t *slate)
 }
 
 void run_scheduler_simulation(slate_t *slate, uint32_t duration_ms,
-                               uint32_t dispatch_interval_ms,
-                               uint32_t log_interval_ms)
+                              uint32_t dispatch_interval_ms,
+                              uint32_t log_interval_ms)
 {
     LOG_DEBUG("Simulating %u ms with dispatch interval %u ms", duration_ms,
               dispatch_interval_ms);
@@ -205,8 +205,8 @@ int verify_dispatch_count(const char *task_name, uint32_t expected,
     }
 
     uint32_t actual = stats->dispatch_count;
-    int in_range = (actual >= expected - tolerance &&
-                    actual <= expected + tolerance);
+    int in_range =
+        (actual >= expected - tolerance && actual <= expected + tolerance);
 
     LOG_DEBUG("  %s: expected ~%u, actual %u [%s]", task_name, expected, actual,
               in_range ? "PASS" : "FAIL");

@@ -1,7 +1,7 @@
 /**
  * @file test_scheduler_helpers.h
  * @brief Shared test infrastructure for scheduler state testing
- * 
+ *
  * This provides common utilities for testing different states with the
  * real scheduler, including time simulation, task execution tracking,
  * and visualization logging.
@@ -63,7 +63,8 @@ void reset_task_stats(void);
 extern FILE *viz_log;
 
 /**
- * Track currently executing task for log capture (defined in test_mocks/logger.c)
+ * Track currently executing task for log capture (defined in
+ * test_mocks/logger.c)
  */
 extern const char *current_executing_task;
 
@@ -113,8 +114,8 @@ void test_sched_dispatch(slate_t *slate);
  * @param log_interval_ms How often to log milestones (0 = no milestones)
  */
 void run_scheduler_simulation(slate_t *slate, uint32_t duration_ms,
-                               uint32_t dispatch_interval_ms,
-                               uint32_t log_interval_ms);
+                              uint32_t dispatch_interval_ms,
+                              uint32_t log_interval_ms);
 
 /**
  * Verify task dispatch counts are within expected range
@@ -150,4 +151,3 @@ extern sched_state_t running_state;
 extern sched_state_t burn_wire_state;
 extern sched_state_t burn_wire_reset_state;
 extern sched_state_t bringup_state;
-
