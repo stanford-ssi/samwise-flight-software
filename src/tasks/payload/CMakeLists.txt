@@ -1,22 +1,19 @@
-if(BUILD_TESTS)
-  # For test builds, create library that links against mocks
-  add_library(payload_task payload_task.c)
+# Create library (same for both test and embedded builds)
+add_library(payload_task payload_task.c)
 
-  # Link against test mocks
-  target_link_libraries(payload_task PUBLIC test_mocks)
+# Link libraries
+target_link_libraries(payload_task PUBLIC
+  # tests use test_mocks instead of payload_uart/slate/common/logger/neopixel
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,payload_uart>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,logger>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,neopixel>
+  utils
+)
 
-  # Set include paths: test_mocks first to shadow real hardware headers
-  target_include_directories(payload_task PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/test_mocks"
-    "${PROJECT_SOURCE_DIR}/src/tasks/payload"
-  )
-else()
-  # For embedded builds, use real hardware dependencies
-  add_library(payload_task payload_task.c)
-
-  target_link_libraries(payload_task PUBLIC payload_uart utils slate common logger neopixel)
-
-  target_include_directories(payload_task PUBLIC
-      "${PROJECT_SOURCE_DIR}/src/tasks/payload"
-  )
-endif()
+# Include directories: tests include test_mocks to shadow real hardware headers
+target_include_directories(payload_task PUBLIC
+  $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
+  "${PROJECT_SOURCE_DIR}/src/tasks/payload"
+)

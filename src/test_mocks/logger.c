@@ -21,7 +21,8 @@ static void log_viz_task_message(const char *task_name, const char *log_message)
         // Escape quotes in log message
         char escaped[512];
         size_t j = 0;
-        for (size_t i = 0; log_message[i] != '\0' && j < sizeof(escaped) - 2; i++)
+        for (size_t i = 0; log_message[i] != '\0' && j < sizeof(escaped) - 2;
+             i++)
         {
             if (log_message[i] == '"')
             {

@@ -46,12 +46,11 @@ void fast_task_dispatch(slate_t *slate)
     log_viz_event("task_dispatch", "fast_task", details);
 }
 
-sched_task_t fast_task = {
-    .name = "fast_task",
-    .dispatch_period_ms = 50,
-    .next_dispatch = 0,
-    .task_init = fast_task_init,
-    .task_dispatch = fast_task_dispatch};
+sched_task_t fast_task = {.name = "fast_task",
+                          .dispatch_period_ms = 50,
+                          .next_dispatch = 0,
+                          .task_init = fast_task_init,
+                          .task_dispatch = fast_task_dispatch};
 
 // Medium task - 200ms period
 void medium_task_init(slate_t *slate)
@@ -78,12 +77,11 @@ void medium_task_dispatch(slate_t *slate)
     log_viz_event("task_dispatch", "medium_task", details);
 }
 
-sched_task_t medium_task = {
-    .name = "medium_task",
-    .dispatch_period_ms = 200,
-    .next_dispatch = 0,
-    .task_init = medium_task_init,
-    .task_dispatch = medium_task_dispatch};
+sched_task_t medium_task = {.name = "medium_task",
+                            .dispatch_period_ms = 200,
+                            .next_dispatch = 0,
+                            .task_init = medium_task_init,
+                            .task_dispatch = medium_task_dispatch};
 
 // Slow task - 1000ms period
 void slow_task_init(slate_t *slate)
@@ -110,12 +108,11 @@ void slow_task_dispatch(slate_t *slate)
     log_viz_event("task_dispatch", "slow_task", details);
 }
 
-sched_task_t slow_task = {
-    .name = "slow_task",
-    .dispatch_period_ms = 1000,
-    .next_dispatch = 0,
-    .task_init = slow_task_init,
-    .task_dispatch = slow_task_dispatch};
+sched_task_t slow_task = {.name = "slow_task",
+                          .dispatch_period_ms = 1000,
+                          .next_dispatch = 0,
+                          .task_init = slow_task_init,
+                          .task_dispatch = slow_task_dispatch};
 
 // Very slow task - 5000ms period
 void very_slow_task_init(slate_t *slate)
@@ -142,12 +139,11 @@ void very_slow_task_dispatch(slate_t *slate)
     log_viz_event("task_dispatch", "very_slow_task", details);
 }
 
-sched_task_t very_slow_task = {
-    .name = "very_slow_task",
-    .dispatch_period_ms = 5000,
-    .next_dispatch = 0,
-    .task_init = very_slow_task_init,
-    .task_dispatch = very_slow_task_dispatch};
+sched_task_t very_slow_task = {.name = "very_slow_task",
+                               .dispatch_period_ms = 5000,
+                               .next_dispatch = 0,
+                               .task_init = very_slow_task_init,
+                               .task_dispatch = very_slow_task_dispatch};
 
 // =============================================================================
 // TEST STATE DEFINITIONS
@@ -176,11 +172,10 @@ sched_state_t *test_state_2_get_next_state(slate_t *slate)
     return &test_state_2;
 }
 
-sched_state_t test_state_2 = {
-    .name = "test_state_2_fast_only",
-    .num_tasks = 2,
-    .task_list = {&fast_task, &medium_task},
-    .get_next_state = test_state_2_get_next_state};
+sched_state_t test_state_2 = {.name = "test_state_2_fast_only",
+                              .num_tasks = 2,
+                              .task_list = {&fast_task, &medium_task},
+                              .get_next_state = test_state_2_get_next_state};
 
 // Test state 3: Only slow tasks
 sched_state_t *test_state_3_get_next_state(slate_t *slate)
@@ -188,18 +183,16 @@ sched_state_t *test_state_3_get_next_state(slate_t *slate)
     return &test_state_3;
 }
 
-sched_state_t test_state_3 = {
-    .name = "test_state_3_slow_only",
-    .num_tasks = 2,
-    .task_list = {&slow_task, &very_slow_task},
-    .get_next_state = test_state_3_get_next_state};
+sched_state_t test_state_3 = {.name = "test_state_3_slow_only",
+                              .num_tasks = 2,
+                              .task_list = {&slow_task, &very_slow_task},
+                              .get_next_state = test_state_3_get_next_state};
 
 // Stub running_state for scheduler.c
-sched_state_t running_state = {
-    .name = "running",
-    .num_tasks = 0,
-    .task_list = {NULL},
-    .get_next_state = NULL};
+sched_state_t running_state = {.name = "running",
+                               .num_tasks = 0,
+                               .task_list = {NULL},
+                               .get_next_state = NULL};
 
 // =============================================================================
 // TESTS
@@ -234,7 +227,7 @@ void test_all_tasks_different_periods()
     task_execution_stats_t *slow = get_task_stats("slow_task");
     task_execution_stats_t *vslow = get_task_stats("very_slow_task");
 
-    ASSERT(fast->dispatch_count >= 180 && fast->dispatch_count <= 220);   // ~200
+    ASSERT(fast->dispatch_count >= 180 && fast->dispatch_count <= 220); // ~200
     ASSERT(medium->dispatch_count >= 45 && medium->dispatch_count <= 55); // ~50
     ASSERT(slow->dispatch_count >= 8 && slow->dispatch_count <= 12);      // ~10
     ASSERT(vslow->dispatch_count >= 1 && vslow->dispatch_count <= 3);     // ~2
@@ -343,8 +336,10 @@ void test_task_period_accuracy()
         uint32_t expected_dispatches = 10000 / task->dispatch_period_ms;
         uint32_t actual_dispatches = stats ? stats->dispatch_count : 0;
 
-        // For very low frequency tasks (<=2 dispatches), allow greater tolerance
-        uint32_t tolerance = (expected_dispatches <= 2) ? expected_dispatches : 5;
+        // For very low frequency tasks (<=2 dispatches), allow greater
+        // tolerance
+        uint32_t tolerance =
+            (expected_dispatches <= 2) ? expected_dispatches : 5;
 
         char details[128];
         snprintf(details, sizeof(details),
@@ -352,7 +347,8 @@ void test_task_period_accuracy()
                  actual_dispatches, task->dispatch_period_ms);
         log_viz_event("period_accuracy_check", task->name, details);
 
-        ASSERT(verify_dispatch_count(task->name, expected_dispatches, tolerance));
+        ASSERT(
+            verify_dispatch_count(task->name, expected_dispatches, tolerance));
     }
 
     log_viz_event("test_pass", NULL, "task_period_accuracy");
