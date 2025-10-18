@@ -14,6 +14,7 @@
 #include "rfm9x.h"
 #include "states.h"
 #include <stdio.h>
+#include <string.h>
 
 extern sched_state_t *overridden_state;
 
