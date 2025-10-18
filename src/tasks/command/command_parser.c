@@ -16,6 +16,7 @@
 #include "states.h"
 #include "str_utils.h"
 #include <stdio.h>
+#include <string.h>
 
 extern sched_state_t *overridden_state;
 
