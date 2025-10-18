@@ -19,3 +19,8 @@ target_include_directories(beacon_task PUBLIC
   $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
   "${PROJECT_SOURCE_DIR}/src/tasks/beacon"
 )
+
+# Add tests subdirectory only for test builds
+if(BUILD_TESTS)
+  add_subdirectory(test)
+endif()
