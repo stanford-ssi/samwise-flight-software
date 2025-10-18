@@ -9,16 +9,15 @@ void test_encode_packet_basic()
 {
     printf("Starting basic encode_packet test\n");
     // Arrange.
-    packet_t p = {
-        .dst = 1,
-        .src = 2,
-        .flags = 0,
-        .seq = 1,
-        .len = 3,
-        .data = {0xAA, 0xBB, 0xCC},
-        .boot_count = 42,
-        .msg_id = 7,
-        .hmac = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x11, 0x22, 0x33}};
+    packet_t p = {.dst = 1,
+                  .src = 2,
+                  .flags = 0,
+                  .seq = 1,
+                  .len = 3,
+                  .data = {0xAA, 0xBB, 0xCC},
+                  .boot_count = 42,
+                  .msg_id = 7,
+                  .hmac = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x11, 0x22, 0x33}};
     uint8_t buf[PACKET_SIZE] = {0};
 
     printf("Data Length: %u\n", sizeof(p.data));
@@ -38,9 +37,9 @@ void test_encode_packet_basic()
     }
 
     // Assert.
-    ASSERT(buf[4] == 3); // Length byte
-    printf("%u\n", buf[8]);   // Data byte 1
-    ASSERT(buf[8] == 42); // Boot count LSB
+    ASSERT(buf[4] == 3);    // Length byte
+    printf("%u\n", buf[8]); // Data byte 1
+    ASSERT(buf[8] == 42);   // Boot count LSB
     printf("\n");
 }
 

@@ -17,7 +17,7 @@ static slate_t *s;
 // Serializes a packet_t into a buffer. Returns the total number of bytes
 // written, or 0 on error.
 size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
-                            bool enable_hmac)
+                     bool enable_hmac)
 {
     if (!p || !buf)
     {
