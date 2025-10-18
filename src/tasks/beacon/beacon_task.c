@@ -55,6 +55,8 @@ uint8_t get_device_status(slate_t *slate)
 // Serialize the slate into a byte array and return its size.
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
+    LOG_INFO("Serializing slate for beacon... %p -> %p", slate, data);
+    LOG_INFO("State name: %s", slate->current_state->name);
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
     size_t name_len = strnlen(slate->current_state->name, MAX_STR_LENGTH);
     strlcpy((char *)data, slate->current_state->name, name_len + 1);

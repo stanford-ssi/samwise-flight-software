@@ -27,6 +27,8 @@
 #define TX_QUEUE_SIZE 16
 #define RX_QUEUE_SIZE 16
 
+size_t encode_packet(const packet_t *p, uint8_t *buf, size_t bufsize,
+                     bool enable_hmac);
 void radio_task_init(slate_t *slate);
 void radio_task_dispatch(slate_t *slate);
 
