@@ -11,6 +11,7 @@ target_link_libraries(running_state PUBLIC
   blink_task
   command_task
   diagnostics_task
+  filesys_task
   payload_task
   print_task
   radio_task

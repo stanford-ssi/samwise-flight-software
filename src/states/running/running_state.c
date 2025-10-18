@@ -17,8 +17,8 @@ sched_state_t running_state = {
 sched_state_t running_state = {
     .name = "running",
     .num_tasks = 9,
-    .task_list = {&print_task, &watchdog_task, &blink_task, &adcs_task,
-                  &telemetry_task, &beacon_task, &radio_task, &command_task,
+    .task_list = {&print_task, &watchdog_task, &beacon_task,
+                  &radio_task, &command_task,
                   &filesys_task},
     .get_next_state = &running_get_next_state};
 #endif
