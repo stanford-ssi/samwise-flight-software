@@ -1,5 +1,6 @@
 # General
 **/.vite
 **/.DS_Store
+**/.vite
 .vscode
 build*
