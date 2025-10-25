@@ -3,8 +3,9 @@
 
 // Add power monitor instance
 static adm1176_t power_monitor;
-// Add MPPT instance
-static mppt_t solar_charger_monitor;
+// Add MPPT instances for both panels
+static mppt_t panel_A_mppt;
+static mppt_t panel_B_mppt;
 
 void telemetry_task_init(slate_t *slate)
 {
@@ -49,15 +50,20 @@ void telemetry_task_init(slate_t *slate)
     power_monitor = adm1176_mk(SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
                                ADM1176_DEFAULT_SENSE_RESISTOR);
 
-    // Initialize MPPT
-    solar_charger_monitor = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR);
-    mppt_init(&solar_charger_monitor);
+    // Initialize MPPT for Panel A
+    panel_A_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_A);
+    mppt_init(&panel_A_mppt);
+    
+    // Initialize MPPT for Panel B
+    panel_B_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_B);
+    mppt_init(&panel_B_mppt);
 #else
     // Initialize mocked PICO power monitor
     power_monitor = adm1176_mk_mock();
 
-    // Initialize mocked PICO MPPT
-    solar_charger_monitor = mppt_mk_mock();
+    // Initialize mocked PICO MPPTs
+    panel_A_mppt = mppt_mk_mock();
+    panel_B_mppt = mppt_mk_mock();
 #endif
 }
 
@@ -74,14 +80,19 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->battery_voltage = (uint16_t)(voltage * 1000); // Convert to mV
     slate->battery_current = (uint16_t)(current * 1000); // Convert to mA
 
-    // Read telemetry data from the LT8491
-    uint16_t solar_vin_voltage = mppt_get_vin_voltage(&solar_charger_monitor);
-    uint16_t solar_voltage = mppt_get_voltage(&solar_charger_monitor);
-    uint16_t solar_current = mppt_get_current(&solar_charger_monitor);
-    uint16_t solar_battery_voltage =
-        mppt_get_battery_voltage(&solar_charger_monitor);
-    uint16_t solar_battery_current =
-        mppt_get_battery_current(&solar_charger_monitor);
+    // Read telemetry data from Panel A MPPT
+    uint16_t panel_A_vin_voltage = mppt_get_vin_voltage(&panel_A_mppt);
+    uint16_t panel_A_voltage = mppt_get_voltage(&panel_A_mppt);
+    uint16_t panel_A_current = mppt_get_current(&panel_A_mppt);
+    uint16_t panel_A_battery_voltage = mppt_get_battery_voltage(&panel_A_mppt);
+    uint16_t panel_A_battery_current = mppt_get_battery_current(&panel_A_mppt);
+    
+    // Read telemetry data from Panel B MPPT
+    uint16_t panel_B_vin_voltage = mppt_get_vin_voltage(&panel_B_mppt);
+    uint16_t panel_B_voltage = mppt_get_voltage(&panel_B_mppt);
+    uint16_t panel_B_current = mppt_get_current(&panel_B_mppt);
+    uint16_t panel_B_battery_voltage = mppt_get_battery_voltage(&panel_B_mppt);
+    uint16_t panel_B_battery_current = mppt_get_battery_current(&panel_B_mppt);
 
     bool solar_charge = is_fixed_solar_charging();
     bool solar_fault = is_fixed_solar_faulty();
@@ -101,9 +112,17 @@ void telemetry_task_dispatch(slate_t *slate)
     // LOG_INFO("Fixed solar charging: %s", solar_charge ? "on" : "off");
     // LOG_INFO("Fixed solar status: %s", solar_fault ? "faulty" : "okay");
 
-    // Write to slate
-    slate->solar_voltage = solar_voltage;
-    slate->solar_current = solar_current;
+    // Write to slate - individual panel data
+    slate->panel_A_voltage = panel_A_voltage;
+    slate->panel_A_current = panel_A_current;
+    slate->panel_B_voltage = panel_B_voltage;
+    slate->panel_B_current = panel_B_current;
+    
+    // Legacy combined data (Panel A for backward compatibility)
+    slate->solar_voltage = panel_A_voltage;
+    slate->solar_current = panel_A_current;
+    
+    // Status flags
     slate->fixed_solar_charge = solar_charge;
     slate->fixed_solar_fault = solar_fault;
     slate->panel_A_deployed = panel_A;
