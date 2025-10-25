@@ -32,8 +32,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PAYLOAD_EXEC:
         {
             PAYLOAD_COMMAND_DATA payload_command;
-            strlcpy(payload_command.serialized_command, command_payload,
-                    sizeof(command_payload));
+            strncpy(payload_command.serialized_command, command_payload,
+                    sizeof(command_payload) - 1);
+            payload_command.serialized_command[sizeof(command_payload) - 1] = '\0';
             payload_command.seq_num = slate->curr_command_seq_num++;
             payload_command.command_type = PAYLOAD_EXEC;
 
