@@ -11,8 +11,10 @@
 #include "pins.h"
 #include "utils.h"
 
-// LT8491 I2C Address (0x10)
-#define LT8491_I2C_ADDR 0x10
+// LT8491 I2C Addresses
+#define LT8491_I2C_ADDR_PANEL_A 0x10 // Side panel A MPPT
+#define LT8491_I2C_ADDR_PANEL_B 0x29 // Side panel B MPPT
+#define LT8491_I2C_ADDR 0x10         // Legacy alias for Panel A
 
 // LT8491 Register Addresses
 #define LT8491_CTRL_CHRG_EN 0x23

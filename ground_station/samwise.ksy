@@ -40,10 +40,24 @@ seq:
   - id: battery_current
     type: u2
 
+  # Legacy combined solar data (Panel A for backward compatibility)
   - id: solar_voltage
     type: u2
 
   - id: solar_current
+    type: u2
+
+  # Individual panel data
+  - id: panel_A_voltage
+    type: u2
+
+  - id: panel_A_current
+    type: u2
+
+  - id: panel_B_voltage
+    type: u2
+
+  - id: panel_B_current
     type: u2
 
   - id: device_status
