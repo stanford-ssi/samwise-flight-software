@@ -12,6 +12,8 @@
 
 #define MAX_DATA_SIZE 252
 #define MAX_STR_LENGTH 64
+#define CALLSIGN "KC3WNY"
+#define CALLSIGN_LENGTH (sizeof(CALLSIGN))
 
 typedef struct
 {
@@ -30,8 +32,10 @@ typedef struct
     uint8_t device_status;    // 0 for off, 1 for on
 } __attribute__((__packed__)) beacon_stats;
 
-_Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 <= MAX_DATA_SIZE,
-               "beacon packet too large");
+_Static_assert(
+    sizeof(beacon_stats) + MAX_STR_LENGTH + 1 + sizeof(adcs_packet_t) + CALLSIGN_LENGTH <=
+        MAX_DATA_SIZE,
+    "beacon packet too large");
 
 size_t send_boot_count(slate_t *slate, uint8_t *data)
 {
@@ -59,7 +63,8 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     LOG_INFO("State name: %s", slate->current_state->name);
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
     size_t name_len = strnlen(slate->current_state->name, MAX_STR_LENGTH);
-    strlcpy((char *)data, slate->current_state->name, name_len + 1);
+    strncpy((char *)data, slate->current_state->name, name_len);
+    data[name_len] = '\0'; // Ensure null termination
 
     beacon_stats stats = {.reboot_counter = slate->reboot_counter,
                           .time = slate->time_in_current_state_ms,
@@ -82,7 +87,11 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     memcpy(data + name_len + 1 + sizeof(beacon_stats), &slate->adcs_telemetry,
            sizeof(adcs_packet_t));
 
-    return name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t);
+    // Add callsign at the end of the packet
+    memcpy(data + name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t),
+           CALLSIGN, CALLSIGN_LENGTH);
+
+    return name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t) + CALLSIGN_LENGTH;
 }
 
 void beacon_task_init(slate_t *slate)
