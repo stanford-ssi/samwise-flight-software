@@ -27,18 +27,18 @@ typedef struct
     uint32_t tx_packets;
     uint16_t battery_voltage; // in mV (to 0.001V)
     uint16_t battery_current; // in mA (to 0.001A)
-    
+
     // Legacy combined solar data (Panel A for backward compatibility)
-    uint16_t solar_voltage;   // in mV (to 0.001V)
-    uint16_t solar_current;   // in mA (to 0.001A)
-    
+    uint16_t solar_voltage; // in mV (to 0.001V)
+    uint16_t solar_current; // in mA (to 0.001A)
+
     // Individual panel data
     uint16_t panel_A_voltage; // in mV (to 0.001V)
     uint16_t panel_A_current; // in mA (to 0.001A)
     uint16_t panel_B_voltage; // in mV (to 0.001V)
     uint16_t panel_B_current; // in mA (to 0.001A)
-    
-    uint8_t device_status;    // 0 for off, 1 for on
+
+    uint8_t device_status; // 0 for off, 1 for on
 } __attribute__((__packed__)) beacon_stats;
 
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 +

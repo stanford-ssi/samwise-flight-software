@@ -53,7 +53,7 @@ void telemetry_task_init(slate_t *slate)
     // Initialize MPPT for Panel A
     panel_A_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_A);
     mppt_init(&panel_A_mppt);
-    
+
     // Initialize MPPT for Panel B
     panel_B_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_B);
     mppt_init(&panel_B_mppt);
@@ -86,7 +86,7 @@ void telemetry_task_dispatch(slate_t *slate)
     uint16_t panel_A_current = mppt_get_current(&panel_A_mppt);
     uint16_t panel_A_battery_voltage = mppt_get_battery_voltage(&panel_A_mppt);
     uint16_t panel_A_battery_current = mppt_get_battery_current(&panel_A_mppt);
-    
+
     // Read telemetry data from Panel B MPPT
     uint16_t panel_B_vin_voltage = mppt_get_vin_voltage(&panel_B_mppt);
     uint16_t panel_B_voltage = mppt_get_voltage(&panel_B_mppt);
@@ -117,11 +117,11 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->panel_A_current = panel_A_current;
     slate->panel_B_voltage = panel_B_voltage;
     slate->panel_B_current = panel_B_current;
-    
+
     // Legacy combined data (Panel A for backward compatibility)
     slate->solar_voltage = panel_A_voltage;
     slate->solar_current = panel_A_current;
-    
+
     // Status flags
     slate->fixed_solar_charge = solar_charge;
     slate->fixed_solar_fault = solar_fault;
