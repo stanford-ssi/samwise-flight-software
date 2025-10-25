@@ -104,3 +104,24 @@ bool init(slate_t *slate)
 
     return true;
 }
+
+#define CHRG_STATUS 34
+#define FAULT_STATUS 33
+#define SIDE_PANEL_A 10
+#define SIDE_PANEL_B 9
+#define RBF_DETECT 42
+
+gpio_init(CHRG_STATUS);
+gpio_set_dir(CHRG_STATUS, GPIO_IN);
+
+gpio_init(FAULT_STATUS);
+gpio_set_dir(FAULT_STATUS, GPIO_IN);
+
+gpio_init(SIDE_PANEL_A);
+gpio_set_dir(SIDE_PANEL_A, GPIO_IN);
+
+gpio_init(SIDE_PANEL_B);
+gpio_set_dir(SIDE_PANEL_B, GPIO_IN);
+
+gpio_init(RBF_DETECT);
+gpio_set_dir(RBF_DETECT, GPIO_IN);
