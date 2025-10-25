@@ -4,7 +4,7 @@
 // Add power monitor instance
 static adm1176_t power_monitor;
 // Add MPPT instance
-static mppt_t solar_charger_monitor
+static mppt_t solar_charger_monitor;
 
 // GPIO pin definitions
 #define CHRG_STATUS 34
@@ -58,7 +58,6 @@ void telemetry_task_init(slate_t *slate)
 #else
     // Initialize mocked PICO power monitor
     power_monitor = adm1176_mk_mock();
-
     // Initialize mocked PICO MPPT
     solar_charger_monitor = mppt_mk_mock();
 #endif
@@ -104,13 +103,8 @@ void telemetry_task_dispatch(slate_t *slate)
     uint16_t solar_battery_voltage = mppt_get_battery_voltage(&solar_charger_monitor);
     uint16_t solar_battery_current = mppt_get_battery_current(&solar_charger_monitor);
 
-    bool solar_charge = is_fixed_solar_charging();
-    bool solar_fault = is_fixed_solar_faulty();
-
     slate->solar_voltage = solar_voltage;
     slate->solar_current = solar_current;
-    slate->fixed_solar_charge = solar_charge;
-    slate->fixed_solar_fault = solar_fault;
 
     // ------------------------------
     // Read single hardware pins
