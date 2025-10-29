@@ -5,4 +5,5 @@
 
 #pragma once
 
+#include "filesys_task.h"
 #include "mram.h"
