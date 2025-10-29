@@ -112,7 +112,7 @@ jobs:
             - The original command was: "${{ github.event.comment.body || github.event.review.body }}"
             - Repo root and PR diff are checked out in the workspace.
 
-            - Allowed Files for Modification (derived from PR diff & globs):
+            - Allowed Files for Viewing (derived from PR diff & globs):
               ---
               {{ALLOWED_FILES}}
               ---
