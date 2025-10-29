@@ -20,6 +20,7 @@
 void payload_task_init(slate_t *slate);
 void payload_task_dispatch(slate_t *slate);
 void heartbeat_check(slate_t *slate);
+bool ping_command_test(slate_t *slate);
 
 static uint8_t RETRY_COUNT = 0;
 extern sched_task_t payload_task;
