@@ -11,6 +11,7 @@
 #include "command_parser.h"
 #include "macros.h"
 #include "payload_uart.h"
+#include "payload_task.h"
 #include "rfm9x.h"
 #include "states.h"
 #include <stdio.h>
@@ -109,6 +110,13 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                 LOG_ERROR("Unknown state override command: %s",
                           command_payload);
             }
+            break;
+        }
+
+        case CHECK_HEARTBEAT:
+        {
+            LOG_INFO("Sending heartbeat ping to RPi...");
+            heartbeat_check(slate);
             break;
         }
 

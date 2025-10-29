@@ -21,7 +21,8 @@ typedef enum
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
-    MANUAL_STATE_OVERRIDE
+    MANUAL_STATE_OVERRIDE,
+    CHECK_HEARTBEAT
     // add more commands here as needed
 } Command;
 

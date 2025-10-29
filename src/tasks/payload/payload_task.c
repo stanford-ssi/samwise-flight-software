@@ -135,7 +135,48 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-void ping_command_test(slate_t *slate)
+
+void heartbeat_check(slate_t *slate)
+{
+    bool response_received = ping_command_test(slate);
+    bool rpi_enabled = gpio_get_out_level(SAMWISE_RPI_ENAB);
+    if(rpi_enabled && response_received){ 
+        LOG_INFO("RPi is operational!");
+    } else if (rpi_enabled && !response_received){
+        // rpi should be on. Serial communication error. 
+        LOG_ERROR("Serial Communication is not working! RPI_ENAB Pin is high, but Raspberry Pi is not operational");
+
+    } else if (!rpi_enabled && !response_received){
+        if(!slate->is_payload_on){
+            // we have called the payload_turn_off() function, so RPI_ENAB is correctly set to false.
+            LOG("RPi is asleep, as it should be!");
+        } else {
+            // RPI_ENAB pin was pulled low accidentally (that is, it was pulled low without calling the payload_turn_off() function)
+            LOG_ERROR("RPi is asleep, but it should be on... attempting to turn on...");
+            payload_turn_on(slate);
+        }
+    } else {
+        // RPi is already on but RPI_ENABLED is off.
+        LOG("RPi is operational, but RPI_ENAB pin is off. Checking if RPI_ENAB is meant to be turned on...");
+        if(!slate->is_payload_on){
+            LOG("RPI_ENAB is meant to be off!");
+        } else {
+            LOG("RPI_ENAB was not meant to be turned off. Turning it on...");
+            payload_turn_on(slate);
+            sleep_ms(5);
+            if(gpio_get_out_level(SAMWISE_RPI_ENAB)){
+                LOG("RPI_ENAB pulled to high successfully!");
+            } else {
+                LOG_ERROR("Unable to pull RPI_ENAB pin to high");
+            }
+        }
+        
+    }
+
+}
+
+
+bool ping_command_test(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
@@ -148,6 +189,7 @@ void ping_command_test(slate_t *slate)
     if (received_len == 0)
     {
         LOG_INFO("ACK was not received!");
+        return false;
     }
     else
     {
@@ -158,6 +200,7 @@ void ping_command_test(slate_t *slate)
             printf("%c", received[i]);
         }
         printf("\n");
+        return true;
     }
 }
 

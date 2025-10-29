@@ -400,7 +400,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     // Receive header
     packet_header_t header;
     bytes_received =
-        receive_into(slate, &header, sizeof(packet_header_t), 1000);
+        receive_into(slate, &header, sizeof(packet_header_t), 50);
 
     if (bytes_received < sizeof(packet_header_t))
     {
@@ -417,7 +417,7 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     }
 
     // Read actual packet
-    bytes_received = receive_into(slate, packet, header.length, 1000);
+    bytes_received = receive_into(slate, packet, header.length, 50);
 
     if (bytes_received < header.length)
     {
