@@ -26,8 +26,8 @@ jobs:
     if: |
       contains(fromJSON('["devYaoYH", "carter-cochran"]'), github.actor) &&
       (
-        contains(github.event.comment.body || github.event.review.body || '', '@claude docs') ||
-        contains(github.event.comment.body || github.event.review.body || '', '@claude changelog')
+        contains(github.event.comment.body || github.event.review.body || '', '/claude docs') ||
+        contains(github.event.comment.body || github.event.review.body || '', '/claude changelog')
       )
     runs-on: ubuntu-latest
 
@@ -112,7 +112,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}
           pr_number: ${{ steps.pr.outputs.number }}
-          trigger_phrase: "@claude"
+          trigger_phrase: "/claude"
           model: ${{ steps.pr.outputs.model }}
           
           # Custom instructions that guide Claude's behavior for this specific task
