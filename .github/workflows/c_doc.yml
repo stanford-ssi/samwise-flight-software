@@ -64,8 +64,8 @@ jobs:
       - name: Checkout PR HEAD
         uses: actions/checkout@v4
         with:
-          # Switch to using a shallow fetch depth (e.g., 50) to reduce checkout time while retaining history context.
-          # We still need a decent depth for git diff to find the merge base reliably.
+          # FOR INITIAL TESTING: Lowered fetch-depth to 5 for faster checkout time. 
+          # This should be increased back to 50 or 0 for production use.
           fetch-depth: 5
           ref: ${{ steps.pr.outputs.head_sha }}
 
@@ -75,23 +75,35 @@ jobs:
           # Fetch the base branch to perform an accurate diff
           git fetch origin ${{ steps.pr.outputs.base_ref }}
           
-          # Get a list of changed files between PR head and base
-          changed_files=$(git diff --name-only origin/${{ steps.pr.outputs.base_ref }}..${{ steps.pr.outputs.head_sha }})
+          # Get a list of ALL changed files (including non-doc files)
+          all_changed_files=$(git diff --name-only origin/${{ steps.pr.outputs.base_ref }}..${{ steps.pr.outputs.head_sha }})
           
-          # Filter changed files against the defined globs and save the list
+          # Calculate the total number of files changed in the PR (code + docs)
+          total_changed_count=$(echo "$all_changed_files" | grep -c .)
+
+          # Filter changed files against the defined documentation globs to determine ALLOWED_FILES
           IFS=',' read -ra globs <<< "${{ env.README_GLOBS }}"
-          filtered_files=()
+          filtered_doc_files=()
           while IFS= read -r file; do
             for glob in "${globs[@]}"; do
               if [[ "$file" == $glob ]]; then
-                filtered_files+=("$file")
+                filtered_doc_files+=("$file")
                 break
               fi
             done
-          done <<< "$changed_files"
+          done <<< "$all_changed_files"
           
-          printf "%s\n" "${filtered_files[@]}" > filtered_files.txt
-          echo "count=${#filtered_files[@]}" >> $GITHUB_OUTPUT
+          # Write the list of actual documentation files to be used by Claude
+          printf "%s\n" "${filtered_doc_files[@]}" > filtered_files.txt
+
+          # MODIFIED LOGIC: If ANY file was changed (total_changed_count > 0), force count to 1.
+          # This ensures the Claude action runs and can generate documentation for new features, 
+          # even if no EXISTING documentation file was modified.
+          if [ "$total_changed_count" -gt 0 ]; then
+            echo "count=1" >> $GITHUB_OUTPUT
+          else
+            echo "count=0" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run Claude for docs/changelog
         if: steps.files.outputs.count != '0'
@@ -112,7 +124,7 @@ jobs:
             - The original command was: "${{ github.event.comment.body || github.event.review.body }}"
             - Repo root and PR diff are checked out in the workspace.
 
-            - Allowed Files for Viewing (derived from PR diff & globs):
+            - Allowed Files for Modification (derived from PR diff & globs):
               ---
               {{ALLOWED_FILES}}
               ---
@@ -124,9 +136,10 @@ jobs:
 
             Tasks:
             1) If the command includes "docs" or "doc":
-              - Inspect the PR's diff to detect user-visible changes (APIs, CLI flags, behavior).
-              - Update existing READMEs under the globs: "${{ env.README_GLOBS }}".
-              - If a changed top-level package/module is missing a README, create one with purpose, install/usage, and updated examples.
+              - Inspect the PR's diff to detect all user-visible changes (APIs, CLI flags, behavior, etc.).
+              - **Goal: Generate/Update Documentation.** For every file or module affected by the PR, propose documentation updates.
+                - If a relevant documentation file exists (e.g., in ${{ env.README_GLOBS }}), propose an update to reflect the changes.
+                - If new user-facing code is added without existing documentation, propose the creation of a **new, complete README equivalent paragraph/section** detailing its purpose, usage, and examples.
               - Tone: factual, concise.
 
             2) If the command includes "changelog" or "change log":
@@ -154,4 +167,4 @@ jobs:
 
       - name: No documentation changes detected
         if: steps.files.outputs.count == '0'
-        run: echo "No files matched globs or no relevant files were changed; skipping Claude run."
+        run: echo "No relevant changes or files detected; skipping Claude run."
