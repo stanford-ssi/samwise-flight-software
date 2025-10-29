@@ -81,6 +81,7 @@ endif()
 # Add the library directories
 if(NOT BUILD_TESTS)
   add_subdirectory(lib/tinycrypt)
+  add_subdirectory(lib/littlefs)
 endif()
 
 # Enable testing if in test mode
