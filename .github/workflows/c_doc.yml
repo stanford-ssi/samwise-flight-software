@@ -9,9 +9,9 @@ on:
     types: [created]
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read # Set to READ-ONLY
+  pull-requests: read # Set to READ-ONLY
+  issues: read # Set to READ-ONLY
   id-token: write
 
 concurrency:
@@ -54,24 +54,19 @@ jobs:
           echo "number=$pr_num" >> $GITHUB_OUTPUT
           echo "head_sha=$(jq -r '.head.sha' <<< "$pr_json")" >> $GITHUB_OUTPUT
           echo "base_ref=$(jq -r '.base.ref' <<< "$pr_json")" >> $GITHUB_OUTPUT
-          # Determine if the PR is from a fork, which dictates if we can push directly.
-          echo "can_push=$(jq -r 'if .head.repo.owner.login == .base.repo.owner.login then "true" else "false" end' <<< "$pr_json")" >> $GITHUB_OUTPUT
+          # Forcing can_push to 'false' due to read-only permissions (ensures comment-only output).
+          echo "can_push=false" >> $GITHUB_OUTPUT
           
-          body="${{ github.event.comment.body || github.event.review.body }}"
-          
-          # 2. Model selection: Use Sonnet only if '@claude sonnet' is explicitly in the command.
-          if grep -iq '@claude sonnet' <<< "$body"; then
-            model='claude-3-5-sonnet-latest'
-          else
-            model='claude-3-5-haiku-latest'
-          fi
+          # 2. Model selection: FORCING the use of the cheaper Haiku model as requested.
+          model='claude-4-5-haiku-latest'
           echo "model=$model" >> $GITHUB_OUTPUT
 
       - name: Checkout PR HEAD
         uses: actions/checkout@v4
         with:
-          # Checkout the PR's head commit for accurate diffing and file modifications
-          fetch-depth: 2
+          # Switch to using a shallow fetch depth (e.g., 50) to reduce checkout time while retaining history context.
+          # We still need a decent depth for git diff to find the merge base reliably.
+          fetch-depth: 5
           ref: ${{ steps.pr.outputs.head_sha }}
 
       - name: Get changed documentation files
@@ -123,8 +118,9 @@ jobs:
               ---
 
             Capabilities:
-            - If can_push=${{ steps.pr.outputs.can_push }} (from same repo): you MAY modify only the allowed files and commit directly to the PR branch.
-            - If can_push=false (from fork): DO NOT modify files; instead, post a PR comment with a single fenced unified diff (```diff ...```).
+            - **Policy Update:** This action is configured to only read and propose changes.
+            - **DO NOT** modify or commit files directly to the PR branch.
+            - Instead, you **MUST** post a PR comment containing a single fenced unified diff.
 
             Tasks:
             1) If the command includes "docs" or "doc":
@@ -143,9 +139,8 @@ jobs:
             - Do not touch files outside the ALLOWED_FILES list.
             - Preserve markdown formatting, links, and table structures.
 
-            Output & Commit Policy (Strict):
-            - If can_push=true: Commit with the appropriate prefix ("docs:" or "chore(changelog):").
-            - If can_push=false: Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence.
+            Output Policy (Strict):
+            - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence.
 
           extra_context: |
             ALLOWED_FILES<<EOF
@@ -154,7 +149,7 @@ jobs:
 
           claude_args: |
             --maxOutputTokens "${{ env.MAX_OUTPUT_TOKENS }}"
-            # Tool to allow Claude to post inline comments on PRs/Issues if needed (e.g., if it can't commit)
+            # Tool to allow Claude to post inline comments on PRs/Issues (used for the diff output)
             --allowedTools "mcp__github_inline_comment__create_inline_comment"
 
       - name: No documentation changes detected
