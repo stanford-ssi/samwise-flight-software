@@ -7,6 +7,7 @@
  */
 
 #include "pico/stdlib.h"
+#include "pico/printf.h"
 
 #ifndef PICO
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
