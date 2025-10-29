@@ -57,7 +57,7 @@ uint8_t get_device_status(slate_t *slate)
 }
 
 // Serialize the slate into a byte array and return its size.
-size_t serialize_slate(slate_t *slate, uint8_t *data)
+size_t serialize_slate(slate_t *slate, uint8_t *data, uint8_t tx_power)
 {
     LOG_INFO("Serializing slate for beacon... %p -> %p", slate, data);
     LOG_INFO("State name: %s", slate->current_state->name);
@@ -91,14 +91,20 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     memcpy(data + name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t),
            CALLSIGN, CALLSIGN_LENGTH);
 
+    // Add current TX power we're sending at
+    memcpy(data + name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t),
+           &tx_power, sizeof(tx_power));
+
     return name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t) +
-           CALLSIGN_LENGTH;
+           CALLSIGN_LENGTH + sizeof(tx_power);
 }
 
 void beacon_task_init(slate_t *slate)
 {
     LOG_DEBUG("Beacon task is initializing...");
 }
+
+#define NUM_PACKETS_TO_SEND 1000
 
 void beacon_task_dispatch(slate_t *slate)
 {
@@ -111,20 +117,34 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.seq = 0;
 
     // Commit into serialized byte array
-    pkt.len = serialize_slate(slate, pkt.data);
-
-    LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
-
-    // Write into tx_queue
-    if (queue_try_add(&slate->tx_queue, &pkt))
+    for (int tx_power = 0; tx_power <= 20; tx_power++)
     {
-        LOG_INFO("Beacon pkt added to queue");
+
+        LOG_INFO(" *** Setting rfm9x tx power to: %d ***\n", tx_power);
+        rfm9x_set_tx_power(&slate->radio, tx_power);
+        ASSERT(rfm9x_get_tx_power(&slate->radio) == tx_power);
+
+        for (int i = 0; i < NUM_PACKETS_TO_SEND; i++)
+        {
+            pkt.len = serialize_slate(slate, pkt.data, tx_power);
+
+            // LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
+
+            // Write into tx_queue
+            if (queue_try_add(&slate->tx_queue, &pkt))
+            {
+                LOG_INFO("Beacon pkt added to queue");
+            }
+            else
+            {
+                LOG_ERROR("Beacon pkt failed to commit to tx_queue");
+            }
+            // neopixel_set_color_rgb(0, 0, 0);
+        }
+
+        LOG_INFO(" *** Finished sending packets at tx power: %d***\n",
+                 tx_power);
     }
-    else
-    {
-        LOG_ERROR("Beacon pkt failed to commit to tx_queue");
-    }
-    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t beacon_task = {.name = "beacon",

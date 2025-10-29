@@ -90,6 +90,9 @@ void rfm9x_print_packet(char *msg, uint8_t *packet, uint8_t l);
 void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
                          uint8_t seq, uint8_t len, uint8_t *data);
 
+void rfm9x_set_tx_power(rfm9x_t *r, int8_t power);
+int8_t rfm9x_get_tx_power(rfm9x_t *r);
+
 typedef enum
 {
     _RH_RF95_REG_00_FIFO = 0x00,
