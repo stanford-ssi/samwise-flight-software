@@ -97,3 +97,6 @@ endif()
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)
+
+# Side project, minimal OTA demo
+add_subdirectory(ota_mvp)
