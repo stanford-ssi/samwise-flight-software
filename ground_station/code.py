@@ -14,6 +14,14 @@ except:
     import hmac
 import sys
 import adafruit_rfm9x
+import csv
+import os
+try:
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    PLOTTING_AVAILABLE = True
+except ImportError:
+    PLOTTING_AVAILABLE = False
 
 
 def detect_board():
@@ -134,6 +142,100 @@ config = {
 rfm9x = None
 
 
+# CSV logging setup
+csv_filename = 'beacon_stats.csv'
+csv_fieldnames = ['timestamp', 'reboot_counter', 'time_in_state_ms', 'rx_bytes', 'rx_packets',
+                  'rx_backpressure_drops', 'rx_bad_packet_drops', 'tx_bytes', 'tx_packets',
+                  'battery_voltage', 'battery_current', 'solar_voltage', 'solar_current', 'device_status', 'tx_power']
+
+def save_stats_to_csv(stats):
+    """Append beacon stats to CSV file"""
+    try:
+        file_exists = os.path.isfile(csv_filename)
+        with open(csv_filename, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            row = {'timestamp': time.time()}
+            row.update(stats)
+            writer.writerow(row)
+    except Exception as e:
+        print(f"Warning: Could not save to CSV: {e}")
+
+def plot_last_stats():
+    """Plot the last beacon stats from CSV"""
+    if not PLOTTING_AVAILABLE:
+        print("Plotting not available. Install matplotlib and pandas.")
+        return
+
+    if not os.path.isfile(csv_filename):
+        print(f"No data file found: {csv_filename}")
+        return
+
+    df = pd.read_csv(csv_filename)
+    if len(df) == 0:
+        print("No data in CSV file")
+        return
+
+    stats = df.iloc[-1]
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+    fig.suptitle('Last Beacon Statistics', fontsize=14, fontweight='bold')
+
+    # RX/TX Packets
+    ax = axes[0, 0]
+    ax.bar(['RX', 'TX'], [stats['rx_packets'], stats['tx_packets']], color=['#2ecc71', '#3498db'])
+    ax.set_ylabel('Packets')
+    ax.set_title('Packet Count')
+    ax.grid(axis='y', alpha=0.3)
+
+    # RX/TX Bytes
+    ax = axes[0, 1]
+    ax.bar(['RX', 'TX'], [stats['rx_bytes'], stats['tx_bytes']], color=['#2ecc71', '#3498db'])
+    ax.set_ylabel('Bytes')
+    ax.set_title('Data Volume')
+    ax.grid(axis='y', alpha=0.3)
+
+    # TX Power
+    ax = axes[0, 2]
+    ax.bar(['TX Power'], [stats['tx_power']], color=['#e74c3c'])
+    ax.set_ylabel('Power (dBm)')
+    ax.set_title('TX Power')
+    ax.grid(axis='y', alpha=0.3)
+
+    # Voltage
+    ax = axes[1, 0]
+    ax.bar(['Battery', 'Solar'], [stats['battery_voltage'], stats['solar_voltage']], color=['#f39c12', '#f1c40f'])
+    ax.set_ylabel('Voltage (mV)')
+    ax.set_title('Voltage')
+    ax.grid(axis='y', alpha=0.3)
+
+    # Current
+    ax = axes[1, 1]
+    ax.bar(['Battery', 'Solar'], [stats['battery_current'], stats['solar_current']], color=['#9b59b6', '#8e44ad'])
+    ax.set_ylabel('Current (mA)')
+    ax.set_title('Current')
+    ax.grid(axis='y', alpha=0.3)
+
+    # RX Drops
+    ax = axes[1, 2]
+    ax.bar(['Backpressure', 'Bad Packets'], [stats['rx_backpressure_drops'], stats['rx_bad_packet_drops']], color=['#e67e22', '#d35400'])
+    ax.set_ylabel('Drops')
+    ax.set_title('RX Drops')
+    ax.grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+    print(f"\nLast beacon stats (from {len(df)} total):")
+    print(f"  Reboot counter: {stats['reboot_counter']}")
+    print(f"  Time in state: {stats['time_in_state_ms']/1000:.1f} sec")
+    print(f"  RX: {stats['rx_packets']} pkts, {stats['rx_bytes']} bytes")
+    print(f"  TX: {stats['tx_packets']} pkts, {stats['tx_bytes']} bytes")
+    print(f"  TX Power: {stats['tx_power']} dBm")
+    print(f"  Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
+    print(f"  Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+    plt.show()
+
+
 class PacketBuilder:
     def __init__(self):
         self.msg_id = STARTING_MSG_ID
@@ -252,14 +354,14 @@ def decode_beacon_data(data):
         stats_start = null_pos + 1
         print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
         
-        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1 = 45 bytes
+        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1+1 = 46 bytes (added tx_power)
         # Plus ADCS packet size: 25 bytes (float w + 4 floats quaternion + char state + uint32_t boot_count)
-        # Total expected: 45 + 25 = 70 bytes after state name
-        if len(data) >= stats_start + 45:  # 45 bytes for beacon_stats struct
+        # Total expected: 46 + 25 = 71 bytes after state name
+        if len(data) >= stats_start + 46:  # 46 bytes for beacon_stats struct (with tx_power)
             print("DEBUG: Extracting stats data...")
-            stats_data = data[stats_start:stats_start + 45]
+            stats_data = data[stats_start:stats_start + 46]
             print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
-            
+
             print("DEBUG: About to call struct.unpack...")
 
             print("DEBUG: Boot bytes: {}".format(
@@ -268,11 +370,11 @@ def decode_beacon_data(data):
 
             # Unpack new beacon_stats struct (all little-endian)
             # CircuitPython struct may not support all format codes, let's try simpler ones
-            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 1x uint8_t
+            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 2x uint8_t (device_status, tx_power)
             # L=uint32, Q=uint64, H=uint16, B=uint8 - try using I for uint32 instead of L
-            unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
+            unpacked_stats = struct.unpack('<LQ6L4H2B', stats_data)
             print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
-            
+
             # Q format worked (uint64 for time)
             beacon_stats = {
                 "reboot_counter": unpacked_stats[0],
@@ -287,11 +389,12 @@ def decode_beacon_data(data):
                 "battery_current": unpacked_stats[9],
                 "solar_voltage": unpacked_stats[10],
                 "solar_current": unpacked_stats[11],
-                "device_status": unpacked_stats[12]
+                "device_status": unpacked_stats[12],
+                "tx_power": unpacked_stats[13]
             }
-            
+
             # Check if ADCS data is appended after beacon stats
-            adcs_start = stats_start + 45
+            adcs_start = stats_start + 46
             adcs_data = None
             if len(data) >= adcs_start + 25:  # 25 bytes for ADCS packet
                 print("DEBUG: ADCS data detected, extracting...")
@@ -393,11 +496,13 @@ def try_get_packet(timeout=0.1):
                         
                         if beacon_data['stats']:
                             stats = beacon_data['stats']
+                            save_stats_to_csv(stats)  # Save to CSV
                             print(f"  === Telemetry ===")
                             print(f"    Reboots: {stats['reboot_counter']}")
                             print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
                             print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
                             print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
+                            print(f"    TX Power: {stats['tx_power']} dBm")
                             print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
                             print(f"    Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
                             print(f"    Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
@@ -676,6 +781,7 @@ def show_command_menu():
     print("3. Send Payload Turn On")
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
+    print("p. Plot last beacon stats")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -726,6 +832,9 @@ def interactive_command_loop():
                         state_name = get_user_input("Enter state name", "running_state")
                         print(f"Sending state override: {state_name}")
                         send_manual_state_override(state_name)
+                    elif cmd == 'p':
+                        print("Plotting last beacon stats...")
+                        plot_last_stats()
                     elif cmd == '':
                         # Just pressed enter, continue monitoring
                         pass
@@ -817,10 +926,12 @@ def debug_listen_mode():
                                 
                                 if beacon_data['stats']:
                                     stats = beacon_data['stats']
+                                    save_stats_to_csv(stats)  # Save to CSV
                                     print("  Reboots: {}".format(stats['reboot_counter']))
                                     print("  Time in State: {} ms".format(stats['time_in_state_ms']))
                                     print("  RX: {} pkts, {} bytes".format(stats['rx_packets'], stats['rx_bytes']))
                                     print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
+                                    print("  TX Power: {} dBm".format(stats['tx_power']))
                                     print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
                                     print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
                                     # Decode device status bits
