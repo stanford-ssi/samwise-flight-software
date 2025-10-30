@@ -17,11 +17,11 @@ sched_state_t *init_get_next_state(slate_t *slate)
         neopixel_set_color_rgb(0xff, 0, 0);
         return &init_state;
     }
-    #ifdef FLIGHT
+#ifdef FLIGHT
     return &burn_wire_state;
-    #else
+#else
     return &running_state;
-    #endif
+#endif
 #endif
 }
 
