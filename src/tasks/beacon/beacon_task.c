@@ -115,36 +115,20 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.dst = 255; // Broadcast address
     pkt.flags = 0;
     pkt.seq = 0;
+    pkt.len = serialize_slate(slate, pkt.data, 15);
 
-    // Commit into serialized byte array
-    for (int tx_power = 0; tx_power <= 20; tx_power++)
+    LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
+
+    // Write into tx_queue
+    if (queue_try_add(&slate->tx_queue, &pkt))
     {
-
-        LOG_INFO(" *** Setting rfm9x tx power to: %d ***\n", tx_power);
-        rfm9x_set_tx_power(&slate->radio, tx_power);
-        ASSERT(rfm9x_get_tx_power(&slate->radio) == tx_power);
-
-        for (int i = 0; i < NUM_PACKETS_TO_SEND; i++)
-        {
-            pkt.len = serialize_slate(slate, pkt.data, tx_power);
-
-            // LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
-
-            // Write into tx_queue
-            if (queue_try_add(&slate->tx_queue, &pkt))
-            {
-                LOG_INFO("Beacon pkt added to queue");
-            }
-            else
-            {
-                LOG_ERROR("Beacon pkt failed to commit to tx_queue");
-            }
-            // neopixel_set_color_rgb(0, 0, 0);
-        }
-
-        LOG_INFO(" *** Finished sending packets at tx power: %d***\n",
-                 tx_power);
+        LOG_INFO("Beacon pkt added to queue");
     }
+    else
+    {
+        LOG_ERROR("Beacon pkt failed to commit to tx_queue");
+    }
+    neopixel_set_color_rgb(0, 0, 0);
 }
 
 sched_task_t beacon_task = {.name = "beacon",
