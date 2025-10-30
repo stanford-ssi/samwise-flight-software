@@ -4,9 +4,16 @@ import digitalio
 import time
 import random
 import struct
-from adafruit_hashlib import sha256
-import circuitpython_hmac as hmac
+try:
+    from adafruit_hashlib import sha256
+except:
+    from hashlib import sha256
+try:
+    import circuitpython_hmac as hmac
+except:
+    import hmac
 import sys
+import adafruit_rfm9x
 
 
 def detect_board():
@@ -15,11 +22,11 @@ def detect_board():
     if hasattr(board, 'GP0') and hasattr(board, 'GP28'):
         return "PICO2"
     # Check for Feather M4 specific pins
-    elif hasattr(board, 'D0') and hasattr(board, 'SCK'):
+    elif hasattr(board, 'D0') and hasattr(board, 'SCK') and hasattr(board, 'A5'):
         return "FEATHER_M4"
     else:
         # Default fallback
-        return "UNKNOWN"
+        return "RPI"
 
 def get_board_pins(board_type):
     """Get pin configuration for specific board"""
@@ -40,6 +47,15 @@ def get_board_pins(board_type):
             'CS': board.A5,         # Analog pin 5
             'RESET': board.D5,      # Digital pin 5
             'LED': board.D13        # Built-in LED
+        }
+    elif board_type == "RPI":
+        return {
+            'MOSI': board.MOSI,     # Usually D23
+            'MISO': board.MISO,     # Usually D22
+            'SCK': board.SCK,       # Usually D24
+            'CS': board.CE1,        # Lifted from run_sequence.py
+            'RESET': board.D25,     # Lifted from run_sequence.py
+            # 'LED': board.D13        # Built-in LED
         }
     else:
         # Default to Pico pins
@@ -63,7 +79,7 @@ MISO_PIN = pins['MISO']
 SCK_PIN = pins['SCK']
 CS_PIN = pins['CS']
 RESET_PIN = pins['RESET']
-LED_PIN = pins['LED']
+LED_PIN = pins.get('LED', None)
 
 print("Pin configuration:")
 print("  MOSI: {}".format(MOSI_PIN))
@@ -72,8 +88,9 @@ print("  SCK: {}".format(SCK_PIN))
 print("  CS: {}".format(CS_PIN))
 print("  RESET: {}".format(RESET_PIN))
 
-led = digitalio.DigitalInOut(LED_PIN)
-led.direction = digitalio.Direction.OUTPUT
+if LED_PIN is not None:
+    led = digitalio.DigitalInOut(LED_PIN)
+    led.direction = digitalio.Direction.OUTPUT
 
 spi = busio.SPI(SCK_PIN, MOSI=MOSI_PIN, MISO=MISO_PIN)
 cs = digitalio.DigitalInOut(CS_PIN)
@@ -636,8 +653,7 @@ def configure_lora_settings():
 def initialize_radio():
     """Initialize the RFM9x radio with configured settings"""
     global rfm9x
-    import adafruit_rfm9x
-    
+ 
     print("\n=== Initializing Radio ===")
     print(f"Frequency: {config['frequency']} MHz")
     print(f"Bandwidth: {config['bandwidth']} Hz")
@@ -743,7 +759,8 @@ def debug_listen_mode():
     try:
         while True:
             # Blink LED to show we're alive
-            led.value = True
+            if LED_PIN is not None:
+                led.value = True
             
             # Check for any packet with short timeout
             packet = rfm9x.receive(timeout=0.1)
@@ -853,7 +870,8 @@ def debug_listen_mode():
                 
                 print("*** END PACKET ***\n")
             
-            led.value = False
+            if LED_PIN is not None: 
+                led.value = False
             time.sleep(0.1)
             
             # Periodic status
