@@ -32,8 +32,10 @@ void sched_init(slate_t *slate)
      * Check that each state has a valid number of tasks, and enumerate all
      * tasks.
      */
+    LOG_DEBUG("Initializing tasks for %d states", num_states);
     for (size_t i = 0; i < num_states; i++)
     {
+        LOG_DEBUG(". %s", all_states[i]->name);
         ASSERT(all_states[i]->num_tasks <= MAX_TASKS_PER_STATE);
         for (size_t j = 0; j < all_states[i]->num_tasks; j++)
         {
