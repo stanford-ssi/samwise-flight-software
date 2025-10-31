@@ -10,7 +10,6 @@
 
 #include "command_parser.h"
 #include "macros.h"
-#include "payload_task.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
 #include "states.h"
@@ -112,14 +111,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
             break;
         }
-
-        case CHECK_HEARTBEAT:
-        {
-            LOG_INFO("Sending heartbeat ping to RPi...");
-            heartbeat_check(slate);
-            break;
-        }
-
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;

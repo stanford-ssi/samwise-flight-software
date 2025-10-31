@@ -199,6 +199,7 @@ void payload_turn_on(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 1);
     slate->is_payload_on = true;
+    slate->payload_most_recent_ping_time = get_absolute_time();
 }
 
 void payload_turn_off(slate_t *slate)

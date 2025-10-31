@@ -135,62 +135,36 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-void heartbeat_check(slate_t *slate)
+bool heartbeat_check(slate_t *slate)
 {
-    bool response_received = ping_command_test(slate);
-    bool rpi_enabled = gpio_get_out_level(SAMWISE_RPI_ENAB);
-    if (rpi_enabled && response_received)
+    const uint64_t TIME_THRESHOLD = 1000;
+    if (slate->is_payload_on)
     {
-        LOG_INFO("RPi is operational!");
-    }
-    else if (rpi_enabled && !response_received)
-    {
-        // rpi should be on. Serial communication error.
-        LOG_ERROR("Serial Communication is not working! RPI_ENAB Pin is high, "
-                  "but Raspberry Pi is not operational");
-    }
-    else if (!rpi_enabled && !response_received)
-    {
-        if (!slate->is_payload_on)
+        bool response_received = ping_command_test(slate);
+        uint64_t timeDelta = absolute_time_diff_us(
+            slate->payload_most_recent_ping_time, get_absolute_time());
+        if (timeDelta >= TIME_THRESHOLD)
         {
-            // we have called the payload_turn_off() function, so RPI_ENAB is
-            // correctly set to false.
-            LOG_ERROR("RPi is asleep, as it should be!");
+            payload_turn_off(slate);
+            payload_turn_on(slate); // this resets the most_recent_ping_time.
+            // still return false; don't let the payload send commands (since we
+            // aren't getting responses.)
+            return false;
         }
         else
         {
-            // RPI_ENAB pin was pulled low accidentally (that is, it was pulled
-            // low without calling the payload_turn_off() function)
-            LOG_ERROR("RPi is asleep, but it should be on... attempting to "
-                      "turn on...");
-            payload_turn_on(slate);
+            bool response_received = ping_command_test(slate);
+            if (response_received)
+            {
+                slate->payload_most_recent_ping_time = get_absolute_time();
+                return true;
+                // operational! we can send commands now.
+            }
+            // if we don't get a response back, don't update the time.
+            return false;
         }
     }
-    else
-    {
-        // RPi is already on but RPI_ENABLED is off.
-        LOG_ERROR("RPi is operational, but RPI_ENAB pin is off. Checking if "
-                  "RPI_ENAB is meant to be turned on...");
-        if (!slate->is_payload_on)
-        {
-            LOG_ERROR("RPI_ENAB is meant to be off!");
-        }
-        else
-        {
-            LOG_ERROR(
-                "RPI_ENAB was not meant to be turned off. Turning it on...");
-            payload_turn_on(slate);
-            sleep_ms(5);
-            if (gpio_get_out_level(SAMWISE_RPI_ENAB))
-            {
-                LOG_ERROR("RPI_ENAB pulled to high successfully!");
-            }
-            else
-            {
-                LOG_ERROR("Unable to pull RPI_ENAB pin to high");
-            }
-        }
-    }
+    return false;
 }
 
 bool ping_command_test(slate_t *slate)
@@ -324,7 +298,7 @@ void payload_task_dispatch(slate_t *slate)
 
     return;
 
-    if (slate->is_payload_on)
+    if (heartbeat_check(slate))
     {
         LOG_INFO("Payload is ON, executing commands...");
         // Attempts to execute k commands per dispatch.
