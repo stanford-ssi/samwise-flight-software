@@ -1,6 +1,6 @@
 /***
  * @author Ayush Garg, Luis Cantoran, Joziah Uribe-Lopez
- * @Archer Date   2025-10-18
+ * @date   2025-10-18
  *
  *  Test for mram driver
  */

@@ -1,7 +1,7 @@
 # Create library (same for both test and embedded builds)
-add_library(filesys_task filesys_task.c)
+add_library(filesys filesys.c)
 # Link libraries
-target_link_libraries(filesys_task PUBLIC
+target_link_libraries(filesys PUBLIC
   # tests use test_mocks instead of common/slate/packet/error/pico_stdlib/hardware_spi/rfm9x/neopixel
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
@@ -14,9 +14,9 @@ target_link_libraries(filesys_task PUBLIC
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,mram>
 )
 # Include directories: tests include test_mocks to shadow real hardware headers
-target_include_directories(filesys_task PUBLIC
+target_include_directories(filesys PUBLIC
   $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
-  "${PROJECT_SOURCE_DIR}/src/tasks/filesys"
+  "${PROJECT_SOURCE_DIR}/src/filesys"
   "${PROJECT_SOURCE_DIR}/lib/littlefs"
 )
 

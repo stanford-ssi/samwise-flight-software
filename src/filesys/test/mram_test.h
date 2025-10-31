@@ -5,5 +5,6 @@
 
 #pragma once
 
-#include "filesys_task.h"
+#include "pico/stdlib.h"
+#include "logger.h"
 #include "mram.h"

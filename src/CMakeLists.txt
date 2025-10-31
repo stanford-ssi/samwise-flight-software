@@ -20,6 +20,7 @@ add_subdirectory(scheduler)
 add_subdirectory(states)
 add_subdirectory(tasks)
 add_subdirectory(utils)
+add_subdirectory(filesys)
 
 # Embedded-only: create the main executable
 if(NOT BUILD_TESTS)

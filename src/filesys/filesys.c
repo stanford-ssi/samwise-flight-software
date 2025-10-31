@@ -1,5 +1,4 @@
-#include "filesys_task.h"
-#include "lfs.h"
+#include "filesys.h"
 
 // variables used by the filesystem
 lfs_t lfs;
@@ -14,13 +13,13 @@ const struct lfs_config cfg = {
     // .sync  = mram_,
 
     // block device configuration
-    // .read_size = 16,
-    // .prog_size = 16,
-    // .block_size = 4096,
-    // .block_count = 128,
-    // .cache_size = 16,
-    // .lookahead_size = 16,
-    // .block_cycles = 500,
+    .read_size = 16,
+    .prog_size = 16,
+    .block_size = 256,
+    .block_count = 128,
+    .cache_size = 256,
+    .lookahead_size = 16,
+    .block_cycles = 500,
 };
 
 void filesys_task_init(slate_t *slate)
@@ -64,11 +63,3 @@ void filesys_task_dispatch(slate_t *slate)
     onboard_led_toggle(&slate->onboard_led);
     ex_lfs();
 }
-
-sched_task_t filesys_task = {.name = "filesys",
-                           .dispatch_period_ms = 2000,
-                           .task_init = &filesys_task_init,
-                           .task_dispatch = &filesys_task_dispatch,
-
-                           /* Set to an actual value on init */
-                           .next_dispatch = 0};
