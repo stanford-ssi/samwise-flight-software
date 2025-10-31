@@ -9,6 +9,7 @@ target_link_libraries(init_state PUBLIC
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,error>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,hardware_spi>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,rfm9x>
+  burn_wire_state
   running_state
   print_task
 )
