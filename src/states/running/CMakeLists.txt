@@ -10,13 +10,13 @@ target_link_libraries(running_state PUBLIC
   beacon_task
   blink_task
   command_task
+  ftp_task
   diagnostics_task
   payload_task
   print_task
   radio_task
   telemetry_task
   watchdog_task
-  filesys_task
 )
 
 # Include directories: tests include test_mocks to shadow real hardware headers

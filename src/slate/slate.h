@@ -129,6 +129,26 @@ typedef struct samwise_slate
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
 
+    /**
+     * Filesystem task
+     */
+    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant for efficiency
+    // on reads/writes rather than buffering like we want. Since FILESYS_BUFFER_SIZE is
+    // not that pretty, we will create an extra buffer that allows little-fs to write
+    // much cleaner numbers to MRAM for efficiency gains.
+    bool filesys_is_writing_file;
+    bool filesys_buffer_is_dirty;
+    uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
+    FILESYS_BUFFERED_FNAME_T filesys_buffered_fname;
+    FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
+    FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
+
+    /**
+     * File transfer protocol task
+     */
+    // A bit being set indicates that the corresponding packet has been recieved
+    FTP_PACKET_TRACKER_T ftp_packets_recieved;
+
 } slate_t;
 
 extern slate_t slate;
