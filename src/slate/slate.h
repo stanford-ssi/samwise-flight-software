@@ -120,6 +120,11 @@ typedef struct samwise_slate
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
 
+    /*
+    Payload Heartbeat time
+    */
+    absolute_time_t payload_most_recent_ping_time;
+
 } slate_t;
 
 extern slate_t slate;

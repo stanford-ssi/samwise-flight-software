@@ -135,7 +135,39 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-void ping_command_test(slate_t *slate)
+bool heartbeat_check(slate_t *slate)
+{
+    const uint64_t TIME_THRESHOLD = 1000;
+    if (slate->is_payload_on)
+    {
+        bool response_received = ping_command_test(slate);
+        uint64_t timeDelta = absolute_time_diff_us(
+            slate->payload_most_recent_ping_time, get_absolute_time());
+        if (timeDelta >= TIME_THRESHOLD)
+        {
+            payload_turn_off(slate);
+            payload_turn_on(slate); // this resets the most_recent_ping_time.
+            // still return false; don't let the payload send commands (since we
+            // aren't getting responses.)
+            return false;
+        }
+        else
+        {
+            bool response_received = ping_command_test(slate);
+            if (response_received)
+            {
+                slate->payload_most_recent_ping_time = get_absolute_time();
+                return true;
+                // operational! we can send commands now.
+            }
+            // if we don't get a response back, don't update the time.
+            return false;
+        }
+    }
+    return false;
+}
+
+bool ping_command_test(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
     int len = sizeof(packet) - 1;
@@ -148,6 +180,7 @@ void ping_command_test(slate_t *slate)
     if (received_len == 0)
     {
         LOG_INFO("ACK was not received!");
+        return false;
     }
     else
     {
@@ -158,6 +191,7 @@ void ping_command_test(slate_t *slate)
             printf("%c", received[i]);
         }
         printf("\n");
+        return true;
     }
 }
 
@@ -264,7 +298,7 @@ void payload_task_dispatch(slate_t *slate)
 
     return;
 
-    if (slate->is_payload_on)
+    if (heartbeat_check(slate))
     {
         LOG_INFO("Payload is ON, executing commands...");
         // Attempts to execute k commands per dispatch.
