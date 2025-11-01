@@ -7,6 +7,12 @@ static adm1176_t power_monitor;
 // Add MPPT instance
 static mppt_t solar_charger_monitor;
 
+#define PIN_CHRG 34    // Solar charger charging status (LOW = charging)
+#define PIN_FAULT 33   // Solar charger fault status (LOW = fault)
+#define PIN_PANEL_A 10 // Side Panel A deployed (HIGH = deployed)
+#define PIN_PANEL_B 9  // Side Panel B deployed (HIGH = deployed)
+#define PIN_RBF 42     // Remove Before Flight (HIGH = removed)
+
 void telemetry_task_init(slate_t *slate)
 {
 #ifndef PICO
@@ -17,13 +23,15 @@ void telemetry_task_init(slate_t *slate)
         uint8_t rxdata;
 
         // Scan MPPT I2C
-        int ret = i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
-                                          make_timeout_time_ms(I2C_TIMEOUT_MS));
+        int ret =
+            i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
+                                    make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
             found_device = true;
 
         // Scan power monitor I2C
-        ret = i2c_read_blocking_until(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata, 1, false,
+        ret = i2c_read_blocking_until(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
+                                      1, false,
                                       make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
             found_device = true;
@@ -43,11 +51,16 @@ void telemetry_task_init(slate_t *slate)
 #endif
 
     // Initialize GPIO pins
-    gpio_init(CHRG_STATUS);      gpio_set_dir(CHRG_STATUS, GPIO_IN);
-    gpio_init(FAULT_STATUS);     gpio_set_dir(FAULT_STATUS, GPIO_IN);
-    gpio_init(SIDE_PANEL_A);     gpio_set_dir(SIDE_PANEL_A, GPIO_IN);
-    gpio_init(SIDE_PANEL_B);     gpio_set_dir(SIDE_PANEL_B, GPIO_IN);
-    gpio_init(RBF_DETECT);       gpio_set_dir(RBF_DETECT, GPIO_IN);
+    gpio_init(CHRG_STATUS);
+    gpio_set_dir(CHRG_STATUS, GPIO_IN);
+    gpio_init(FAULT_STATUS);
+    gpio_set_dir(FAULT_STATUS, GPIO_IN);
+    gpio_init(SIDE_PANEL_A);
+    gpio_set_dir(SIDE_PANEL_A, GPIO_IN);
+    gpio_init(SIDE_PANEL_B);
+    gpio_set_dir(SIDE_PANEL_B, GPIO_IN);
+    gpio_init(RBF_DETECT);
+    gpio_set_dir(RBF_DETECT, GPIO_IN);
 }
 
 void telemetry_task_dispatch(slate_t *slate)
@@ -65,24 +78,40 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->solar_current = mppt_get_current(&solar_charger_monitor);
 
     // Single hardware pins
-    slate->fixed_solar_charge = gpio_get(CHRG_STATUS) == LOW;   // LOW = OK
-    slate->fixed_solar_fault = gpio_get(FAULT_STATUS) == LOW;   // LOW = Faulty
+    slate->fixed_solar_charge = gpio_get(CHRG_STATUS) == LOW; // LOW = OK
+    slate->fixed_solar_fault = gpio_get(FAULT_STATUS) == LOW; // LOW = Faulty
     slate->panel_A_deployed = gpio_get(SIDE_PANEL_A) == HIGH;
     slate->panel_B_deployed = gpio_get(SIDE_PANEL_B) == HIGH;
     slate->is_rbf_detected = gpio_get(RBF_DETECT) == HIGH;
 
     // Existing ADCS telemetry
     LOG_INFO("ADCS status: %s", slate->is_adcs_on ? "ON" : "OFF");
-    LOG_INFO("ADCS telemetry valid: %s", slate->is_adcs_telem_valid ? "VALID" : "INVALID");
+    LOG_INFO("ADCS telemetry valid: %s",
+             slate->is_adcs_telem_valid ? "VALID" : "INVALID");
     LOG_INFO("ADCS num failed checks: %d", slate->adcs_num_failed_checks);
 
     neopixel_set_color_rgb(0, 0, 0);
+
+    bool chrg_raw = gpio_get(PIN_CHRG);
+    bool fault_raw = gpio_get(PIN_FAULT);
+    bool panel_a = gpio_get(PIN_PANEL_A);
+    bool panel_b = gpio_get(PIN_PANEL_B);
+    bool rbf = gpio_get(PIN_RBF);
+
+    // Hardware says: CHRG LOW = charging OK, FAULT LOW = fault present
+    bool fault_low = (fault_raw == 0);
+    bool chrg_low = (chrg_raw == 0);
+
+    slate->solar_charger_fault = fault_low;
+    slate->solar_charger_charging = chrg_low && !fault_low;
+
+    slate->panel_a_deployed = (panel_a == 1);
+    slate->panel_b_deployed = (panel_b == 1);
+    slate->rbf_removed = (rbf == 1);
 }
 
-sched_task_t telemetry_task = {
-    .name = "telemetry",
-    .dispatch_period_ms = 1000,
-    .task_init = &telemetry_task_init,
-    .task_dispatch = &telemetry_task_dispatch,
-    .next_dispatch = 0
-};
+sched_task_t telemetry_task = {.name = "telemetry",
+                               .dispatch_period_ms = 1000,
+                               .task_init = &telemetry_task_init,
+                               .task_dispatch = &telemetry_task_dispatch,
+                               .next_dispatch = 0};

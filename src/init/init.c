@@ -1,6 +1,6 @@
 #include "init.h"
-#include "telemetry_pins.h"
 #include "burn_wire.h"
+#include "telemetry_pins.h"
 
 static bool init_gpio_pins()
 {
@@ -47,12 +47,20 @@ bool init(slate_t *slate)
     ASSERT(init_drivers(slate));
     sched_init(slate);
 
-    // Initialize telemetry GPIOs
-    gpio_init(CHRG_STATUS);      gpio_set_dir(CHRG_STATUS, GPIO_IN);
-    gpio_init(FAULT_STATUS);     gpio_set_dir(FAULT_STATUS, GPIO_IN);
-    gpio_init(SIDE_PANEL_A);     gpio_set_dir(SIDE_PANEL_A, GPIO_IN);
-    gpio_init(SIDE_PANEL_B);     gpio_set_dir(SIDE_PANEL_B, GPIO_IN);
-    gpio_init(RBF_DETECT);       gpio_set_dir(RBF_DETECT, GPIO_IN);
+    gpio_init(PIN_CHRG);
+    gpio_set_dir(PIN_CHRG, GPIO_IN);
+
+    gpio_init(PIN_FAULT);
+    gpio_set_dir(PIN_FAULT, GPIO_IN);
+
+    gpio_init(PIN_PANEL_A);
+    gpio_set_dir(PIN_PANEL_A, GPIO_IN);
+
+    gpio_init(PIN_PANEL_B);
+    gpio_set_dir(PIN_PANEL_B, GPIO_IN);
+
+    gpio_init(PIN_RBF);
+    gpio_set_dir(PIN_RBF, GPIO_IN);
 
     return true;
 }

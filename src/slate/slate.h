@@ -113,6 +113,15 @@ typedef struct samwise_slate
     bool is_uart_init;
 
     /*
+     * Solar charger hardware pins
+     */
+    bool solar_charger_charging; // true => charging (CHRG pin LOW && no FAULT)
+    bool solar_charger_fault;    // true => FAULT pin LOW => fault present
+    bool panel_a_deployed;       // true => deployed (PIN 10 HIGH)
+    bool panel_b_deployed;       // true => deployed (PIN 9 HIGH)
+    bool rbf_removed; // true => Remove Before Flight pin removed (PIN 42 HIGH)
+
+    /*
      * ADCS board status and telemetry
      */
     bool is_adcs_on;
