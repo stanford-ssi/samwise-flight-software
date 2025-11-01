@@ -20,5 +20,5 @@ target_link_libraries(ftp_task PUBLIC
 target_include_directories(ftp_task PUBLIC
   $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
   "${PROJECT_SOURCE_DIR}/src/tasks/ftp"
-  "${PROJECT_SOURCE_DIR}/lib/littlefs"
+  "${PROJECT_SOURCE_DIR}/lib/littlefs-cmake"
 )

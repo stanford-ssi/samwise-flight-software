@@ -17,8 +17,10 @@ target_link_libraries(filesys PUBLIC
 target_include_directories(filesys PUBLIC
   $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
   "${PROJECT_SOURCE_DIR}/src/filesys"
-  "${PROJECT_SOURCE_DIR}/lib/littlefs"
+  "${PROJECT_SOURCE_DIR}/lib/littlefs-cmake"
 )
+
+target_link_libraries(filesys PRIVATE littlefs)
 
 # Add tests subdirectory only for test builds
 if(BUILD_TESTS)
