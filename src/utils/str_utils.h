@@ -9,10 +9,11 @@
  *
  * @param dst Destination buffer.
  * @param src Source string.
- * @param size Size of the source buffer.
+ * @param size Maximum size of the destination buffer.
  */
-inline static void strcpy_trunc(char *dst, const char *src, size_t size)
+inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
 {
-    if (memccpy(dst, src, '\0', size) == NULL)
-        dst[size - 1] = '\0'; /* truncation occured, null-terminate manually. */
+    if (memccpy(dst, src, '\0', max_size) == NULL)
+        dst[max_size - 1] =
+            '\0'; /* truncation occured, null-terminate manually. */
 }
