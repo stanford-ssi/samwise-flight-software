@@ -27,9 +27,18 @@ typedef struct
     uint32_t tx_packets;
     uint16_t battery_voltage; // in mV (to 0.001V)
     uint16_t battery_current; // in mA (to 0.001A)
-    uint16_t solar_voltage;   // in mV (to 0.001V)
-    uint16_t solar_current;   // in mA (to 0.001A)
-    uint8_t device_status;    // 0 for off, 1 for on
+
+    // Legacy combined solar data (Panel A for backward compatibility)
+    uint16_t solar_voltage; // in mV (to 0.001V)
+    uint16_t solar_current; // in mA (to 0.001A)
+
+    // Individual panel data
+    uint16_t panel_A_voltage; // in mV (to 0.001V)
+    uint16_t panel_A_current; // in mA (to 0.001A)
+    uint16_t panel_B_voltage; // in mV (to 0.001V)
+    uint16_t panel_B_current; // in mA (to 0.001A)
+
+    uint8_t device_status; // 0 for off, 1 for on
 } __attribute__((__packed__)) beacon_stats;
 
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 +
@@ -78,6 +87,10 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .battery_current = slate->battery_current,
                           .solar_voltage = slate->solar_voltage,
                           .solar_current = slate->solar_current,
+                          .panel_A_voltage = slate->panel_A_voltage,
+                          .panel_A_current = slate->panel_A_current,
+                          .panel_B_voltage = slate->panel_B_voltage,
+                          .panel_B_current = slate->panel_B_current,
                           .device_status = get_device_status(slate)};
 
     // 1 Extra byte: 1 for \0 terminator
