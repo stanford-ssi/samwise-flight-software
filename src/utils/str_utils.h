@@ -3,10 +3,10 @@
 #include <string.h>
 
 /**
- * Replacement for strlcpy that works for static-sized buffers (dst) that 
+ * Replacement for strlcpy that works for static-sized buffers (dst) that
  * don't care about truncation and just want to ensure null-termination.
  * Adapted from https://nrk.neocities.org/articles/not-a-fan-of-strlcpy.
- * 
+ *
  * @param dst Destination buffer.
  * @param src Source string.
  * @param size Size of the source buffer.

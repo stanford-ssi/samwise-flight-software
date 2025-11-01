@@ -123,10 +123,11 @@ typedef struct samwise_slate
     /**
      * Filesystem task
      */
-    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant for efficiency
-    // on reads/writes rather than buffering like we want. Since FILESYS_BUFFER_SIZE is
-    // not that pretty, we will create an extra buffer that allows little-fs to write
-    // much cleaner numbers to MRAM for efficiency gains.
+    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
+    // for efficiency on reads/writes rather than buffering like we want. Since
+    // FILESYS_BUFFER_SIZE is not that pretty, we will create an extra buffer
+    // that allows little-fs to write much cleaner numbers to MRAM for
+    // efficiency gains.
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
     uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];

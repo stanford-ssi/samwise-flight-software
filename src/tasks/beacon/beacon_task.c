@@ -8,6 +8,7 @@
 #include "beacon_task.h"
 #include "adcs_packet.h"
 #include "neopixel.h"
+#include "str_utils.h"
 #include <stdlib.h>
 #include <string.h>
 

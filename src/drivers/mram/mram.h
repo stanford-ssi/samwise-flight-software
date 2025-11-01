@@ -6,8 +6,8 @@
  * MRAM using QSPI on a RP2350B chip.
  */
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /**
