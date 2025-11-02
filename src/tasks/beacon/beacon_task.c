@@ -118,7 +118,7 @@ void beacon_task_dispatch(slate_t *slate)
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 5000,
+                            .dispatch_period_ms = 50,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */
