@@ -10,20 +10,10 @@ on:
 
 jobs:
   claude_docs:
-    if: >
-      (
-        (github.event_name == 'pull_request_review_comment' &&
-          contains(github.event.comment.body, '/claude docs')
-        )
-        ||
-        (github.event_name == 'pull_request_review' &&
-          contains(toLower(github.event.review.body, '/claude docs')
-        )
-        ||
-        (github.event_name == 'issue_comment' &&
-          github.event.issue.pull_request != '' &&
-          contains(toLower(github.event.comment.body, '/claude docs')
-        )
+    (
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '/claude docs')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '/claude docs')) ||
+        (github.event_name == 'issue_comment' && github.event.issue.pull_request != '' && contains(github.event.comment.body, '/claude docs'))
       )
       && (github.actor == 'devYaoYH' || github.actor == 'carter-cochran')
     runs-on: ubuntu-latest
