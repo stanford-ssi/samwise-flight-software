@@ -5,28 +5,30 @@ on:
     types: [created]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
   pull_request_review:
     types: [submitted]
 
 jobs:
   claude:
-    if: |
+    # Fire on review comments, reviews, and regular PR comments that include the trigger phrase
+    if: >
       (
         (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '/claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '/claude'))
-      ) && (
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '/claude')) ||
+        (github.event_name == 'issue_comment' && github.event.issue.pull_request != '' && contains(github.event.comment.body, '/claude'))
+      )
+      && (
         github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran'
       )
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write   # allow commenting on PRs
+      issues: write          # allow commenting when event is issue_comment
       id-token: write
-      actions: read # Required for Claude to read CI results on PRs
+      actions: read          # for CI status reading
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,23 +41,17 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
-          # This is an optional setting that allows Claude to read CI results on PRs
+          # Let the action recognize /claude ... (not @claude)
+          trigger_phrase: "/claude"
+
+          # This lets Claude read CI results on PRs
           additional_permissions: |
             actions: read
-          
-          # Optional: Specify model (defaults to Claude Haiku 4.5)
-          # model='claude-4-5-haiku-latest'
-          
-          # Optional: Customize the trigger phrase (default: @claude)
-          # trigger_phrase: ".claude"
-          
-          # Optional: Trigger when specific user is assigned to an issue
-          # assignee_trigger: "claude-bot"
-          
-          # Optional: Allow Claude to run specific commands
-      
-          
-          # Optional: Add custom instructions for Claude to customize its behavior for your project
+
+          # Optional: specify model (uncomment to pin)
+          # model: "claude-4-5-haiku-latest"
+
+          # Keep the instructions static—remove undefined interpolation
           custom_instructions: |
             Tasks:
             1) If the command includes "docs" or "doc":
@@ -67,13 +63,8 @@ jobs:
 
             2) If the command includes "changelog" or "change log":
               - write a faux-CHANGELOG.md per "Keep a Changelog" (Added/Changed/Fixed/etc.) in the comments in terse bullets.
-              - Summarize PR's user-facing changes in terse bullets (1–2 lines), including "(#${{ steps.pr.outputs.number }})" and @contributors.
+              - Summarize PR's user-facing changes in terse bullets (1–2 lines), including the PR number in parentheses when available, and @contributors.
               - If no user-visible changes, add a note under "Changed" or skip.
 
             Output Policy (Strict):
             - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence.
-          
-          # Optional: Custom environment variables for Claude
-          # claude_env: |
-          #   NODE_ENV: test
-
