@@ -14,10 +14,8 @@ jobs:
   claude:
     if: |
       (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-        (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '/claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '/claude'))
       ) && (
         github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran'
@@ -29,9 +27,7 @@ jobs:
       issues: read
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
-    concurrency:
-  group: claude-docs-changelog-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true
+ 
 steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -77,7 +73,6 @@ steps:
 
             Output Policy (Strict):
             - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence.
-
           
           # Optional: Custom environment variables for Claude
           # claude_env: |
