@@ -9,42 +9,39 @@ on:
     types: [submitted]
 
 jobs:
-  claude:
-    # Fire on review comments, reviews, and regular PR comments that include the trigger phrase
+  claude_docs:
     if: >
       (
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '/claude')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '/claude')) ||
-        (github.event_name == 'issue_comment' && github.event.issue.pull_request != '' && contains(github.event.comment.body, '/claude'))
+        (github.event_name == 'pull_request_review_comment' &&
+          contains(toLower(github.event.comment.body), '/claude docs')
+        )
+        ||
+        (github.event_name == 'pull_request_review' &&
+          contains(toLower(github.event.review.body), '/claude docs')
+        )
+        ||
+        (github.event_name == 'issue_comment' &&
+          github.event.issue.pull_request != '' &&
+          contains(toLower(github.event.comment.body), '/claude docs')
+        )
       )
-      && (
-        github.actor == 'devYaoYH' ||
-        github.actor == 'carter-cochran'
-      )
+      && (github.actor == 'devYaoYH' || github.actor == 'carter-cochran')
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write   # allow commenting on PRs
-      issues: write          # allow commenting when event is issue_comment
+      pull-requests: write
+      issues: write
       id-token: write
-      actions: read          # for CI status reading
-
+      actions: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 5
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 5 }
 
-      - name: Run Claude Code
-        id: claude
+      - name: Run Claude Docs
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-
-          # Let the action recognize /claude ... (not @claude)
-          trigger_phrase: "/claude"
-
-          # This lets Claude read CI results on PRs
+          trigger_phrase: "/claude docs"     # distinct from @claude
           additional_permissions: |
             actions: read
 
