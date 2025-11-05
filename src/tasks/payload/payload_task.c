@@ -30,6 +30,65 @@ void payload_task_init(slate_t *slate)
     // NOTE: Turning on payload is handled by command_parser
 }
 
+bool ping_command(slate_t *slate)
+{
+    char packet[] = "[\"ping\", [], {}]";
+    int len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, packet, len, 999);
+
+    safe_sleep_ms(1000);
+
+    char received[MAX_RECEIVED_LEN];
+    uint16_t received_len = payload_uart_read_packet(slate, received);
+    if (received_len == 0)
+    {
+        LOG_INFO("ACK was not received!");
+        return false;
+    }
+    else
+    {
+        LOG_INFO("ACK received!");
+        LOG_INFO("ACK:");
+        for (uint16_t i = 0; i < received_len; i++)
+        {
+            printf("%c", received[i]);
+        }
+        printf("\n");
+        return true;
+    }
+}
+
+bool send_heartbeat(slate_t *slate)
+{
+    if (slate->is_payload_on)
+    {
+        uint64_t timeDelta =
+            absolute_time_diff_us(slate->payload_most_recent_ping_time,
+                                  get_absolute_time()) /
+            1000;
+        if (timeDelta >= PAYLOAD_HEARTBEAT_TIMEOUT_MS)
+        {
+            payload_restart(slate); // this resets the most_recent_ping_time.
+            // still return false; don't let the payload send commands (since we
+            // aren't getting responses.)
+            return false;
+        }
+        else
+        {
+            bool response_received = ping_command(slate);
+            if (response_received)
+            {
+                slate->payload_most_recent_ping_time = get_absolute_time();
+                return true;
+                // operational! we can send commands now.
+            }
+            // if we don't get a response back, don't update the time.
+            return false;
+        }
+    }
+    return false;
+}
+
 bool try_execute_payload_command(slate_t *slate)
 {
     if (!queue_is_empty(&slate->payload_command_data))
@@ -135,66 +194,6 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-bool send_heartbeat(slate_t *slate)
-{
-    if (slate->is_payload_on)
-    {
-        bool response_received = ping_command_test(slate);
-        uint64_t timeDelta =
-            absolute_time_diff_us(slate->payload_most_recent_ping_time,
-                                  get_absolute_time()) /
-            1000;
-        if (timeDelta >= PAYLOAD_HEARTBEAT_TIMEOUT_MS)
-        {
-            payload_restart(slate); // this resets the most_recent_ping_time.
-            // still return false; don't let the payload send commands (since we
-            // aren't getting responses.)
-            return false;
-        }
-        else
-        {
-            bool response_received = ping_command_test(slate);
-            if (response_received)
-            {
-                slate->payload_most_recent_ping_time = get_absolute_time();
-                return true;
-                // operational! we can send commands now.
-            }
-            // if we don't get a response back, don't update the time.
-            return false;
-        }
-    }
-    return false;
-}
-
-bool ping_command_test(slate_t *slate)
-{
-    char packet[] = "[\"ping\", [], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
-
-    char received[MAX_RECEIVED_LEN];
-    uint16_t received_len = payload_uart_read_packet(slate, received);
-    if (received_len == 0)
-    {
-        LOG_INFO("ACK was not received!");
-        return false;
-    }
-    else
-    {
-        LOG_INFO("ACK received!");
-        LOG_INFO("ACK:");
-        for (uint16_t i = 0; i < received_len; i++)
-        {
-            printf("%c", received[i]);
-        }
-        printf("\n");
-        return true;
-    }
-}
-
 /*** BRINGUP TESTS ***/
 void power_on_off_payload_test(slate_t *slate)
 {
@@ -292,7 +291,7 @@ void payload_task_dispatch(slate_t *slate)
     neopixel_set_color_rgb(PAYLOAD_TASK_COLOR);
     LOG_INFO("Sending an Info Request Command to the RPI...");
     // beacon_down_command_test(slate);
-    // ping_command_test(slate);
+    // ping_command(slate);
 
     payload_uart_write_on_test(slate);
 
