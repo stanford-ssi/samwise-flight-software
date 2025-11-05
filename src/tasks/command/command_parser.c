@@ -9,6 +9,7 @@
  */
 
 #include "command_parser.h"
+#include "config.h"
 #include "macros.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
@@ -80,6 +81,132 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         {
             LOG_INFO("Turning off payload...");
             payload_turn_off(slate);
+            break;
+        }
+        /* FTP Commands */
+        case FTP_START_FILE_WRITE:
+        {
+            LOG_INFO("FTP_START_FILE_WRITE command received.");
+
+            if (slate->filesys_is_writing_file)
+            {
+                LOG_ERROR("A file is already being written. Cannot "
+                          "start a new file write. Existing fname = %s, "
+                          "new fname = %u",
+                          slate->filesys_buffered_fname,
+                          ((unsigned char)command_payload[0] << 8) |
+                              (unsigned char)command_payload[1]);
+                break;
+            }
+
+            if (queue_is_full(&slate->ftp_start_file_write_data))
+            {
+                LOG_ERROR(
+                    "VERY BAD ERROR! FTP start file write queue is "
+                    "full, but filesys_is_writing_file is false. Dropping "
+                    "command.");
+                break;
+            }
+
+            FTP_START_FILE_WRITE_DATA command_data;
+
+            memcpy(&command_data.fname, command_payload,
+                   sizeof(FILESYS_BUFFERED_FNAME_T));
+
+            memcpy(&command_data.file_len,
+                   command_payload + sizeof(FILESYS_BUFFERED_FNAME_T),
+                   sizeof(FILESYS_BUFFERED_FILE_LEN_T));
+
+            memcpy(&command_data.file_crc,
+                   command_payload + sizeof(FILESYS_BUFFERED_FNAME_T) +
+                       sizeof(FILESYS_BUFFERED_FILE_LEN_T),
+                   sizeof(FILESYS_BUFFERED_FILE_CRC_T));
+
+            if (!queue_try_add(&slate->ftp_start_file_write_data,
+                               &command_data))
+            {
+                LOG_ERROR("Failed to enqueue FTP_START_FILE_WRITE_DATA "
+                          "command for fname %s",
+                          command_data.fname);
+            }
+
+            break;
+        }
+        case FTP_WRITE_TO_FILE:
+        {
+            LOG_INFO("FTP_WRITE_TO_FILE command received.");
+            FTP_WRITE_TO_FILE_DATA command_data;
+
+            // This should be the size of the data payload in this packet
+            // TODO: THIS IS INCORRECT! Look at
+            // https://github.com/stanford-ssi/samwise-flight-software/issues/204
+            command_data.data_len = packet->len - COMMAND_MNEMONIC_SIZE -
+                                    sizeof(FILESYS_BUFFERED_FNAME_T) -
+                                    sizeof(FTP_PACKET_SEQUENCE_T);
+
+            if (command_data.data_len > FTP_DATA_PAYLOAD_SIZE)
+            {
+                LOG_ERROR("Packet data size exceeds FTP_DATA_PAYLOAD_SIZE! "
+                          "Something went really wrong.");
+                break;
+            }
+
+            memcpy(&command_data.fname, command_payload,
+                   sizeof(FILESYS_BUFFERED_FNAME_T));
+
+            memcpy(&command_data.packet_id,
+                   command_payload + sizeof(FILESYS_BUFFERED_FNAME_T),
+                   sizeof(FTP_PACKET_SEQUENCE_T));
+
+            memcpy(
+                &command_data.data,
+                command_payload + sizeof(FILESYS_BUFFERED_FNAME_T) +
+                    sizeof(FTP_PACKET_SEQUENCE_T),
+                command_data.data_len); // Use data_len for last packet - may be
+                                        // smaller than FTP_DATA_PAYLOAD_SIZE
+
+            if (!queue_try_add(&slate->ftp_write_to_file_data, &command_data))
+            {
+                LOG_ERROR("Failed to enqueue FTP_WRITE_TO_FILE_DATA command "
+                          "for fname %s, packet_id %u",
+                          command_data.fname, command_data.packet_id);
+            }
+
+            break;
+        }
+        case FTP_CANCEL_FILE_WRITE:
+        {
+            LOG_INFO("FTP_CANCEL_FILE_WRITE command received.");
+
+            if (!slate->filesys_is_writing_file)
+            {
+                LOG_ERROR("No file is currently being written. Cannot cancel "
+                          "non-existent file write.");
+                break;
+            }
+
+            FTP_CANCEL_FILE_WRITE_DATA command_data;
+
+            memcpy(&command_data.fname, command_payload,
+                   sizeof(FILESYS_BUFFERED_FNAME_T));
+
+            if (command_data.fname != slate->filesys_buffered_fname)
+            {
+                LOG_ERROR("FTP_CANCEL_FILE_WRITE command fname %s does not "
+                          "match current writing fname %s. Ignoring cancel "
+                          "command.",
+                          command_data.fname, slate->filesys_buffered_fname);
+                break;
+            }
+
+            if (!queue_try_add(&slate->ftp_cancel_file_write_data,
+                               &command_data))
+            {
+                LOG_ERROR("Failed to enqueue FTP_CANCEL_FILE_WRITE_DATA "
+                          "command for fname %s",
+                          command_data.fname);
+            }
+
             break;
         }
         /* Toggle Commands */

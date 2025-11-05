@@ -13,12 +13,8 @@ const struct lfs_config cfg = {
     // .sync  = mram_,
 
     // block device configuration
-    .read_size = 16,
-    .prog_size = 16,
-    .block_size = 256,
-    .block_count = 128,
-    .cache_size = 256,
-    .lookahead_size = 16,
+    .read_size = 16,     .prog_size = 16,   .block_size = 256,
+    .block_count = 128,  .cache_size = 256, .lookahead_size = 16,
     .block_cycles = 500,
 };
 
@@ -27,7 +23,8 @@ void filesys_task_init(slate_t *slate)
 }
 
 // entry point
-int ex_lfs(void) {
+int ex_lfs(void)
+{
     // mount the filesystem
     // int err = lfs_mount(&lfs, &cfg);
 
@@ -48,14 +45,14 @@ int ex_lfs(void) {
     // lfs_file_rewind(&lfs, &file);
     // lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
 
-    // // remember the storage is not updated until the file is closed successfully
-    // lfs_file_close(&lfs, &file);
+    // // remember the storage is not updated until the file is closed
+    // successfully lfs_file_close(&lfs, &file);
 
     // // release any resources we were using
     // lfs_unmount(&lfs);
 
     // print the boot count
-    printf("Filesys_Run_test: \n", "this is a test"/*boot_count*/);
+    printf("Filesys_Run_test: \n", "this is a test" /*boot_count*/);
 }
 
 void filesys_task_dispatch(slate_t *slate)
