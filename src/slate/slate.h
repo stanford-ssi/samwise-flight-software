@@ -130,12 +130,13 @@ typedef struct samwise_slate
     bool is_adcs_telem_valid;
 
     /**
-     * Filesystem task
+     * Filesystem API variables
      */
-    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant for efficiency
-    // on reads/writes rather than buffering like we want. Since FILESYS_BUFFER_SIZE is
-    // not that pretty, we will create an extra buffer that allows little-fs to write
-    // much cleaner numbers to MRAM for efficiency gains.
+    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
+    // for efficiency on reads/writes rather than buffering like we want. Since
+    // FILESYS_BUFFER_SIZE is not that pretty, we will create an extra buffer
+    // that allows little-fs to write much cleaner numbers to MRAM for
+    // efficiency gains.
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
     uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
@@ -148,6 +149,11 @@ typedef struct samwise_slate
      */
     // A bit being set indicates that the corresponding packet has been recieved
     FTP_PACKET_TRACKER_T ftp_packets_recieved;
+    queue_t ftp_start_file_write_data;
+    queue_t ftp_write_to_file_data; // Realistically this should be an array of
+                                    // size FTP_NUM_PACKETS_PER_CYCLE, but for
+                                    // simplicity we will use a queue.
+    queue_t ftp_cancel_file_write_data;
 
 } slate_t;
 

@@ -5,6 +5,6 @@
 
 #pragma once
 
-#include "pico/stdlib.h"
 #include "logger.h"
 #include "mram.h"
+#include "pico/stdlib.h"
