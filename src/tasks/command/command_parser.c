@@ -112,6 +112,23 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             break;
         }
 
+        case CMD_STOP_SATELLITE: {
+        // If last command was STOP too, count up; otherwise reset to 1
+        slate->stop_req_count++;
+
+        if (slate->stop_req_count >= 3) {
+        slate->stop_req_count = 0;     // consume the streak
+        slate->stop_requested = true;  // arm transition
+        LOG_WARN("STOP confirmed (3x). Requesting STOP state.");
+        } else {
+        LOG_INFO("STOP requested (%u/3)", slate->stop_req_count);
+        }
+        break;
+        }
+            LOG_WARN("STOP command received. Entering STOP request state...");
+            slate->stop_requested = true;
+            break;
+        }
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
