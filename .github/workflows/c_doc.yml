@@ -26,7 +26,6 @@ jobs:
       id-token: write
       actions: read
     steps:
-      deploy:
       # ... other steps to deploy the code
       - name: Add comment to PR
         uses: actions/github-script@v6
