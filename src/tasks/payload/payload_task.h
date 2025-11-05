@@ -16,11 +16,10 @@
 
 #define MAX_PAYLOAD_COMMANDS_PER_DISPATCH 3
 #define MAX_PAYLOAD_RETRY_COUNT 3
+#define PAYLOAD_HEARTBEAT_TIMEOUT_MS 10000
 
 void payload_task_init(slate_t *slate);
 void payload_task_dispatch(slate_t *slate);
-bool heartbeat_check(slate_t *slate);
-bool ping_command_test(slate_t *slate);
 
 static uint8_t RETRY_COUNT = 0;
 extern sched_task_t payload_task;

@@ -135,18 +135,18 @@ void beacon_down_command_test(slate_t *slate)
     }
 }
 
-bool heartbeat_check(slate_t *slate)
+bool send_heartbeat(slate_t *slate)
 {
-    const uint64_t TIME_THRESHOLD = 1000;
     if (slate->is_payload_on)
     {
         bool response_received = ping_command_test(slate);
-        uint64_t timeDelta = absolute_time_diff_us(
-            slate->payload_most_recent_ping_time, get_absolute_time());
-        if (timeDelta >= TIME_THRESHOLD)
+        uint64_t timeDelta =
+            absolute_time_diff_us(slate->payload_most_recent_ping_time,
+                                  get_absolute_time()) /
+            1000;
+        if (timeDelta >= PAYLOAD_HEARTBEAT_TIMEOUT_MS)
         {
-            payload_turn_off(slate);
-            payload_turn_on(slate); // this resets the most_recent_ping_time.
+            payload_restart(slate); // this resets the most_recent_ping_time.
             // still return false; don't let the payload send commands (since we
             // aren't getting responses.)
             return false;
@@ -298,7 +298,7 @@ void payload_task_dispatch(slate_t *slate)
 
     return;
 
-    if (heartbeat_check(slate))
+    if (send_heartbeat(slate))
     {
         LOG_INFO("Payload is ON, executing commands...");
         // Attempts to execute k commands per dispatch.

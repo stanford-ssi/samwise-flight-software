@@ -121,7 +121,8 @@ typedef struct samwise_slate
     bool is_adcs_telem_valid;
 
     /*
-    Payload Heartbeat time
+    Payload Heartbeat time: the time at which the Picubed last sent a request to
+    the payload.
     */
     absolute_time_t payload_most_recent_ping_time;
 

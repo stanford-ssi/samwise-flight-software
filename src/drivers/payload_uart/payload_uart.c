@@ -25,6 +25,7 @@
 #define PARITY UART_PARITY_NONE
 #define WRITE_MAX_TIMEOUT 10000
 #define MAX_WRITE_TRIES 3
+#define UART_READ_WRITE_BLOCKING_MS 50
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
@@ -193,6 +194,12 @@ static void send_syn()
     {
         uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
     }
+}
+
+void payload_restart(slate_t *slate)
+{
+    payload_turn_off(slate);
+    payload_turn_on(slate);
 }
 
 void payload_turn_on(slate_t *slate)
@@ -400,7 +407,8 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
 
     // Receive header
     packet_header_t header;
-    bytes_received = receive_into(slate, &header, sizeof(packet_header_t), 50);
+    bytes_received = receive_into(slate, &header, sizeof(packet_header_t),
+                                  UART_READ_WRITE_BLOCKING_MS);
 
     if (bytes_received < sizeof(packet_header_t))
     {
