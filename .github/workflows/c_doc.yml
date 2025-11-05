@@ -12,8 +12,8 @@ jobs:
   claude:
     if: |
       (
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@docs')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@docs'))
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@c_docs')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@c_docs'))
       ) && (
         github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran'
@@ -33,7 +33,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          trigger_phrase: "@docs"     # distinct from @claude
+          trigger_phrase: "@c_docs"     # distinct from @claude
           additional_permissions: |
             actions: read
 
