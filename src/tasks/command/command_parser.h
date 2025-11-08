@@ -28,6 +28,7 @@ typedef enum
     FTP_START_FILE_WRITE,
     FTP_WRITE_TO_FILE,
     FTP_CANCEL_FILE_WRITE,
+    FTP_FORMAT_FILESYSTEM,
 
     // add more commands here as needed
 } Command;

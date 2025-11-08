@@ -126,6 +126,14 @@ void ftp_process_file_write_data_command(
 void ftp_process_file_cancel_write_command(
     slate_t *slate, const FTP_CANCEL_FILE_WRITE_DATA *command_data);
 
+/**
+ * Processes an FTP_FORMAT_FILESYSTEM command. Formats the filesystem on MRAM.
+ * This is a destructive operation that erases all data on the filesystem.
+ *
+ * @param slate Pointer to the slate structure.
+ */
+void ftp_process_format_filesystem_command(slate_t *slate);
+
 /* HELPER FUNCTIONS */
 /**
  * Sends an FTP result packet back to ground, after running one of these
