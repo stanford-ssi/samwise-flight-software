@@ -138,8 +138,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             FTP_WRITE_TO_FILE_DATA command_data;
 
             // This should be the size of the data payload in this packet
-            // TODO: THIS IS INCORRECT! Look at
-            // https://github.com/stanford-ssi/samwise-flight-software/issues/204
             command_data.data_len = packet->len - COMMAND_MNEMONIC_SIZE -
                                     sizeof(FILESYS_BUFFERED_FNAME_T) -
                                     sizeof(FTP_PACKET_SEQUENCE_T);
@@ -206,6 +204,16 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                           "command for fname %s",
                           command_data.fname);
             }
+
+            break;
+        }
+        case FTP_FORMAT_FILESYSTEM:
+        {
+            LOG_INFO("FTP_FORMAT_FILESYSTEM command received.");
+
+            // Add command into queue.
+            if (!queue_try_add(&slate->ftp_format_filesystem_data, NULL))
+                LOG_ERROR("Failed to enqueue FTP_FORMAT_FILESYSTEM command.");
 
             break;
         }

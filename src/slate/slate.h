@@ -145,6 +145,7 @@ typedef struct samwise_slate
                                     // size FTP_NUM_PACKETS_PER_CYCLE, but for
                                     // simplicity we will use a queue.
     queue_t ftp_cancel_file_write_data;
+    queue_t ftp_format_filesystem_data;
 
 } slate_t;
 

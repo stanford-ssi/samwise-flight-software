@@ -5,7 +5,7 @@
 void ftp_task_init(slate_t *slate)
 {
     LOG_INFO("FTP task is initializing...");
-    // Add initialization code here
+    // TODO: Add initialization code here
 }
 
 void ftp_task_dispatch(slate_t *slate)

@@ -15,11 +15,13 @@
 #include <string.h>
 
 #include "lfs.h"
+#include "lfs_mram_wrapper.h"
 #include "logger.h"
 #include "macros.h"
 #include "slate.h"
 #include "state_machine.h"
 #include "stdint.h"
+#include "str_utils.h"
 #include "typedefs.h"
 
 /**
@@ -28,7 +30,7 @@
  *
  * @return A negative error code on failure.
  */
-lfs_ssize_t filesys_initialize(void);
+lfs_ssize_t filesys_initialize(slate_t *slate);
 
 /**
  * Initializes writing to a file in the filesystem.
@@ -37,10 +39,18 @@ lfs_ssize_t filesys_initialize(void);
  * @param fname The name of the file to buffer.
  * @param file_size The size of the file to buffer.
  * @param file_crc The CRC of the file to buffer.
+ * @param blocksLeftAfterWrite Pointer to store the amount of blocks left
+ * after the write. Note if this is negative, there is not enough space to write
+ * the file. This is not written if the function returns -1 or -2.
+ * @return -1 if a file is already being written, -2 if there was an error
+ * getting the filesystem size, -3 if there is not enough space to write the
+ * file, -4 if there was an error opening the file for writing/appending, 0 on
+ * success.
  */
-void filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
-                              FILESYS_BUFFERED_FILE_LEN_T file_size,
-                              FILESYS_BUFFERED_FILE_CRC_T file_crc);
+int8_t filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
+                                FILESYS_BUFFERED_FILE_LEN_T file_size,
+                                FILESYS_BUFFERED_FILE_CRC_T file_crc,
+                                lfs_ssize_t *blocksLeftAfterWrite);
 
 /**
  * Writes data to the current file buffer at the specified offset.
@@ -52,9 +62,9 @@ void filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
  * @param offset The offset in the buffer to start writing at. (Must not exceed
  * FILESYS_BUFFER_SIZE).
  */
-void filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
-                                  FILESYS_BUFFER_SIZE_T n_bytes,
-                                  FILESYS_BUFFER_SIZE_T offset);
+int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
+                                    FILESYS_BUFFER_SIZE_T n_bytes,
+                                    FILESYS_BUFFER_SIZE_T offset);
 
 /**
  * Writes the current buffered state to MRAM as a block, and mark the buffer
@@ -76,9 +86,10 @@ lfs_ssize_t filesys_write_buffer_to_mram(slate_t *slate,
  * write it to MRAM before completing.
  *
  * @param slate Pointer to the slate structure.
- * @return true if successfully completed, false if buffer is dirty.
+ * @return -1 if the buffer is dirty, -2 if there was an error closing the file,
+ * 0 on success.
  */
-bool filesys_complete_file_write(slate_t *slate);
+int8_t filesys_complete_file_write(slate_t *slate);
 
 /**
  * Marks the current buffer as clean. DESTRUCTIVE OPERATION.
@@ -94,6 +105,7 @@ void filesys_clear_buffer(slate_t *slate);
  * completely cancelling the write operation. DESTRUCTIVE OPERATION.
  *
  * @param slate Pointer to the slate structure.
- * @return A negative error code on failure.
+ * @return -1 if no file is being written, -2 if there was an error closing the
+ * file, -3 if there was an error deleting the file, 0 on success.
  */
-lfs_ssize_t filesys_cancel_file_write(slate_t *slate);
+int8_t filesys_cancel_file_write(slate_t *slate);
