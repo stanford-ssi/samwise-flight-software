@@ -49,10 +49,19 @@ typedef struct samwise_slate
      */
     uint16_t battery_voltage; // in mV (to 0.001V)
     uint16_t battery_current; // in mA (to 0.001A)
-    uint16_t solar_voltage;   // in mV (to 0.001V)
-    uint16_t solar_current;   // in mA (to 0.001A)
-    bool fixed_solar_charge;  // 0 for off status, 1 for on status
-    bool fixed_solar_fault;   // 0 for no fault, 1 for faulty
+
+    // Legacy combined solar data (Panel A for backward compatibility)
+    uint16_t solar_voltage; // in mV (to 0.001V) - Panel A voltage
+    uint16_t solar_current; // in mA (to 0.001A) - Panel A current
+
+    // Individual panel data
+    uint16_t panel_A_voltage; // in mV (to 0.001V)
+    uint16_t panel_A_current; // in mA (to 0.001A)
+    uint16_t panel_B_voltage; // in mV (to 0.001V)
+    uint16_t panel_B_current; // in mA (to 0.001A)
+
+    bool fixed_solar_charge; // 0 for off status, 1 for on status
+    bool fixed_solar_fault;  // 0 for no fault, 1 for faulty
 
     /*
      * Structure status readouts

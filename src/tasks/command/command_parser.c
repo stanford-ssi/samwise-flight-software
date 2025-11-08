@@ -10,11 +10,11 @@
 
 #include "command_parser.h"
 #include "macros.h"
+#include "packet.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
 #include "states.h"
 #include "str_utils.h"
-#include <stdio.h>
 
 extern sched_state_t *overridden_state;
 
@@ -25,6 +25,8 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
     Command command_id = (Command)packet->data[0];
     char *command_payload = packet->data + COMMAND_MNEMONIC_SIZE;
+    uint8_t command_payload_data_size =
+        PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
 
     switch (command_id)
@@ -33,8 +35,10 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PAYLOAD_EXEC:
         {
             PAYLOAD_COMMAND_DATA payload_command;
-            strlcpy(payload_command.serialized_command, command_payload,
-                    sizeof(command_payload));
+            strncpy(payload_command.serialized_command, command_payload,
+                    command_payload_data_size);
+            payload_command.serialized_command[command_payload_data_size - 1] =
+                '\0';
             payload_command.seq_num = slate->curr_command_seq_num++;
             payload_command.command_type = PAYLOAD_EXEC;
 
