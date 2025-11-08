@@ -47,10 +47,11 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Retrieving number of commands executed...");
             uint8_t data[PACKET_DATA_SIZE];
 
-            // Package interger value into a string
-            int len =
-                snprintf(data, sizeof(data), "Number commands executed: %d",
-                         slate->number_commands_processed);
+            // Format into buffer and use snprintf's return value to determine
+            // length.
+            int len = snprintf_len((char *)data, sizeof(data),
+                                   "Number commands executed: %u",
+                                   (unsigned)slate->number_commands_processed);
 
             // Create the packet
             packet_t pkt;
