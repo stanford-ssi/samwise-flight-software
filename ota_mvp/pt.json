@@ -17,8 +17,7 @@
         "secure": "rw",
         "nonsecure": "r",
         "bootloader": "rw"
-      },
-      "link": ["a", 1]
+      }
     },
     {
       "name": "B",
