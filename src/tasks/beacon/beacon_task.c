@@ -8,6 +8,7 @@
 #include "beacon_task.h"
 #include "adcs_packet.h"
 #include "neopixel.h"
+#include "str_utils.h"
 #include <stdlib.h>
 
 #define MAX_DATA_SIZE 252
@@ -72,8 +73,7 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     LOG_INFO("State name: %s", slate->current_state->name);
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
     size_t name_len = strnlen(slate->current_state->name, MAX_STR_LENGTH);
-    strncpy((char *)data, slate->current_state->name, name_len);
-    data[name_len] = '\0'; // Ensure null termination
+    strcpy_trunc((char *)data, slate->current_state->name, MAX_STR_LENGTH);
 
     beacon_stats stats = {.reboot_counter = slate->reboot_counter,
                           .time = slate->time_in_current_state_ms,
