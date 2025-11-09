@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #define MAX_RECEIVED_LEN 1024
+#define SEQUENCE_NUMBER_DUMMY 999
 
 void payload_task_init(slate_t *slate)
 {
@@ -30,13 +31,62 @@ void payload_task_init(slate_t *slate)
     // NOTE: Turning on payload is handled by command_parser
 }
 
+bool send_payload_exec(slate_t *slate, char msg[])
+{
+    LOG_INFO("Executing Payload Command: %s", msg);
+    // First attempt to execute the command but do not throw it away
+    // yet.
+    payload_write_error_code exec_successful = payload_uart_write_packet(
+        slate, msg, sizeof(msg), SEQUENCE_NUMBER_DUMMY);
+
+    if (exec_successful == SUCCESSFUL_WRITE)
+    {
+        return true;
+    }
+    else if (exec_successful == PACKET_TOO_BIG)
+    {
+        LOG_DEBUG("Packet exceeds 4096 bytes...");
+        return false;
+    }
+    else if (exec_successful == SYN_UNSUCCESSFUL)
+    {
+        LOG_DEBUG("PiCubed was unable to sync with the Payload...");
+        return false;
+    }
+    else if (exec_successful == UART_WRITE_TIMEDOUT)
+    {
+        LOG_DEBUG("The transmission took too long and the write timed "
+                  "out...");
+        return false;
+    }
+    else if (exec_successful == HEADER_UNACKNOWLEDGED)
+    {
+        LOG_DEBUG("Payload did not acknowledge the header...");
+        return false;
+    }
+    else if (exec_successful == FINAL_WRITE_UNSUCCESSFUL)
+    {
+        LOG_DEBUG("Final packet transmission timed out...");
+        return false;
+    }
+    else
+    {
+        LOG_DEBUG("Payload command execution failed, retrying...");
+        // If the command was not successful, we will not remove it
+        // from the queue and will try again next time.
+        return false;
+    }
+}
+
 bool ping_command(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
-
-    safe_sleep_ms(1000);
+    bool write_success = send_payload_exec(slate, packet);
+    if (!write_success)
+    {
+        LOG_INFO("Writing packet to payload was not successful!");
+        return false;
+    }
 
     char received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
@@ -96,56 +146,22 @@ bool try_execute_payload_command(slate_t *slate)
         PAYLOAD_COMMAND_DATA payload_command;
         if (queue_try_peek(&slate->payload_command_data, &payload_command))
         {
-            LOG_INFO("Executing Payload Command: %s",
-                     payload_command.serialized_command);
-            // First attempt to execute the command but do not throw it away
-            // yet.
-            payload_write_error_code exec_successful =
-                payload_uart_write_packet(
-                    slate, payload_command.serialized_command,
-                    sizeof(payload_command.serialized_command),
-                    payload_command.seq_num);
+            bool writeSuccess =
+                send_payload_exec(slate, payload_command.serialized_command);
+            // removeFromQueue is true if we succesfully sent the packet to the
+            // payload
+
             // If the command was successful, remove it from the queue.
             // Alternatively, if we have already retried the command up to
             // a maximum number of times, remove it from the queue.
-            if (exec_successful == SUCCESSFUL_WRITE ||
-                RETRY_COUNT >= MAX_PAYLOAD_RETRY_COUNT)
+            if (writeSuccess || RETRY_COUNT > MAX_PAYLOAD_RETRY_COUNT)
             {
                 // Return success when the command is removed.
                 return queue_try_remove(&slate->payload_command_data,
                                         &payload_command);
             }
-            else if (exec_successful == PACKET_TOO_BIG)
-            {
-                LOG_DEBUG("Packet exceeds 4096 bytes...");
-                return false;
-            }
-            else if (exec_successful == SYN_UNSUCCESSFUL)
-            {
-                LOG_DEBUG("PiCubed was unable to sync with the Payload...");
-                return false;
-            }
-            else if (exec_successful == UART_WRITE_TIMEDOUT)
-            {
-                LOG_DEBUG("The transmission took too long and the write timed "
-                          "out...");
-                return false;
-            }
-            else if (exec_successful == HEADER_UNACKNOWLEDGED)
-            {
-                LOG_DEBUG("Payload did not acknowledge the header...");
-                return false;
-            }
-            else if (exec_successful == FINAL_WRITE_UNSUCCESSFUL)
-            {
-                LOG_DEBUG("Final packet transmission timed out...");
-                return false;
-            }
             else
             {
-                LOG_DEBUG("Payload command execution failed, retrying...");
-                // If the command was not successful, we will not remove it
-                // from the queue and will try again next time.
                 return false;
             }
         }
