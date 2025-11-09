@@ -21,10 +21,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: PICO
-            cmake_args: "-DPROFILE=PICO"
-            build_dir: "build-2040"
-            artifact: "samwise-products-pico"
           - name: PICUBED-FLIGHT
             cmake_args: "-DPROFILE=PICUBED-FLIGHT"
             build_dir: "build-2350"
@@ -33,6 +29,10 @@ jobs:
             cmake_args: "-DPROFILE=PICUBED-BRINGUP"
             build_dir: "build-2350"
             artifact: "samwise-products-picubed-bringup"
+          - name: PICUBED-DEBUG
+            cmake_args: "-DPROFILE=PICUBED-DEBUG"
+            build_dir: "build-2350"
+            artifact: "samwise-products-picubed-debug"
     steps:
       - uses: actions/checkout@v4
         with:
