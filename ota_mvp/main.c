@@ -8,6 +8,8 @@
 
 #include "pico/printf.h"
 #include "pico/stdlib.h"
+#include "hardware/flash.h"
+#include "hardware/platform_defs.h"
 
 #ifndef PICO
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
@@ -17,6 +19,8 @@
 static_assert(PICO_RP2350A == 0,
               "PICO_RP2350A must be defined to 0 for PICUBED builds.");
 #endif
+
+extern char __flash_binary_start;
 
 /**
  * Main code entry point.
@@ -35,12 +39,21 @@ int main()
     const uint LED_PIN = PICO_DEFAULT_LED_PIN;
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
-    gpio_put(LED_PIN, 1); // Turn on LED
 
     // Infinite loop
     while (1)
     {
+        gpio_put(LED_PIN, 1);
         printf("OTA MVP Main Running...\n");
+        printf("XIP_BASE: %p\n", XIP_BASE);
+        printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n", XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
+        printf("__flash_binary_start: %p\n", __flash_binary_start);
+#ifdef BUILD_BLINK
+        sleep_ms(700);
+        gpio_put(LED_PIN, 0);
+        sleep_ms(300);
+#else
         sleep_ms(1000);
+#endif
     }
 }

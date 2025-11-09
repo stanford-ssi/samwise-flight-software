@@ -1,7 +1,7 @@
 {
   "version": [1, 0],
   "unpartitioned": {
-    "families": ["absolute", "data"],
+    "families": ["absolute"],
     "permissions": {
       "secure": "rw",
       "nonsecure": "rw",
@@ -10,8 +10,9 @@
   },
   "partitions": [
     {
-      "name": "A",
-      "size": "512k",
+      "name": "Program_A",
+      "id": 0,
+      "size": "256K",
       "families": ["rp2350-arm-s"],
       "permissions": {
         "secure": "rw",
@@ -20,8 +21,9 @@
       }
     },
     {
-      "name": "B",
-      "size": "512k",
+      "name": "Program_B",
+      "id": 1,
+      "size": "256K",
       "families": ["rp2350-arm-s"],
       "permissions": {
         "secure": "rw",
@@ -29,6 +31,17 @@
         "bootloader": "rw"
       },
       "link": ["a", 0]
+    },
+    {
+      "name": "Shared_Data",
+      "id": 2,
+      "size": "512K",
+      "families": ["data"],
+      "permissions": {
+        "secure": "rw",
+        "nonsecure": "rw",
+        "bootloader": "rw"
+      }
     }
   ]
 }
