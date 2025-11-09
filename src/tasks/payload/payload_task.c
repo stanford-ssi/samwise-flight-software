@@ -31,13 +31,13 @@ void payload_task_init(slate_t *slate)
     // NOTE: Turning on payload is handled by command_parser
 }
 
-bool send_payload_exec(slate_t *slate, char msg[])
+bool send_payload_exec(slate_t *slate, char msg[], uint16_t seq_num)
 {
     LOG_INFO("Executing Payload Command: %s", msg);
     // First attempt to execute the command but do not throw it away
     // yet.
-    payload_write_error_code exec_successful = payload_uart_write_packet(
-        slate, msg, sizeof(msg), SEQUENCE_NUMBER_DUMMY);
+    payload_write_error_code exec_successful =
+        payload_uart_write_packet(slate, msg, sizeof(msg), seq_num);
 
     if (exec_successful == SUCCESSFUL_WRITE)
     {
@@ -81,7 +81,8 @@ bool send_payload_exec(slate_t *slate, char msg[])
 bool ping_command(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
-    bool write_success = send_payload_exec(slate, packet);
+    bool write_success =
+        send_payload_exec(slate, packet, SEQUENCE_NUMBER_DUMMY);
     if (!write_success)
     {
         LOG_INFO("Writing packet to payload was not successful!");
@@ -147,7 +148,8 @@ bool try_execute_payload_command(slate_t *slate)
         if (queue_try_peek(&slate->payload_command_data, &payload_command))
         {
             bool writeSuccess =
-                send_payload_exec(slate, payload_command.serialized_command);
+                send_payload_exec(slate, payload_command.serialized_command,
+                                  payload_command.seq_num);
             // removeFromQueue is true if we succesfully sent the packet to the
             // payload
 
