@@ -6,10 +6,10 @@
  * for OTA.
  */
 
-#include "pico/printf.h"
-#include "pico/stdlib.h"
 #include "hardware/flash.h"
 #include "hardware/platform_defs.h"
+#include "pico/printf.h"
+#include "pico/stdlib.h"
 
 #ifndef PICO
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
@@ -46,7 +46,8 @@ int main()
         gpio_put(LED_PIN, 1);
         printf("OTA MVP Main Running...\n");
         printf("XIP_BASE: %p\n", XIP_BASE);
-        printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n", XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
+        printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n",
+               XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
         printf("__flash_binary_start: %p\n", __flash_binary_start);
 #ifdef BUILD_BLINK
         sleep_ms(700);
