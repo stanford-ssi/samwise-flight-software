@@ -32,7 +32,7 @@ picotool partition create pt.json pt.uf2
 Place your RP2350 into `BOOTSEL` mode, then use
 
 ```
-picotool load pt.uf2
+picotool load pt.uf2 [-f]
 ```
 
 to load the partition table. Now, make sure to reboot so the new one is recognized by the bootloader.
@@ -40,9 +40,26 @@ to load the partition table. Now, make sure to reboot so the new one is recogniz
 To confirm that it worked, run
 
 ```
-picotooll partition info
+picotool partition info
 ```
 
 which should print out your loaded partition table
 
-## Load 
+## Select partition to install program into
+
+Once the partition table has been set up, one can select which partition to flash a new program into using the following command:
+
+```
+picotool load blink.uf2 -p 0 [-f]
+```
+
+Which will select the first partition (0). To select the second partition, use `-p 1` instead.
+
+Once again, verify after installation using:
+
+```
+picotool info [-f]
+```
+
+Which will print out the partitions as well as program loaded into each partition.
+
