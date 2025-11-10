@@ -1,15 +1,20 @@
 # Minimal OTA demonstration code
 
 1. Leverage picotool to prepare multiple partitions on the rp2350
-2. Write prog_b (hello world) -> compile into .elf to get the program bytes
-3. Write prog_a that contains program bytes of prog_b and writes them into the respective regions of flash
-4. prog_a should also handle making the sys calls necessary to reboot from newly written prog_b bytes
+2. Write prog\_b (hello world) -> compile into .elf to get the program bytes
+3. Write prog\_a that contains program bytes of prog\_b and writes them into the respective regions of flash
+4. prog\_a should also handle making the sys calls necessary to reboot from newly written prog\_b bytes
 
 ## Build & Execute
 
-Execute:
 ```
-cmake --build build --target ota
+cmake -B build-ota # builds the static.uf2 version
+cmake -B build-ota -DVERSION=BLINK # builds the blink.uf2 version
+```
+
+To compile the toy program:
+```
+cmake --build build-ota --target ota
 ```
 
 From the repo root to only build this demo app (skips samwise build).
@@ -62,4 +67,34 @@ picotool info [-f]
 ```
 
 Which will print out the partitions as well as program loaded into each partition.
+
+## Example setup
+
+Two pre-compiled binaries are available, `static.uf2` keeps the built-in LEDturned on while `blink.uf2` blinks the LED.
+
+The two programs also have different names so one can tell them apart when inspecting `picotool info`, e.g:
+
+```
+Partition 0
+ Program Information
+  name:          ota_demo
+  version:       0.0
+  features:      UART stdin / stdout
+                 USB stdin / stdout
+  binary start:  0x10000000
+  binary end:    0x10007770
+  target chip:   RP2350
+  image type:    ARM Secure
+
+Partition 1
+ Program Information
+  name:          ota_blink
+  version:       0.1
+  features:      UART stdin / stdout
+                 USB stdin / stdout
+  binary start:  0x10000000
+  binary end:    0x10007788
+  target chip:   RP2350
+  image type:    ARM Secure
+```
 
