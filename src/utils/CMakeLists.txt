@@ -9,3 +9,7 @@ endif()
 target_include_directories(utils INTERFACE
   "${PROJECT_SOURCE_DIR}/src/utils"
 )
+
+if (BUILD_TESTS)
+  add_subdirectory(test)
+endif()
