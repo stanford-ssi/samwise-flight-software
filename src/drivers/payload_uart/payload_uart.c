@@ -425,7 +425,8 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     }
 
     // Read actual packet
-    bytes_received = receive_into(slate, packet, header.length, 50);
+    bytes_received =
+        receive_into(slate, packet, header.length, UART_READ_WRITE_BLOCKING_MS);
 
     if (bytes_received < header.length)
     {
