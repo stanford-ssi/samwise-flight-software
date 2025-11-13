@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.h"
 #include "logger.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -64,11 +65,15 @@ inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
  * Converts a uint16_t to a string, where each byte is represented
  * as a character in the string.
  *
- * @param value The uint16_t value to convert.
- * @return A pointer to the string representation of the value.
+ * @param value The filename value to convert.
+ * @return A pointer to the string representation of the value. This must be
+ * at least 3 bytes long to hold the two characters and the null terminator.
  */
-inline static void toString(const uint16_t value, char *buffer)
+inline static void fileToString(FILESYS_BUFFERED_FNAME_T value, char *buffer)
 {
+    static_assert(
+        sizeof(FILESYS_BUFFERED_FNAME_T) == 2,
+        "FILESYS_BUFFERED_FNAME_T must be 2 bytes to use this function.");
     buffer[0] = (value >> 8) & 0xFF;
     buffer[1] = value & 0xFF;
     buffer[2] = '\0';

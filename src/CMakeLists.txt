@@ -38,7 +38,7 @@ if(NOT BUILD_TESTS)
 
   # Samwise
   target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
-    flash neopixel)
+    flash neopixel filesys)
 
   pico_add_extra_outputs(samwise)
 endif()

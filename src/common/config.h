@@ -41,6 +41,12 @@
 #define FILESYS_BUFFER_SIZE_T                                                  \
     uint16_t // Must be able to hold FILESYS_BUFFER_SIZE
 
+// Size of buffer used for filesystem reads (specifically for computing CRC)
+#define FILESYS_READ_BUFFER_SIZE 256
+#define FILESYS_READ_BUFFER_SIZE_T                                             \
+    uint16_t // Must be able to hold
+             // FILESYS_READ_BUFFER_SIZE
+
 // Note: Only one file can be buffered at a time, so there is no configuration
 // for FILESYS_MAX_BUFFERED_FILES.
 

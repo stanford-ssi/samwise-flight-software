@@ -85,7 +85,6 @@ endif()
 # Add the library directories
 if(NOT BUILD_TESTS)
   add_subdirectory(lib/tinycrypt)
-  add_subdirectory(lib/littlefs-cmake)
 endif()
 
 # Enable testing if in test mode
@@ -94,6 +93,10 @@ if(BUILD_TESTS)
   # Include test helper functions before subdirectories so they're available
   include(cmake/SamwiseTest.cmake)
 endif()
+
+# Include required filesys libraries - littlefs - for both
+# tests and normal builds
+add_subdirectory(lib/littlefs-cmake)
 
 # Include src
 # Executable `samwise` built under src/

@@ -1,9 +1,5 @@
 #include "filesys.h"
 
-// variables used by the filesystem
-lfs_t lfs;
-lfs_file_t file;
-
 // configuration of the filesystem is provided by this struct
 const struct lfs_config cfg = {
     // block device operations
@@ -30,7 +26,7 @@ const struct lfs_config cfg = {
 lfs_ssize_t filesys_initialize(slate_t *slate)
 {
     // mount the filesystem
-    int err = lfs_mount(&lfs, &cfg);
+    int err = lfs_mount(&slate->lfs, &cfg);
 
     if (err)
     {
@@ -66,7 +62,7 @@ int8_t filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
         filesys_clear_buffer(slate);
     }
 
-    lfs_ssize_t fs_size = lfs_fs_size(&lfs);
+    lfs_ssize_t fs_size = lfs_fs_size(&slate->lfs);
 
     if (fs_size < 0)
     {
@@ -92,14 +88,26 @@ int8_t filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
 
     // Open file for appending
     char fname_str[sizeof(FILESYS_BUFFERED_FNAME_T) + 1];
-    toString(slate->filesys_buffered_fname, fname_str);
-    int err = lfs_file_open(&lfs, &file, fname_str,
-                            LFS_O_WRONLY | LFS_O_CREAT | LFS_O_APPEND);
+    fileToString(slate->filesys_buffered_fname, fname_str);
+
+    int err =
+        lfs_file_open(&slate->lfs, &slate->filesys_lfs_open_file, fname_str,
+                      LFS_O_WRONLY | LFS_O_CREAT | LFS_O_APPEND);
     if (err)
     {
         LOG_ERROR("[filesys] Failed to open file %s for writing: %d", fname,
                   err);
         return -4;
+    }
+
+    // Add CRC as attribute to open file - type 0
+    err = lfs_setattr(&slate->lfs, fname_str, 0, &file_crc, sizeof(file_crc));
+    if (err)
+    {
+        LOG_ERROR("[filesys] Failed to set CRC attribute for file %s: %d",
+                  fname, err);
+        lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
+        return -5;
     }
 
     slate->filesys_is_writing_file = true;
@@ -141,7 +149,6 @@ int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
 }
 
 lfs_ssize_t filesys_write_buffer_to_mram(slate_t *slate,
-                                         FILESYS_BUFFERED_FNAME_T fname,
                                          FILESYS_BUFFER_SIZE_T n_bytes)
 {
     if (!slate->filesys_is_writing_file)
@@ -160,21 +167,87 @@ lfs_ssize_t filesys_write_buffer_to_mram(slate_t *slate,
 
     // Write buffer to file
     lfs_ssize_t bytes_written =
-        lfs_file_write(&lfs, &file, slate->filesys_buffer, n_bytes);
+        lfs_file_write(&slate->lfs, &slate->filesys_lfs_open_file,
+                       slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
     {
-        LOG_ERROR("[filesys] Failed to write buffer to file %s: %d", fname,
-                  bytes_written);
-        lfs_file_close(&lfs, &file);
+        LOG_ERROR("[filesys] Failed to write buffer to file %s: %d",
+                  slate->filesys_buffered_fname, bytes_written);
+        lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
         return bytes_written;
     }
 
     filesys_clear_buffer(slate);
 
     LOG_INFO("[filesys] Wrote %d bytes from buffer to file %s in MRAM",
-             bytes_written, fname);
+             bytes_written, slate->filesys_buffered_fname);
 
     return bytes_written;
+}
+
+unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
+{
+    unsigned int crc = 0xFFFFFFFF;
+
+    // Read file in chunks and compute CRC
+    uint8_t buffer[FILESYS_READ_BUFFER_SIZE];
+    lfs_file_rewind(&slate->lfs, &slate->filesys_lfs_open_file);
+
+    FILESYS_BUFFERED_FILE_LEN_T bytes_remaining =
+        slate->filesys_buffered_file_len;
+    while (bytes_remaining > 0)
+    {
+        lfs_size_t to_read = (bytes_remaining < FILESYS_READ_BUFFER_SIZE)
+                                 ? bytes_remaining
+                                 : FILESYS_READ_BUFFER_SIZE;
+
+        lfs_ssize_t bytes_read = lfs_file_read(
+            &slate->lfs, &slate->filesys_lfs_open_file, buffer, to_read);
+
+        if (bytes_read < 0)
+        {
+            LOG_ERROR("[filesys] Failed to read file at %d bytes left for CRC "
+                      "computation: Error code %d",
+                      bytes_remaining, bytes_read);
+            *error_code = -1;
+            return crc; // We will return the crc so far, but error_code
+                        // indicates failure
+        }
+
+        crc = crc32_continue(buffer, bytes_read, crc);
+        bytes_remaining -= bytes_read;
+    }
+
+    *error_code = 0;
+    return ~crc;
+}
+
+int8_t filesys_is_crc_correct(slate_t *slate)
+{
+    if (!slate->filesys_is_writing_file)
+    {
+        LOG_ERROR(
+            "[filesys] Cannot check CRC; no file is currently being written.");
+        return -2;
+    }
+
+    uint8_t error_code = 0;
+    unsigned int computed_crc = filesys_compute_crc(slate, &error_code);
+
+    if (computed_crc == slate->filesys_buffered_file_crc)
+    {
+        LOG_INFO("[filesys] CRC check passed for file %s",
+                 slate->filesys_buffered_fname);
+        return 0;
+    }
+    else
+    {
+        LOG_ERROR("[filesys] CRC check failed for file %s. Computed: %u, "
+                  "Expected: %u",
+                  slate->filesys_buffered_fname, computed_crc,
+                  slate->filesys_buffered_file_crc);
+        return -1;
+    }
 }
 
 int8_t filesys_complete_file_write(slate_t *slate)
@@ -188,13 +261,31 @@ int8_t filesys_complete_file_write(slate_t *slate)
     }
 
     // Close the file
-    int err = lfs_file_close(&lfs, &file);
+    int err = lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
     if (err)
     {
         LOG_ERROR("[filesys] Failed to close file %s: %d",
                   slate->filesys_buffered_fname, err);
         return -2;
     }
+
+    // Check CRC here
+    int8_t crc_check = filesys_is_crc_correct(slate);
+    if (crc_check != 0 && crc_check != 1)
+    {
+        LOG_ERROR("[filesys] Error during CRC check for file %s: %d",
+                  slate->filesys_buffered_fname, crc_check);
+        return -3;
+    }
+    else if (crc_check == -1)
+    {
+        LOG_ERROR("[filesys] CRC mismatch for file %s during completion.",
+                  slate->filesys_buffered_fname);
+        return -4;
+    }
+
+    LOG_INFO("[filesys] CRC matches for file %s!",
+             slate->filesys_buffered_fname);
 
     slate->filesys_is_writing_file = false;
     LOG_INFO("[filesys] Completed file write for file: %s",
@@ -220,7 +311,7 @@ int8_t filesys_cancel_file_write(slate_t *slate)
     }
 
     // Close the file
-    int err = lfs_file_close(&lfs, &file);
+    int err = lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
     if (err)
     {
         LOG_ERROR("[filesys] Failed to close file %s during cancel: %d",
@@ -230,8 +321,8 @@ int8_t filesys_cancel_file_write(slate_t *slate)
 
     // Delete the file
     char fname_str[sizeof(FILESYS_BUFFERED_FNAME_T) + 1];
-    toString(slate->filesys_buffered_fname, fname_str);
-    err = lfs_remove(&lfs, fname_str);
+    fileToString(slate->filesys_buffered_fname, fname_str);
+    err = lfs_remove(&slate->lfs, fname_str);
     if (err)
     {
         LOG_ERROR("[filesys] Failed to delete file %s during cancel: %d",
