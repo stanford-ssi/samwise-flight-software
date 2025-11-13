@@ -113,6 +113,7 @@ int main()
                XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
         printf("__flash_binary_start: %p\n", __flash_binary_start);
 #ifdef BUILD_BLINK
+        printf(">>> BLINKING <<<\n");
         sleep_ms(700);
         gpio_put(LED_PIN, 0);
         sleep_ms(300);
