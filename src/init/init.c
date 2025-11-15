@@ -95,7 +95,6 @@ bool init(slate_t *slate)
      */
     gpio_init(SAMWISE_FIXED_SOLAR_CHARGE);
     gpio_set_dir(SAMWISE_FIXED_SOLAR_CHARGE, GPIO_IN);
-    
     gpio_init(SAMWISE_FIXED_SOLAR_FAULT);
     gpio_set_dir(SAMWISE_FIXED_SOLAR_FAULT, GPIO_IN);
     
