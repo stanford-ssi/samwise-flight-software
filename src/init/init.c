@@ -99,7 +99,6 @@ bool init(slate_t *slate)
     gpio_set_dir(SAMWISE_PANEL_A, GPIO_IN);
     gpio_set_dir(SAMWISE_PANEL_B, GPIO_IN);
     gpio_set_dir(SAMWISE_RBF_DETECT_PIN, GPIO_IN);
-    /*
      * Initialize gpio pins
      */
     ASSERT(init_gpio_pins());
