@@ -26,7 +26,7 @@ if(NOT BUILD_TESTS)
   add_executable(samwise main.c)
 
   pico_set_program_name(samwise samwise)
-  pico_set_program_version(samwise "0.1")
+  pico_set_program_version(samwise "0.25")
 
   # pico_enable_stdio_uart(samwise 0)
   pico_enable_stdio_usb(samwise 1)

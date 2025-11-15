@@ -6,9 +6,11 @@
 
 sched_state_t *init_get_next_state(slate_t *slate)
 {
+LOG_INFO("Init State Reached.");
 #ifdef BRINGUP
     return &bringup_state;
 #else
+    #ifndef PICO
     // Check if RBF pin is detected
     if (is_rbf_pin_detected())
     {
@@ -17,11 +19,13 @@ sched_state_t *init_get_next_state(slate_t *slate)
         neopixel_set_color_rgb(0xff, 0, 0);
         return &init_state;
     }
-#ifdef FLIGHT
+    #endif
+
+    #ifdef FLIGHT
     return &burn_wire_state;
-#else
+    #else
     return &running_state;
-#endif
+    #endif
 #endif
 }
 

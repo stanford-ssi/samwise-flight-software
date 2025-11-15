@@ -9,7 +9,7 @@ option(PACKET_HMAC_PSK "Packet HMAC PSK")
 set(PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
 
 if(PROFILE STREQUAL "PICO")
-  set(PICO_BOARD pico)
+  set(PICO_BOARD samwise_picubed)
   set(SAMWISE_DEFINES PICO)
 elseif(PROFILE STREQUAL "PICUBED-DEBUG")
   set(PICO_BOARD samwise_picubed)
