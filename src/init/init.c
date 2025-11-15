@@ -90,7 +90,6 @@ bool init(slate_t *slate)
 
     gpio_init(SAMWISE_WATCHDOG_FEED_PIN);
     gpio_set_dir(SAMWISE_WATCHDOG_FEED_PIN, GPIO_OUT);
-    
     /*
      * Initialize telemetry input pins
      */
