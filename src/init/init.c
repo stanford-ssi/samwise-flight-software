@@ -102,7 +102,6 @@ bool init(slate_t *slate)
      * Initialize gpio pins
     ASSERT(init_gpio_pins());
 
-    ASSERT(init_drivers(slate));
 
     /*
      * Initialize the state machine
