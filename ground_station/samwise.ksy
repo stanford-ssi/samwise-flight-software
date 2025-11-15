@@ -31,3 +31,18 @@ seq:
 
   - id: tx_packets
     type: u4
+  
+  - id: battery_voltage
+    type: u2
+
+  - id: battery_current
+    type: u2
+
+  - id: solar_voltage
+    type: u2
+
+  - id: solar_current
+    type: u2
+
+  - id: device_status
+    type: u1
