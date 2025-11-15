@@ -35,7 +35,7 @@
     {
       "name": "Shared_Data",
       "id": 2,
-      "size": "512K",
+      "size": "15860K",
       "families": ["data"],
       "permissions": {
         "secure": "rw",
