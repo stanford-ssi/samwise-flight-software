@@ -23,5 +23,6 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
                                                    uint16_t len,
                                                    uint16_t seq_num);
 
+void payload_restart(slate_t *slate);
 void payload_turn_on(slate_t *slate);
 void payload_turn_off(slate_t *slate);

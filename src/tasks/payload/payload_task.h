@@ -16,6 +16,7 @@
 
 #define MAX_PAYLOAD_COMMANDS_PER_DISPATCH 3
 #define MAX_PAYLOAD_RETRY_COUNT 3
+#define PAYLOAD_HEARTBEAT_TIMEOUT_MS 10000
 
 void payload_task_init(slate_t *slate);
 void payload_task_dispatch(slate_t *slate);
