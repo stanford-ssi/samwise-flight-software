@@ -18,6 +18,7 @@
 // LED Color for beacon task - Yellow
 #define BEACON_TASK_COLOR 255, 255, 0
 
+size_t serialize_slate(slate_t *slate, uint8_t *data);
 void beacon_task_init(slate_t *slate);
 void beacon_task_dispatch(slate_t *slate);
 

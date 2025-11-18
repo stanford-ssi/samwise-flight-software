@@ -1,5 +1,7 @@
 # General
+**/.vite
 **/.DS_Store
 **/.vite
+**/env
 .vscode
 build*

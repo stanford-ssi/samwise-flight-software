@@ -51,6 +51,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Only initialize Pico SDK for non-test builds
 if(NOT BUILD_TESTS)
+  # Set PICO_SDK_PATH to use local submodule before pico-vscode.cmake
+  set(PICO_SDK_PATH ${CMAKE_CURRENT_LIST_DIR}/pico-sdk CACHE PATH "Path to the Pico SDK" FORCE)
+
   # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
   if(WIN32)
       set(USERHOME $ENV{USERPROFILE})
@@ -60,6 +63,7 @@ if(NOT BUILD_TESTS)
   set(sdkVersion 2.0.0)
   set(toolchainVersion 13_2_Rel1)
   set(picotoolVersion 2.0.0)
+  # Note: pico-vscode.cmake sets PICO_SDK_PATH, but we override it above to use local submodule
   include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
   # ====================================================================================
 
@@ -93,3 +97,6 @@ endif()
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)
+
+# Side project, minimal OTA demo
+add_subdirectory(ota_mvp)

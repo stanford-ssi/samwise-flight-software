@@ -10,8 +10,8 @@ typedef struct __attribute__((packed))
     uint8_t src;
     uint8_t flags;
     uint8_t seq;
-    uint8_t len; // this should be the length of the packet structure being sent
-                 // over
+    uint8_t
+        len; // This is the length of the data field only. Max PACKET_DATA_SIZE.
     uint8_t data[255 - (sizeof(uint8_t) * 5) - (sizeof(uint32_t) * 2) -
                  TC_SHA256_DIGEST_SIZE];
     uint32_t boot_count;

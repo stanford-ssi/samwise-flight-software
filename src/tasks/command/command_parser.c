@@ -10,10 +10,11 @@
 
 #include "command_parser.h"
 #include "macros.h"
+#include "packet.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
 #include "states.h"
-#include <stdio.h>
+#include "str_utils.h"
 
 extern sched_state_t *overridden_state;
 
@@ -24,6 +25,8 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
     Command command_id = (Command)packet->data[0];
     char *command_payload = packet->data + COMMAND_MNEMONIC_SIZE;
+    uint8_t command_payload_data_size =
+        PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
 
     switch (command_id)
@@ -32,8 +35,8 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         case PAYLOAD_EXEC:
         {
             PAYLOAD_COMMAND_DATA payload_command;
-            strlcpy(payload_command.serialized_command, command_payload,
-                    sizeof(command_payload));
+            strcpy_trunc(payload_command.serialized_command, command_payload,
+                         command_payload_data_size);
             payload_command.seq_num = slate->curr_command_seq_num++;
             payload_command.command_type = PAYLOAD_EXEC;
 
@@ -47,10 +50,11 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Retrieving number of commands executed...");
             uint8_t data[PACKET_DATA_SIZE];
 
-            // Package interger value into a string
-            int len =
-                snprintf(data, sizeof(data), "Number commands executed: %d",
-                         slate->number_commands_processed);
+            // Format into buffer and use snprintf's return value to determine
+            // length.
+            int len = snprintf_len((char *)data, sizeof(data),
+                                   "Number commands executed: %u",
+                                   (unsigned)slate->number_commands_processed);
 
             // Create the packet
             packet_t pkt;
