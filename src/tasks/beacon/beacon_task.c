@@ -8,6 +8,7 @@
 #include "beacon_task.h"
 #include "adcs_packet.h"
 #include "neopixel.h"
+#include "rfm9x.h"
 #include "str_utils.h"
 #include <stdlib.h>
 
@@ -40,6 +41,7 @@ typedef struct
     uint16_t panel_B_current; // in mA (to 0.001A)
 
     uint8_t device_status; // 0 for off, 1 for on
+    uint8_t tx_power;
 } __attribute__((__packed__)) beacon_stats;
 
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 +
@@ -91,7 +93,8 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .panel_A_current = slate->panel_A_current,
                           .panel_B_voltage = slate->panel_B_voltage,
                           .panel_B_current = slate->panel_B_current,
-                          .device_status = get_device_status(slate)};
+                          .device_status = get_device_status(slate),
+                          .tx_power = rfm9x_get_output_power(&slate->radio)};
 
     // 1 Extra byte: 1 for \0 terminator
     memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
