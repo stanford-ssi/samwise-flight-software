@@ -12,14 +12,7 @@ on:
 
 jobs:
   claude:
-    if: |
-      (
-        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@c_docs')) ||
-        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@c_docs'))
-      ) && (
-        github.actor == 'devYaoYH' ||
-        github.actor == 'carter-cochran'
-      )
+    if: github.event_name == 'pull_request' && github.event.action == 'ready_for_review'
     runs-on: ubuntu-latest
     permissions:
       contents: read
