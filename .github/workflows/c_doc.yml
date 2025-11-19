@@ -1,6 +1,7 @@
 name: Claude Documentation
 
 on:
+# Can also adjust on conditions to follow comment request for phrase "@c_docs"
   pull_request:
     branches:
       - main
