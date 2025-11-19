@@ -260,12 +260,12 @@ def decode_beacon_data(data):
         stats_start = null_pos + 1
         print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
         
-        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1 = 45 bytes
+        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1+1 = 46 bytes
         # Plus ADCS packet size: 25 bytes (float w + 4 floats quaternion + char state + uint32_t boot_count)
-        # Total expected: 45 + 25 = 70 bytes after state name
-        if len(data) >= stats_start + 45:  # 45 bytes for beacon_stats struct
+        # Total expected: 45 + 25 = 71 bytes after state name
+        if len(data) >= stats_start + 46:  # 46 bytes for beacon_stats struct
             print("DEBUG: Extracting stats data...")
-            stats_data = data[stats_start:stats_start + 45]
+            stats_data = data[stats_start:stats_start + 46]
             print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
             
             print("DEBUG: About to call struct.unpack...")
@@ -278,7 +278,7 @@ def decode_beacon_data(data):
             # CircuitPython struct may not support all format codes, let's try simpler ones
             # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 1x uint8_t
             # L=uint32, Q=uint64, H=uint16, B=uint8 - try using I for uint32 instead of L
-            unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
+            unpacked_stats = struct.unpack('<LQ6L4H2B', stats_data)
             print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
             
             # Q format worked (uint64 for time)
@@ -295,11 +295,12 @@ def decode_beacon_data(data):
                 "battery_current": unpacked_stats[9],
                 "solar_voltage": unpacked_stats[10],
                 "solar_current": unpacked_stats[11],
-                "device_status": unpacked_stats[12]
+                "device_status": unpacked_stats[12],
+                "tx_power": unpacked_stats[13]
             }
             
             # Check if ADCS data is appended after beacon stats
-            adcs_start = stats_start + 45
+            adcs_start = stats_start + 46
             adcs_data = None
             if len(data) >= adcs_start + 25:  # 25 bytes for ADCS packet
                 print("DEBUG: ADCS data detected, extracting...")
@@ -319,7 +320,7 @@ def decode_beacon_data(data):
                 "adcs": adcs_data
             }
         else:
-            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(45, len(data) - stats_start))
+            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(46, len(data) - stats_start))
             return {"state_name": state_name, "stats": None}
             
     except Exception as e:
