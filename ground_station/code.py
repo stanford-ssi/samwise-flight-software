@@ -402,6 +402,13 @@ def try_get_packet(timeout=0.1):
                         if beacon_data['stats']:
                             stats = beacon_data['stats']
                             print(f"  === Telemetry ===")
+                            if stats['reboot_counter'] != config['boot_count']:
+                                print(f"\n*** SATELLITE RESTART DETECTED ***")
+                                print(f"    Old boot count: {config['boot_count']}")
+                                print(f"    New boot count: {stats['reboot_counter']}")
+                                print(f"    Resetting msg_id from {packet_builder.msg_id} to {STARTING_MSG_ID}\n")
+                                config['boot_count'] = stats['reboot_counter']
+                                packet_builder.msg_id = STARTING_MSG_ID
                             print(f"    Reboots: {stats['reboot_counter']}")
                             print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
                             print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
