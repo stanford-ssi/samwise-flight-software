@@ -12,8 +12,6 @@ on:
 
 jobs:
   claude:
-    if: github.event_name == 'pull_request' && github.event.action == 'ready_for_review'
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
@@ -39,14 +37,14 @@ jobs:
           # Keep the instructions static—remove undefined interpolation
           custom_instructions: |
             Tasks:
-            1) If the command includes "docs" or "doc":
+            1) 
               - Inspect the PR's diff to detect all user-visible changes (APIs, CLI flags, behavior, etc.).
               - **Goal: Generate Brief Update Documentation.** For every file or module affected by the PR.
                 - If a relevant documentation file exists, propose an update to reflect the changes.
                 - If new user-facing code is added without existing documentation, propose the creation of a **new, complete README equivalent paragraph/section** detailing its purpose, usage, and examples.
               - Tone: factual, concise.
 
-            2) If the command includes "changelog" or "change log":
+            2) 
               - write a faux-CHANGELOG.md per "Keep a Changelog" (Added/Changed/Fixed/etc.) in the comments in terse bullets.
               - Summarize PR's user-facing changes in terse bullets (1–2 lines), including the PR number in parentheses when available, and @contributors.
               - If no user-visible changes, add a note under "Changed" or skip.
