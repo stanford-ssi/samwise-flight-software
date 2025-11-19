@@ -409,7 +409,8 @@ def try_get_packet(timeout=0.1):
                             print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
                             print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
                             print(f"    Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
-                            print(f"    Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+                            print(f"    SolarHello: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+                            print(f"    TX Power: {stats['tx_power']}")
                             # Decode device status bits
                             status = stats['device_status']
                             status_flags = []
