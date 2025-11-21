@@ -16,6 +16,7 @@ target_link_libraries(running_state PUBLIC
   radio_task
   telemetry_task
   watchdog_task
+  transmit_task
 )
 
 # Include directories: tests include test_mocks to shadow real hardware headers

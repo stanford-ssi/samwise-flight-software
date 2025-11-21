@@ -121,7 +121,7 @@ void transmit_task_init(slate_t *slate)
 
     LOG_DEBUG("Setting max power...");
     slate->tx_max_power = MAX_TX_POWER;
-    slate->tx_min_power = MIN_TX_POER;
+    slate->tx_min_power = MIN_TX_POWER;
     slate->tx_packet_sent = 0;
 }
 
@@ -174,7 +174,7 @@ void transmit_task_dispatch(slate_t *slate)
 
 sched_task_t transmit_task = {.name = "transmit",
                               .dispatch_period_ms = 20,
-                              .task_init = &tranmit_task_init,
+                              .task_init = &transmit_task_init,
                               .task_dispatch = &transmit_task_dispatch,
                               /* Set to an actual value on init */
                               .next_dispatch = 0};
