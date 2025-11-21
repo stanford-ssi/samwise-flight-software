@@ -126,6 +126,7 @@ PAYLOAD_EXEC = 1
 PAYLOAD_TURN_ON = 2
 PAYLOAD_TURN_OFF = 3
 MANUAL_STATE_OVERRIDE = 4
+TX_POWER_ID = 5
 
 # Global configuration variables
 config = {
@@ -544,6 +545,8 @@ def send_manual_state_override(state_name):
     """Send manual state override command"""
     send_command(MANUAL_STATE_OVERRIDE, state_name)
 
+def send_tx_power_status(tx_power):
+    send_command(TX_POWER_ID, power)
 
 def send_packet_ping():
     # Create a NO_OP packet (command 0x04)
@@ -1031,6 +1034,29 @@ def debug_range_test_rcv_mode():
         print("Total packets: {}".format(packet_count))
         print("Returning to main menu...")
 
+# TX Power ranges for high power is 5 - 23.
+def range_test_transmit():
+    print("***** Preparing to send packets *****")
+
+    for i in range(5, 24):
+        print(f"     Current TX Power: {i}")
+        rfm9x.tx_power = i
+
+        for j in range(10):
+            for k in range(100):
+                send_tx_power_status(rfm9x.tx_power)
+            
+            packets_sent = (j + 1) * 100
+            print(f"Sent {packets_sent} packets!")
+
+        print(f"Finished sending 1000 packets at {rfm9x.tx_power} tx power!\n")
+
+    print("Finished sending all packets, reverting tx power to default!")
+    rfm9x.tx_power = 13
+
+    is_default = True if rfm9x.tx_power == 13 else False
+    print(f"ASSERT on TX_POWER: {is_default}")
+
 def main():
     """Main program entry point"""
     print("=== Samwise Ground Station ===")
@@ -1056,6 +1082,7 @@ def main():
     print("1. Debug Listen Mode (watch for any packets)")
     print("2. Interactive Command Mode")
     print("3. Range Test Debug Listen")
+    print("4. Range Test Transmit")
     
     try:
         choice = input("Enter choice (1 or 2): ").strip()
@@ -1063,6 +1090,8 @@ def main():
             debug_listen_mode()
         elif choice == "3":
             debug_range_test_rcv_mode()
+        elif choice == "4":
+            range_test_transmit()
         else:
             print("\n=== Starting Interactive Command Loop ===")
             interactive_command_loop()
