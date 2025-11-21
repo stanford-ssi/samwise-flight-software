@@ -5,7 +5,7 @@
  * Task to emit telemetry packet to the radio TX queue.
  */
 
-#include "beacon_task.h"
+#include "transmit_task.h"
 #include "adcs_packet.h"
 #include "neopixel.h"
 #include "rfm9x.h"
@@ -41,6 +41,7 @@ typedef struct
     uint16_t panel_B_current; // in mA (to 0.001A)
 
     uint8_t device_status; // 0 for off, 1 for on
+    uint8_t tx_power;
 } __attribute__((__packed__)) beacon_stats;
 
 _Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 +
@@ -92,7 +93,8 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .panel_A_current = slate->panel_A_current,
                           .panel_B_voltage = slate->panel_B_voltage,
                           .panel_B_current = slate->panel_B_current,
-                          .device_status = get_device_status(slate)};
+                          .device_status = get_device_status(slate),
+                          .tx_power = rfm9x_get_tx_power(&slate->radio)};
 
     // 1 Extra byte: 1 for \0 terminator
     memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
@@ -109,12 +111,23 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
            CALLSIGN_LENGTH;
 }
 
-void beacon_task_init(slate_t *slate)
+// Range is [5, 23]
+#define MAX_TX_POWER 23
+#define MIN_TX_POWER 5
+
+void transmit_task_init(slate_t *slate)
 {
-    LOG_DEBUG("Beacon task is initializing...");
+    LOG_DEBUG("Transmit task is initializing...");
+
+    LOG_DEBUG("Setting max power...");
+    slate->tx_max_power = MAX_TX_POWER;
+    slate->tx_min_power = MIN_TX_POER;
+    slate->tx_packet_sent = 0;
 }
 
-void beacon_task_dispatch(slate_t *slate)
+#define NUM_PACKET_TO_SEND 1000
+
+void transmit_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(BEACON_TASK_COLOR);
     // Create a new packet for radio TX
@@ -125,6 +138,24 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.seq = 0;
 
     // Commit into serialized byte array
+    if (slate->tx_curr_power < MAX_TX_POWER)
+    {
+        if (slate->tx_packet_sent > NUM_PACKET_TO_SEND)
+        {
+            slate->tx_curr_power = slate->tx_curr_power + 1;
+            slate->tx_packet_sent = 1;
+        }
+        else
+        {
+            slate->tx_packet_sent = slate->tx_packet_sent + 1;
+        }
+    }
+    else
+    {
+        slate->tx_curr_power = MIN_TX_POWER;
+    }
+
+    rfm9x_set_tx_power(&slate->radio, slate->tx_curr_power);
     pkt.len = serialize_slate(slate, pkt.data);
 
     LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
@@ -141,9 +172,9 @@ void beacon_task_dispatch(slate_t *slate)
     neopixel_set_color_rgb(0, 0, 0);
 }
 
-sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 5000,
-                            .task_init = &beacon_task_init,
-                            .task_dispatch = &beacon_task_dispatch,
-                            /* Set to an actual value on init */
-                            .next_dispatch = 0};
+sched_task_t transmit_task = {.name = "transmit",
+                              .dispatch_period_ms = 20,
+                              .task_init = &tranmit_task_init,
+                              .task_dispatch = &transmit_task_dispatch,
+                              /* Set to an actual value on init */
+                              .next_dispatch = 0};
