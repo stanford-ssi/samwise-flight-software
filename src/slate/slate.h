@@ -136,6 +136,12 @@ typedef struct samwise_slate
     uint8_t tx_min_power;
     uint32_t tx_packet_sent;
     uint8_t tx_curr_power;
+
+    /*
+     * Payload Heartbeat time: the time at which the Picubed \
+     * last sent a request to the payload.
+     */
+    absolute_time_t payload_most_recent_ping_time;
 } slate_t;
 
 extern slate_t slate;

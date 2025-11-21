@@ -115,7 +115,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
             break;
         }
-
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
