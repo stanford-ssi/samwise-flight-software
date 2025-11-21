@@ -136,6 +136,7 @@ typedef struct samwise_slate
     uint8_t tx_min_power;
     uint32_t tx_packet_sent;
     uint8_t tx_curr_power;
+    char rx_curr_power[5];
 
     /*
      * Payload Heartbeat time: the time at which the Picubed \

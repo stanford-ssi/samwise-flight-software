@@ -545,8 +545,8 @@ def send_manual_state_override(state_name):
     """Send manual state override command"""
     send_command(MANUAL_STATE_OVERRIDE, state_name)
 
-def send_tx_power_status(tx_power):
-    send_command(TX_POWER_ID, power)
+def send_tx_power_status(tx_power: str):
+    send_command(TX_POWER_ID, tx_power)
 
 def send_packet_ping():
     # Create a NO_OP packet (command 0x04)
@@ -1044,7 +1044,7 @@ def range_test_transmit():
 
         for j in range(10):
             for k in range(100):
-                send_tx_power_status(rfm9x.tx_power)
+                send_tx_power_status(str(rfm9x.tx_power))
             
             packets_sent = (j + 1) * 100
             print(f"Sent {packets_sent} packets!")

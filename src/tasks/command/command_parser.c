@@ -115,6 +115,52 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
             break;
         }
+        case TX_POWER:
+        {
+            for (int i = 0; i < MIN(5, command_payload_data_size); i++)
+            {
+                if (slate->rx_curr_power != NULL &&
+                    slate->rx_curr_power[i] != command_payload[i])
+                {
+                    LOG_INFO("Detected new power...");
+                    uint8_t data[PACKET_DATA_SIZE];
+
+                    // Format into buffer and use snprintf's return value to
+                    // determine length.
+                    int len = snprintf_len(
+                        (char *)data, sizeof(data),
+                        "Number packets received for tx power %s: %u",
+                        command_payload,
+                        (unsigned)slate->number_commands_processed);
+
+                    // Create the packet
+                    packet_t pkt;
+                    rfm9x_format_packet(&pkt, 0, 0, 0, 0, len, &data[0]);
+
+                    // Add to transmit buffer
+                    LOG_INFO("Sending to radio transmit queue...");
+                    if (queue_try_add(&slate->tx_queue, &pkt))
+                    {
+                        LOG_INFO("Ping info was sent...");
+                    }
+                    else
+                    {
+                        LOG_ERROR("Ping info failed to send...");
+                    }
+
+                    LOG_INFO("Sent information to ground station...");
+
+                    for (int size = 0; size < command_payload_data_size; size++)
+                    {
+                        slate->rx_curr_power[size] = command_payload[size];
+                    }
+
+                    break;
+                }
+            }
+
+            break;
+        }
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
