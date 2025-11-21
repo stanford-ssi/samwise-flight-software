@@ -409,8 +409,7 @@ def try_get_packet(timeout=0.1):
                             print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
                             print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
                             print(f"    Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
-                            print(f"    SolarHello: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
-                            print(f"    TX Power: {stats['tx_power']}")
+                            print(f"    Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
                             # Decode device status bits
                             status = stats['device_status']
                             status_flags = []
@@ -833,6 +832,7 @@ def debug_listen_mode():
                                     print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
                                     print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
                                     print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
+                                    print(f"    TX Power: {stats['tx_power']}")
                                     # Decode device status bits
                                     status = stats['device_status']
                                     status_flags = []
@@ -855,6 +855,142 @@ def debug_listen_mode():
                                         print("  Quat Magnitude: {:.6f}".format(q_mag))
                                         print("  ADCS State: {}".format(adcs['state']))
                                         print("  ADCS Boot Count: {}".format(adcs['boot_count']))
+                                else:
+                                    print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
+                            except Exception as e:
+                                print("  Error decoding beacon data: {}".format(e))
+                            finally:
+                                print("  Data: {}".format(beacon_payload))
+                        else:
+                            print("  Packet too short: need {} bytes, got {}".format(1 + data_len, len(packet)))
+                    
+                except Exception as e:
+                    print("DECODE ERROR: {}".format(e))
+                    # Fallback to raw display
+                    if len(packet) >= 5:
+                        print("Raw first 5 bytes: {}, {}, {}, {}, {}".format(
+                            packet[0], packet[1], packet[2], packet[3], packet[4]))
+                
+                # Show signal strength
+                try:
+                    rssi = rfm9x.last_rssi
+                    print("RSSI: {} dBm".format(rssi))
+                except:
+                    pass
+                
+                print("*** END PACKET ***\n")
+            
+            if LED_PIN is not None: 
+                led.value = False
+            time.sleep(0.1)
+            
+            # Periodic status
+            current_time = time.monotonic()
+            if current_time - start_time > 30:
+                print("[{:.0f}s] Listening... ({} packets so far)".format(current_time - start_time, packet_count))
+                start_time = current_time
+                
+    except KeyboardInterrupt:
+        print("\n=== SUMMARY ===")
+        print("Total packets: {}".format(packet_count))
+        print("Returning to main menu...")
+
+tx_power_dict = {5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0,
+                 11: 0, 12: 0, 13: 0, 14: 0, 15: 0,
+                 16: 0, 17: 0, 18: 0, 19: 0, 20: 0,
+                 21: 0, 22: 0, 23: 0}
+
+def debug_range_test_rcv_mode():
+    """Simple range test mode - just listen and report any packets"""
+    
+    packet_count = 0
+    start_time = time.monotonic()
+    
+    try:
+        while True:
+            # Blink LED to show we're alive
+            if LED_PIN is not None:
+                led.value = True
+            
+            # Check for any packet with short timeout
+            packet = rfm9x.receive(timeout=0.1)
+            
+            if packet is not None:
+                packet_count += 1
+                current_time = time.monotonic()
+                elapsed = current_time - start_time
+                
+                print("\n*** PACKET #{} at {:.1f}s ***".format(packet_count, elapsed))
+                print("Length: {} bytes".format(len(packet)))
+                
+                # Convert to hex string
+                if hasattr(packet, 'hex'):
+                    hex_str = packet.hex()
+                else:
+                    hex_str = ''.join('{:02x}'.format(b) for b in packet)
+                print("Raw hex: {}".format(hex_str))
+                
+                # Use adafruit_rfm9x library properties to get RadioHead header fields
+                try:
+                    # Get RadioHead header fields from the library
+                    rh_destination = getattr(rfm9x, 'destination', None)
+                    rh_node = getattr(rfm9x, 'node', None) 
+                    rh_identifier = getattr(rfm9x, 'identifier', None)
+                    rh_flags = getattr(rfm9x, 'flags', None)
+                    
+                    print("ADAFRUIT RFM9X HEADER FIELDS:")
+                    print("  RadioHead TO (destination): {}".format(rh_destination))
+                    print("  RadioHead FROM (node): {}".format(rh_node))
+                    print("  RadioHead ID (identifier): {}".format(rh_identifier))
+                    print("  RadioHead FLAGS: {}".format(rh_flags))
+                    
+                    # RadioHead stripped dst, src, flags, seq
+                    # Beacon packets after RadioHead processing: len(1) + beacon_data(len)
+                    # (boot_count, msg_id, hmac are handled at packet layer, not beacon layer)
+                    if len(packet) >= 1:
+                        # First byte is the beacon data length
+                        data_len = packet[0]
+                        print("BEACON PACKET STRUCTURE:")
+                        print("  beacon_data_len={}".format(data_len))
+                        print("  expected_total_size={} bytes".format(1 + data_len))
+                        print("  actual_packet_size={} bytes".format(len(packet)))
+                        
+                        # Extract beacon data payload
+                        if len(packet) >= 1 + data_len:
+                            beacon_payload = packet[1:1+data_len]
+                            
+                            # Check RadioHead headers to determine if this is from satellite
+                            try:
+                                beacon_data = decode_beacon_data(beacon_payload)
+                                print("  >>> BEACON DETECTED (from satellite) <<<")
+                                print("  State: {}".format(beacon_data['state_name']))
+                                
+                                if beacon_data['stats']:
+                                    stats = beacon_data['stats']
+                                    print("  Reboots: {}".format(stats['reboot_counter']))
+                                    print("  Time in State: {} ms".format(stats['time_in_state_ms']))
+                                    print("  RX: {} pkts, {} bytes".format(stats['rx_packets'], stats['rx_bytes']))
+                                    print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
+                                    print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
+                                    print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
+                                    print("    TX Power: {}".format(stats['tx_power']))
+                                    # Decode device status bits
+                                    status = stats['device_status']
+                                    status_flags = []
+                                    if status & 0x01: status_flags.append("RBF")
+                                    if status & 0x02: status_flags.append("solar_charge")
+                                    if status & 0x04: status_flags.append("solar_fault")
+                                    if status & 0x08: status_flags.append("panel_A")
+                                    if status & 0x10: status_flags.append("panel_B")
+                                    if status & 0x20: status_flags.append("payload")
+                                    print("  Status: 0x{:02x} ({})".format(status, ','.join(status_flags) if status_flags else 'none'))
+                                    
+                                    # Add tx power to the dictionary
+                                    tx_power_dict[stats['tx_power']] += 1
+
+                                    # Print out packets received for each tx_power
+                                    print("    TX Power dictionary: {}".format(tx_power_dict))
+
                                 else:
                                     print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
                             except Exception as e:
@@ -919,11 +1055,14 @@ def main():
     print("\nSelect mode:")
     print("1. Debug Listen Mode (watch for any packets)")
     print("2. Interactive Command Mode")
+    print("3. Range Test Debug Listen")
     
     try:
         choice = input("Enter choice (1 or 2): ").strip()
         if choice == "1":
             debug_listen_mode()
+        elif choice == "3":
+            debug_range_test_rcv_mode()
         else:
             print("\n=== Starting Interactive Command Loop ===")
             interactive_command_loop()
