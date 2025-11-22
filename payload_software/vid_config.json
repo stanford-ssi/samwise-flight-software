@@ -1,0 +1,15 @@
+{
+  "libcamera": {
+    "default": "--timeout 5000 --framerate 10",
+    "longvid": "--timeout 30000 --framerate 10"
+  },
+  "ffmpeg_in": {
+    "default": "-r 10",
+    "low_framerate": "-r 2"
+  },
+  "ffmpeg_out": {
+    "default": "-vcodec libx265 -crf 30 -r 10",
+    "low_framerate": "-vcodec libx265 -crf 30 -r 2",
+    "low_memory": "-vcodec libx265 -crf 34 -r 2"
+  }
+}
