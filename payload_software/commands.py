@@ -332,6 +332,13 @@ def process_send_image(image_id: str, w=800, h=600, quality=100, cells_x=1, cell
     else:
         raise ValueError(f'Radio type should be 433 or 2400 (received {radio_type})')
 
+def set_lora_parameters():
+    '''
+    Set Lora tx and rx parameters.
+    '''
+    #TODO
+    pass
+
 
 # Dictionary mapping command names to actual commands
 NAMES_TO_COMMANDS = {
@@ -364,5 +371,7 @@ NAMES_TO_COMMANDS = {
     "take_vid" : take_vid,
 
     "take_process_send_image" : take_process_send_image,
-    "process_send_image" : process_send_image
+    "process_send_image" : process_send_image,
+
+    "set_lora" : set_lora_parameters
 }
