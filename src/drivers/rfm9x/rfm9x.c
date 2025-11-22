@@ -617,6 +617,26 @@ uint8_t rfm9x_is_agc_on(rfm9x_t *r)
     return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 2);
 }
 
+void rfm9x_set_ldro(rfm9x_t *r, uint8_t ldro)
+{
+    uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
+
+    if (ldro)
+    {
+        c = bit_set(c, 3);
+    }
+    else
+    {
+        c = bit_clr(c, 3);
+    }
+    rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, c);
+}
+
+uint8_t rfm9x_is_ldro_on(rfm9x_t *r)
+{
+    return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 3);
+}
+
 static rfm9x_t *radio_with_interrupts;
 
 static void rfm9x_interrupt_received(uint gpio, uint32_t events)
@@ -768,6 +788,9 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_set_agc(r, 1);
     ASSERT(rfm9x_is_agc_on(r) == 1);
+
+    rfm9x_set_ldro(r, 1);
+    ASSERT(rfm9x_is_ldro_on(r) == 1);
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
