@@ -617,6 +617,9 @@ uint8_t rfm9x_is_agc_on(rfm9x_t *r)
     return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 2);
 }
 
+/*
+ * See pg. 107 of HopeRF Documentation
+ */
 void rfm9x_set_ldro(rfm9x_t *r, uint8_t ldro)
 {
     uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
