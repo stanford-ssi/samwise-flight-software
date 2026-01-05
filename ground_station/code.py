@@ -1,9 +1,7 @@
+import adafruit_rfm9x
 import board
 import busio
 import digitalio
-import time
-import random
-import struct
 try:
     from adafruit_hashlib import sha256
 except:
@@ -12,8 +10,18 @@ try:
     import circuitpython_hmac as hmac
 except:
     import hmac
+import random
+import struct
 import sys
-import adafruit_rfm9x
+import time
+
+try:
+    # This lib might not be available on the CircuitPython platform.
+    import functools
+    # Override all print statements to immediately flush write buffer.
+    print = functools.partial(print, flush=True)
+except Exception as e:
+    print("functools lib not available: ", e)
 
 
 def detect_board():

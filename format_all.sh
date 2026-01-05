@@ -2,4 +2,5 @@
 # Install clang-format on mac: brew install clang-format
 echo Formatting all files...
 find src -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs -I {} clang-format -i {}
+find ota_mvp -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs -I {} clang-format -i {}
 echo Done!
