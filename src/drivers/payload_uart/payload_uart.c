@@ -25,6 +25,7 @@
 #define PARITY UART_PARITY_NONE
 #define WRITE_MAX_TIMEOUT 10000
 #define MAX_WRITE_TRIES 3
+#define UART_READ_WRITE_BLOCKING_MS 50
 
 // Packet parameters
 #define MAX_PACKET_LEN 4069
@@ -195,10 +196,17 @@ static void send_syn()
     }
 }
 
+void payload_restart(slate_t *slate)
+{
+    payload_turn_off(slate);
+    payload_turn_on(slate);
+}
+
 void payload_turn_on(slate_t *slate)
 {
     gpio_put(SAMWISE_RPI_ENAB, 1);
     slate->is_payload_on = true;
+    slate->payload_most_recent_ping_time = get_absolute_time();
 }
 
 void payload_turn_off(slate_t *slate)
@@ -399,8 +407,8 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
 
     // Receive header
     packet_header_t header;
-    bytes_received =
-        receive_into(slate, &header, sizeof(packet_header_t), 1000);
+    bytes_received = receive_into(slate, &header, sizeof(packet_header_t),
+                                  UART_READ_WRITE_BLOCKING_MS);
 
     if (bytes_received < sizeof(packet_header_t))
     {
@@ -417,7 +425,8 @@ uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet)
     }
 
     // Read actual packet
-    bytes_received = receive_into(slate, packet, header.length, 1000);
+    bytes_received =
+        receive_into(slate, packet, header.length, UART_READ_WRITE_BLOCKING_MS);
 
     if (bytes_received < header.length)
     {
