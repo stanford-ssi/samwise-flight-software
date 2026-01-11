@@ -3,6 +3,8 @@
 Flight computer firmware for the SAMWISE 2U cubesat. Designed for the Raspberry
 Pi RP2040 and RP2350 microcontrollers.
 
+![PXL_20251105_063120461](https://github.com/user-attachments/assets/f1ea9d1d-33db-42ee-8892-54c7ed03953b)
+
 ## Getting Started
 
 See [the onboarding doc](docs/ONBOARDING.md) for development environment setup. To set some useful configurations for this repo, run `configure.sh`.
