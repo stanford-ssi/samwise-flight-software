@@ -159,6 +159,12 @@ typedef struct samwise_slate
                                     // simplicity we will use a queue.
     queue_t ftp_cancel_file_write_data;
     queue_t ftp_format_filesystem_data;
+  
+    /*
+    Payload Heartbeat time: the time at which the Picubed last sent a request to
+    the payload.
+    */
+    absolute_time_t payload_most_recent_ping_time;
 
 } slate_t;
 
