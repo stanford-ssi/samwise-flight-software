@@ -14,9 +14,15 @@ const struct lfs_config cfg = {
     .block_size = FILESYS_BLOCK_SIZE,
     .block_count = FILESYS_BLOCK_COUNT,
 
-    .cache_size = 16,
-    .lookahead_size = 16,
+    .cache_size = FILESYS_CFG_CACHE_SIZE,
+    .lookahead_size = FILESYS_CFG_LOOKAHEAD_SIZE,
     .block_cycles = 500,
+
+    .prog_buffer = prog_buffer,
+    .read_buffer = read_buffer,
+    .lookahead_buffer = lookahead_buffer,
+
+    .name_max = sizeof(FILESYS_BUFFERED_FNAME_STR_T),
 };
 
 lfs_ssize_t filesys_initialize(slate_t *slate)
@@ -105,11 +111,13 @@ int8_t filesys_start_file_write(slate_t *slate,
     memcpy(slate->filesys_buffered_fname_str, fname_str,
            sizeof(FILESYS_BUFFERED_FNAME_STR_T));
 
-    int err =
-        lfs_file_open(&slate->lfs, &slate->filesys_lfs_open_file,
-                      slate->filesys_buffered_fname_str,
-                      LFS_O_RDWR | LFS_O_CREAT |
-                          LFS_O_APPEND); // Allow reading for CRC check later on
+    int err = lfs_file_opencfg(
+        &slate->lfs, &slate->filesys_lfs_open_file,
+        slate->filesys_buffered_fname_str,
+        LFS_O_RDWR | LFS_O_CREAT |
+            LFS_O_APPEND, // Allow reading for CRC check later on
+        &(struct lfs_file_config){.buffer = cache_buffer});
+
     if (err < 0)
     {
         LOG_ERROR("[filesys] Failed to open file %s for writing: %d",

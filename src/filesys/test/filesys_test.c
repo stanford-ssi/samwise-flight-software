@@ -67,7 +67,8 @@ int filesys_test_write_readback()
 
     uint8_t read_buffer[64];
     lfs_file_t read_file;
-    lfs_file_open(&test_slate.lfs, &read_file, fname_str, LFS_O_RDONLY);
+    lfs_file_opencfg(&test_slate.lfs, &read_file, fname_str, LFS_O_RDONLY,
+                     &(struct lfs_file_config){.buffer = cache_buffer});
 
     lfs_file_read(&test_slate.lfs, &read_file, read_buffer,
                   sizeof(read_buffer));

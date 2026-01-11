@@ -29,6 +29,15 @@
 #include "str_utils.h"
 #include "typedefs.h"
 
+#define FILESYS_CFG_CACHE_SIZE 16
+#define FILESYS_CFG_LOOKAHEAD_SIZE 16
+
+// Prevent the use of MALLOC (BAD) by LFS!!!
+static uint8_t prog_buffer[FILESYS_CFG_CACHE_SIZE];
+static uint8_t read_buffer[FILESYS_CFG_CACHE_SIZE];
+static uint8_t cache_buffer[FILESYS_CFG_CACHE_SIZE];
+static uint8_t lookahead_buffer[FILESYS_CFG_LOOKAHEAD_SIZE];
+
 // configuration of the filesystem is provided by this struct
 extern const struct lfs_config cfg;
 
