@@ -1,9 +1,10 @@
 #include "mram.h"
+#include "filesys/filesys.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
-#define MOCK_MRAM_SIZE 4096
+#define MOCK_MRAM_SIZE FILESYS_BLOCK_SIZE *FILESYS_BLOCK_COUNT
 
 static uint8_t mock_mram[MOCK_MRAM_SIZE];
 static bool write_enabled = false;

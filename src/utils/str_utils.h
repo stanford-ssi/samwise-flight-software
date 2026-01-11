@@ -69,12 +69,12 @@ inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
  * @return A pointer to the string representation of the value. This must be
  * at least 3 bytes long to hold the two characters and the null terminator.
  */
-inline static void fileToString(FILESYS_BUFFERED_FNAME_T value, char *buffer)
+inline static void fileToString(FILESYS_BUFFERED_FNAME_T value,
+                                FILESYS_BUFFERED_FNAME_STR_T buffer)
 {
-    static_assert(
-        sizeof(FILESYS_BUFFERED_FNAME_T) == 2,
-        "FILESYS_BUFFERED_FNAME_T must be 2 bytes to use this function.");
-    buffer[0] = (value >> 8) & 0xFF;
-    buffer[1] = value & 0xFF;
-    buffer[2] = '\0';
+    for (size_t i = 0; i < sizeof(FILESYS_BUFFERED_FNAME_T); i++)
+        buffer[i] =
+            (value >> (8 * (sizeof(FILESYS_BUFFERED_FNAME_T) - 1 - i))) & 0xFF;
+
+    buffer[sizeof(FILESYS_BUFFERED_FNAME_T)] = '\0';
 }

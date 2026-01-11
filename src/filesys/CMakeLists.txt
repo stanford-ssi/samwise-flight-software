@@ -1,5 +1,5 @@
 # Create library (same for both test and embedded builds)
-add_library(filesys filesys.c)
+add_library(filesys lfs_mram_wrapper.c filesys.c)
 # Link libraries
 target_link_libraries(filesys PUBLIC
   # tests use test_mocks instead of common/slate/packet/error/pico_stdlib/hardware_spi/rfm9x/neopixel

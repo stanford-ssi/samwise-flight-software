@@ -96,6 +96,15 @@ void ftp_task_dispatch(slate_t *slate);
 
 /* COMMANDS */
 /**
+ * Processes an FTP_REFORMAT command. Formats the filesystem on MRAM. This is a
+ * destructive operation that erases all data on the filesystem.
+ *
+ * @param slate Pointer to the slate structure.
+ * TODO: Add confirmation step?
+ */
+void ftp_process_reformat_command(slate_t *slate);
+
+/**
  * Processes an FTP_START_FILE_WRITE command. Initializes file write state.
  *
  * @param slate Pointer to the slate structure.

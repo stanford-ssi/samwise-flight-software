@@ -25,6 +25,7 @@ typedef enum
     MANUAL_STATE_OVERRIDE,
 
     /* FTP Commands */
+    FTP_REFORMAT,
     FTP_START_FILE_WRITE,
     FTP_WRITE_TO_FILE,
     FTP_CANCEL_FILE_WRITE,
@@ -52,14 +53,14 @@ typedef struct
 
 typedef struct
 {
-    FILESYS_BUFFERED_FNAME_T fname;
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
     FILESYS_BUFFERED_FILE_LEN_T file_len;
     FILESYS_BUFFERED_FILE_CRC_T file_crc;
 } FTP_START_FILE_WRITE_DATA;
 
 typedef struct
 {
-    FILESYS_BUFFERED_FNAME_T fname;
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
     FTP_PACKET_SEQUENCE_T packet_id;
     PACKET_SIZE_T data_len; // Length of the data payload - might be less than
                             // FTP_DATA_PAYLOAD_SIZE for last packet
@@ -68,7 +69,7 @@ typedef struct
 
 typedef struct
 {
-    FILESYS_BUFFERED_FNAME_T fname;
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
 } FTP_CANCEL_FILE_WRITE_DATA;
 
 void dispatch_command(slate_t *slate, packet_t *packet);

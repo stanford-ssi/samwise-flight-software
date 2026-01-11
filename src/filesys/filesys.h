@@ -11,6 +11,9 @@
  * directories are not supported. Files must be uniquely named (2^16 files max).
  */
 
+#pragma once
+
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -25,6 +28,9 @@
 #include "str_utils.h"
 #include "typedefs.h"
 
+// configuration of the filesystem is provided by this struct
+extern const struct lfs_config cfg;
+
 /**
  * Mounts the filesystem & initializes the overall filesys system.
  * This MUST be run before any other filesystem operations.
@@ -32,6 +38,15 @@
  * @return A negative error code on failure.
  */
 lfs_ssize_t filesys_initialize(slate_t *slate);
+
+/**
+ * Formats the filesystem on MRAM.
+ * This is a destructive operation that erases all data on the filesystem.
+ *
+ * @param slate Pointer to the slate structure.
+ * @return A negative error code on failure.
+ */
+lfs_ssize_t filesys_reformat(slate_t *slate);
 
 /**
  * Initializes writing to a file in the filesystem.
@@ -55,7 +70,8 @@ lfs_ssize_t filesys_initialize(slate_t *slate);
  *
  * 0 on success.
  */
-int8_t filesys_start_file_write(slate_t *slate, FILESYS_BUFFERED_FNAME_T fname,
+int8_t filesys_start_file_write(slate_t *slate,
+                                FILESYS_BUFFERED_FNAME_STR_T fname_str,
                                 FILESYS_BUFFERED_FILE_LEN_T file_size,
                                 FILESYS_BUFFERED_FILE_CRC_T file_crc,
                                 lfs_ssize_t *blocksLeftAfterWrite);

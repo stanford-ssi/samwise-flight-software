@@ -88,18 +88,30 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             break;
         }
         /* FTP Commands */
+        case FTP_REFORMAT:
+        {
+            LOG_INFO("FTP_REFORMAT command received.");
+
+            // Add command into queue.
+            if (!queue_try_add(&slate->ftp_format_filesystem_data, NULL))
+                LOG_ERROR("Failed to enqueue FTP_FORMAT_FILESYSTEM command.");
+
+            break;
+        }
         case FTP_START_FILE_WRITE:
         {
             LOG_INFO("FTP_START_FILE_WRITE command received.");
 
             if (slate->filesys_is_writing_file)
             {
+                FILESYS_BUFFERED_FNAME_STR_T fname_str;
+                fileToString(command_payload[0] << 8 | command_payload[1],
+                             fname_str);
+
                 LOG_ERROR("A file is already being written. Cannot "
                           "start a new file write. Existing fname = %s, "
-                          "new fname = %u",
-                          slate->filesys_buffered_fname,
-                          ((unsigned char)command_payload[0] << 8) |
-                              (unsigned char)command_payload[1]);
+                          "new fname = %s",
+                          slate->filesys_buffered_fname_str, fname_str);
                 break;
             }
 
@@ -114,8 +126,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             FTP_START_FILE_WRITE_DATA command_data;
 
-            memcpy(&command_data.fname, command_payload,
-                   sizeof(FILESYS_BUFFERED_FNAME_T));
+            FILESYS_BUFFERED_FNAME_T fname;
+            memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
+            fileToString(fname, command_data.fname_str);
 
             memcpy(&command_data.file_len,
                    command_payload + sizeof(FILESYS_BUFFERED_FNAME_T),
@@ -131,7 +144,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 LOG_ERROR("Failed to enqueue FTP_START_FILE_WRITE_DATA "
                           "command for fname %s",
-                          command_data.fname);
+                          command_data.fname_str);
             }
 
             break;
@@ -153,8 +166,20 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                 break;
             }
 
-            memcpy(&command_data.fname, command_payload,
-                   sizeof(FILESYS_BUFFERED_FNAME_T));
+            FILESYS_BUFFERED_FNAME_T fname;
+            memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
+
+            fileToString(fname, command_data.fname_str);
+            if (strcmp(command_data.fname_str,
+                       slate->filesys_buffered_fname_str) != 0)
+            {
+                LOG_ERROR("FTP_WRITE_TO_FILE command fname %s does not "
+                          "match current writing fname %s. Ignoring write "
+                          "command.",
+                          command_data.fname_str,
+                          slate->filesys_buffered_fname_str);
+                break;
+            }
 
             memcpy(&command_data.packet_id,
                    command_payload + sizeof(FILESYS_BUFFERED_FNAME_T),
@@ -171,7 +196,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 LOG_ERROR("Failed to enqueue FTP_WRITE_TO_FILE_DATA command "
                           "for fname %s, packet_id %u",
-                          command_data.fname, command_data.packet_id);
+                          command_data.fname_str, command_data.packet_id);
             }
 
             break;
@@ -189,15 +214,18 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             FTP_CANCEL_FILE_WRITE_DATA command_data;
 
-            memcpy(&command_data.fname, command_payload,
-                   sizeof(FILESYS_BUFFERED_FNAME_T));
+            FILESYS_BUFFERED_FNAME_T fname;
+            memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
+            fileToString(fname, command_data.fname_str);
 
-            if (command_data.fname != slate->filesys_buffered_fname)
+            if (strcmp(command_data.fname_str,
+                       slate->filesys_buffered_fname_str) != 0)
             {
                 LOG_ERROR("FTP_CANCEL_FILE_WRITE command fname %s does not "
                           "match current writing fname %s. Ignoring cancel "
                           "command.",
-                          command_data.fname, slate->filesys_buffered_fname);
+                          command_data.fname_str,
+                          slate->filesys_buffered_fname_str);
                 break;
             }
 
@@ -206,7 +234,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 LOG_ERROR("Failed to enqueue FTP_CANCEL_FILE_WRITE_DATA "
                           "command for fname %s",
-                          command_data.fname);
+                          command_data.fname_str);
             }
 
             break;

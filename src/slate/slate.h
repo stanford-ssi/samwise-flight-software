@@ -144,7 +144,7 @@ typedef struct samwise_slate
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
     uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
-    FILESYS_BUFFERED_FNAME_T filesys_buffered_fname;
+    FILESYS_BUFFERED_FNAME_STR_T filesys_buffered_fname_str;
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
 

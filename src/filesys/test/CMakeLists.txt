@@ -5,5 +5,6 @@ samwise_add_test(
 
 samwise_add_test(
   NAME filesys_test
-  SOURCES filesys_test.c
+  SOURCES filesys_test.c ${PROJECT_SOURCE_DIR}/src/filesys/filesys.c
+  LIBRARIES filesys
 )
