@@ -6,34 +6,6 @@
 #define MIN_WATCHDOG_INTERVAL_MS 200
 
 /**
- * Command task configuration
- */
-#define COMMAND_MNEMONIC_SIZE 1 // number of bytes used to identify command
-
-/**
- * File transfer protocol configuration
- */
-// The number of packets to require before moving on to the next n packets
-#define FTP_NUM_PACKETS_PER_CYCLE 5
-
-// Note: FTP_NUM_PACKETS_PER_CYCLE must be <= number of bits in
-// FTP_PACKET_TRACKER_T
-typedef uint8_t FTP_PACKET_TRACKER_T;
-
-// Automatically calculated size of maximum data payload in bytes per packet
-#define FTP_DATA_PAYLOAD_SIZE                                                  \
-    (PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE -                                \
-     sizeof(FILESYS_BUFFERED_FNAME_T) - sizeof(FTP_PACKET_SEQUENCE_T))
-
-// Maximum length of a file, as determined by the number of bytes for sequence
-// id and the maximum data payload size
-#define FTP_MAX_FILE_LEN                                                       \
-    (1 << sizeof(FTP_PACKET_SEQUENCE_T)) * FTP_DATA_PAYLOAD_SIZE
-
-// Type used to represent packet sequence IDs
-typedef uint16_t FTP_PACKET_SEQUENCE_T;
-
-/**
  * Filesystem configuration
  */
 // Size of buffer used for filesystem writes

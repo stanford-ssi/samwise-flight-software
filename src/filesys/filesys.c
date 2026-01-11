@@ -32,7 +32,7 @@ const struct lfs_config cfg = {
     .name_max = sizeof(FILESYS_BUFFERED_FNAME_STR_T),
 };
 
-lfs_ssize_t filesys_initialize(slate_t *slate)
+int8_t filesys_initialize(slate_t *slate)
 {
     // mount the filesystem
     mram_write_enable();
@@ -41,17 +41,17 @@ lfs_ssize_t filesys_initialize(slate_t *slate)
     if (err < 0)
     {
         LOG_ERROR("[filesys] Failed to mount filesystem: %d", err);
-        return err;
+        return FILESYS_ERR_MOUNT;
     }
 
     slate->filesys_is_writing_file = false;
     filesys_clear_buffer(slate);
 
     LOG_INFO("[filesys] Filesystem mounted successfully");
-    return 0;
+    return FILESYS_OK;
 }
 
-lfs_ssize_t filesys_reformat(slate_t *slate)
+int8_t filesys_reformat(slate_t *slate)
 {
     mram_write_enable();
     int err = lfs_format(&slate->lfs, &cfg);
@@ -59,16 +59,16 @@ lfs_ssize_t filesys_reformat(slate_t *slate)
     if (err < 0)
     {
         LOG_ERROR("[filesys] Failed to format filesystem: %d", err);
-        return err;
+        return FILESYS_ERR_REFORMAT;
     }
 
     LOG_INFO("[filesys] Filesystem formatted successfully");
 
-    lfs_ssize_t errInit = filesys_initialize(slate); // Re-mount after format
+    int8_t errInit = filesys_initialize(slate); // Re-mount after format
     if (errInit < 0)
         return errInit;
 
-    return 0;
+    return FILESYS_OK;
 }
 
 int8_t filesys_start_file_write(slate_t *slate,
@@ -82,7 +82,7 @@ int8_t filesys_start_file_write(slate_t *slate,
         LOG_ERROR("[filesys] Cannot start new file write for %s; a file is "
                   "already being written: %s",
                   fname_str, slate->filesys_buffered_fname_str);
-        return -1;
+        return FILESYS_ERR_FILE_ALREADY_WRITING;
     }
 
     if (slate->filesys_buffer_is_dirty)
@@ -98,7 +98,7 @@ int8_t filesys_start_file_write(slate_t *slate,
     if (fs_size < 0)
     {
         LOG_ERROR("[filesys] Failed to get filesystem size: Error %d", fs_size);
-        return -2;
+        return FILESYS_ERR_GET_FS_SIZE;
     }
 
     // Get number of blocks needed, which is ceil(file_size / block_size)
@@ -114,7 +114,7 @@ int8_t filesys_start_file_write(slate_t *slate,
             "File size: %u bytes, Blocks needed: %d, FS size: %u blocks, "
             "Block count: %u blocks",
             file_size, numBlocksNeeded, fs_size, cfg.block_count);
-        return -3;
+        return FILESYS_ERR_NOT_ENOUGH_SPACE;
     }
 
     // Open file for appending
@@ -132,7 +132,7 @@ int8_t filesys_start_file_write(slate_t *slate,
     {
         LOG_ERROR("[filesys] Failed to open file %s for writing: %d",
                   slate->filesys_buffered_fname_str, err);
-        return -4;
+        return FILESYS_ERR_OPEN_FILE;
     }
 
     // Add CRC as attribute to open file - type 0
@@ -143,7 +143,7 @@ int8_t filesys_start_file_write(slate_t *slate,
         LOG_ERROR("[filesys] Failed to set CRC attribute for file %s: %d",
                   slate->filesys_buffered_fname_str, err);
         lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
-        return -5;
+        return FILESYS_ERR_SET_CRC_ATTR;
     }
 
     slate->filesys_is_writing_file = true;
@@ -153,7 +153,7 @@ int8_t filesys_start_file_write(slate_t *slate,
 
     LOG_INFO("[filesys] Started file write for file: %s",
              slate->filesys_buffered_fname_str);
-    return 0;
+    return FILESYS_OK;
 }
 
 int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
@@ -164,7 +164,7 @@ int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
     {
         LOG_ERROR("[filesys] Write exceeds buffer size. Offset: %u, Bytes: %u",
                   offset, n_bytes);
-        return -1;
+        return FILESYS_ERR_EXCEED_BUFFER;
     }
 
     if (!slate->filesys_is_writing_file)
@@ -172,7 +172,7 @@ int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
         LOG_ERROR(
             "[filesys] Cannot write data to buffer; no file is currently being "
             "written.");
-        return -2;
+        return FILESYS_ERR_NO_FILE_WRITING;
     }
 
     slate->filesys_buffer_is_dirty = true;
@@ -181,24 +181,24 @@ int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
     LOG_INFO("[filesys] Wrote %u bytes to buffer at offset %u", n_bytes,
              offset);
 
-    return 0;
+    return FILESYS_OK;
 }
 
-lfs_ssize_t filesys_write_buffer_to_mram(slate_t *slate,
-                                         FILESYS_BUFFER_SIZE_T n_bytes)
+int8_t filesys_write_buffer_to_mram(slate_t *slate,
+                                    FILESYS_BUFFER_SIZE_T n_bytes)
 {
     if (!slate->filesys_is_writing_file)
     {
         LOG_ERROR(
             "[filesys] Cannot write buffer to MRAM; no file is currently being "
             "written.");
-        return -1;
+        return FILESYS_ERR_NO_FILE_WRITING;
     }
 
     if (!slate->filesys_buffer_is_dirty)
     {
         LOG_INFO("[filesys] Buffer is clean; no need to write to MRAM.");
-        return 0;
+        return FILESYS_OK;
     }
 
     // Write buffer to file
@@ -209,8 +209,8 @@ lfs_ssize_t filesys_write_buffer_to_mram(slate_t *slate,
     {
         LOG_ERROR("[filesys] Failed to write buffer to file %s: %d",
                   slate->filesys_buffered_fname_str, bytes_written);
-        lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
-        return bytes_written;
+        filesys_cancel_file_write(slate);
+        return FILESYS_ERR_WRITE_MRAM;
     }
 
     filesys_clear_buffer(slate);
@@ -245,7 +245,7 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
             LOG_ERROR("[filesys] Failed to read file at %d bytes left for CRC "
                       "computation: Error code %d",
                       bytes_remaining, bytes_read);
-            *error_code = -1;
+            *error_code = FILESYS_ERR_CRC_CHECK;
             return crc; // We will return the crc so far, but error_code
                         // indicates failure
         }
@@ -254,7 +254,7 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
         bytes_remaining -= bytes_read;
     }
 
-    *error_code = 0;
+    *error_code = FILESYS_OK;
     return ~crc;
 }
 
@@ -264,7 +264,7 @@ int8_t filesys_is_crc_correct(slate_t *slate)
     {
         LOG_ERROR(
             "[filesys] Cannot check CRC; no file is currently being written.");
-        return -2;
+        return FILESYS_ERR_NO_FILE_WRITING;
     }
 
     uint8_t error_code = 0;
@@ -274,7 +274,7 @@ int8_t filesys_is_crc_correct(slate_t *slate)
     {
         LOG_INFO("[filesys] CRC check passed for file %s",
                  slate->filesys_buffered_fname_str);
-        return 0;
+        return FILESYS_OK;
     }
     else
     {
@@ -282,7 +282,7 @@ int8_t filesys_is_crc_correct(slate_t *slate)
                   "Expected: %u",
                   slate->filesys_buffered_fname_str, computed_crc,
                   slate->filesys_buffered_file_crc);
-        return -1;
+        return FILESYS_ERR_CRC_MISMATCH;
     }
 }
 
@@ -293,23 +293,14 @@ int8_t filesys_complete_file_write(slate_t *slate)
         LOG_ERROR(
             "[filesys] Cannot complete file write; buffer is dirty. Please "
             "write or clear the buffer before completing.");
-        return -1;
+        return FILESYS_ERR_BUFFER_DIRTY;
     }
 
     // Check CRC here
     int8_t crc_check = filesys_is_crc_correct(slate);
-    if (crc_check != 0 && crc_check != -1)
-    {
-        LOG_ERROR("[filesys] Error during CRC check for file %s: %d",
-                  slate->filesys_buffered_fname_str, crc_check);
-        return -3;
-    }
-    else if (crc_check == -1)
-    {
-        LOG_ERROR("[filesys] CRC mismatch for file %s during completion.",
-                  slate->filesys_buffered_fname_str);
-        return -4;
-    }
+    if (crc_check == FILESYS_ERR_CRC_CHECK ||
+        crc_check == FILESYS_ERR_CRC_MISMATCH)
+        return crc_check;
 
     LOG_INFO("[filesys] CRC matches for file %s!",
              slate->filesys_buffered_fname_str);
@@ -320,14 +311,14 @@ int8_t filesys_complete_file_write(slate_t *slate)
     {
         LOG_ERROR("[filesys] Failed to close file %s: %d",
                   slate->filesys_buffered_fname_str, err);
-        return -2;
+        return FILESYS_ERR_CLOSE_FILE;
     }
 
     slate->filesys_is_writing_file = false;
     LOG_INFO("[filesys] Completed file write for file: %s",
              slate->filesys_buffered_fname_str);
 
-    return 0;
+    return FILESYS_OK;
 }
 
 void filesys_clear_buffer(slate_t *slate)
@@ -346,7 +337,7 @@ int8_t filesys_cancel_file_write(slate_t *slate)
         LOG_ERROR(
             "[filesys] Cannot cancel file write; no file is currently being "
             "written.");
-        return -1;
+        return FILESYS_ERR_NO_FILE_WRITING;
     }
 
     // Close the file
@@ -355,7 +346,7 @@ int8_t filesys_cancel_file_write(slate_t *slate)
     {
         LOG_ERROR("[filesys] Failed to close file %s during cancel: %d",
                   slate->filesys_buffered_fname_str, err);
-        return -2;
+        return FILESYS_ERR_CLOSE_FILE;
     }
 
     // Delete the file
@@ -364,7 +355,7 @@ int8_t filesys_cancel_file_write(slate_t *slate)
     {
         LOG_ERROR("[filesys] Failed to delete file %s during cancel: %d",
                   slate->filesys_buffered_fname_str, err);
-        return -3;
+        return FILESYS_ERR_DELETE_FILE;
     }
 
     filesys_clear_buffer(slate);
@@ -373,5 +364,5 @@ int8_t filesys_cancel_file_write(slate_t *slate)
     LOG_INFO("[filesys] Cancelled file write and deleted file: %s",
              slate->filesys_buffered_fname_str);
 
-    return 0;
+    return FILESYS_OK;
 }
