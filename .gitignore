@@ -6,3 +6,5 @@
 .vscode
 build*
 .idea/
+!build_debug.sh
+!build_tests.sh
