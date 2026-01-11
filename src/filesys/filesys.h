@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "crc32.h"
+
 #include "lfs.h"
 #include "lfs_mram_wrapper.h"
 #include "logger.h"
