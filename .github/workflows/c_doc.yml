@@ -1,7 +1,6 @@
 name: Claude Documentation
 
 on:
-# Can also adjust on conditions to follow comment request for phrase "@c_docs"
   pull_request:
     branches:
       - main
@@ -11,45 +10,91 @@ on:
       - reopened
       - ready_for_review
 
+  # Uncomment below to trigger via comment instead of automatic runs
+  # issue_comment:
+  #   types: [created]
+
+concurrency:
+  group: claude-docs-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+  
 jobs:
   claude:
     runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+    # Only run for specific users
+    if: |
+      (
+        github.event_name == 'pull_request' 
+      ) && (
+        github.event.pull_request.draft == false
+      ) && (
+        github.actor == 'devYaoYH' ||
+        github.actor == 'carter-cochran'
+      )
+    # Uncomment condition below if using comment trigger instead
+    # if: |
+    #   github.event_name == 'issue_comment' && 
+    #   github.event.issue.pull_request &&
+    #   contains(github.event.comment.body, '@c_docs') &&
+    #   contains(fromJSON('["authorized-user1", "authorized-user2", "authorized-user3"]'), github.actor)
+    
     permissions:
       contents: read
-      pull-requests: write
-      issues: write
+      pull-requests: read
+      issues: read
       id-token: write
       actions: read
+
     steps:
-      # ... other steps to deploy the code
       - uses: actions/checkout@v4
-        with: { fetch-depth: 5 }
+        with: 
+          fetch-depth: 5
+      
+      # Uncomment step below if using comment trigger
+      # - name: Get PR details from comment
+      #   if: github.event_name == 'issue_comment'
+      #   uses: actions/github-script@v7
+      #   id: get-pr
+      #   with:
+      #     script: |
+      #       const pr = await github.rest.pulls.get({
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         pull_number: context.issue.number
+      #       });
+      #       return pr.data;
 
       - name: Run Claude Docs
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          trigger_phrase: "@c_docs"     # distinct from @claude
+          
+          # Remove trigger_phrase for automatic runs
+          # trigger_phrase: "@c_docs"  # Only needed for comment-triggered runs
+          
           additional_permissions: |
             actions: read
-
+          
           # Optional: specify model (uncomment to pin)
-          # model: "claude-4-5-haiku-latest"
-
-          # Keep the instructions static—remove undefined interpolation
+          # model: "claude-sonnet-4-5-20250929"
+          # model: "claude-opus-4-20250514"
+          
           custom_instructions: |
             Tasks:
-            1) 
-              - Inspect the PR's diff to detect all user-visible changes (APIs, CLI flags, behavior, etc.).
-              - **Goal: Generate Brief Update Documentation.** For every file or module affected by the PR.
-                - If a relevant documentation file exists, propose an update to reflect the changes.
-                - If new user-facing code is added without existing documentation, propose the creation of a **new, complete README equivalent paragraph/section** detailing its purpose, usage, and examples.
-              - Tone: factual, concise.
-
-            2) 
-              - write a faux-CHANGELOG.md per "Keep a Changelog" (Added/Changed/Fixed/etc.) in the comments in terse bullets.
-              - Summarize PR's user-facing changes in terse bullets (1–2 lines), including the PR number in parentheses when available, and @contributors.
-              - If no user-visible changes, add a note under "Changed" or skip.
-
+            
+            1) Documentation Updates
+               - Inspect the PR's diff to detect all user-visible changes (APIs, CLI flags, behavior, etc.).
+               - **Goal: Generate Brief Update Documentation.** For every file or module affected by the PR:
+                 - If a relevant documentation file exists, propose an update to reflect the changes.
+                 - If new user-facing code is added without existing documentation, propose the creation of a **new, complete README equivalent paragraph/section** detailing its purpose, usage, and examples.
+               - Tone: factual, concise.
+            
+            2) Changelog Generation
+               - Write a faux-CHANGELOG.md per "Keep a Changelog" format (Added/Changed/Fixed/Deprecated/Removed/Security) in terse bullets.
+               - Summarize PR's user-facing changes in terse bullets (1–2 lines), including the PR number in parentheses when available, and @contributors.
+               - If no user-visible changes, add a note under "Changed" or skip that section.
+            
             Output Policy (Strict):
-            - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence.
+            - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence with the proposed documentation changes.
