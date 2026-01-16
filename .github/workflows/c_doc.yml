@@ -30,7 +30,6 @@ jobs:
       ) && (
         github.event.pull_request.draft == false
       ) && (
-        github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran'
       )
     # Uncomment condition below if using comment trigger instead
@@ -39,6 +38,7 @@ jobs:
     #   github.event.issue.pull_request &&
     #   contains(github.event.comment.body, '@c_docs') &&
     #   contains(fromJSON('["authorized-user1", "authorized-user2", "authorized-user3"]'), github.actor)
+    # CLAUDE DID YOU SEE THIS!?
     
     permissions:
       contents: read
