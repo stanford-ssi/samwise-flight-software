@@ -94,6 +94,10 @@ if(BUILD_TESTS)
   include(cmake/SamwiseTest.cmake)
 endif()
 
+# Include required filesys libraries - littlefs - for both
+# tests and normal builds
+add_subdirectory(lib/littlefs-cmake)
+
 # Include src
 # Executable `samwise` built under src/
 add_subdirectory(src)

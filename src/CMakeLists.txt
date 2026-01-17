@@ -20,6 +20,7 @@ add_subdirectory(scheduler)
 add_subdirectory(states)
 add_subdirectory(tasks)
 add_subdirectory(utils)
+add_subdirectory(filesys)
 
 # Embedded-only: create the main executable
 if(NOT BUILD_TESTS)
@@ -37,7 +38,7 @@ if(NOT BUILD_TESTS)
 
   # Samwise
   target_link_libraries(samwise PRIVATE scheduler error rfm9x slate init logger
-    flash neopixel)
+    flash neopixel filesys)
 
   pico_add_extra_outputs(samwise)
 endif()

@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
+#include "crc32.h"
 #include "macros.h"
 #include "payload_uart.h"
 #include "pins.h"
@@ -56,29 +57,6 @@ static void uart_rx_callback()
         queue_try_add(&slate_for_irq->rpi_uart_queue, &ch);
         slate_for_irq->rpi_uart_last_byte_receive_time = get_absolute_time();
     }
-}
-
-// From https://gist.github.com/xobs/91a84d29152161e973d717b9be84c4d0
-// (not using fast version because we want small binary size)
-unsigned int crc32(const uint8_t *message, uint16_t len)
-{
-    size_t i;
-    unsigned int byte, crc, mask;
-
-    i = 0;
-    crc = 0xFFFFFFFF;
-    while (i < len)
-    {
-        byte = message[i]; // Get next byte.
-        crc = crc ^ byte;
-        for (int j = 0; j < 8; j++)
-        { // Do eight times.
-            mask = -(crc & 1);
-            crc = (crc >> 1) ^ (0xEDB88320 & mask);
-        }
-        i = i + 1;
-    }
-    return ~crc;
 }
 
 /**

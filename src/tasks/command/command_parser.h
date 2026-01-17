@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "config.h"
 #include "macros.h"
 #include "packet.h"
 #include "payload_uart.h"
@@ -21,12 +22,17 @@ typedef enum
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
-    MANUAL_STATE_OVERRIDE
+    MANUAL_STATE_OVERRIDE,
+
+    /* FTP Commands */
+    FTP_REFORMAT,
+    FTP_START_FILE_WRITE,
+    FTP_WRITE_TO_FILE,
+    FTP_CANCEL_FILE_WRITE,
+    FTP_FORMAT_FILESYSTEM,
+
     // add more commands here as needed
 } Command;
-
-// Packet configuration
-#define COMMAND_MNEMONIC_SIZE 1 // number of bytes used to identify command
 
 /**
  * Command data structures
@@ -40,10 +46,30 @@ typedef enum
 
 typedef struct
 {
-    char serialized_command[sizeof(((packet_t *)0)->data) -
-                            COMMAND_MNEMONIC_SIZE];
+    char serialized_command[PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE];
     uint16_t seq_num;     // Sequence number for command execution
     Command command_type; // Command type
 } PAYLOAD_COMMAND_DATA;
+
+typedef struct
+{
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
+    FILESYS_BUFFERED_FILE_LEN_T file_len;
+    FILESYS_BUFFERED_FILE_CRC_T file_crc;
+} FTP_START_FILE_WRITE_DATA;
+
+typedef struct
+{
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
+    FTP_PACKET_SEQUENCE_T packet_id;
+    PACKET_SIZE_T data_len; // Length of the data payload - might be less than
+                            // FTP_DATA_PAYLOAD_SIZE for last packet
+    uint8_t data[FTP_DATA_PAYLOAD_SIZE];
+} FTP_WRITE_TO_FILE_DATA;
+
+typedef struct
+{
+    FILESYS_BUFFERED_FNAME_STR_T fname_str;
+} FTP_CANCEL_FILE_WRITE_DATA;
 
 void dispatch_command(slate_t *slate, packet_t *packet);

@@ -9,6 +9,7 @@
 #include "blink_task.h"
 #include "command_task.h"
 #include "diagnostics_task.h"
+#include "ftp_task.h"
 #include "payload_task.h"
 #include "print_task.h"
 #include "radio_task.h"

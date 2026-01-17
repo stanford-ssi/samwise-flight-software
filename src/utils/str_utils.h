@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.h"
 #include "logger.h"
 #include <stdarg.h>
 #include <stdio.h>
@@ -58,4 +59,22 @@ inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
     if (memccpy(dst, src, '\0', max_size) == NULL)
         dst[max_size - 1] =
             '\0'; /* truncation occured, null-terminate manually. */
+}
+
+/**
+ * Converts a uint16_t to a string, where each byte is represented
+ * as a character in the string.
+ *
+ * @param value The filename value to convert.
+ * @return A pointer to the string representation of the value. This must be
+ * at least 3 bytes long to hold the two characters and the null terminator.
+ */
+inline static void fileToString(FILESYS_BUFFERED_FNAME_T value,
+                                FILESYS_BUFFERED_FNAME_STR_T buffer)
+{
+    for (size_t i = 0; i < sizeof(FILESYS_BUFFERED_FNAME_T); i++)
+        buffer[i] =
+            (value >> (8 * (sizeof(FILESYS_BUFFERED_FNAME_T) - 1 - i))) & 0xFF;
+
+    buffer[sizeof(FILESYS_BUFFERED_FNAME_T)] = '\0';
 }

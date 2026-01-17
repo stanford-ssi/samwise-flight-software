@@ -17,6 +17,7 @@ Each task has a unique neopixel LED color that lights up during task execution:
 | Payload | Purple | (128, 0, 128) |
 | Burn Wire | Bright White | (255, 255, 255) |
 | ADCS | Lime Green | (128, 255, 0) |
+| FTP | Hot Pink | (255,105,180) |
 
 ## Adding a New Task
 
@@ -135,8 +136,8 @@ When selecting an LED color for your task:
 - Consider brightness - very bright colors may be hard to distinguish
 
 ### Example Colors for New Tasks:
-- Lime Green: (128, 255, 0)
-- Pink: (255, 20, 147)
+- ~~Lime Green: (128, 255, 0)~~
+- ~~Pink: (255, 20, 147)~~
 - Turquoise: (64, 224, 208)
 - Gold: (255, 215, 0)
 - Indigo: (75, 0, 130)

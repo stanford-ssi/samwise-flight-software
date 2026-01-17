@@ -4,4 +4,7 @@ target_link_libraries(slate PUBLIC pico_stdlib scheduler onboard_led watchdog rf
 
 target_include_directories(slate PUBLIC
   "${PROJECT_SOURCE_DIR}/src/slate"
+  "${PROJECT_SOURCE_DIR}/lib/littlefs-cmake"
 )
+
+target_link_libraries(slate PRIVATE littlefs)
