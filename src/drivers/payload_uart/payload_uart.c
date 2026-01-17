@@ -284,6 +284,7 @@ bool payload_uart_init(slate_t *slate)
  * @param len           Number of bytes in the packet
  * @param timeout_us    Time microseconds that the command will try to write
  * until doing a timeout
+ * @return              Boolean of execution status
  */
 bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
 {
@@ -315,6 +316,7 @@ bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
  * @param len       Number of bytes in the packet
  * @param seq_num   Sequence number (useful for sending multiple packets, ignore
  * otherwise)
+ * @return          Return code of the execution
  */
 payload_write_error_code payload_uart_write_packet(slate_t *slate,
                                                    const uint8_t *packet,
