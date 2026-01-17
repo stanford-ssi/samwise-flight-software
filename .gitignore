@@ -5,3 +5,5 @@
 **/env
 .vscode
 build*
+!build_debug.sh
+!build_tests.sh
