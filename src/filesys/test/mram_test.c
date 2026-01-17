@@ -7,6 +7,7 @@
 #include "logger.h"
 #include "mram.h"
 #include "pico/stdlib.h"
+#include <string.h>
 
 void read_write_helper(char *str, int length)
 {
@@ -40,7 +41,7 @@ void test_mram_write_disable_enable(void)
     mram_read(test_addr, buffer, 26);
     /* When writes are disabled the write may or may not succeed depending on
        the MRAM mock/implementation; assert that it did NOT write the data */
-    ASSERT(memcmp(buffer, "This should not be written", 26) != 0);
+    ASSERT(memcmp(buffer, "This should not be written", 26UL) != 0);
     LOG_DEBUG("Testing MRAM write enable...\n");
     mram_write_enable();
     /* Now write the expected data then read it back into a local buffer and

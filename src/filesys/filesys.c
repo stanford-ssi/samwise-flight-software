@@ -1,4 +1,11 @@
+/**
+ * @author Ayush Garg
+ * @date 2026-01-15
+ * @brief Implementation file for the filesystem module.
+ */
+
 #include "filesys.h"
+#include <string.h>
 
 const struct lfs_config cfg = {
     // block device operations
@@ -38,7 +45,7 @@ lfs_ssize_t filesys_initialize(slate_t *slate)
     }
 
     slate->filesys_is_writing_file = false;
-    slate->filesys_buffer_is_dirty = false;
+    filesys_clear_buffer(slate);
 
     LOG_INFO("[filesys] Filesystem mounted successfully");
     return 0;
@@ -56,7 +63,10 @@ lfs_ssize_t filesys_reformat(slate_t *slate)
     }
 
     LOG_INFO("[filesys] Filesystem formatted successfully");
-    filesys_initialize(slate); // Re-mount after format
+
+    lfs_ssize_t errInit = filesys_initialize(slate); // Re-mount after format
+    if (errInit < 0)
+        return errInit;
 
     return 0;
 }
@@ -288,7 +298,7 @@ int8_t filesys_complete_file_write(slate_t *slate)
 
     // Check CRC here
     int8_t crc_check = filesys_is_crc_correct(slate);
-    if (crc_check != 0 && crc_check != 1)
+    if (crc_check != 0 && crc_check != -1)
     {
         LOG_ERROR("[filesys] Error during CRC check for file %s: %d",
                   slate->filesys_buffered_fname_str, crc_check);
@@ -323,6 +333,9 @@ int8_t filesys_complete_file_write(slate_t *slate)
 void filesys_clear_buffer(slate_t *slate)
 {
     slate->filesys_buffer_is_dirty = false;
+    for (FILESYS_BUFFER_SIZE_T i = 0; i < FILESYS_BUFFER_SIZE; i++)
+        slate->filesys_buffer[i] = 0; // Clear buffer contents
+
     LOG_INFO("[filesys] Marked filesystem buffer as clean.");
 }
 
