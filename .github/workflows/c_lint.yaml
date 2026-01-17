@@ -32,7 +32,7 @@ jobs:
           format-review: true
           passive-reviews: true
           # do not format external lib folder and board header files
-          ignore: 'lib|boards'
+          ignore: 'lib|boards|payload/radio'
       - name: Fail if there are linter errors
         if: ${{steps.linter.outputs.clang-format-checks-failed > 0}}
         run: |
