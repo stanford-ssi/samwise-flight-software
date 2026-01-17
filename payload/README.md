@@ -2,6 +2,8 @@
 
 This repository contains the software for the Raspberry Pi 4B-based imaging payload for the **SSI Samwise 2U Cubesat Mission**. The payload is responsible for managing the camera subsystem and the 2400MHz radio communication.
 
+Setup link: https://docs.google.com/document/d/199YqVAPGcxWh0DG2zB8p-KAbreFfaThLlTS_5SFfKP8/edit?tab=t.0
+
 ## Project Overview
 
 The Samwise Payload is designed for a 2U Cubesat. Its primary objectives are:
