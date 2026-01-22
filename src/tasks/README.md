@@ -17,6 +17,7 @@ Each task has a unique neopixel LED color that lights up during task execution:
 | Payload | Purple | (128, 0, 128) |
 | Burn Wire | Bright White | (255, 255, 255) |
 | ADCS | Lime Green | (128, 255, 0) |
+| Filesys | Pink | (255, 20, 147) |
 
 ## Adding a New Task
 

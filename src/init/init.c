@@ -95,7 +95,11 @@ bool init(slate_t *slate)
      */
     ASSERT(init_gpio_pins());
 
+    LOG_DEBUG("Initializing drivers");
+
     ASSERT(init_drivers(slate));
+
+    LOG_DEBUG("Drivers initialized...");
 
     /*
      * Initialize the state machine

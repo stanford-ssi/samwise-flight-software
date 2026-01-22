@@ -14,10 +14,10 @@ sched_state_t running_state = {
     .task_list = {&print_task, &watchdog_task, &diagnostics_task},
     .get_next_state = &running_get_next_state};
 #else
-sched_state_t running_state = {
-    .name = "running",
-    .num_tasks = 8,
-    .task_list = {&print_task, &watchdog_task, &blink_task, &adcs_task,
-                  &telemetry_task, &beacon_task, &radio_task, &command_task},
-    .get_next_state = &running_get_next_state};
+sched_state_t running_state = {.name = "running",
+                               .num_tasks = 9,
+                               .task_list = {&print_task, &watchdog_task,
+                                             &beacon_task, &radio_task,
+                                             &command_task, &filesys_task},
+                               .get_next_state = &running_get_next_state};
 #endif
