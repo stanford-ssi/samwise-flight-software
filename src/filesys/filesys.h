@@ -127,10 +127,11 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code);
  * (on _CRC attribute).
  *
  * @param slate Pointer to the slate structure.
+ * @param crc_out Pointer to store the computed CRC value.
  * @return 0 if the CRC is correct, -1 if incorrect, -2 if no file is being
  * written.
  */
-int8_t filesys_is_crc_correct(slate_t *slate);
+int8_t filesys_is_crc_correct(slate_t *slate, unsigned int *crc_out);
 
 /**
  * Marks the filesystem as no longer writing a file. If the buffer is currently
@@ -138,11 +139,12 @@ int8_t filesys_is_crc_correct(slate_t *slate);
  * write it to MRAM before completing.
  *
  * @param slate Pointer to the slate structure.
+ * @param crc_out Pointer to store the computed CRC value.
  * @return -1 if the buffer is dirty, -2 if there was an error closing the file,
  * -3 if there was an error during CRC check, -4 if the CRC did not match,
  * 0 on success.
  */
-int8_t filesys_complete_file_write(slate_t *slate);
+int8_t filesys_complete_file_write(slate_t *slate, unsigned int *crc_out);
 
 /**
  * Marks the current buffer as clean. DESTRUCTIVE OPERATION.

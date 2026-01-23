@@ -91,25 +91,26 @@ void dispatch_command(slate_t *slate, packet_t *packet)
         /* FTP Commands */
         case FTP_REFORMAT:
         {
-            LOG_INFO("FTP_REFORMAT command received.");
+            LOG_INFO("[Command] FTP_REFORMAT command received.");
 
             // Add command into queue.
             if (!queue_try_add(&slate->ftp_format_filesystem_data, NULL))
-                LOG_ERROR("Failed to enqueue FTP_FORMAT_FILESYSTEM command.");
+                LOG_ERROR("[Command] Failed to enqueue FTP_FORMAT_FILESYSTEM "
+                          "command.");
 
             break;
         }
         case FTP_START_FILE_WRITE:
         {
-            LOG_INFO("FTP_START_FILE_WRITE command received.");
+            LOG_INFO("[Command] FTP_START_FILE_WRITE command received.");
 
             if (slate->filesys_is_writing_file)
             {
                 FILESYS_BUFFERED_FNAME_STR_T fname_str;
-                fileToString(command_payload[0] << 8 | command_payload[1],
-                             fname_str);
+                file_to_string(command_payload[0] << 8 | command_payload[1],
+                               fname_str);
 
-                LOG_ERROR("A file is already being written. Cannot "
+                LOG_ERROR("[Command] A file is already being written. Cannot "
                           "start a new file write. Existing fname = %s, "
                           "new fname = %s",
                           slate->filesys_buffered_fname_str, fname_str);
@@ -119,7 +120,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             if (queue_is_full(&slate->ftp_start_file_write_data))
             {
                 LOG_ERROR(
-                    "VERY BAD ERROR! FTP start file write queue is "
+                    "[Command] VERY BAD ERROR! FTP start file write queue is "
                     "full, but filesys_is_writing_file is false. Dropping "
                     "command.");
                 break;
@@ -129,7 +130,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             FILESYS_BUFFERED_FNAME_T fname;
             memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
-            fileToString(fname, command_data.fname_str);
+            file_to_string(fname, command_data.fname_str);
 
             memcpy(&command_data.file_len,
                    command_payload + sizeof(FILESYS_BUFFERED_FNAME_T),
@@ -170,7 +171,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             FILESYS_BUFFERED_FNAME_T fname;
             memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
 
-            fileToString(fname, command_data.fname_str);
+            file_to_string(fname, command_data.fname_str);
             if (strcmp(command_data.fname_str,
                        slate->filesys_buffered_fname_str) != 0)
             {
@@ -217,7 +218,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             FILESYS_BUFFERED_FNAME_T fname;
             memcpy(&fname, command_payload, sizeof(FILESYS_BUFFERED_FNAME_T));
-            fileToString(fname, command_data.fname_str);
+            file_to_string(fname, command_data.fname_str);
 
             if (strcmp(command_data.fname_str,
                        slate->filesys_buffered_fname_str) != 0)

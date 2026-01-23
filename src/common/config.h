@@ -13,11 +13,18 @@
 /**
  * File transfer protocol configuration
  */
+// Time to wait between dispatches when idle
+#define FTP_IDLE_DISPATCH_MS 1000
+
+// Time to wait between dispatches when active
+#define FTP_ACTIVE_DISPATCH_MS 100
+
 // The number of packets to require before moving on to the next n packets
 #define FTP_NUM_PACKETS_PER_CYCLE 5
 
 // Note: FTP_NUM_PACKETS_PER_CYCLE must be <= number of bits in
 // FTP_PACKET_TRACKER_T
+// A bit set means the corresponding packet in this cycle was received.
 typedef uint8_t FTP_PACKET_TRACKER_T;
 
 // Automatically calculated size of maximum data payload in bytes per packet
@@ -28,7 +35,8 @@ typedef uint8_t FTP_PACKET_TRACKER_T;
 // Maximum length of a file, as determined by the number of bytes for sequence
 // id and the maximum data payload size
 #define FTP_MAX_FILE_LEN                                                       \
-    (1 << sizeof(FTP_PACKET_SEQUENCE_T)) * FTP_DATA_PAYLOAD_SIZE
+    (1 << (sizeof(FTP_PACKET_SEQUENCE_T) * __CHAR_BIT__)) *                    \
+        FTP_DATA_PAYLOAD_SIZE
 
 // Type used to represent packet sequence IDs
 typedef uint16_t FTP_PACKET_SEQUENCE_T;

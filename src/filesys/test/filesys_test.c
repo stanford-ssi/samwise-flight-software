@@ -327,7 +327,8 @@ int filesys_test_complete_file_write_dirty_buffer()
     TEST_ASSERT(test_slate.filesys_buffer_is_dirty, "Buffer should be dirty");
 
     // Try to complete file write with dirty buffer
-    code = filesys_complete_file_write(&test_slate);
+    FILESYS_BUFFERED_FILE_CRC_T crc;
+    code = filesys_complete_file_write(&test_slate, &crc);
     TEST_ASSERT(code == -1,
                 "complete_file_write with dirty buffer should fail with -1");
 
@@ -475,11 +476,12 @@ int filesys_test_crc_correct()
     TEST_ASSERT(bytes == 64, "write_buffer_to_mram should write 64 bytes");
 
     // Check CRC
-    int8_t crc_result = filesys_is_crc_correct(&test_slate);
+    FILESYS_BUFFERED_FILE_CRC_T crc;
+    int8_t crc_result = filesys_is_crc_correct(&test_slate, &crc);
     TEST_ASSERT(crc_result == 0, "CRC should be correct (return 0)");
 
     // Complete file write (should succeed with correct CRC)
-    code = filesys_complete_file_write(&test_slate);
+    code = filesys_complete_file_write(&test_slate, &crc);
     TEST_ASSERT(code == 0,
                 "complete_file_write should succeed with correct CRC");
 
@@ -518,11 +520,12 @@ int filesys_test_crc_incorrect()
     TEST_ASSERT(bytes == 64, "write_buffer_to_mram should write 64 bytes");
 
     // Check CRC - should fail
-    int8_t crc_result = filesys_is_crc_correct(&test_slate);
+    FILESYS_BUFFERED_FILE_CRC_T crc;
+    int8_t crc_result = filesys_is_crc_correct(&test_slate, &crc);
     TEST_ASSERT(crc_result == -1, "CRC should be incorrect (return -1)");
 
     // Complete file write should fail due to CRC mismatch
-    code = filesys_complete_file_write(&test_slate);
+    code = filesys_complete_file_write(&test_slate, &crc);
     TEST_ASSERT(code == -4,
                 "complete_file_write should fail with -4 (CRC mismatch)");
 
@@ -546,7 +549,8 @@ int filesys_test_crc_no_file()
         return -1;
 
     // Try to check CRC without starting a file write
-    int8_t crc_result = filesys_is_crc_correct(&test_slate);
+    FILESYS_BUFFERED_FILE_CRC_T crc;
+    int8_t crc_result = filesys_is_crc_correct(&test_slate, &crc);
     TEST_ASSERT(crc_result == -2, "CRC check without file should fail with -2");
 
     LOG_DEBUG("=== Test PASSED: CRC Check - No File Being Written ===\n");

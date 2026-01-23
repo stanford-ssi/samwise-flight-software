@@ -69,8 +69,8 @@ inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
  * @return A pointer to the string representation of the value. This must be
  * at least 3 bytes long to hold the two characters and the null terminator.
  */
-inline static void fileToString(FILESYS_BUFFERED_FNAME_T value,
-                                FILESYS_BUFFERED_FNAME_STR_T buffer)
+inline static void file_to_string(FILESYS_BUFFERED_FNAME_T value,
+                                  FILESYS_BUFFERED_FNAME_STR_T buffer)
 {
     for (size_t i = 0; i < sizeof(FILESYS_BUFFERED_FNAME_T); i++)
         buffer[i] =

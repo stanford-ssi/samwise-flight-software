@@ -14,6 +14,8 @@ target_link_libraries(ftp_task PUBLIC
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,error>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,rfm9x>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,adm1176>
+  $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,mram>
+  filesys
 )
 
 # Include directories: tests include test_mocks to shadow real hardware headers
@@ -22,3 +24,7 @@ target_include_directories(ftp_task PUBLIC
   "${PROJECT_SOURCE_DIR}/src/tasks/ftp"
   "${PROJECT_SOURCE_DIR}/lib/littlefs-cmake"
 )
+
+if (BUILD_TESTS)
+  add_subdirectory(test)
+endif()

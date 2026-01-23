@@ -258,7 +258,7 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
     return ~crc;
 }
 
-int8_t filesys_is_crc_correct(slate_t *slate)
+int8_t filesys_is_crc_correct(slate_t *slate, unsigned int *crc_out)
 {
     if (!slate->filesys_is_writing_file)
     {
@@ -268,9 +268,9 @@ int8_t filesys_is_crc_correct(slate_t *slate)
     }
 
     uint8_t error_code = 0;
-    unsigned int computed_crc = filesys_compute_crc(slate, &error_code);
+    *crc_out = filesys_compute_crc(slate, &error_code);
 
-    if (computed_crc == slate->filesys_buffered_file_crc)
+    if (*crc_out == slate->filesys_buffered_file_crc)
     {
         LOG_INFO("[filesys] CRC check passed for file %s",
                  slate->filesys_buffered_fname_str);
@@ -280,13 +280,13 @@ int8_t filesys_is_crc_correct(slate_t *slate)
     {
         LOG_ERROR("[filesys] CRC check failed for file %s. Computed: %u, "
                   "Expected: %u",
-                  slate->filesys_buffered_fname_str, computed_crc,
+                  slate->filesys_buffered_fname_str, *crc_out,
                   slate->filesys_buffered_file_crc);
         return -1;
     }
 }
 
-int8_t filesys_complete_file_write(slate_t *slate)
+int8_t filesys_complete_file_write(slate_t *slate, unsigned int *crc_out)
 {
     if (slate->filesys_buffer_is_dirty)
     {
@@ -297,7 +297,7 @@ int8_t filesys_complete_file_write(slate_t *slate)
     }
 
     // Check CRC here
-    int8_t crc_check = filesys_is_crc_correct(slate);
+    int8_t crc_check = filesys_is_crc_correct(slate, crc_out);
     if (crc_check != 0 && crc_check != -1)
     {
         LOG_ERROR("[filesys] Error during CRC check for file %s: %d",

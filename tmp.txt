@@ -1,0 +1,153 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /usr/bin/cc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Added test: mram_test
+-- Added test: filesys_test
+-- Added test: scheduler_test
+-- Added test: running_state_test
+-- Added test: beacon_task_test
+-- Added test: ftp_task_test
+-- Added test: print_task_test
+-- Added test: radio_task_test
+-- Added test: str_utils_test
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ayush/ssi/samwise-flight-software/build_tests
+[  1%] Building C object lib/littlefs-cmake/CMakeFiles/littlefs.dir/lfs.c.o
+[  2%] Building C object lib/littlefs-cmake/CMakeFiles/littlefs.dir/lfs_util.c.o
+[  4%] Linking C static library ../liblittlefs.a
+[  4%] Built target littlefs
+[  5%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/logger.c.o
+[  6%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/error.c.o
+[  8%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/neopixel.c.o
+[  9%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/driver_stubs.c.o
+[ 10%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/pico/time.c.o
+[ 12%] Building C object src/test_mocks/CMakeFiles/test_mocks.dir/mram.c.o
+[ 13%] Linking C static library libtest_mocks.a
+[ 13%] Built target test_mocks
+[ 15%] Building C object src/test_infrastructure/CMakeFiles/test_infrastructure.dir/test_scheduler_helpers.c.o
+[ 16%] Linking C static library libtest_infrastructure.a
+[ 16%] Built target test_infrastructure
+[ 17%] Building C object src/filesys/CMakeFiles/filesys.dir/lfs_mram_wrapper.c.o
+[ 19%] Building C object src/filesys/CMakeFiles/filesys.dir/filesys.c.o
+[ 20%] Linking C static library libfilesys.a
+[ 20%] Built target filesys
+[ 21%] Building C object src/filesys/test/CMakeFiles/mram_test.dir/mram_test.c.o
+[ 23%] Linking C executable mram_test
+[ 23%] Built target mram_test
+[ 24%] Building C object src/filesys/test/CMakeFiles/filesys_test.dir/filesys_test.c.o
+[ 26%] Building C object src/filesys/test/CMakeFiles/filesys_test.dir/__/filesys.c.o
+[ 27%] Linking C executable filesys_test
+[ 27%] Built target filesys_test
+[ 28%] Building C object src/tasks/watchdog/CMakeFiles/watchdog_task.dir/watchdog_task.c.o
+[ 30%] Linking C static library libwatchdog_task.a
+[ 30%] Built target watchdog_task
+[ 31%] Building C object src/tasks/adcs/CMakeFiles/adcs_task.dir/adcs_task.c.o
+[ 32%] Linking C static library libadcs_task.a
+[ 32%] Built target adcs_task
+[ 34%] Building C object src/tasks/beacon/CMakeFiles/beacon_task.dir/beacon_task.c.o
+[ 35%] Linking C static library libbeacon_task.a
+[ 35%] Built target beacon_task
+[ 36%] Building C object src/tasks/blink/CMakeFiles/blink_task.dir/blink_task.c.o
+[ 38%] Linking C static library libblink_task.a
+[ 38%] Built target blink_task
+[ 39%] Building C object src/tasks/command/CMakeFiles/command_task.dir/command_task.c.o
+[ 41%] Building C object src/tasks/command/CMakeFiles/command_task.dir/command_parser.c.o
+[ 42%] Linking C static library libcommand_task.a
+[ 42%] Built target command_task
+[ 43%] Building C object src/tasks/diagnostics/CMakeFiles/diagnostics_task.dir/diagnostics_task.c.o
+[ 45%] Linking C static library libdiagnostics_task.a
+[ 45%] Built target diagnostics_task
+[ 46%] Building C object src/tasks/ftp/CMakeFiles/ftp_task.dir/ftp_task.c.o
+[ 47%] Linking C static library libftp_task.a
+[ 47%] Built target ftp_task
+[ 49%] Building C object src/tasks/payload/CMakeFiles/payload_task.dir/payload_task.c.o
+[ 50%] Linking C static library libpayload_task.a
+[ 50%] Built target payload_task
+[ 52%] Building C object src/tasks/print/CMakeFiles/print_task.dir/print_task.c.o
+[ 53%] Linking C static library libprint_task.a
+[ 53%] Built target print_task
+[ 54%] Building C object src/tasks/radio/CMakeFiles/radio_task.dir/radio_task.c.o
+[ 56%] Linking C static library libradio_task.a
+[ 56%] Built target radio_task
+[ 57%] Building C object src/tasks/telemetry/CMakeFiles/telemetry_task.dir/telemetry_task.c.o
+[ 58%] Linking C static library libtelemetry_task.a
+[ 58%] Built target telemetry_task
+[ 60%] Building C object src/states/running/CMakeFiles/running_state.dir/running_state.c.o
+[ 61%] Linking C static library librunning_state.a
+[ 61%] Built target running_state
+[ 63%] Building C object src/tasks/burn_wire/CMakeFiles/burn_wire_task.dir/burn_wire_task.c.o
+[ 64%] Linking C static library libburn_wire_task.a
+[ 64%] Built target burn_wire_task
+[ 65%] Building C object src/states/burn_wire/CMakeFiles/burn_wire_state.dir/burn_wire_state.c.o
+[ 67%] Linking C static library libburn_wire_state.a
+[ 67%] Built target burn_wire_state
+[ 68%] Building C object src/states/init/CMakeFiles/init_state.dir/init_state.c.o
+[ 69%] Linking C static library libinit_state.a
+[ 69%] Built target init_state
+[ 71%] Building C object src/states/bringup/CMakeFiles/bringup_state.dir/bringup_state.c.o
+[ 72%] Linking C static library libbringup_state.a
+[ 72%] Built target bringup_state
+[ 73%] Building C object src/states/burn_wire_reset/CMakeFiles/burn_wire_reset_state.dir/burn_wire_reset_state.c.o
+[ 75%] Linking C static library libburn_wire_reset_state.a
+[ 75%] Built target burn_wire_reset_state
+[ 76%] Building C object src/scheduler/CMakeFiles/scheduler.dir/scheduler.c.o
+[ 78%] Linking C static library libscheduler.a
+[ 78%] Built target scheduler
+[ 79%] Building C object src/scheduler/test/CMakeFiles/scheduler_test.dir/test_scheduler.c.o
+[ 80%] Building C object src/scheduler/test/CMakeFiles/scheduler_test.dir/__/scheduler.c.o
+[ 82%] Linking C executable scheduler_test
+[ 82%] Built target scheduler_test
+[ 83%] Building C object src/states/running/test/CMakeFiles/running_state_test.dir/test_running_state.c.o
+[ 84%] Building C object src/states/running/test/CMakeFiles/running_state_test.dir/__/__/__/scheduler/scheduler.c.o
+[ 86%] Linking C executable running_state_test
+[ 86%] Built target running_state_test
+[ 87%] Building C object src/tasks/beacon/test/CMakeFiles/beacon_task_test.dir/beacon_test.c.o
+[ 89%] Linking C executable beacon_task_test
+[ 89%] Built target beacon_task_test
+[ 90%] Building C object src/tasks/ftp/test/CMakeFiles/ftp_task_test.dir/ftp_test.c.o
+[ 91%] Linking C executable ftp_task_test
+[ 91%] Built target ftp_task_test
+[ 93%] Building C object src/tasks/print/test/CMakeFiles/print_task_test.dir/print_test.c.o
+[ 94%] Linking C executable print_task_test
+[ 94%] Built target print_task_test
+[ 95%] Building C object src/tasks/radio/test/CMakeFiles/radio_task_test.dir/radio_test.c.o
+[ 97%] Linking C executable radio_task_test
+[ 97%] Built target radio_task_test
+[ 98%] Building C object src/utils/test/CMakeFiles/str_utils_test.dir/test_str_utils.c.o
+[100%] Linking C executable str_utils_test
+[100%] Built target str_utils_test
+Test project /home/ayush/ssi/samwise-flight-software/build_tests
+    Start 1: mram_test
+1/9 Test #1: mram_test ........................   Passed    0.00 sec
+    Start 2: filesys_test
+2/9 Test #2: filesys_test .....................   Passed    0.00 sec
+    Start 3: scheduler_test
+3/9 Test #3: scheduler_test ...................   Passed    0.00 sec
+    Start 4: running_state_test
+4/9 Test #4: running_state_test ...............   Passed    0.00 sec
+    Start 5: beacon_task_test
+5/9 Test #5: beacon_task_test .................   Passed    0.00 sec
+    Start 6: ftp_task_test
+6/9 Test #6: ftp_task_test ....................   Passed    0.00 sec
+    Start 7: print_task_test
+7/9 Test #7: print_task_test ..................   Passed    0.00 sec
+    Start 8: radio_task_test
+8/9 Test #8: radio_task_test ..................   Passed    0.00 sec
+    Start 9: str_utils_test
+9/9 Test #9: str_utils_test ...................   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =   0.02 sec
