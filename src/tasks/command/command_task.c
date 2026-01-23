@@ -14,10 +14,6 @@
 
 const int PAYLOAD_DATA_CAPACITY = 32;
 
-// Should be somewhat bigger than FTP_NUM_PACKETS_PER_CYCLE to handle bursts
-// of incoming file packets.
-const int FTP_WRITE_TO_FILE_DATA_CAPACITY = 16;
-
 /// @brief Initialize the command switch task
 /// @param slate Slate
 void command_task_init(slate_t *slate)
@@ -25,17 +21,6 @@ void command_task_init(slate_t *slate)
     // Initialize queues for storing processed commands
     queue_init(&slate->payload_command_data, sizeof(PAYLOAD_COMMAND_DATA),
                PAYLOAD_DATA_CAPACITY);
-
-    queue_init(&slate->ftp_start_file_write_data,
-               sizeof(FTP_START_FILE_WRITE_DATA),
-               1); // We currently only buffer
-                   // one file at a time
-    queue_init(&slate->ftp_write_to_file_data, sizeof(FTP_WRITE_TO_FILE_DATA),
-               FTP_WRITE_TO_FILE_DATA_CAPACITY);
-    queue_init(&slate->ftp_cancel_file_write_data,
-               sizeof(FTP_CANCEL_FILE_WRITE_DATA),
-               1); // Only one cancel command at a time (rejected automatically
-                   // if filename doesn't match)
 
     slate->num_uploaded_bytes = 0;
     slate->packet_buffer_index = 0;
