@@ -9,6 +9,8 @@
 #define LFS_YES_TRACE
 
 #include "filesys.h"
+#include "lfs.h"
+#include "mram.h"
 
 // Helper macro for test assertions with error messages
 #define TEST_ASSERT(cond, msg)                                                 \
@@ -748,8 +750,74 @@ int filesys_test_write_at_offset()
     return 0;
 }
 
-#include "lfs.h"
-#include "mram.h"
+// ============================================================================
+// Test 19: Get file length on disk - existing file
+// ============================================================================
+int filesys_test_get_file_length_existing()
+{
+    LOG_DEBUG("=== Test: Get File Length - Existing File ===\n");
+
+    slate_t test_slate;
+    if (setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "LN";
+    // CRC32 for bytes 0x00..0x3F (64 bytes)
+    FILESYS_BUFFERED_FILE_CRC_T correct_crc = 0x100ECE8C;
+    const uint8_t expected_file_size = 64;
+
+    int8_t code = filesys_start_file_write(
+        &test_slate, fname, expected_file_size, correct_crc, &blocks_left);
+    TEST_ASSERT(code == 0, "start_file_write should succeed");
+
+    uint8_t buffer[64];
+    for (uint8_t i = 0; i < 64; i++)
+        buffer[i] = i;
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer, 64, 0);
+    TEST_ASSERT(code == 0, "write_data_to_buffer should succeed");
+
+    lfs_ssize_t bytes = filesys_write_buffer_to_mram(&test_slate, 64);
+    TEST_ASSERT(bytes == 64, "write_buffer_to_mram should write 64 bytes");
+
+    // Complete file write
+    FILESYS_BUFFERED_FILE_CRC_T crc;
+    code = filesys_complete_file_write(&test_slate, &crc);
+    TEST_ASSERT(code == 0, "complete_file_write should succeed");
+
+    // Now test filesys_get_file_length_on_disk
+    lfs_size_t file_length =
+        filesys_get_file_length_on_disk(&test_slate, fname);
+    TEST_ASSERT(file_length == expected_file_size,
+                "File length should match expected size (64 bytes)");
+
+    LOG_DEBUG("=== Test PASSED: Get File Length - Existing File ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 20: Get file length on disk - non-existent file
+// ============================================================================
+int filesys_test_get_file_length_nonexistent()
+{
+    LOG_DEBUG("=== Test: Get File Length - Non-existent File ===\n");
+
+    slate_t test_slate;
+    if (setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    FILESYS_BUFFERED_FNAME_STR_T fname = "NX";
+
+    // Get length of a file that doesn't exist
+    lfs_size_t file_length =
+        filesys_get_file_length_on_disk(&test_slate, fname);
+    TEST_ASSERT(file_length == 0,
+                "File length for non-existent file should be 0");
+
+    LOG_DEBUG("=== Test PASSED: Get File Length - Non-existent File ===\n");
+    return 0;
+}
 
 lfs_t lfs;
 lfs_file_t file;
@@ -818,6 +886,10 @@ int main()
         // {filesys_test_blocks_left_calculation, "Blocks Left Calculation"},
         // {filesys_test_multi_chunk_write, "Multi-Chunk Write"},
         // {filesys_test_write_at_offset, "Write at Offset"},
+        // {filesys_test_get_file_length_existing,
+        //  "Get File Length - Existing File"},
+        // {filesys_test_get_file_length_nonexistent,
+        //  "Get File Length - Non-existent File"},
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);

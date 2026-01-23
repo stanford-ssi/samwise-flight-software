@@ -164,3 +164,15 @@ void filesys_clear_buffer(slate_t *slate);
  * file, -3 if there was an error deleting the file, 0 on success.
  */
 int8_t filesys_cancel_file_write(slate_t *slate);
+
+/**
+ * Gets the length of a file on disk.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param fname_str The name of the file to check.
+ * @param file_len_out Pointer to store the length of the file.
+ * @return -1 if there was an error getting the file info, 0 on success.
+ */
+lfs_size_t
+filesys_get_file_length_on_disk(slate_t *slate,
+                                FILESYS_BUFFERED_FNAME_STR_T fname_str);

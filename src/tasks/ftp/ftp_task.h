@@ -73,6 +73,10 @@ typedef enum
      *
      *      New Packet_End (FTP_PACKET_SEQUENCE_T) - Last
      * accepted packet ID in new set (inclusive)
+     *
+     *      Received (FTP_PACKET_TRACKER_T) - Bitfield of
+     * received packets in this set. (Only included for consistency with
+     * FTP_READY_RECEIVE).
      */
     FTP_FILE_WRITE_SUCCESS, // Received FTP_NUM_PACKETS_PER_CYCLE packets
                             // successfully, ready for next set
@@ -120,10 +124,18 @@ typedef enum
     /**
      * FTP_ERROR_ALREADY_WRITING_FILE:
      *     Filename (FILESYS_BUFFERED_FNAME_STR_T) - Name of file currently
-     * being written Data (char[]) - Additional error data (optional, plaintext)
+     * being written
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext)
      * NOT USED
      */
     FTP_ERROR_ALREADY_WRITING_FILE, // Error: Already writing a file
+
+    /**
+     * FTP_ERROR_NOT_WRITING_FILE:
+     *   (No additional data)
+     */
+    FTP_ERROR_NOT_WRITING_FILE, // Error: Not writing a file
 
     /**
      * FTP_ERROR_RECEIVE:
@@ -138,7 +150,19 @@ typedef enum
     FTP_ERROR_RECEIVE, // Error initializing file write
 
     /**
-     * All other errors:
+     * FTP_ERROR_PACKET_OUT_OF_RANGE:
+     *     Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID in
+     * set (inclusive)
+     *     Packet_End (FTP_PACKET_SEQUENCE_T) - Last accepted packet
+     * ID in set (inclusive)
+     *      Received (FTP_PACKET_TRACKER_T) - Bitfield of received packets in
+     * this set.
+     */
+    FTP_ERROR_PACKET_OUT_OF_RANGE, // Received packet outside of expected
+                                   // range
+
+    /**
+     * FTP_FILE_WRITE_BUFFER_ERROR:
      *      LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar.
      *
      *     Data (char[]) - Additional error data (optional, plaintext) NOT USED

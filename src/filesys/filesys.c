@@ -375,3 +375,19 @@ int8_t filesys_cancel_file_write(slate_t *slate)
 
     return 0;
 }
+
+lfs_size_t
+filesys_get_file_length_on_disk(slate_t *slate,
+                                FILESYS_BUFFERED_FNAME_STR_T fname_str)
+{
+    struct lfs_info info;
+    int err = lfs_stat(&slate->lfs, fname_str, &info);
+    if (err < 0)
+    {
+        LOG_ERROR("[filesys] Failed to get file length for %s: %d", fname_str,
+                  err);
+        return 0;
+    }
+
+    return info.size;
+}

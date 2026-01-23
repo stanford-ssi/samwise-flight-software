@@ -81,6 +81,52 @@ void ftp_send_result_packet(slate_t *slate, FTP_Result result,
                                        additional_data, additional_data_len);
 }
 
+inline static FTP_PACKET_SEQUENCE_T ftp_get_last_packet(slate_t *slate)
+{
+    return slate->ftp_start_cycle_packet_id + FTP_NUM_PACKETS_PER_CYCLE - 1;
+}
+
+/**
+ * Works for FILESYS_INIT_ERROR, FILESYS_REFORMAT_ERROR,
+ * FTP_FILE_WRITE_MRAM_ERROR, FTP_FILE_WRITE_BUFFER_ERROR,
+ * and FTP_CANCEL_ERROR
+ */
+inline static void send_ftp_lfs_error_packet(slate_t *slate, FTP_Result result,
+                                             lfs_ssize_t lfs_error_code)
+{
+    assert(result == FILESYS_INIT_ERROR || result == FILESYS_REFORMAT_ERROR ||
+           result == FTP_FILE_WRITE_MRAM_ERROR ||
+           result == FTP_FILE_WRITE_BUFFER_ERROR || result == FTP_CANCEL_ERROR);
+
+    ftp_send_result_packet_no_file(slate, result, &lfs_error_code,
+                                   sizeof(lfs_error_code));
+}
+
+/**
+ * Works for FTP_READY_RECEIVE, FTP_FILE_WRITE_SUCCESS, and
+ * FTP_ERROR_PACKET_OUT_OF_RANGE
+ */
+inline static void
+send_ftp_cycle_info_packet(slate_t *slate, FTP_Result result,
+                           FTP_PACKET_SEQUENCE_T packet_start,
+                           FTP_PACKET_TRACKER_T packets_received_tracker)
+{
+    assert(result == FTP_READY_RECEIVE || result == FTP_FILE_WRITE_SUCCESS ||
+           result == FTP_ERROR_PACKET_OUT_OF_RANGE);
+
+    uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
+                        sizeof(FTP_PACKET_TRACKER_T)];
+
+    uint8_t *result_data_ptr = result_data;
+    memcpy_inc(&result_data_ptr, &packet_start, sizeof(FTP_PACKET_SEQUENCE_T));
+    memcpy_inc(&result_data_ptr, &ftp_get_last_packet(slate),
+               sizeof(FTP_PACKET_SEQUENCE_T));
+    memcpy_inc(&result_data_ptr, &packets_received_tracker,
+               sizeof(FTP_PACKET_TRACKER_T));
+
+    ftp_send_result_packet(slate, result, result_data, sizeof(result_data));
+}
+
 void ftp_task_init(slate_t *slate)
 {
     LOG_INFO("FTP task is initializing...");
@@ -96,8 +142,7 @@ void ftp_task_init(slate_t *slate)
             "[FTP] FTP task failed to initialize filesystem with error %d.",
             res);
 
-        ftp_send_result_packet_no_file(slate, FILESYS_INIT_ERROR, &res,
-                                       sizeof(res));
+        send_ftp_lfs_error_packet(slate, FILESYS_INIT_ERROR, res);
 
         return;
     }
@@ -118,8 +163,7 @@ void ftp_process_reformat_command(slate_t *slate)
         LOG_ERROR("[FTP] FTP task failed to format filesystem with error %d.",
                   res);
 
-        ftp_send_result_packet_no_file(slate, FILESYS_REFORMAT_ERROR, &res,
-                                       sizeof(res));
+        send_ftp_lfs_error_packet(slate, FILESYS_REFORMAT_ERROR, res);
 
         return;
     }
@@ -189,21 +233,10 @@ void ftp_process_file_start_write_command(
              "writing, if successful: %d",
              blocksLeftAfterWrite);
 
-    const FTP_PACKET_SEQUENCE_T last_packet =
-        slate->ftp_start_cycle_packet_id + FTP_NUM_PACKETS_PER_CYCLE - 1;
-
-    uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
-                        sizeof(FTP_PACKET_TRACKER_T)];
-
-    uint8_t *result_data_ptr = result_data;
-    memcpy_inc(&result_data_ptr, &slate->ftp_start_cycle_packet_id,
-               sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&result_data_ptr, &last_packet, sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&result_data_ptr, &slate->ftp_packets_received_tracker,
-               sizeof(FTP_PACKET_TRACKER_T));
-
-    ftp_send_result_packet(slate, FTP_READY_RECEIVE, result_data,
-                           sizeof(result_data));
+    // Send READY_RECEIVE for first cycle
+    send_ftp_cycle_info_packet(slate, FTP_READY_RECEIVE,
+                               slate->ftp_start_cycle_packet_id,
+                               slate->ftp_packets_received_tracker);
 }
 
 void ftp_process_file_write_data_command(slate_t *slate,
@@ -213,6 +246,8 @@ void ftp_process_file_write_data_command(slate_t *slate,
     {
         LOG_ERROR("[FTP] Received file write data command but no file is being "
                   "written! Ignoring.");
+        ftp_send_result_packet_no_file(slate, FTP_ERROR_NOT_WRITING_FILE, NULL,
+                                       0);
         return;
     }
 
@@ -222,9 +257,14 @@ void ftp_process_file_write_data_command(slate_t *slate,
     {
         LOG_ERROR(
             "[FTP] Received packet ID %d outside of current cycle range (%d to "
-            "%d). Ignoring.",
+            "%d)!",
             command_data.packet_id, slate->ftp_start_cycle_packet_id,
             slate->ftp_start_cycle_packet_id + FTP_NUM_PACKETS_PER_CYCLE - 1);
+
+        // Send error packet with expected range and received tracker
+        send_ftp_cycle_info_packet(slate, FTP_ERROR_PACKET_OUT_OF_RANGE,
+                                   slate->ftp_start_cycle_packet_id,
+                                   slate->ftp_packets_received_tracker);
         return;
     }
 
@@ -242,8 +282,8 @@ void ftp_process_file_write_data_command(slate_t *slate,
     if (write_res != 0)
     {
         LOG_ERROR("[FTP] Failed to write data to buffer: %d", write_res);
-        ftp_send_result_packet(slate, FTP_FILE_WRITE_BUFFER_ERROR, &write_res,
-                               sizeof(write_res));
+        send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_BUFFER_ERROR,
+                                  write_res);
         return;
     }
 
@@ -277,20 +317,9 @@ void ftp_process_file_write_data_command(slate_t *slate,
     if (slate->ftp_packets_received_tracker != expected_mask)
     {
         // Send FTP_READY_RECEIVE with Packet range
-        const FTP_PACKET_SEQUENCE_T last_packet =
-            slate->ftp_start_cycle_packet_id + packets_in_this_cycle - 1;
-
-        uint8_t range[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
-                      sizeof(FTP_PACKET_TRACKER_T)];
-
-        uint8_t *range_ptr = range;
-        memcpy_inc(&range_ptr, &slate->ftp_start_cycle_packet_id,
-                   sizeof(FTP_PACKET_SEQUENCE_T));
-        memcpy_inc(&range_ptr, &last_packet, sizeof(FTP_PACKET_SEQUENCE_T));
-        memcpy_inc(&range_ptr, &slate->ftp_packets_received_tracker,
-                   sizeof(FTP_PACKET_TRACKER_T));
-
-        ftp_send_result_packet(slate, FTP_READY_RECEIVE, range, sizeof(range));
+        send_ftp_cycle_info_packet(slate, FTP_READY_RECEIVE,
+                                   slate->ftp_start_cycle_packet_id,
+                                   slate->ftp_packets_received_tracker);
         return;
     }
 
@@ -321,9 +350,8 @@ void ftp_process_file_write_data_command(slate_t *slate,
     {
         LOG_ERROR("[FTP] Failed to write buffer to MRAM: %ld", mram_write_res);
         // Send error packet with the error code
-        lfs_ssize_t err_code = mram_write_res;
-        ftp_send_result_packet(slate, FTP_FILE_WRITE_MRAM_ERROR, &err_code,
-                               sizeof(lfs_ssize_t));
+        send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_MRAM_ERROR,
+                                  mram_write_res);
         return;
     }
 
@@ -336,22 +364,9 @@ void ftp_process_file_write_data_command(slate_t *slate,
         // If not the final cycle, prepare for next cycle and send
         // FTP_FILE_WRITE_SUCCESS
         slate->ftp_start_cycle_packet_id += packets_in_this_cycle;
-        const FTP_PACKET_SEQUENCE_T new_last_packet =
-            slate->ftp_start_cycle_packet_id + FTP_NUM_PACKETS_PER_CYCLE - 1;
-
-        LOG_INFO("[FTP] Completed write of %ld bytes to MRAM for packet cycle. "
-                 "Preparing for next cycle starting at packet ID %d.",
-                 mram_write_res, slate->ftp_start_cycle_packet_id);
-
-        uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2];
-        uint8_t *result_data_ptr = result_data;
-        memcpy_inc(&result_data_ptr, &slate->ftp_start_cycle_packet_id,
-                   sizeof(FTP_PACKET_SEQUENCE_T));
-        memcpy_inc(&result_data_ptr, &new_last_packet,
-                   sizeof(FTP_PACKET_SEQUENCE_T));
-
-        ftp_send_result_packet(slate, FTP_FILE_WRITE_SUCCESS, result_data,
-                               sizeof(result_data));
+        send_ftp_cycle_info_packet(slate, FTP_FILE_WRITE_SUCCESS,
+                                   slate->ftp_start_cycle_packet_id,
+                                   slate->ftp_packets_received_tracker);
         return;
     }
 
@@ -381,8 +396,8 @@ void ftp_process_file_write_data_command(slate_t *slate,
         }
         else
         {
-            ftp_send_result_packet(slate, FTP_FILE_WRITE_MRAM_ERROR,
-                                   &complete_res, sizeof(int8_t));
+            send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_MRAM_ERROR,
+                                      complete_res);
         }
 
         return;
@@ -392,13 +407,18 @@ void ftp_process_file_write_data_command(slate_t *slate,
     LOG_INFO("[FTP] File write complete & successful! Computed CRC: 0x%X",
              computed_crc);
 
+    // Get file length on disk
+    FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
+        filesys_get_file_length_on_disk(slate,
+                                        slate->filesys_buffered_fname_str);
+
     uint8_t success_data[sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
                          sizeof(FILESYS_BUFFERED_FILE_LEN_T)];
 
     uint8_t *success_data_ptr = success_data;
-    memcpy_inc(&success_data_ptr, &slate->filesys_buffered_file_crc,
+    memcpy_inc(&success_data_ptr, &computed_crc,
                sizeof(FILESYS_BUFFERED_FILE_CRC_T));
-    memcpy_inc(&success_data_ptr, &slate->filesys_buffered_file_len,
+    memcpy_inc(&success_data_ptr, &file_len_on_disk,
                sizeof(FILESYS_BUFFERED_FILE_LEN_T));
 
     ftp_send_result_packet(slate, FTP_EOF_SUCCESS, &success_data,
@@ -413,7 +433,7 @@ void ftp_process_file_cancel_write_command(
     if (res != 0)
     {
         LOG_ERROR("[FTP] Failed to cancel file write with code %d.", res);
-        ftp_send_result_packet(slate, FTP_CANCEL_ERROR, &res, sizeof(res));
+        send_ftp_lfs_error_packet(slate, FTP_CANCEL_ERROR, res);
         return;
     }
 
@@ -466,35 +486,7 @@ void ftp_task_dispatch(slate_t *slate)
             LOG_ERROR("[FTP] Failed to remove cancel file command from queue.");
     }
 
-    if (slate->filesys_is_writing_file)
-    {
-        LOG_INFO("[FTP] Currently writing file: %s. Sending update packet.",
-                 slate->filesys_buffered_fname_str);
-
-        // Note we will always send FTP_READY_RECEIVE as an update here, even if
-        // we encountered an error before. Errors are sent immediately when they
-        // occur. If an error has occured, the write would essentially be
-        // "dropped" in ftp_packets_received_tracker and so the client should be
-        // able to tell that some error occurred, even if the actual error
-        // packet was dropped.
-        const FTP_PACKET_SEQUENCE_T last_packet =
-            slate->ftp_start_cycle_packet_id + FTP_NUM_PACKETS_PER_CYCLE - 1;
-
-        uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
-                            sizeof(FTP_PACKET_TRACKER_T)];
-
-        uint8_t *result_data_ptr = result_data;
-        memcpy_inc(&result_data_ptr, &slate->ftp_start_cycle_packet_id,
-                   sizeof(FTP_PACKET_SEQUENCE_T));
-        memcpy_inc(&result_data_ptr, &last_packet,
-                   sizeof(FTP_PACKET_SEQUENCE_T));
-        memcpy_inc(&result_data_ptr, &slate->ftp_packets_received_tracker,
-                   sizeof(FTP_PACKET_TRACKER_T));
-
-        ftp_send_result_packet(slate, FTP_READY_RECEIVE, result_data,
-                               sizeof(result_data));
-    }
-    else
+    if (!slate->filesys_is_writing_file)
     {
         ftp_task.next_dispatch =
             make_timeout_time_ms(FTP_IDLE_DISPATCH_MS); // Slow down when
