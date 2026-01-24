@@ -148,17 +148,6 @@ typedef struct samwise_slate
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
 
-    /**
-     * File transfer protocol task
-     */
-    // A bit being set indicates that the corresponding packet has been recieved
-    FTP_PACKET_TRACKER_T ftp_packets_recieved;
-    queue_t ftp_start_file_write_data;
-    queue_t ftp_write_to_file_data; // Realistically this should be an array of
-                                    // size FTP_NUM_PACKETS_PER_CYCLE, but for
-                                    // simplicity we will use a queue.
-    queue_t ftp_cancel_file_write_data;
-    queue_t ftp_format_filesystem_data;
     /*
     Payload Heartbeat time: the time at which the Picubed last sent a request to
     the payload.

@@ -48,7 +48,7 @@ enum filesys_error
     FILESYS_ERR_REFORMAT = -13,            // Failed to reformat the filesystem
     FILESYS_ERR_MOUNT = -14,               // Failed to mount the filesystem
     FILESYS_ERR_WRITE_MRAM = -15,          // Failed to write to MRAM
-}
+};
 
 #define FILESYS_CFG_CACHE_SIZE 16
 #define FILESYS_CFG_LOOKAHEAD_SIZE 16
