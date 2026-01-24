@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+gs_state.json
+.pytest_cache/
+.venv/
+node_modules/

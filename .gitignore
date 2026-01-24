@@ -1,9 +1,20 @@
 # General
 **/.vite
 **/.DS_Store
-**/.vite
 **/env
 .vscode
 build*
 !build_debug.sh
 !build_tests.sh
+
+# Dependencies
+node_modules/
+**/__pycache__/
+*.pyc
+
+# Environment
+.venv/
+.env
+
+# Testing
+.pytest_cache/
