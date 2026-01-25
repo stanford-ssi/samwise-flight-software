@@ -7,7 +7,7 @@
 #include "filesys.h"
 #include <string.h>
 
-const struct lfs_config cfg = {
+const struct lfs_config filesys_lfs_cfg = {
     // block device operations
     .read = lfs_mram_wrap_read,
     .prog = lfs_mram_wrap_prog,
@@ -36,7 +36,7 @@ int8_t filesys_initialize(slate_t *slate)
 {
     // mount the filesystem
     mram_write_enable();
-    int err = lfs_mount(&slate->lfs, &cfg);
+    int err = lfs_mount(&slate->lfs, &filesys_lfs_cfg);
 
     if (err < 0)
     {
@@ -51,10 +51,10 @@ int8_t filesys_initialize(slate_t *slate)
     return FILESYS_OK;
 }
 
-int8_t filesys_reformat(slate_t *slate)
+int8_t filesys_reformat_initialize(slate_t *slate)
 {
     mram_write_enable();
-    int err = lfs_format(&slate->lfs, &cfg);
+    int err = lfs_format(&slate->lfs, &filesys_lfs_cfg);
 
     if (err < 0)
     {
@@ -102,18 +102,19 @@ int8_t filesys_start_file_write(slate_t *slate,
     }
 
     // Get number of blocks needed, which is ceil(file_size / block_size)
-    lfs_ssize_t numBlocksNeeded =
-        (file_size + cfg.block_size - 1) / cfg.block_size;
+    lfs_ssize_t numBlocksNeeded = (file_size + filesys_lfs_cfg.block_size - 1) /
+                                  filesys_lfs_cfg.block_size;
 
-    *blocksLeftAfterWrite = cfg.block_count - fs_size - numBlocksNeeded;
+    *blocksLeftAfterWrite =
+        filesys_lfs_cfg.block_count - fs_size - numBlocksNeeded;
 
-    if (fs_size + numBlocksNeeded > cfg.block_count)
+    if (fs_size + numBlocksNeeded > filesys_lfs_cfg.block_count)
     {
         LOG_ERROR(
             "[filesys] Not enough space in filesystem to start file write. "
             "File size: %u bytes, Blocks needed: %d, FS size: %u blocks, "
             "Block count: %u blocks",
-            file_size, numBlocksNeeded, fs_size, cfg.block_count);
+            file_size, numBlocksNeeded, fs_size, filesys_lfs_cfg.block_count);
         return FILESYS_ERR_NOT_ENOUGH_SPACE;
     }
 

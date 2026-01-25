@@ -26,7 +26,7 @@
 // Helper function to initialize a clean filesystem for testing
 static int setup_clean_filesystem(slate_t *slate)
 {
-    lfs_ssize_t code = filesys_reformat(slate);
+    lfs_ssize_t code = filesys_reformat_initialize(slate);
     if (code < 0)
     {
         LOG_ERROR("Failed to reformat filesystem for test setup: %d\n", code);
@@ -140,8 +140,8 @@ int filesys_test_initialize_reformat_success()
     slate_t test_slate;
 
     // Test reformat
-    lfs_ssize_t code = filesys_reformat(&test_slate);
-    TEST_ASSERT(code >= 0, "filesys_reformat should succeed");
+    lfs_ssize_t code = filesys_reformat_initialize(&test_slate);
+    TEST_ASSERT(code >= 0, "filesys_reformat_initialize should succeed");
     TEST_ASSERT(!test_slate.filesys_is_writing_file,
                 "filesys_is_writing_file should be false after reformat");
     TEST_ASSERT(!test_slate.filesys_buffer_is_dirty,
@@ -771,8 +771,8 @@ int main()
     // // mount the filesystem
     // mram_write_enable();
 
-    // lfs_format(&lfs, &cfg);
-    // lfs_mount(&lfs, &cfg);
+    // lfs_format(&lfs, &filesys_lfs_cfg);
+    // lfs_mount(&lfs, &filesys_lfs_cfg);
 
     // // read current count
     // lfs_file_opencfg(&lfs, &file, "bc", LFS_O_RDWR | LFS_O_CREAT |

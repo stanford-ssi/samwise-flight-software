@@ -50,7 +50,19 @@ enum filesys_error
     FILESYS_ERR_WRITE_MRAM = -15,          // Failed to write to MRAM
 };
 
+// Size of block caches in bytes. Each cache buffers a portion of a block in
+// RAM. The littlefs needs a read cache, a program cache, and one additional
+// cache per file. Larger caches can improve performance by storing more
+// data and reducing the number of disk accesses. Must be a multiple of the
+// read and program sizes, and a factor of the block size.
+// Recommended to keep it small to save RAM.
 #define FILESYS_CFG_CACHE_SIZE 16
+
+// Size of the lookahead buffer in bytes. A larger lookahead buffer
+// increases the number of blocks found during an allocation pass. The
+// lookahead buffer is stored as a compact bitmap, so each byte of RAM
+// can track 8 blocks.
+// Recommended to keep it small to save RAM.
 #define FILESYS_CFG_LOOKAHEAD_SIZE 16
 
 // Prevent the use of MALLOC (BAD) by LFS!!!
@@ -60,7 +72,7 @@ static uint8_t cache_buffer[FILESYS_CFG_CACHE_SIZE];
 static uint8_t lookahead_buffer[FILESYS_CFG_LOOKAHEAD_SIZE];
 
 // configuration of the filesystem is provided by this struct
-extern const struct lfs_config cfg;
+extern const struct lfs_config filesys_lfs_cfg;
 
 /**
  * Mounts the filesystem & initializes the overall filesys system.
@@ -77,7 +89,7 @@ int8_t filesys_initialize(slate_t *slate);
  * @param slate Pointer to the slate structure.
  * @return A negative error code on failure.
  */
-int8_t filesys_reformat(slate_t *slate);
+int8_t filesys_reformat_initialize(slate_t *slate);
 
 /**
  * Initializes writing to a file in the filesystem.

@@ -67,11 +67,15 @@ inline static void strcpy_trunc(char *dst, const char *src, size_t max_size)
  *
  * @param value The filename value to convert.
  * @return A pointer to the string representation of the value. This must be
- * at least 3 bytes long to hold the two characters and the null terminator.
+ * sizeof(FILESYS_BUFFERED_FNAME_T) + 1 bytes long.
  */
 inline static void fileToString(FILESYS_BUFFERED_FNAME_T value,
                                 FILESYS_BUFFERED_FNAME_STR_T buffer)
 {
+    _Static_assert(sizeof(FILESYS_BUFFERED_FNAME_STR_T) ==
+                       sizeof(FILESYS_BUFFERED_FNAME_T) + 1,
+                   "Buffer size mismatch in fileToString");
+
     for (size_t i = 0; i < sizeof(FILESYS_BUFFERED_FNAME_T); i++)
         buffer[i] =
             (value >> (8 * (sizeof(FILESYS_BUFFERED_FNAME_T) - 1 - i))) & 0xFF;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "packet.h"
+#include <limits.h>
 
 #define I2C_TIMEOUT_MS 100
 #define MIN_WATCHDOG_INTERVAL_MS 200
@@ -27,21 +28,35 @@ typedef uint16_t FTP_PACKET_SEQUENCE_T;
 /**
  * Filesystem configuration
  */
+// Number of bytes to use for storing the filename
+typedef uint16_t FILESYS_BUFFERED_FNAME_T;
+
 // Size of buffer used for filesystem writes
 #define FILESYS_BUFFER_SIZE (FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE)
 typedef uint16_t
     FILESYS_BUFFER_SIZE_T; // Must be able to hold FILESYS_BUFFER_SIZE
+
+_Static_assert(
+    FILESYS_BUFFER_SIZE <= (1 << (sizeof(FILESYS_BUFFER_SIZE_T) * CHAR_BIT)),
+    "FILESYS_BUFFER_SIZE_T must be able to hold FILESYS_BUFFER_SIZE");
+
+_Static_assert(
+    FILESYS_BUFFER_SIZE <=
+        100000, // Maximum of 100KB buffer size just as an upper bound
+    "FILESYS_BUFFER_SIZE must be a multiple of FILESYS_BLOCK_SIZE");
 
 // Size of buffer used for filesystem reads (specifically for computing CRC)
 #define FILESYS_READ_BUFFER_SIZE 256
 typedef uint16_t FILESYS_READ_BUFFER_SIZE_T; // Must be able to hold
                                              // FILESYS_READ_BUFFER_SIZE
 
+_Static_assert(FILESYS_READ_BUFFER_SIZE <=
+                   (1 << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * CHAR_BIT)),
+               "FILESYS_READ_BUFFER_SIZE_T must be able to hold "
+               "FILESYS_READ_BUFFER_SIZE");
+
 // Note: Only one file can be buffered at a time, so there is no configuration
 // for FILESYS_MAX_BUFFERED_FILES.
-
-// Number of bytes to use for storing the filename
-typedef uint16_t FILESYS_BUFFERED_FNAME_T;
 
 // Type for storing filename str, based on FILESYS_BUFFERED_FNAME_T
 typedef char FILESYS_BUFFERED_FNAME_STR_T[sizeof(FILESYS_BUFFERED_FNAME_T) + 1];
