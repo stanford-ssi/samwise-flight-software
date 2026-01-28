@@ -1,22 +1,34 @@
 # FTP Implementation
-Designed by Ayush Garg, Yao Yiheng, Marc Reyes, in tandem with others; implemented & this doc mostly by Ayush Garg.
+Designed by Ayush Garg, Yao Yiheng, Marc Reyes, in tandem with others; implemented & this doc written mostly by Ayush Garg.
 
 This is a document outlining how we implement our version of FTP, designed for a space satellite.
 
+## Background
+
 This was specifically designed around multiple core concepts:
-* Running on low-level, small memory hardware -> need low overhead & NO MALLOCS! (little-fs)
+* Running on low-level, small memory hardware -> need low overhead & NO MALLOCS! (little-fs, see `src/filesys`)
 * Potential to drop packets in transit -> resiliance against packet dropping, ability to get data out-of-order
 * Low RAM availability -> small file buffers & cyclic implementation
 * MRAM life needs to be preserved -> use buffers and write large chunks at once
 * One file uploaded at a time, for simplicity's sake (this may be upgraded later)
 
+On the other hand, this was not designed for other common goals, which are not implemented in this design:
+* We do not preserve any directory information, and in fact only have 2 bytes per file name
+    * Similarly, no file attributes are (currently) implemented, and the filesystem itself (see `src/filesys`) is as simple as possible
+* There is no authentication or real security (apart from inbuilt packet monitoring), only CRC is used to verify a file has been uploaded
+* Not interoperable with standard FTP servers/clients; this is a custom, minimal protocol tailored for the satellite link.
+* No download/read support beyond the write path described here; files are only written or removed, not fetched. 
+* Compression has not been implemented (maybe in the future?)
+
 A few notes on this document:
-1. See ftp_task.h to get in-depth information on how error and success packets are formatted from FTP to the sender.
-2. See config.h to get information on types & limitations of the protocol, e.g. how many bytes maximum can be sent.
+1. See `ftp_task.h` to get in-depth information on how error and success packets are formatted from FTP to the sender.
+2. See `config.h` to get information on types & limitations of the protocol, e.g. how many bytes maximum can be sent.
 
 ## Overall Design
 
 A file is split into `ceil(File_Size / (205 * 5))` cycles, each of which accepts `5` packets of `205` bytes each, unless it is the last packet.
+
+A buffer of `205 * 5` bytes lives on SAMWISE's RAM, which is used to cache the `5` packets currently being accepted. When packets are recieved, the buffer is flushed to MRAM, cleared, and SAMWISE accepts the next packets in sequence, or ends the file transfer if it is necessary.
 
 The design is, in rough terms, as follows:
 1. Start a file write
@@ -24,6 +36,46 @@ The design is, in rough terms, as follows:
     1. Allow N (=5 right now) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..4 inclusive to be written in any order, and store each one in buffer.
     2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 5..9 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually writen file. If successful, finally finish the operation.
+
+Here is a relevant flowchart for the design, only showing a full write (for context on how to read a UML sequence diagram, [this](https://creately.com/guides/sequence-diagram-tutorial/) is a good tutorial):
+```mermaid
+---
+title: FTP Design
+---
+sequenceDiagram
+    box SAMWISE
+        participant FILESYS@{ "type": "entity" }
+        participant RAM@{ "type": "entity" }
+        participant FTP
+    end
+    participant GROUND STATION
+
+    Note over FTP: Note: This includes interactions<br />with radio & command task, not <br/>included here for brevity.
+    GROUND STATION-)FTP: Start File Write<br />fname, crc32, len
+    activate FTP
+    FTP-->>GROUND STATION: Ready<br />Packet_Start, Packet_End
+    deactivate FTP
+    activate GROUND STATION
+
+    loop Until upload done
+        GROUND STATION-)FTP: Data Packet<br />fname, packet_id, 205 bytes of data
+        deactivate GROUND STATION
+        activate FTP
+        FTP->>RAM: Write data to RAM
+        alt Buffer full (cycle finished)
+            RAM->>FILESYS: Append file data on MRAM
+            Note over RAM: Buffer is cleared
+            FTP-->>GROUND STATION: New_Ready<br />New_Packet_Start, New_Packet_End
+        else More packets needed in cycle
+            FTP-->>GROUND STATION: Ready<br />Packet_Start, Packet_End
+        end
+        deactivate FTP
+    end
+    FILESYS->>FTP: File read & CRC32 Computed
+    activate FTP
+    FTP->>GROUND STATION: CRC Result (Failed or Succeeded)<br />computed_crc, len_disk
+    deactivate FTP
+```
 
 We implement the following functions:
 * reformat filesystem
@@ -114,3 +166,56 @@ This will remove the file from the MRAM, returning a FTP_REMOVE_SUCCESS on compl
 Finally, a general error is defined, FTP_ERROR. This is rarely used (not as of time of writing this doc), but should be known to the ground station.
 
 Additionally, many errors include char[] data that may extend after its actual data. These are optional and should be treated as c-strings. Currently, none are implemented, but there may be room for some in the future.
+
+## Packet Path through SAMWISE
+```mermaid
+---
+title: Packet Path through SAMWISE
+---
+flowchart LR
+    GS([Ground]) -- Packet --> radio_task
+    radio_task --> command_task --> ftp_task
+    ftp_task --> RAM[(RAM Buffers)]
+    ftp_task --> filesys --> lfs(little_fs) --> MRAM[(MRAM)]
+```
+
+## Packet Formatting (Ground Station -> SAMWISE)
+**NOTE:** This only shows the `data` field of a sample packet, as defined by the radio task. There are many more attributes that must be added outside of these FTP-specific ones!
+```mermaid
+---
+title: Ground Station -> SAMWISE Start File Write Packet
+---
+packet
++8: "Command = FTP_START_FILE_WRITE"
++16: "fname"
++32: "file_len (in bytes)"
++32: "file_crc (CRC-32, from Ground)"
+```
+---
+```mermaid
+---
+title: Ground Station -> SAMWISE File Data Packet
+---
+packet
++8: "Command = FTP_WRITE_TO_FILE"
++16: "fname"
++16: "packet_id (FTP-Specific, in file)"
++72: "Data"
++8: "... More data (total 205 bytes) ..."
+```
+
+## Alt Designs
+We had a couple of other designs we were thinking of, which ultimately were not pursued:
+1. Write sequentially directly to MRAM
+    * We expect high packet drop rates, so we cannot expect all packets to arrive in sequential order, or all packes to arrive at all
+2. Write out of order directly to MRAM any time we recieve a new packet (i.e. eliminate RAM buffer entirely)
+    * (a) This would cause the Ground Station to essentially cycle through all packets infinitely until we finally get everything into MRAM, as dropped packets means that we could have only packet 10 dropped and still have to cycle through the next 400 packets before getting back to sending packet 10
+       * It's better to have a system where we can know when we've finished a segment, so we avoid this crazy scenario
+    * (b) This would be very inefficient for the MRAM, as we only write ~205 bytes at a time, that too out-of-order
+        * Both little-fs and MRAMs do not like this - it would be better to somehow keep sequential writes
+    * (c) Similar to (b), more writes & operations on MRAM = more wear & tear/lower lifetime of MRAM
+        * We need to minimize these writes
+3. Fit entire file into RAM
+    * Obvious issue: we don't have enough RAM!
+
+And more, but these should highlight the reasoning we went through to arrive at this design.
