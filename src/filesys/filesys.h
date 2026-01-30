@@ -66,10 +66,10 @@ enum filesys_error
 #define FILESYS_CFG_LOOKAHEAD_SIZE 16
 
 // Prevent the use of MALLOC (BAD) by LFS!!!
-static uint8_t prog_buffer[FILESYS_CFG_CACHE_SIZE];
-static uint8_t read_buffer[FILESYS_CFG_CACHE_SIZE];
-static uint8_t cache_buffer[FILESYS_CFG_CACHE_SIZE];
-static uint8_t lookahead_buffer[FILESYS_CFG_LOOKAHEAD_SIZE];
+static uint8_t prog_buffer[FILESYS_CFG_CACHE_SIZE] = {0};
+static uint8_t read_buffer[FILESYS_CFG_CACHE_SIZE] = {0};
+static uint8_t cache_buffer[FILESYS_CFG_CACHE_SIZE] = {0};
+static uint8_t lookahead_buffer[FILESYS_CFG_LOOKAHEAD_SIZE] = {0};
 
 // configuration of the filesystem is provided by this struct
 extern const struct lfs_config filesys_lfs_cfg;

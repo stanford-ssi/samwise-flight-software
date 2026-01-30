@@ -134,7 +134,6 @@ typedef struct samwise_slate
      * Filesystem API variables
      */
     lfs_t lfs;
-    lfs_file_t filesys_lfs_open_file;
 
     // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
     // for efficiency on reads/writes rather than buffering like we want. Since

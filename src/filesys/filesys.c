@@ -32,6 +32,26 @@ const struct lfs_config filesys_lfs_cfg = {
     .name_max = sizeof(FILESYS_BUFFERED_FNAME_STR_T),
 };
 
+const struct lfs_file_config filesys_lfs_file_cfg = {
+    .buffer = cache_buffer,
+};
+
+void filesys_file_open(lfs_t *lfs, lfs_file_t *file, const char *fname,
+                       int flags)
+{
+    int err = lfs_file_opencfg(lfs, file, fname, flags, &filesys_lfs_file_cfg);
+    if (err < 0)
+        LOG_ERROR("[filesys] Failed to open file %s: %d", fname, err);
+}
+
+void filesys_file_close(lfs_t *lfs, lfs_file_t *file)
+{
+    int err = lfs_file_close(lfs, file);
+
+    if (err < 0)
+        LOG_ERROR("[filesys] Failed to close file: %d", err);
+}
+
 int8_t filesys_initialize(slate_t *slate)
 {
     // mount the filesystem
@@ -122,30 +142,24 @@ int8_t filesys_start_file_write(slate_t *slate,
     memcpy(slate->filesys_buffered_fname_str, fname_str,
            sizeof(FILESYS_BUFFERED_FNAME_STR_T));
 
-    int err = lfs_file_opencfg(
-        &slate->lfs, &slate->filesys_lfs_open_file,
-        slate->filesys_buffered_fname_str,
-        LFS_O_RDWR | LFS_O_CREAT |
-            LFS_O_APPEND, // Allow reading for CRC check later on
-        &(struct lfs_file_config){.buffer = cache_buffer});
-
-    if (err < 0)
-    {
-        LOG_ERROR("[filesys] Failed to open file %s for writing: %d",
-                  slate->filesys_buffered_fname_str, err);
-        return FILESYS_ERR_OPEN_FILE;
-    }
+    lfs_file_t lfs_open_file;
+    filesys_file_open(&slate->lfs, &lfs_open_file,
+                      slate->filesys_buffered_fname_str,
+                      LFS_O_CREAT | LFS_O_WRONLY);
 
     // Add CRC as attribute to open file - type 0
-    err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str, 0,
-                      &file_crc, sizeof(file_crc));
+    int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str, 0,
+                          &file_crc, sizeof(file_crc));
     if (err < 0)
     {
         LOG_ERROR("[filesys] Failed to set CRC attribute for file %s: %d",
                   slate->filesys_buffered_fname_str, err);
-        lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
+        filesys_file_close(&slate->lfs, &lfs_open_file);
         return FILESYS_ERR_SET_CRC_ATTR;
     }
+
+    // Close file for now - reopen it every time we write
+    filesys_file_close(&slate->lfs, &lfs_open_file);
 
     slate->filesys_is_writing_file = true;
     slate->filesys_buffered_file_len = file_size;
@@ -202,10 +216,15 @@ int8_t filesys_write_buffer_to_mram(slate_t *slate,
         return FILESYS_OK;
     }
 
+    // Reopen the file for appending
+    lfs_file_t lfs_open_file;
+    filesys_file_open(&slate->lfs, &lfs_open_file,
+                      slate->filesys_buffered_fname_str,
+                      LFS_O_WRONLY | LFS_O_APPEND);
+
     // Write buffer to file
-    lfs_ssize_t bytes_written =
-        lfs_file_write(&slate->lfs, &slate->filesys_lfs_open_file,
-                       slate->filesys_buffer, n_bytes);
+    lfs_ssize_t bytes_written = lfs_file_write(&slate->lfs, &lfs_open_file,
+                                               slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
     {
         LOG_ERROR("[filesys] Failed to write buffer to file %s: %d",
@@ -214,6 +233,7 @@ int8_t filesys_write_buffer_to_mram(slate_t *slate,
         return FILESYS_ERR_WRITE_MRAM;
     }
 
+    filesys_file_close(&slate->lfs, &lfs_open_file);
     filesys_clear_buffer(slate);
 
     LOG_INFO("[filesys] Wrote %d bytes from buffer to file %s in MRAM",
@@ -226,9 +246,13 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
 {
     unsigned int crc = 0xFFFFFFFF;
 
+    lfs_file_t lfs_open_file;
+    filesys_file_open(&slate->lfs, &lfs_open_file,
+                      slate->filesys_buffered_fname_str, LFS_O_RDONLY);
+
     // Read file in chunks and compute CRC
     uint8_t buffer[FILESYS_READ_BUFFER_SIZE];
-    lfs_file_rewind(&slate->lfs, &slate->filesys_lfs_open_file);
+    lfs_file_rewind(&slate->lfs, &lfs_open_file);
 
     FILESYS_BUFFERED_FILE_LEN_T bytes_remaining =
         slate->filesys_buffered_file_len;
@@ -238,8 +262,8 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
                                  ? bytes_remaining
                                  : FILESYS_READ_BUFFER_SIZE;
 
-        lfs_ssize_t bytes_read = lfs_file_read(
-            &slate->lfs, &slate->filesys_lfs_open_file, buffer, to_read);
+        lfs_ssize_t bytes_read =
+            lfs_file_read(&slate->lfs, &lfs_open_file, buffer, to_read);
 
         if (bytes_read < 0)
         {
@@ -247,6 +271,7 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
                       "computation: Error code %d",
                       bytes_remaining, bytes_read);
             *error_code = FILESYS_ERR_CRC_CHECK;
+            filesys_file_close(&slate->lfs, &lfs_open_file);
             return crc; // We will return the crc so far, but error_code
                         // indicates failure
         }
@@ -254,6 +279,8 @@ unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
         crc = crc32_continue(buffer, bytes_read, crc);
         bytes_remaining -= bytes_read;
     }
+
+    filesys_file_close(&slate->lfs, &lfs_open_file);
 
     *error_code = FILESYS_OK;
     return ~crc;
@@ -306,15 +333,6 @@ int8_t filesys_complete_file_write(slate_t *slate)
     LOG_INFO("[filesys] CRC matches for file %s!",
              slate->filesys_buffered_fname_str);
 
-    // Close the file
-    int err = lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
-    if (err < 0)
-    {
-        LOG_ERROR("[filesys] Failed to close file %s: %d",
-                  slate->filesys_buffered_fname_str, err);
-        return FILESYS_ERR_CLOSE_FILE;
-    }
-
     slate->filesys_is_writing_file = false;
     LOG_INFO("[filesys] Completed file write for file: %s",
              slate->filesys_buffered_fname_str);
@@ -341,17 +359,8 @@ int8_t filesys_cancel_file_write(slate_t *slate)
         return FILESYS_ERR_NO_FILE_WRITING;
     }
 
-    // Close the file
-    int err = lfs_file_close(&slate->lfs, &slate->filesys_lfs_open_file);
-    if (err < 0)
-    {
-        LOG_ERROR("[filesys] Failed to close file %s during cancel: %d",
-                  slate->filesys_buffered_fname_str, err);
-        return FILESYS_ERR_CLOSE_FILE;
-    }
-
     // Delete the file
-    err = lfs_remove(&slate->lfs, slate->filesys_buffered_fname_str);
+    int err = lfs_remove(&slate->lfs, slate->filesys_buffered_fname_str);
     if (err < 0)
     {
         LOG_ERROR("[filesys] Failed to delete file %s during cancel: %d",
