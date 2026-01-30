@@ -14,6 +14,7 @@
 #pragma once
 
 #include "lfs.h"
+#include "mram.h"
 
 // Read a region in a block. Negative error codes are propagated
 // to the user.

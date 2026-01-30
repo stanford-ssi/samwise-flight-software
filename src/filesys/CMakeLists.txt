@@ -17,6 +17,7 @@ target_link_libraries(filesys PUBLIC
 target_include_directories(filesys PUBLIC
   $<$<BOOL:${BUILD_TESTS}>:${PROJECT_SOURCE_DIR}/src/test_mocks>
   "${PROJECT_SOURCE_DIR}/src/filesys"
+  "${PROJECT_SOURCE_DIR}/src/drivers/mram"
   "${PROJECT_SOURCE_DIR}/lib/littlefs-cmake"
 )
 
