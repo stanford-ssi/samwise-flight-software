@@ -298,6 +298,7 @@ void ftp_process_file_write_data_command(slate_t *slate,
     // Calculate how many packets we expect in this specific cycle
     // (Usually FTP_NUM_PACKETS_PER_CYCLE, unless it's the last incomplete
     // cycle)
+    // TODO: THis is completely wrong!
     const FILESYS_BUFFERED_FILE_LEN_T packets_remaining =
         total_packets - slate->ftp_start_cycle_packet_id;
 
@@ -328,7 +329,7 @@ void ftp_process_file_write_data_command(slate_t *slate,
 
     // Calculate bytes to write
     FILESYS_BUFFER_SIZE_T bytes_to_write;
-    if (packets_remaining > FTP_NUM_PACKETS_PER_CYCLE)
+    if (packets_remaining > 1) // TODO: THIs is wrong!
     {
         // Not the last cycle, so full buffer
         bytes_to_write = FTP_NUM_PACKETS_PER_CYCLE * FTP_DATA_PAYLOAD_SIZE;

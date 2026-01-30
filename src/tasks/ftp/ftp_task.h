@@ -137,6 +137,7 @@ typedef enum
      */
     FTP_ERROR_NOT_WRITING_FILE, // Error: Not writing a file
 
+    // TODO: add distinct error code for out of space?
     /**
      * FTP_ERROR_RECEIVE:
      *     LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar. Note
