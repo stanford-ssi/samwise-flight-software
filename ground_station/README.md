@@ -1,159 +1,82 @@
-# Ground Station
+# Samwise Ground Station
 
-Interactive LoRA communication system for communicating with the Samwise satellite.
+An optimized, mission-ready LoRA communication system designed for coordinating with the Samwise Cubesat. Optimized for high-performance monitoring on Raspberry Pi or CircuitPython microcontrollers.
 
-## Hardware Setup
+## 📁 System Architecture
 
-### Supported Boards
-- Raspberry Pi Pico 2
-- Adafruit Feather M4
+The ground station is designed with a modular, object-oriented architecture to ensure reliable data capture even during high-throughput satellite passes.
 
-### Required Hardware
-- Compatible microcontroller board (Pico 2 or Feather M4)
-- RFM9x LoRA radio module
-- Proper antenna for 438.1 MHz
-- USB connection for monitoring output
-
-## Software Setup
-
-### 1. Install CircuitPython
-
-Install CircuitPython on your microcontroller:
-- **Pico 2**: Follow instructions at https://circuitpython.org/board/raspberry_pi_pico2/
-- **Feather M4**: Follow instructions at https://circuitpython.org/board/feather_m4_express/
-
-### 2. Install Required Libraries
-
-Copy the required libraries to your CircuitPython device:
-
-1. Connect your microcontroller via USB (it should appear as a drive named `CIRCUITPY`)
-2. Copy all files from `ground_station/lib/` to the `lib/` folder on your device
-3. The main required library is `adafruit_rfm9x.mpy` (from https://github.com/adafruit/Adafruit_CircuitPython_RFM9x)
-
-### 3. Deploy Ground Station Code
-
-Copy `ground_station/code.py` to the root of your CircuitPython device as `code.py`
-
-## Running the Ground Station
-
-### Using `tio`
-
-1. **Install cli tool**: (MacOS) `brew install tio`
-2. Look for the device plugged in:
-   - **Windows**: Usually `COM3`, `COM4`, etc.
-   - **Mac**: Usually `/dev/cu.usbmodem*` or `/dev/tty.usbmodem*`
-   - **Linux**: Usually `/dev/ttyACM0` or `/dev/ttyUSB0`
-3. Connect to it using:
-   - `tio /dev/tty.usbmodem1101 -t`: Make sure you change the name of the device appropriately
-
-**Note: If it's not responding, you don't see anything printing, use CTRL+C to interrupt it and follow on-screen instructions**
-
-### Setting Up Serial Monitor in VSCode
-
-1. **Install Extension**: Install Microsoft's "Serial Monitor" extension in VSCode
-2. **Connect Hardware**: Connect your microcontroller via USB
-3. **Open Serial Monitor**: 
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-   - Type "Serial Monitor: Start Monitoring"
-   - Or find "Serial Monitor" in the bottom panel/terminal area
-4. **Select Port**: Choose the correct serial port:
-   - **Windows**: Usually `COM3`, `COM4`, etc.
-   - **Mac**: Usually `/dev/cu.usbmodem*` or `/dev/tty.usbmodem*`
-   - **Linux**: Usually `/dev/ttyACM0` or `/dev/ttyUSB0`
-5. **Set Baud Rate**: Use `115200` (default for CircuitPython)
-6. **Start Listening**: Click "Start Monitoring" or press the play button
-
-### Basic Execution
-
-1. With serial monitor connected, reset the microcontroller or press `Ctrl+D`
-2. The ground station will start automatically and display the mode selection menu
-
-### Operation Modes
-
-The ground station offers two modes:
-
-#### 1. Debug Listen Mode
-Continuously monitors for incoming packets and provides detailed analysis.
-
-Features:
-- Real-time packet monitoring
-- Detailed packet structure analysis
-- Automatic beacon packet detection and decoding
-- Signal strength reporting (RSSI)
-- Telemetry statistics display
-
-#### 2. Interactive Command Mode
-Allows sending commands to the satellite and monitoring responses.
-
-Features:
-- HMAC authenticated command sending
-- Automatic boot count synchronization from beacons
-- Real-time message ID tracking
-- Interactive command selection (NO_OP, Payload Exec, State Override)
-
-Available commands:
-- NO_OP (ping)
-- Payload Execute (with JSON parameters)
-- Payload Turn On/Off
-- Manual State Override
-
-NOTE: Ensure you have the correct HMAC PSK configured in `gs/config.py` or through the configuration menu to communicate with the satellite.
-
-### Debug Mode Usage
-
-When running in debug mode, the system displays detailed packet information:
-
-```
-*** PACKET #1 at 5.2s ***
-Length: 45 bytes
-Raw hex: 01054c6f72656d...
-ADAFRUIT RFM9X HEADER FIELDS:
-  RadioHead TO (destination): 255
-  RadioHead FROM (node): 0
-  RadioHead ID (identifier): 0
-  RadioHead FLAGS: 0
-BEACON PACKET STRUCTURE:
-  beacon_data_len=20
-  expected_total_size=21 bytes
-  actual_packet_size=45 bytes
-  >>> BEACON DETECTED (from satellite) <<<
-  State: running_state
-  Reboots: 1
-  Time in State: 15000 ms
-  RX: 5 pkts, 225 bytes
-  TX: 3 pkts, 135 bytes
-RSSI: -85 dBm
-*** END PACKET ***
+```text
+ground_station/
+├── code.py             # Main entry point (the firmware/script you run)
+├── requirements.txt    # Python dependencies (Pydantic, etc.)
+├── gs/                 # Core logic module
+│   ├── __init__.py     # Module initialization and state management singleton
+│   ├── config.py       # Radio settings (Frequency, BW, SF) and HMAC PSK
+│   ├── hardware.py     # Platform-agnostic hardware initialization (Pi / Pico / Feather)
+│   ├── protocol.py     # Packet architecture: OOP Decoders for Beacons & ADCS
+│   ├── comms.py        # High-level communication hooks (send/receive)
+│   ├── ui.py           # Non-blocking Interactive UI and Debug Listen modes
+│   ├── state.py        # Persistent state (boot_count/msg_id) with lazy-saving
+│   ├── logger.py       # Mission data archiver (CSV logging & Console output)
+│   └── models.py       # Pydantic data schemas for structured telemetry
+├── logs/               # Persistent telemetry CSV archives (Auto-generated)
+├── lib/                # CircuitPython libraries (for microcontroller deployment)
+└── tests/              # Unit tests for protocol and decoding logic
 ```
 
-### Beacon Packet Analysis
+### Why we split the software this way:
+*   **Separation of Concerns**: Decouples the radio hardware (`hardware.py`) from the orbital protocol (`protocol.py`) and the operator interface (`ui.py`).
+*   **Mission Reliability**: Heavy operations like file-logging (`logger.py`) and state persistence (`state.py`) are isolated to prevent blocking the mission-critical radio polling loop.
+*   **Type Safety**: Centralized schemas (`models.py`) ensure that malformed satellite data is caught and handled before it reaches the operator or the database.
 
-Debug mode automatically detects beacon packets (source node = 0) and decodes:
-- **State name** - Current satellite state
-- **Telemetry statistics**:
-  - Reboot counter
-  - Time in current state (ms)
-  - RX/TX packet and byte counts
-  - Packet drop statistics
+---
 
-## Configuration
+## 🚀 Getting Started
 
-The system uses default settings that match the flight software:
-- **Frequency**: 438.1 MHz
-- **Bandwidth**: 125000 Hz
-- **Spreading Factor**: 7
-- **Coding Rate**: 5
-- **CRC**: Enabled
-- **Authentication**: HMAC enabled with default PSK
+### 1. Main Entrypoint
+The **`code.py`** file is the system's entrypoint. It initializes the hardware, loads the latest mission state, and launches the operator menu.
 
-## Troubleshooting
+### 2. Running on Raspberry Pi (Recommended)
+Perfect for fixed ground stations.
+1.  **Install Dependencies**: `pip3 install -r requirements.txt`
+2.  **Verify Blinka**: Ensure the Adafruit Blinka library is configured for your Pi's hardware pins.
+3.  **Run**: `python3 code.py`
 
-If no packets are received:
-1. Verify antenna connection
-2. Check frequency settings match satellite
-3. Ensure satellite is transmitting
-4. Check signal strength (RSSI values)
-5. Verify board type detection is correct
+### 3. Running on Microcontrollers (Feather M4 / Pico 2)
+1.  Connect via USB (appears as `CIRCUITPY`).
+2.  Ensure the `lib/` folder and `gs/` module are copied to the root of the device.
+3.  Copy `code.py` to the device root.
+4.  Monitor output via a serial terminal (VSCode Serial Monitor or `tio`).
 
-Press `Ctrl+C` to stop debug mode or return to main menu.
+---
 
+## 🛠️ Operations & Modes
+
+### 📡 Debug Listen Mode
+A "read-only" high-speed monitoring mode.
+*   **Continuous radio polling**: Optimized for 10ms latency.
+*   **Automated Beacon Decoding**: Instantly parses incoming beacons into human-readable telemetry.
+*   **UTC Centric**: All timestamps follow ISO-8601 UTC for coordination with mission TLEs.
+
+### 🎮 Interactive Command Mode
+The primary mode for satellite control.
+*   **Non-Blocking Logic**: The radio continues to monitor for satellite packets *even while you are typing commands*. You will never miss data while interacting with the menu.
+*   **HMAC Authentication**: Every outgoing command is cryptographically signed and sequence-checked to prevent replays.
+*   **Lazy Saving**: State is cached in RAM and committed to the SD card periodically to protect your hardware during high-speed burst operations.
+
+---
+
+## 📊 Mission Telemetry
+
+Every packet received is automatically archived in **`logs/telemetry_log.csv`**. 
+*   **Raw Traceability**: The logs include the raw hex payload for forensic recovery.
+*   **Link Quality**: RSSI and SNR (Signal-to-Noise Ratio) are tracked for every packet to analyze antenna performance during a pass.
+
+---
+
+## ⚙️ Configuration
+
+Mission-specific settings (Frequency: 438.1 MHz, HMAC Keys, etc.) should be adjusted in **`gs/config.py`**. 
+
+**Note**: The ground station automatically synchronizes its `boot_count` whenever it hears a beacon, ensuring that your next command is always correctly authenticated without manual setup.
