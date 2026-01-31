@@ -5,7 +5,8 @@ import time
 STATE_FILE = "gs_state.json"
 
 class StateManager:
-    def __init__(self):
+    def __init__(self, state_file=STATE_FILE):
+        self.state_file = state_file
         self.boot_count = 0
         self.msg_id = 0
         self.last_save_time = 0
@@ -16,12 +17,12 @@ class StateManager:
         try:
             # Check if file exists first to avoid exception spam
             try:
-                os.stat(STATE_FILE)
+                os.stat(self.state_file)
             except OSError:
-                print(f"No existing state file {STATE_FILE}, starting fresh.")
+                print(f"No existing state file {self.state_file}, starting fresh.")
                 return
 
-            with open(STATE_FILE, "r") as f:
+            with open(self.state_file, "r") as f:
                 data = json.load(f)
                 self.boot_count = data.get("boot_count", 0)
                 self.msg_id = data.get("msg_id", 0)
@@ -41,7 +42,7 @@ class StateManager:
                 "boot_count": self.boot_count,
                 "msg_id": self.msg_id
             }
-            with open(STATE_FILE, "w") as f:
+            with open(self.state_file, "w") as f:
                 json.dump(data, f)
             self.last_save_time = now
             # logger.debug("State saved to disk")

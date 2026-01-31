@@ -18,3 +18,4 @@ node_modules/
 
 # Testing
 .pytest_cache/
+ground_station/tests/runtime_artifacts/

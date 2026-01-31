@@ -13,15 +13,27 @@ sys.modules['busio'] = MagicMock()
 sys.modules['digitalio'] = MagicMock()
 sys.modules['adafruit_rfm9x'] = MagicMock()
 
-from gs.protocol import PacketBuilder, create_cmd_payload, decode_beacon_data
-from gs.state import state_manager
+# Protocol tests for ground station communication.
+# Byte formats must remain in sync with the Kaitai Struct specification:
+# @see https://github.com/stanford-ssi/samwise-flight-software/blob/main/ground_station/samwise.ksy
+
+from gs.protocol import LegacyPacketBuilder as PacketBuilder, create_cmd_payload, decode_beacon_data
+from gs.state import StateManager
 from gs import config
 
 class TestProtocol(unittest.TestCase):
     def setUp(self):
+        # Use a temporary state file for tests to avoid polluting production data
+        test_state_file = os.path.join(os.path.dirname(__file__), 'runtime_artifacts', 'test_gs_state.json')
+        self.test_state = StateManager(state_file=test_state_file)
+        
+        # Inject our test state into the global state_manager for gs.protocol to use
+        from gs import state
+        state.state_manager = self.test_state
+        
         # Reset state headers for deterministic tests
-        state_manager.boot_count = 100
-        state_manager.msg_id = 50
+        self.test_state.boot_count = 100
+        self.test_state.msg_id = 50
 
     def test_create_cmd_payload(self):
         # Test string payload

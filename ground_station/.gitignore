@@ -1,6 +1,6 @@
-__pycache__/
-*.pyc
+# Mission State (Persisted locally on GS)
 gs_state.json
-.pytest_cache/
+
+# Local environment
 .venv/
 node_modules/

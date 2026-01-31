@@ -4,7 +4,7 @@ import select
 from .radio_commands import get_radio
 from . import protocol
 from . import config
-from . import hardware
+from . import radio_initialization as hardware
 from .state import state_manager
 
 def get_user_input(prompt, default=None):

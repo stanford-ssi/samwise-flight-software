@@ -8,19 +8,23 @@ PACKET_HMAC_SIZE = 32  # SHA256 size
 PACKET_FOOTER_SIZE = 8 + PACKET_HMAC_SIZE  # boot_count (4) + msg_id (4) + hmac
 PACKET_MAX_DATA_SIZE = 255 - PACKET_HEADER_SIZE - PACKET_FOOTER_SIZE
 
-# Default LoRA settings from flight software
+# Default LoRA settings - Must match flight software configuration
+# @see src/drivers/rfm9x/rfm9x.h for RFM9X_FREQUENCY and RFM9X_BANDWIDTH
+# @see src/drivers/rfm9x/rfm9x.c:rfm9x_init() for SF, CR, and CRC defaults
 DEFAULT_FREQUENCY = 438.1
 DEFAULT_BANDWIDTH = 125000
 DEFAULT_SPREADING_FACTOR = 7
 DEFAULT_CODING_RATE = 5
 DEFAULT_CRC = True
 
-# Command constants (from flight software)
+# Command constants - Must match flight software task handlers
+# @see src/tasks/beacon_task.c (or command_handler.c) for ID mappings
 NO_OP = 0
 PAYLOAD_EXEC = 1
 PAYLOAD_TURN_ON = 2
 PAYLOAD_TURN_OFF = 3
 MANUAL_STATE_OVERRIDE = 4
+PAYLOAD_SHUTDOWN = 5
 
 # Global configuration variables
 config = {

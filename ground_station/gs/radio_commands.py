@@ -1,4 +1,4 @@
-from . import hardware
+from . import radio_initialization as hardware
 from . import protocol
 from . import config
 from .state import state_manager
