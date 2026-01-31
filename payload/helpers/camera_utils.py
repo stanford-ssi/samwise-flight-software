@@ -12,7 +12,7 @@ IMAGES_DIR = "/home/pi/images"
 VID_DIR = "/home/pi/videos"
 log = logging.getLogger(__name__)
 
-def capture_raw_image(image_id: str, config_profile: str, camera_name: str) -> int:
+def capture_raw_image(image_id: str, config_profile: str, camera_name: str, camera_num: int) -> int:
     # Take a photo using the camera using supplied configuration (flags to pass into libcamera)
     # Saves the image to images/{image_id}_raw.png
     # Returns the size of the file in bytes
@@ -28,7 +28,7 @@ def capture_raw_image(image_id: str, config_profile: str, camera_name: str) -> i
 
     # Take image using `libcamera-still``
     image_filepath = f"{IMAGES_DIR}/{image_id}_raw.jpg"
-    os.system(f"libcamera-still -o {image_filepath} {camera_flags}")
+    os.system(f"libcamera-still -o {image_filepath} {camera_flags} --camera {camera_num}")
 
     return os.path.getsize(image_filepath)
 
@@ -88,14 +88,14 @@ def split_compressed_image(image_id: str, cells_x: int, cells_y: int, quality: i
     # Return size of the average cell (in bytes) and largest cell (in bytes)
     return sum(cell_sizes) // len(cell_sizes), max(cell_sizes)
 
-def capture_raw_vid(vid_id: str, libcamera_config_profile: str, camera_name: str) -> int:
+def capture_raw_vid(vid_id: str, libcamera_config_profile: str, camera_name: str, camera_num: int) -> int:
     select_camera(camera_name)
     with open(f"{CODE_DIR}/vid_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
     camera_flags = camera_flags_dict['libcamera'][libcamera_config_profile]
     log.info(f"Taking video '{vid_id}' with camera '{camera_name}'")
     vid_filepath = f"{VID_DIR}/{vid_id}_raw.h265"
-    os.system(f"libcamera-vid -o {vid_filepath} {camera_flags}")
+    os.system(f"libcamera-vid -o {vid_filepath} {camera_flags} --camera {camera_num}")
     return os.path.getsize(vid_filepath)
 
 
