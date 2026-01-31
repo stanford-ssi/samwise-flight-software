@@ -1,3 +1,4 @@
 adafruit-circuitpython-rfm9x
 adafruit-circuitpython-hashlib
 circuitpython-hmac
+pydantic
