@@ -33,57 +33,37 @@ class LoraRadio:
                 
                 # Check if this is from satellite (beacon source)
                 if rh_node == 0:  # FROM satellite
-                    print(f"  Type: BEACON PACKET")
-                    
                     if len(packet) >= 1:
                         data_len = packet[0]
-                        
                         if len(packet) >= 1 + data_len:
                             beacon_payload = packet[1:1+data_len]
                             beacon_data = protocol.decode_beacon_data(beacon_payload)
                             beacon_data.raw_hex = packet.hex() if hasattr(packet, 'hex') else ''.join('{:02x}'.format(b) for b in packet)
                             
-                            print(f"  State: {beacon_data.state_name}")
-                            
+                            # 1. Sync local mission state (Critical operational step)
                             if beacon_data.stats:
-                                stats = beacon_data.stats
-                                print(f"  === Telemetry ===")
-                                print(f"Reboots: {stats.reboot_counter}")
-                                
-                                # Sync our local state with satellite's boot count
-                                state_manager.update_from_beacon(stats.reboot_counter)
-                                
-                                print(f"Time in State: {stats.time_in_state_ms} ms ({stats.time_in_state_ms/1000:.1f} sec)")
-                                print(f"RX: {stats.rx_packets} pkts, TX: {stats.tx_packets} pkts")
-                                print(f"Battery: {stats.battery_voltage} mV, {stats.battery_current} mA")
-                                
-                                # Use Pydantic helper for status flags
-                                status_flags = stats.device_status_flags
-                                print(f"    Status: 0x{stats.device_status:02x} ({', '.join(status_flags) if status_flags else 'none'})")
-                                
-                                if beacon_data.adcs:
-                                    adcs = beacon_data.adcs
-                                    print(f"  === ADCS Telemetry ===")
-                                    print(f"Angular Velocity: {adcs.angular_velocity:.6f} rad/s")
-                                    print(f"Quaternion Mag: {adcs.quaternion.magnitude:.6f}")
-                                
-                                # Log to persistent storage
-                                try:
-                                    rssi = getattr(self.radio, 'last_rssi', None)
-                                    snr = getattr(self.radio, 'last_snr', None)
-                                    telemetry_logger.log_beacon(beacon_data.dict(), rssi=rssi, snr=snr)
-                                except Exception as log_err:
-                                    logger.error("Failed to log beacon: %s", log_err)
-
-                            else:
-                                logger.warning("Beacon decode failed")
+                                state_manager.update_from_beacon(beacon_data.stats.reboot_counter)
+                            
+                            # 2. Comprehensive Logging & Reporting
+                            # This handles both CSV storage and the detailed console report
+                            try:
+                                rssi = getattr(self.radio, 'last_rssi', None)
+                                snr = getattr(self.radio, 'last_snr', None)
+                                telemetry_logger.log_beacon(beacon_data, rssi=rssi, snr=snr, detailed=True)
+                            except Exception as log_err:
+                                logger.error("Failed to process beacon telemetry: %s", log_err)
+                        else:
+                            logger.warning("Truncated beacon payload: expected %d bytes, got %d", data_len, len(packet)-1)
+                    else:
+                        logger.warning("Empty packet from satellite")
                 else:
-                    print(f"Type: RESPONSE from node {rh_node}")
+                    # Non-beacon traffic (command responses, etc.)
+                    logger.info("RESPONSE | FROM: %d", rh_node)
                     try:
                         unpacked = protocol.Packet.unpack(packet)
                         print(f"  Data: {unpacked.data}")
                     except:
-                        print(f"  Raw Data: {packet[:20]}")
+                        logger.debug("Raw Payload: %s", packet.hex())
                 
                 print(">>> END PACKET <<<\n")
                 return True

@@ -79,7 +79,7 @@ class TelemetryLogger:
                 t.tm_year, t.tm_mon, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec
             )
 
-    def log_beacon(self, beacon_data, rssi=None, snr=None, console_only=False):
+    def log_beacon(self, beacon_data, rssi=None, snr=None, console_only=False, detailed=False):
         """
         Logs decoded telemetry data.
         
@@ -88,20 +88,55 @@ class TelemetryLogger:
             rssi (float, optional): Received Signal Strength Indicator.
             snr (float, optional): Signal-to-Noise Ratio.
             console_only (bool): If True, bypass the CSV file even if initialized.
+            detailed (bool): If True, prints comprehensive telemetry to the console.
         """
         ts = self._get_timestamp()
-        stats = beacon_data.get('stats', {})
-        adcs = beacon_data.get('adcs', {})
         
-        # 1. Logic for Console Logging (using standard logging lib)
+        # Support both Pydantic models (with .dict()) and raw dictionaries
+        data_dict = beacon_data if isinstance(beacon_data, dict) else beacon_data.dict()
+        stats = data_dict.get('stats', {})
+        adcs = data_dict.get('adcs', {})
+        state = data_dict.get('state_name', 'UNKNOWN')
+        
+        # 1. Logic for Console Logging
         if self.log_to_console:
-            state = beacon_data.get('state_name', 'UNKNOWN')
-            reboots = stats.get('reboot_counter', 0)
-            batt = stats.get('battery_voltage', 0)
-            logger.info("BEACON | State: %s | Reboots: %d | Battery: %d mV | Signal: RSSI %s, SNR %s", 
-                        state, reboots, batt, str(rssi), str(snr))
+            if detailed:
+                # Comprehensive Mission Report
+                print(f"\n--- MISSION TELEMETRY REPORT ({ts}) ---")
+                print(f"State: {state} | Callsign: {data_dict.get('callsign', 'N/A')}")
+                if stats:
+                    print(f"Reboots: {stats.get('reboot_counter', 0)}")
+                    print(f"Time in State: {stats.get('time_in_state_ms', 0)} ms")
+                    print(f"Battery: {stats.get('battery_voltage', 0)} mV | {stats.get('battery_current', 0)} mA")
+                    print(f"Solar: Bus {stats.get('solar_voltage', 0)} mV | A {stats.get('panel_A_voltage', 0)} mV | B {stats.get('panel_B_voltage', 0)} mV")
+                    print(f"Comms: RX {stats.get('rx_packets', 0)} pkts | TX {stats.get('tx_packets', 0)} pkts")
+                    
+                    # Status Flags
+                    status = stats.get('device_status', 0)
+                    # We can use the Pydantic helper if available, otherwise manual
+                    if hasattr(beacon_data, 'stats') and hasattr(beacon_data.stats, 'device_status_flags'):
+                        flags = beacon_data.stats.device_status_flags
+                    else:
+                        # Fallback bitmask parsing
+                        flags = []
+                        if status & 0x20: flags.append("payload_on")
+                        if status & 0x40: flags.append("adcs_on")
+                    print(f"Status Flags: 0x{status:02x} ({', '.join(flags) if flags else 'none'})")
+                
+                if adcs:
+                    w = adcs.get('angular_velocity', 0)
+                    print(f"ADCS: w={w:.6f} rad/s | State: {adcs.get('state', 0)}")
+                
+                print(f"Signal: RSSI {rssi} dBm | SNR {snr}")
+                print("---------------------------------------")
+            else:
+                # Quick status line
+                reboots = stats.get('reboot_counter', 0)
+                batt = stats.get('battery_voltage', 0)
+                logger.info("BEACON | State: %s | Reboot: %d | Batt: %d mV | RSSI: %s", 
+                            state, reboots, batt, str(rssi))
 
-        # 2. Logic for CSV Persistence
+        # 2. Logic for CSV Persistence (using data_dict to be safe)
         if self.log_to_csv and not console_only and self.initialized and self.file_handle:
             try:
                 row = [
