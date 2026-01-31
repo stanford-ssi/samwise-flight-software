@@ -1,5 +1,6 @@
 import sys
 import time
+import select
 from . import comms
 from . import protocol
 from . import config
@@ -76,6 +77,12 @@ def configure_lora_settings():
     print(f"  Spreading Factor: {config.config['spreading_factor']}")
     print(f"  Coding Rate: {config.config['coding_rate']}")
     print(f"  CRC: {config.config['crc']}")
+    print(
+        """
+        WARNING: Command mode requires valid authentication settings (PSK and Boot Count).
+        The system will attempt to sync Boot Count automatically from received beacons.
+        """
+        )
     
     if get_yes_no("Modify LoRA settings?", False):
         freq_str = get_user_input("Frequency (MHz)", config.config['frequency'])
@@ -125,65 +132,57 @@ def show_command_menu():
     print("h. Show this help")
 
 def interactive_command_loop():
-    """Main interactive command loop with continuous packet monitoring"""
+    """Main interactive command loop with non-blocking packet monitoring"""
     show_command_menu()
-    print("\nSystem is now monitoring for packets continuously...")
-    print("Press Enter to show command prompt, or type commands when prompted.")
+    print("\nSystem is monitoring for packets. Press Enter to type a command.")
     
-    last_prompt_time = time.monotonic()
-    prompt_interval = 5.0  # Show prompt every 5 seconds
+    last_status_time = time.monotonic()
+    status_interval = 10.0  # Show status every 10 seconds
     
     while True:
         try:
-            # Continuously check for packets
-            comms.try_get_packet(timeout=0.1)
+            # 1. Continuously check for packets (most important)
+            comms.try_get_packet(timeout=0.01)
             
-            # Show prompt periodically or when user presses enter
-            current_time = time.monotonic()
-            if current_time - last_prompt_time > prompt_interval:
-                try:
-                    cmd = input("\n[Monitoring...] Enter command (h for help, q to quit): ").strip().lower()
-                    last_prompt_time = current_time
-                    
-                    if cmd == 'q':
-                        print("Goodbye!")
-                        break
-                    elif cmd == 'h':
-                        show_command_menu()
-                    elif cmd == 'r':
-                        print("Checking for packets...")
-                        comms.try_get_packet(timeout=1.0)
-                    elif cmd == '1':
-                        print("Sending NO_OP...")
-                        comms.send_no_op()
-                    elif cmd == '2':
-                        payload_cmd = get_user_input("Enter payload command", '["take_photo", ["test1"], {"w": 1024, "h": 768, "cell": 128}]')
-                        print(f"Sending payload execute: {payload_cmd}")
-                        comms.send_payload_exec(payload_cmd)
-                    elif cmd == '3':
-                        print("Sending payload turn on...")
-                        comms.send_payload_turn_on()
-                    elif cmd == '4':
-                        print("Sending payload turn off...")
-                        comms.send_payload_turn_off()
-                    elif cmd == '5':
-                        state_name = get_user_input("Enter state name", "running_state")
-                        print(f"Sending state override: {state_name}")
-                        comms.send_manual_state_override(state_name)
-                    elif cmd == '':
-                        # Just pressed enter, continue monitoring
-                        pass
-                    else:
-                        print("Unknown command. Type 'h' for help.")
+            # 2. Check for user input without blocking
+            # Linux/Pi compatible non-blocking stdin check
+            rlist, _, _ = select.select([sys.stdin], [], [], 0)
+            if rlist:
+                line = sys.stdin.readline()
+                cmd = line.strip().lower()
                 
-                except EOFError:
-                    # Handle Ctrl+D
-                    print("\nGoodbye!")
+                if cmd == 'q':
+                    print("Goodbye!")
                     break
-            else:
-                # Brief sleep to prevent excessive CPU usage
-                time.sleep(0.1)
-        
+                elif cmd == 'h':
+                    show_command_menu()
+                elif cmd == '1':
+                    print("Sending NO_OP...")
+                    comms.send_no_op()
+                elif cmd == '2':
+                    payload_cmd = str(input("Enter payload command: ") or '["take_photo"]')
+                    comms.send_payload_exec(payload_cmd)
+                elif cmd == '3':
+                    comms.send_payload_turn_on()
+                elif cmd == '4':
+                    comms.send_payload_turn_off()
+                elif cmd == '5':
+                    state_name = str(input("Enter state name: ") or "running_state")
+                    comms.send_manual_state_override(state_name)
+                elif cmd == '':
+                    # Pressed enter, show status and prompt
+                    print(f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-5, q, h): ", end="", flush=True)
+                else:
+                    print(f"Unknown command '{cmd}'. Type 'h' for help.")
+            
+            # 3. Periodic status line to show we're alive
+            current_time = time.monotonic()
+            if current_time - last_status_time > status_interval:
+                print(f"\r[STATUS] Monitoring... Boot:{state_manager.boot_count} MsgID:{state_manager.msg_id}   ", end="", flush=True)
+                last_status_time = current_time
+                
+            time.sleep(0.01) # Low latency
+            
         except KeyboardInterrupt:
             print("\nGoodbye!")
             break
@@ -198,138 +197,56 @@ def debug_listen_mode():
     print("Press Ctrl+C to stop\n")
     
     packet_count = 0
-    start_time = time.monotonic()
     
+    # Try to import datetime for UTC timestamps
+    try:
+        from datetime import datetime
+    except ImportError:
+        datetime = None
+
+    start_time = time.monotonic()
+    last_status_time = start_time
+
     try:
         while True:
             # Blink LED to show we're alive
             if hardware.led is not None:
                 hardware.led.value = True
             
-            # Check for any packet with short timeout
-            if hardware.rfm9x is not None:
-                packet = hardware.rfm9x.receive(timeout=0.1)
-            else:
-                packet = None
-            
-            if packet is not None:
+            # Check for packets - comms.try_get_packet handles decoding and printing
+            if comms.try_get_packet(timeout=0.1):
                 packet_count += 1
-                current_time = time.monotonic()
-                elapsed = current_time - start_time
                 
-                print("\n*** PACKET #{} at {:.1f}s ***".format(packet_count, elapsed))
-                print("Length: {} bytes".format(len(packet)))
-                
-                # Convert to hex string
-                if hasattr(packet, 'hex'):
-                    hex_str = packet.hex()
+                # Get wall clock time
+                if datetime:
+                    ts = datetime.utcnow().strftime('%H:%M:%S')
                 else:
-                    hex_str = ''.join('{:02x}'.format(b) for b in packet)
-                print("Raw hex: {}".format(hex_str))
+                    ts = "{:.1f}s".format(time.monotonic() - start_time)
                 
-                # Use adafruit_rfm9x library properties to get RadioHead header fields
-                try:
-                    # Get RadioHead header fields from the library
-                    rh_destination = getattr(hardware.rfm9x, 'destination', None)
-                    rh_node = getattr(hardware.rfm9x, 'node', None) 
-                    rh_identifier = getattr(hardware.rfm9x, 'identifier', None)
-                    rh_flags = getattr(hardware.rfm9x, 'flags', None)
-                    
-                    print("ADAFRUIT RFM9X HEADER FIELDS:")
-                    print("  RadioHead TO (destination): {}".format(rh_destination))
-                    print("  RadioHead FROM (node): {}".format(rh_node))
-                    print("  RadioHead ID (identifier): {}".format(rh_identifier))
-                    print("  RadioHead FLAGS: {}".format(rh_flags))
-                    
-                    # RadioHead stripped dst, src, flags, seq
-                    # Beacon packets after RadioHead processing: len(1) + beacon_data(len)
-                    # (boot_count, msg_id, hmac are handled at packet layer, not beacon layer)
-                    if len(packet) >= 1:
-                        # First byte is the beacon data length
-                        data_len = packet[0]
-                        print("BEACON PACKET STRUCTURE:")
-                        print("  beacon_data_len={}".format(data_len))
-                        print("  expected_total_size={} bytes".format(1 + data_len))
-                        print("  actual_packet_size={} bytes".format(len(packet)))
-                        
-                        # Extract beacon data payload
-                        if len(packet) >= 1 + data_len:
-                            beacon_payload = packet[1:1+data_len]
-                            
-                            # Check RadioHead headers to determine if this is from satellite
-                            try:
-                                beacon_data = protocol.decode_beacon_data(beacon_payload)
-                                print("  >>> BEACON DETECTED (from satellite) <<<")
-                                print("  State: {}".format(beacon_data['state_name']))
-                                
-                                if beacon_data['stats']:
-                                    stats = beacon_data['stats']
-                                    
-                                    # Sync our local state with satellite's boot count
-                                    state_manager.update_from_beacon(stats['reboot_counter'])
-                                    
-                                    print("  Reboots: {}".format(stats['reboot_counter']))
-                                    print("  Time in State: {} ms".format(stats['time_in_state_ms']))
-                                    print("  RX: {} pkts, {} bytes".format(stats['rx_packets'], stats['rx_bytes']))
-                                    print("  TX: {} pkts, {} bytes".format(stats['tx_packets'], stats['tx_bytes']))
-                                    print("  Battery: {} mV, {} mA".format(stats['battery_voltage'], stats['battery_current']))
-                                    print("  Solar: {} mV, {} mA".format(stats['solar_voltage'], stats['solar_current']))
-                                    # Decode device status bits
-                                    status = stats['device_status']
-                                    status_flags = []
-                                    if status & 0x01: status_flags.append("RBF")
-                                    if status & 0x02: status_flags.append("solar_charge")
-                                    if status & 0x04: status_flags.append("solar_fault")
-                                    if status & 0x08: status_flags.append("panel_A")
-                                    if status & 0x10: status_flags.append("panel_B")
-                                    if status & 0x20: status_flags.append("payload")
-                                    print("  Status: 0x{:02x} ({})".format(status, ','.join(status_flags) if status_flags else 'none'))
-                                    
-                                    # Display ADCS data if present
-                                    if beacon_data.get('adcs'):
-                                        adcs = beacon_data['adcs']
-                                        print("  === ADCS Data ===")
-                                        print("  Angular Velocity: {:.6f} rad/s".format(adcs['angular_velocity']))
-                                        q = adcs['quaternion']
-                                        print("  Quaternion: q0={:.6f}, q1={:.6f}, q2={:.6f}, q3={:.6f}".format(q['q0'], q['q1'], q['q2'], q['q3']))
-                                        q_mag = (q['q0']**2 + q['q1']**2 + q['q2']**2 + q['q3']**2)**0.5
-                                        print("  Quat Magnitude: {:.6f}".format(q_mag))
-                                        print("  ADCS State: {}".format(adcs['state']))
-                                        print("  ADCS Boot Count: {}".format(adcs['boot_count']))
-                                else:
-                                    print("  Beacon decode failed, raw data: {}".format(beacon_payload[:20]))
-                            except Exception as e:
-                                print("  Error decoding beacon data: {}".format(e))
-                            finally:
-                                print("  Data: {}".format(beacon_payload))
-                        else:
-                            print("  Packet too short: need {} bytes, got {}".format(1 + data_len, len(packet)))
-                    
-                except Exception as e:
-                    print("DECODE ERROR: {}".format(e))
-                    # Fallback to raw display
-                    if len(packet) >= 5:
-                        print("Raw first 5 bytes: {}, {}, {}, {}, {}".format(
-                            packet[0], packet[1], packet[2], packet[3], packet[4]))
+                print(f"\n*** PACKET #{packet_count} at {ts} UTC ***")
                 
                 # Show signal strength
                 try:
                     rssi = hardware.rfm9x.last_rssi
-                    print("RSSI: {} dBm".format(rssi))
+                    snr = getattr(hardware.rfm9x, 'last_snr', None)
+                    if snr is not None:
+                        print(f"Signal: RSSI {rssi} dBm, SNR {snr}")
+                    else:
+                        print(f"Signal: RSSI {rssi} dBm")
                 except:
                     pass
-                
                 print("*** END PACKET ***\n")
             
             if hardware.led is not None: 
                 hardware.led.value = False
-            time.sleep(0.1)
             
             # Periodic status
             current_time = time.monotonic()
-            if current_time - start_time > 30:
+            if current_time - last_status_time > 30:
                 print("[{:.0f}s] Listening... ({} packets so far)".format(current_time - start_time, packet_count))
-                start_time = current_time
+                last_status_time = current_time
+            
+            time.sleep(0.1)
                 
     except KeyboardInterrupt:
         print("\n=== SUMMARY ===")

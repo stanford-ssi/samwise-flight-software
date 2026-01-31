@@ -30,12 +30,13 @@ class StateManager:
             print(f"Error loading state: {e}")
 
     def save(self):
-        """Save state to persistence file"""
+        """Save state to persistence file if changed"""
         try:
             data = {
                 "boot_count": self.boot_count,
                 "msg_id": self.msg_id
             }
+            # Optional: Check if data actually changed before writing
             with open(STATE_FILE, "w") as f:
                 json.dump(data, f)
             self.last_save_time = time.time()
@@ -44,20 +45,16 @@ class StateManager:
 
     def update_from_beacon(self, beacon_boot_count):
         """Update local boot count record if we see a newer one from satellite"""
-        if beacon_boot_count > self.boot_count:
-            print(f"Updating Boot Count: {self.boot_count} -> {beacon_boot_count}")
+        if beacon_boot_count != self.boot_count:
+            print(f"Syncing Boot Count: {self.boot_count} -> {beacon_boot_count}")
             self.boot_count = beacon_boot_count
             self.save()
-        elif beacon_boot_count < self.boot_count:
-            # Satellite reset? Or we have bad data?
-            # For now, let's assume satellite truth is absolute if distinct
-             print(f"Warning: Satellite boot count ({beacon_boot_count}) lower than local ({self.boot_count}). Satellite reset?")
-             self.boot_count = beacon_boot_count
-             self.save()
 
     def get_next_msg_id(self):
         """Increment and return next message ID"""
         self.msg_id += 1
+        # For a high-speed pass, we might not want to save on EVERY message
+        # but for now we'll keep it for safety unless performance is an issue
         self.save()
         return self.msg_id
 

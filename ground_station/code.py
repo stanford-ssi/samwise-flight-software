@@ -32,5 +32,6 @@ if __name__ == "__main__":
         pass
     except Exception as e:
         print(f"Error setting up print flushing: {e}")
-        
+
     main()
+

@@ -82,16 +82,22 @@ Features:
 - Signal strength reporting (RSSI)
 - Telemetry statistics display
 
-#### 2. Interactive Command Mode (**DO NOT USE**)
+#### 2. Interactive Command Mode
 Allows sending commands to the satellite and monitoring responses.
+
+Features:
+- HMAC authenticated command sending
+- Automatic boot count synchronization from beacons
+- Real-time message ID tracking
+- Interactive command selection (NO_OP, Payload Exec, State Override)
 
 Available commands:
 - NO_OP (ping)
-- Payload Execute
+- Payload Execute (with JSON parameters)
 - Payload Turn On/Off
 - Manual State Override
 
-WARNING: This mode has not yet been fully debugged and is missing key features necessary to send a valid command instruction or receive beacons from the satellite!
+NOTE: Ensure you have the correct HMAC PSK configured in `gs/config.py` or through the configuration menu to communicate with the satellite.
 
 ### Debug Mode Usage
 

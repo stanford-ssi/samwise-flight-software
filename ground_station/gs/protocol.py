@@ -38,10 +38,6 @@ class PacketBuilder:
 
         # Pack header fields
         packet = struct.pack("BBBBB", dst, src, flags, seq, len(data))
-
-        print("Data length: {}, Data: {}".format(len(data), data))
-
-        # Add data
         packet += data
         
         # Get dynamic state
@@ -52,14 +48,8 @@ class PacketBuilder:
         packet += struct.pack("<II", current_boot_count, next_msg_id)
 
         # Flight software always expects HMAC authentication
-        # Calculate HMAC (even if auth is "disabled", we still send it for compatibility)
         h = hmac.new(config.config['packet_hmac_psk'], msg=packet, digestmod=sha256)
         packet += h.digest()
-
-        # Debug packet contents
-        print("Total packet size: {} bytes (min required: 45)".format(len(packet)))
-        for i, byte in enumerate(packet):
-            print("[DEBUG] {:02d}: {:02x}".format(i, byte))
         
         # RFM9x library adds 4-byte header, so we return the full packet
         # The flight software expects the complete packet structure
@@ -111,6 +101,7 @@ class PacketBuilder:
                 "src": src,
                 "flags": flags,
                 "seq": seq,
+                "len": data_len, # Added len for consistency with flight software
                 "data": data
             }
 
@@ -148,28 +139,19 @@ def decode_beacon_data(data):
         stats_start = null_pos + 1
         print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
         
-        # New beacon_stats struct size: 4+8+4+4+4+4+4+4+2+2+2+2+1 = 45 bytes
-        # Plus ADCS packet size: 25 bytes (float w + 4 floats quaternion + char state + uint32_t boot_count)
-        # Total expected: 45 + 25 = 70 bytes after state name
-        if len(data) >= stats_start + 45:  # 45 bytes for beacon_stats struct
+        # New beacon_stats struct size: 53 bytes
+        # 4+8 + 6*4 + 8*2 + 1 = 53
+        if len(data) >= stats_start + 53:
             print("DEBUG: Extracting stats data...")
-            stats_data = data[stats_start:stats_start + 45]
+            stats_data = data[stats_start:stats_start + 53]
             print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
             
-            print("DEBUG: About to call struct.unpack...")
-
-            print("DEBUG: Boot bytes: {}".format(
-                ' '.join('{:02x}'.format(b) for b in stats_data[:4])
-            ))
-
             # Unpack new beacon_stats struct (all little-endian)
-            # CircuitPython struct may not support all format codes, let's try simpler ones
-            # uint32_t reboot_counter, uint64_t time, 6x uint32_t values, 4x uint16_t values, 1x uint8_t
-            # L=uint32, Q=uint64, H=uint16, B=uint8 - try using I for uint32 instead of L
-            unpacked_stats = struct.unpack('<LQ6L4HB', stats_data)
+            # <LQ6L8HB
+            # L=uint32, Q=uint64, H=uint16, B=uint8
+            unpacked_stats = struct.unpack('<LQ6L8HB', stats_data)
             print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
             
-            # Q format worked (uint64 for time)
             beacon_stats = {
                 "reboot_counter": unpacked_stats[0],
                 "time_in_state_ms": unpacked_stats[1],
@@ -183,11 +165,15 @@ def decode_beacon_data(data):
                 "battery_current": unpacked_stats[9],
                 "solar_voltage": unpacked_stats[10],
                 "solar_current": unpacked_stats[11],
-                "device_status": unpacked_stats[12]
+                "panel_A_voltage": unpacked_stats[12],
+                "panel_A_current": unpacked_stats[13],
+                "panel_B_voltage": unpacked_stats[14],
+                "panel_B_current": unpacked_stats[15],
+                "device_status": unpacked_stats[16]
             }
             
             # Check if ADCS data is appended after beacon stats
-            adcs_start = stats_start + 45
+            adcs_start = stats_start + 53
             adcs_data = None
             if len(data) >= adcs_start + 25:  # 25 bytes for ADCS packet
                 print("DEBUG: ADCS data detected, extracting...")
@@ -198,16 +184,25 @@ def decode_beacon_data(data):
                 else:
                     print("DEBUG: ADCS decode failed: {}".format(adcs_data.get('error', 'unknown')))
                     adcs_data = None
-            else:
-                print("DEBUG: No ADCS data present (need {} bytes, have {})".format(25, len(data) - adcs_start))
             
+            # Check for callsign (KC3WNY)
+            callsign_start = adcs_start + 25
+            callsign = None
+            if len(data) >= callsign_start + 7: # "KC3WNY\0" is 7 bytes
+                try:
+                    callsign = data[callsign_start:callsign_start+7].decode('utf-8').strip('\x00')
+                    print("DEBUG: Callsign detected: {}".format(callsign))
+                except:
+                    pass
+
             return {
                 "state_name": state_name,
                 "stats": beacon_stats,
-                "adcs": adcs_data
+                "adcs": adcs_data,
+                "callsign": callsign
             }
         else:
-            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(45, len(data) - stats_start))
+            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(53, len(data) - stats_start))
             return {"state_name": state_name, "stats": None}
             
     except Exception as e:

@@ -1,6 +1,8 @@
 from . import hardware
 from . import protocol
 from . import config
+from .state import state_manager
+from .logger import telemetry_logger
 import time
 
 def try_get_packet(timeout=0.1):
@@ -36,27 +38,37 @@ def try_get_packet(timeout=0.1):
                     if len(packet) >= 1 + data_len:
                         beacon_payload = packet[1:1+data_len]
                         beacon_data = protocol.decode_beacon_data(beacon_payload)
+                        beacon_data['raw_hex'] = packet.hex() if hasattr(packet, 'hex') else ''.join('{:02x}'.format(b) for b in packet)
                         print(f"  State: {beacon_data['state_name']}")
                         
                         if beacon_data['stats']:
                             stats = beacon_data['stats']
                             print(f"  === Telemetry ===")
                             print(f"    Reboots: {stats['reboot_counter']}")
+                            
+                            # Sync our local state with satellite's boot count
+                            state_manager.update_from_beacon(stats['reboot_counter'])
+                            
                             print(f"    Time in State: {stats['time_in_state_ms']} ms ({stats['time_in_state_ms']/1000:.1f} sec)")
                             print(f"    RX: {stats['rx_packets']} packets, {stats['rx_bytes']} bytes")
                             print(f"    TX: {stats['tx_packets']} packets, {stats['tx_bytes']} bytes")
                             print(f"    RX Drops - Backpressure: {stats['rx_backpressure_drops']}, Bad Packets: {stats['rx_bad_packet_drops']}")
                             print(f"    Battery: {stats['battery_voltage']} mV, {stats['battery_current']} mA")
-                            print(f"    Solar: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+                            print(f"    Solar Legacy: {stats['solar_voltage']} mV, {stats['solar_current']} mA")
+                            print(f"    Panel A: {stats['panel_A_voltage']} mV, {stats['panel_A_current']} mA")
+                            print(f"    Panel B: {stats['panel_B_voltage']} mV, {stats['panel_B_current']} mA")
+                            
                             # Decode device status bits
                             status = stats['device_status']
                             status_flags = []
                             if status & 0x01: status_flags.append("RBF_detected")
-                            if status & 0x02: status_flags.append("fixed_solar_charge")
-                            if status & 0x04: status_flags.append("fixed_solar_fault")
+                            if status & 0x02: status_flags.append("solar_charge")
+                            if status & 0x04: status_flags.append("solar_fault")
                             if status & 0x08: status_flags.append("panel_A_deployed")
                             if status & 0x10: status_flags.append("panel_B_deployed")
                             if status & 0x20: status_flags.append("payload_on")
+                            if status & 0x40: status_flags.append("adcs_on")
+                            if status & 0x80: status_flags.append("adcs_valid")
                             print(f"    Device Status: 0x{status:02x} ({', '.join(status_flags) if status_flags else 'none'})")
                             
                             # Display ADCS data if present
@@ -69,8 +81,19 @@ def try_get_packet(timeout=0.1):
                                 # Calculate quaternion magnitude for validation
                                 q_mag = (q['q0']**2 + q['q1']**2 + q['q2']**2 + q['q3']**2)**0.5
                                 print(f"    Quaternion Magnitude: {q_mag:.6f} (should be ~1.0)")
-                                print(f"    ADCS State: {adcs['state']}")
                                 print(f"    ADCS Boot Count: {adcs['boot_count']}")
+                            
+                            if beacon_data.get('callsign'):
+                                print(f"  Callsign: {beacon_data['callsign']}")
+                            
+                            # Log to persistent storage
+                            try:
+                                rssi = getattr(hardware.rfm9x, 'last_rssi', None)
+                                snr = getattr(hardware.rfm9x, 'last_snr', None)
+                                telemetry_logger.log_beacon(beacon_data, rssi=rssi, snr=snr)
+                            except Exception as log_err:
+                                print(f"  [Error] Failed to log beacon: {log_err}")
+
                         else:
                             print(f"    Beacon decode failed, raw data: {beacon_payload[:20]}")
                     else:
@@ -105,34 +128,25 @@ def send_command(cmd_id, cmd_payload="", dst=0xFF):
 
     data = protocol.create_cmd_payload(cmd_id, cmd_payload)
     
-    # Create our packet payload (without RadioHead headers)
-    # Flight software expects: dst, src, flags, seq, len, data, boot_count, msg_id, hmac
+    # Create our packet payload
     packet_payload = protocol.packet_builder.create_packet(
-        dst=dst,  # Our destination address
-        src=0xFF,  # Our source address (ground station)
-        flags=0x00,  # No special flags
-        seq=0x00,  # Sequence number
-        data=data,  # Command data
+        dst=dst,
+        src=0xFF,
+        flags=0x00,
+        seq=0x00,
+        data=data,
     )
     
-    # Do NOT strip the header. The flight software expects the full packet structure 
-    # (dst, src, flags, seq) as the payload, even if RadioHead also has headers.
-    payload_to_send = packet_payload
-    
-    print("Packet dump: " + " ".join("{:02x}".format(byte) for byte in payload_to_send))
-    
-    # Use adafruit_rfm9x library's RadioHead headers
+    # Send using library
     hardware.rfm9x.send(
-        payload_to_send,
-        destination=0xFF,    # RadioHead TO field
-        node=0x00,          # RadioHead FROM field (ground station)
-        identifier=0x00,    # RadioHead ID field 
-        flags=0x00          # RadioHead FLAGS field
+        packet_payload,
+        destination=0xFF,
+        node=0x00,
+        identifier=0x00,
+        flags=0x00
     )
     
-    print("Sent packet with RadioHead headers: TO={}, FROM={}, ID={}, FLAGS={}".format(
-        dst, 0xFF, 0x00, 0x00))
-    print("Payload length: {} bytes".format(len(payload_to_send)))
+    print(f"Sent command {cmd_id} (Payload: {cmd_payload})")
 
 def send_no_op():
     """Send a NO_OP ping command"""
