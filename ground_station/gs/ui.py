@@ -127,6 +127,7 @@ def show_command_menu():
     print("3. Send Payload Turn On")
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
+    print("6. Send Payload Shutdown")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -153,6 +154,7 @@ def interactive_command_loop():
                 
                 if cmd == 'q':
                     print("Goodbye!")
+                    state_manager.shutdown()
                     break
                 elif cmd == 'h':
                     show_command_menu()
@@ -169,9 +171,12 @@ def interactive_command_loop():
                 elif cmd == '5':
                     state_name = str(input("Enter state name: ") or "running_state")
                     comms.send_manual_state_override(state_name)
+                elif cmd == '6':
+                    print("Sending payload shutdown...")
+                    comms.send_payload_shutdown()
                 elif cmd == '':
                     # Pressed enter, show status and prompt
-                    print(f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-5, q, h): ", end="", flush=True)
+                    print(f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-6, q, h): ", end="", flush=True)
                 else:
                     print(f"Unknown command '{cmd}'. Type 'h' for help.")
             
@@ -185,6 +190,7 @@ def interactive_command_loop():
             
         except KeyboardInterrupt:
             print("\nGoodbye!")
+            state_manager.shutdown()
             break
         except Exception as e:
             print(f"Error: {e}")
@@ -199,6 +205,7 @@ def debug_listen_mode():
     packet_count = 0
     
     # Try to import datetime for UTC timestamps
+
     try:
         from datetime import datetime
     except ImportError:
@@ -249,6 +256,8 @@ def debug_listen_mode():
             time.sleep(0.1)
                 
     except KeyboardInterrupt:
+        print("\nExiting listener mode...")
+        state_manager.shutdown()
         print("\n=== SUMMARY ===")
         print("Total packets: {}".format(packet_count))
         print("Returning to main menu...")

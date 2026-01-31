@@ -9,6 +9,8 @@ except:
     import hmac
 from . import config
 from .state import state_manager
+from .models import BeaconData, BeaconStats, ADCSData, ADCSQuaternion, RadioPacket
+from typing import Optional
 
 def create_cmd_payload(cmd_id, cmd_payload=""):
     if isinstance(cmd_payload, str):
@@ -25,227 +27,152 @@ def safe_compare_digest(a, b):
         result |= x ^ y
     return result == 0
 
-class PacketBuilder:
-    def __init__(self):
-        # We no longer maintain internal state, we rely on state_manager
-        pass
-
-    def create_packet(self, dst, src, flags, seq, data):
+class Packet:
+    """Handles the standard radio protocol envelope: Headers, Auth, and Footers."""
+    
+    @staticmethod
+    def create(dst, src, flags, seq, data) -> bytes:
+        """Create a full authenticated packet."""
         if len(data) > config.PACKET_MAX_DATA_SIZE:
-            raise ValueError(
-                f"Data too large: {len(data)} bytes (max {config.PACKET_MAX_DATA_SIZE})"
-            )
+            raise ValueError(f"Data too large: {len(data)} bytes")
 
-        # Pack header fields
-        packet = struct.pack("BBBBB", dst, src, flags, seq, len(data))
-        packet += data
+        # Create model representing the unsaved packet
+        pkt = RadioPacket(
+            dst=dst, src=src, flags=flags, seq=seq, data=data,
+            boot_count=state_manager.boot_count,
+            msg_id=state_manager.get_next_msg_id()
+        )
         
-        # Get dynamic state
-        current_boot_count = state_manager.boot_count
-        next_msg_id = state_manager.get_next_msg_id()
-
-        # Add boot count and msg_id (flight software always expects these)
-        packet += struct.pack("<II", current_boot_count, next_msg_id)
-
-        # Flight software always expects HMAC authentication
-        h = hmac.new(config.config['packet_hmac_psk'], msg=packet, digestmod=sha256)
-        packet += h.digest()
+        # Build the payload for HMAC
+        payload = pkt.header_bytes + pkt.data + pkt.footer_bytes
         
-        # RFM9x library adds 4-byte header, so we return the full packet
-        # The flight software expects the complete packet structure
-        return packet
+        # Add HMAC
+        h = hmac.new(config.config['packet_hmac_psk'], msg=payload, digestmod=sha256)
+        return payload + h.digest()
 
-    def unpack_packet(self, packet_bytes):
+    @staticmethod
+    def unpack(packet_bytes: bytes) -> RadioPacket:
+        """Unpack raw bytes into a RadioPacket model and verify auth."""
         if len(packet_bytes) < config.PACKET_HEADER_SIZE:
-            raise ValueError("Packet too small")
+            raise ValueError("Packet too short")
 
-        # Unpack header
+        # 1. Unpack Header
         dst, src, flags, seq, data_len = struct.unpack(
             "BBBBB", packet_bytes[:config.PACKET_HEADER_SIZE]
         )
 
-        # Extract data
-        data = packet_bytes[config.PACKET_HEADER_SIZE:config.PACKET_HEADER_SIZE + data_len]
-
+        # 2. Extract components
+        data_end = config.PACKET_HEADER_SIZE + data_len
+        # Footer is 8 bytes (boot_count + msg_id) before the HMAC (32 bytes)
+        footer_start = len(packet_bytes) - config.PACKET_HMAC_SIZE - 8
+        
+        data = packet_bytes[config.PACKET_HEADER_SIZE:data_end]
+        
+        # 3. Authenticate
         if config.config['auth_enabled']:
-            # Extract HMAC
             received_hmac = packet_bytes[-config.PACKET_HMAC_SIZE:]
-            packet_without_hmac = packet_bytes[:-config.PACKET_HMAC_SIZE]
-
-            # Verify HMAC
-            h = hmac.new(config.config['packet_hmac_psk'], msg=packet_without_hmac, digestmod=sha256)
+            payload_for_verification = packet_bytes[:-config.PACKET_HMAC_SIZE]
+            
+            h = hmac.new(config.config['packet_hmac_psk'], msg=payload_for_verification, digestmod=sha256)
             if not safe_compare_digest(h.digest(), received_hmac):
-               print("HMAC verification failed. Received: {}, Calculated: {}".format(
-                   ' '.join('{:02x}'.format(b) for b in received_hmac),
-                   ' '.join('{:02x}'.format(b) for b in h.digest())
-               ))
-               # raise ValueError("HMAC verification failed") # Warning only for now
-
-
-            # Unpack footer
-            footer_start = len(packet_bytes) - config.PACKET_FOOTER_SIZE
+                print(f"[Packet] HMAC verification failed for packet from node {src}")
+            
+            # 4. Unpack Footer
             boot_count, msg_id = struct.unpack('<II', packet_bytes[footer_start:footer_start+8])
             
-            return {
-                "dst": dst,
-                "src": src,
-                "flags": flags,
-                "seq": seq,
-                "data": data,
-                'boot_count': boot_count,
-                'msg_id': msg_id
-            }
-        else:
-            return {
-                "dst": dst,
-                "src": src,
-                "flags": flags,
-                "seq": seq,
-                "len": data_len, # Added len for consistency with flight software
-                "data": data
-            }
-
-packet_builder = PacketBuilder()
-
-def decode_beacon_data(data):
-    """Decode beacon data payload from beacon_task.c format"""
-    try:
-        print("DEBUG: decode_beacon_data called with {} bytes".format(len(data)))
-        print("DEBUG: data = {}".format(' '.join('{:02x}'.format(b) for b in data)))
+            return RadioPacket(
+                dst=dst, src=src, flags=flags, seq=seq, data=data,
+                boot_count=boot_count, msg_id=msg_id, hmac_digest=received_hmac
+            )
         
-        # Find the null terminator for the state name
-        null_pos = data.find(b'\x00')
-        print("DEBUG: null_pos = {}".format(null_pos))
+        return RadioPacket(dst=dst, src=src, flags=flags, seq=seq, data=data)
+
+class BeaconPacket(Packet):
+    """Specialized packet for satellite beacons."""
+    
+    @classmethod
+    def decode(cls, packet_bytes: bytes) -> BeaconData:
+        # Standard beacon packets from radio have a 1-byte length header prefix
+        # before the state name null-terminated string.
+        if len(packet_bytes) < 1:
+            return BeaconData(state_name="short_packet")
+            
+        data_len = packet_bytes[0]
+        payload = packet_bytes[1:1+data_len]
         
+        # Raw hex for forensic logging
+        raw_hex = packet_bytes.hex()
+        
+        # Find null terminator for state name
+        null_pos = payload.find(b'\x00')
         if null_pos == -1:
-            # No null terminator found, assume entire data is state name
-            print("DEBUG: No null terminator found")
-            try:
-                state_name = data.decode('utf-8')
-            except UnicodeDecodeError:
-                # Fallback for invalid UTF-8
-                state_name = str(data)
-            return {"state_name": state_name, "stats": None}
-        
-        # Extract state name (null-terminated string)
-        try:
-            state_name = data[:null_pos].decode('utf-8')
-        except UnicodeDecodeError:
-            # Fallback for invalid UTF-8
-            state_name = str(data[:null_pos])
-        print("DEBUG: Decoded state name: '{}'".format(state_name))
-        
-        # Extract beacon statistics starting after null terminator
+            return BeaconData(state_name=payload.decode('utf-8', 'ignore'), raw_hex=raw_hex)
+            
+        state_name = payload[:null_pos].decode('utf-8', 'ignore')
         stats_start = null_pos + 1
-        print("DEBUG: stats_start = {}, remaining bytes = {}".format(stats_start, len(data) - stats_start))
         
-        # New beacon_stats struct size: 53 bytes
-        # 4+8 + 6*4 + 8*2 + 1 = 53
-        if len(data) >= stats_start + 53:
-            print("DEBUG: Extracting stats data...")
-            stats_data = data[stats_start:stats_start + 53]
-            print("DEBUG: Extracted stats data ({} bytes): {}".format(len(stats_data), ' '.join('{:02x}'.format(b) for b in stats_data)))
-            
-            # Unpack new beacon_stats struct (all little-endian)
-            # <LQ6L8HB
-            # L=uint32, Q=uint64, H=uint16, B=uint8
-            unpacked_stats = struct.unpack('<LQ6L8HB', stats_data)
-            print("DEBUG: struct.unpack successful, got {} values".format(len(unpacked_stats)))
-            
-            beacon_stats = {
-                "reboot_counter": unpacked_stats[0],
-                "time_in_state_ms": unpacked_stats[1],
-                "rx_bytes": unpacked_stats[2],
-                "rx_packets": unpacked_stats[3],
-                "rx_backpressure_drops": unpacked_stats[4],
-                "rx_bad_packet_drops": unpacked_stats[5],
-                "tx_bytes": unpacked_stats[6],
-                "tx_packets": unpacked_stats[7],
-                "battery_voltage": unpacked_stats[8],
-                "battery_current": unpacked_stats[9],
-                "solar_voltage": unpacked_stats[10],
-                "solar_current": unpacked_stats[11],
-                "panel_A_voltage": unpacked_stats[12],
-                "panel_A_current": unpacked_stats[13],
-                "panel_B_voltage": unpacked_stats[14],
-                "panel_B_current": unpacked_stats[15],
-                "device_status": unpacked_stats[16]
-            }
-            
-            # Check if ADCS data is appended after beacon stats
-            adcs_start = stats_start + 53
-            adcs_data = None
-            if len(data) >= adcs_start + 25:  # 25 bytes for ADCS packet
-                print("DEBUG: ADCS data detected, extracting...")
-                adcs_payload = data[adcs_start:adcs_start + 25]
-                adcs_data = decode_adcs_data(adcs_payload)
-                if 'error' not in adcs_data:
-                    print("DEBUG: ADCS decode successful")
-                else:
-                    print("DEBUG: ADCS decode failed: {}".format(adcs_data.get('error', 'unknown')))
-                    adcs_data = None
-            
-            # Check for callsign (KC3WNY)
-            callsign_start = adcs_start + 25
-            callsign = None
-            if len(data) >= callsign_start + 7: # "KC3WNY\0" is 7 bytes
-                try:
-                    callsign = data[callsign_start:callsign_start+7].decode('utf-8').strip('\x00')
-                    print("DEBUG: Callsign detected: {}".format(callsign))
-                except:
-                    pass
+        beacon_data = BeaconData(state_name=state_name, raw_hex=raw_hex)
 
-            return {
-                "state_name": state_name,
-                "stats": beacon_stats,
-                "adcs": adcs_data,
-                "callsign": callsign
-            }
-        else:
-            print("DEBUG: Not enough data for stats, need {} bytes, have {}".format(53, len(data) - stats_start))
-            return {"state_name": state_name, "stats": None}
+        # 1. Decode Stats (53 bytes)
+        if len(payload) >= stats_start + 53:
+            stats_data = payload[stats_start:stats_start+53]
+            unpacked = struct.unpack('<LQ6L8HB', stats_data)
+            beacon_data.stats = BeaconStats(
+                reboot_counter=unpacked[0],
+                time_in_state_ms=unpacked[1],
+                rx_bytes=unpacked[2], rx_packets=unpacked[3],
+                rx_backpressure_drops=unpacked[4], rx_bad_packet_drops=unpacked[5],
+                tx_bytes=unpacked[6], tx_packets=unpacked[7],
+                battery_voltage=unpacked[8], battery_current=unpacked[9],
+                solar_voltage=unpacked[10], solar_current=unpacked[11],
+                panel_A_voltage=unpacked[12], panel_A_current=unpacked[13],
+                panel_B_voltage=unpacked[14], panel_B_current=unpacked[15],
+                device_status=unpacked[16]
+            )
+
+            # 2. Decode ADCS if present (appended after stats)
+            adcs_start = stats_start + 53
+            if len(payload) >= adcs_start + 25:
+                beacon_data.adcs = AdcsTelemetryPacket.decode_payload(payload[adcs_start:adcs_start+25])
             
-    except Exception as e:
-        print("[decode_beacon_data] Error decoding beacon data: {}".format(e))
-        print("DEBUG: Full traceback:")
-        return {"state_name": "decode_error", "stats": None}
+            # 3. Decode Callsign if present
+            callsign_start = adcs_start + 25
+            if len(payload) >= callsign_start + 6:
+                beacon_data.callsign = payload[callsign_start:callsign_start+6].decode('utf-8', 'ignore').strip('\x00')
+
+        return beacon_data
+
+class AdcsTelemetryPacket(Packet):
+    """Specialized packet for ADCS telemetry."""
+    
+    @staticmethod
+    def decode_payload(data: bytes) -> Optional[ADCSData]:
+        if len(data) < 25:
+            return None
+        try:
+            unpacked = struct.unpack('<fffffBL', data[:25])
+            return ADCSData(
+                angular_velocity=unpacked[0],
+                quaternion=ADCSQuaternion(q0=unpacked[1], q1=unpacked[2], q2=unpacked[3], q3=unpacked[4]),
+                state=unpacked[5],
+                boot_count=unpacked[6]
+            )
+        except:
+            return None
+
+# Backward compatibility wrappers
+def decode_beacon_data(data):
+    return BeaconPacket.decode(data)
 
 def decode_adcs_data(data):
-    """Decode ADCS telemetry data from adcs_packet.h format"""
-    try:
-        print("DEBUG: decode_adcs_data called with {} bytes".format(len(data)))
-        print("DEBUG: data = {}".format(' '.join('{:02x}'.format(b) for b in data)))
-        
-        # ADCS packet structure from adcs_packet.h:
-        # float w (4 bytes) - Angular velocity
-        # float q0, q1, q2, q3 (16 bytes) - Quaternion estimate
-        # char state (1 byte) - State
-        # uint32_t boot_count (4 bytes) - Boot count
-        # Total: 25 bytes
-        
-        if len(data) < 25:
-            print("DEBUG: ADCS packet too short, need 25 bytes, got {}".format(len(data)))
-            return {"error": "packet_too_short", "expected": 25, "actual": len(data)}
-        
-        # Unpack ADCS data (little-endian floats, char, uint32)
-        # f = float (4 bytes), B = unsigned char (1 byte), L = uint32 (4 bytes)
-        unpacked = struct.unpack('<fffffBL', data[:25])
-        
-        adcs_data = {
-            "angular_velocity": unpacked[0],
-            "quaternion": {
-                "q0": unpacked[1],
-                "q1": unpacked[2], 
-                "q2": unpacked[3],
-                "q3": unpacked[4]
-            },
-            "state": unpacked[5],
-            "boot_count": unpacked[6]
-        }
-        
-        print("DEBUG: ADCS decode successful")
-        return adcs_data
-        
-    except Exception as e:
-        print("[decode_adcs_data] Error decoding ADCS data: {}".format(e))
-        return {"error": "decode_failed", "exception": str(e)}
+    return AdcsTelemetryPacket.decode_payload(data)
+
+class LegacyPacketBuilder:
+    def create_packet(self, dst, src, flags, seq, data):
+        return Packet.create(dst, src, flags, seq, data)
+    
+    def unpack_packet(self, packet_bytes):
+        pkt = Packet.unpack(packet_bytes)
+        return pkt.dict()
+
+packet_builder = LegacyPacketBuilder()
