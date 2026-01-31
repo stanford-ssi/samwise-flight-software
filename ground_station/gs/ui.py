@@ -1,7 +1,7 @@
 import sys
 import time
 import select
-from . import comms
+from .radio_commands import get_radio
 from . import protocol
 from . import config
 from . import hardware
@@ -38,7 +38,8 @@ def get_user_input_with_timeout(prompt, timeout=0.5):
     
     while True:
         # Check for packets every 100ms
-        if comms.try_get_packet(timeout=0.1):
+        radio = get_radio()
+        if radio.try_get_packet(timeout=0.1):
             # Packet received, redisplay prompt
             print(f"\r{prompt}", end='', flush=True)
         
@@ -143,7 +144,8 @@ def interactive_command_loop():
     while True:
         try:
             # 1. Continuously check for packets (most important)
-            comms.try_get_packet(timeout=0.01)
+            radio = get_radio()
+            radio.try_get_packet(timeout=0.01)
             
             # 2. Check for user input without blocking
             # Linux/Pi compatible non-blocking stdin check
@@ -160,20 +162,20 @@ def interactive_command_loop():
                     show_command_menu()
                 elif cmd == '1':
                     print("Sending NO_OP...")
-                    comms.send_no_op()
+                    radio.send_no_op()
                 elif cmd == '2':
                     payload_cmd = str(input("Enter payload command: ") or '["take_photo"]')
-                    comms.send_payload_exec(payload_cmd)
+                    radio.send_payload_exec(payload_cmd)
                 elif cmd == '3':
-                    comms.send_payload_turn_on()
+                    radio.send_payload_turn_on()
                 elif cmd == '4':
-                    comms.send_payload_turn_off()
+                    radio.send_payload_turn_off()
                 elif cmd == '5':
                     state_name = str(input("Enter state name: ") or "running_state")
-                    comms.send_manual_state_override(state_name)
+                    radio.send_manual_state_override(state_name)
                 elif cmd == '6':
                     print("Sending payload shutdown...")
-                    comms.send_payload_shutdown()
+                    radio.send_payload_shutdown()
                 elif cmd == '':
                     # Pressed enter, show status and prompt
                     print(f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-6, q, h): ", end="", flush=True)
@@ -220,8 +222,9 @@ def debug_listen_mode():
             if hardware.led is not None:
                 hardware.led.value = True
             
-            # Check for packets - comms.try_get_packet handles decoding and printing
-            if comms.try_get_packet(timeout=0.1):
+            # Check for packets - radio handles decoding and printing
+            radio = get_radio()
+            if radio.try_get_packet(timeout=0.1):
                 packet_count += 1
                 
                 # Get wall clock time
