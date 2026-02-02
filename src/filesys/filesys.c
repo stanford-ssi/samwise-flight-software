@@ -25,15 +25,15 @@ const struct lfs_config filesys_lfs_cfg = {
     .lookahead_size = FILESYS_CFG_LOOKAHEAD_SIZE,
     .block_cycles = 500,
 
-    .prog_buffer = prog_buffer,
-    .read_buffer = read_buffer,
-    .lookahead_buffer = lookahead_buffer,
+    // .prog_buffer = prog_buffer,
+    // .read_buffer = read_buffer,
+    // .lookahead_buffer = lookahead_buffer,
 
     .name_max = sizeof(FILESYS_BUFFERED_FNAME_STR_T),
 };
 
 const struct lfs_file_config filesys_lfs_file_cfg = {
-    .buffer = cache_buffer,
+    // .buffer = cache_buffer,
 };
 
 void filesys_file_open(lfs_t *lfs, lfs_file_t *file, const char *fname,
@@ -145,7 +145,7 @@ int8_t filesys_start_file_write(slate_t *slate,
     lfs_file_t lfs_open_file;
     filesys_file_open(&slate->lfs, &lfs_open_file,
                       slate->filesys_buffered_fname_str,
-                      LFS_O_CREAT | LFS_O_WRONLY);
+                      LFS_O_CREAT | LFS_O_WRONLY | LFS_O_TRUNC);
 
     // Add CRC as attribute to open file - type 0
     int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str, 0,
@@ -229,6 +229,13 @@ int8_t filesys_write_buffer_to_mram(slate_t *slate,
     {
         LOG_ERROR("[filesys] Failed to write buffer to file %s: %d",
                   slate->filesys_buffered_fname_str, bytes_written);
+
+        // Get amount of space used
+        lfs_ssize_t used_size = lfs_file_size(&slate->lfs, &lfs_open_file);
+        lfs_ssize_t total_fs_used_size = lfs_fs_size(&slate->lfs);
+        LOG_ERROR("[filesys] Current file size: %d bytes, Total FS used size: "
+                  "%d blocks",
+                  used_size, total_fs_used_size);
         filesys_cancel_file_write(slate);
         return FILESYS_ERR_WRITE_MRAM;
     }
@@ -239,7 +246,7 @@ int8_t filesys_write_buffer_to_mram(slate_t *slate,
     LOG_INFO("[filesys] Wrote %d bytes from buffer to file %s in MRAM",
              bytes_written, slate->filesys_buffered_fname_str);
 
-    return bytes_written;
+    return FILESYS_OK;
 }
 
 unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code)
@@ -326,8 +333,7 @@ int8_t filesys_complete_file_write(slate_t *slate)
 
     // Check CRC here
     int8_t crc_check = filesys_is_crc_correct(slate);
-    if (crc_check == FILESYS_ERR_CRC_CHECK ||
-        crc_check == FILESYS_ERR_CRC_MISMATCH)
+    if (crc_check != FILESYS_OK)
         return crc_check;
 
     LOG_INFO("[filesys] CRC matches for file %s!",

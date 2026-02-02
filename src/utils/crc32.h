@@ -8,7 +8,10 @@
 // WARNING: Note this does NOT invert after calculation, this must be done by
 // the user! To use, initialize crc to 0xFFFFFFFF, then call crc32_continue as
 // needed, then invert the final result (use the ~ operator).
-inline static unsigned int crc32_continue(const uint8_t *message, uint16_t len,
+// This is equivalent to zlib's implementation, and should always be the same as
+// running in Python: import zlib zlib.crc32(data) Where data is a byte-string
+// (use bytes()) with the same data as message.
+inline static unsigned int crc32_continue(const uint8_t *message, size_t len,
                                           unsigned int crc)
 {
     size_t i;
@@ -30,7 +33,7 @@ inline static unsigned int crc32_continue(const uint8_t *message, uint16_t len,
     return crc; // Don't invert here - must be done by the user!
 }
 
-inline static unsigned int crc32(const uint8_t *message, uint16_t len)
+inline static unsigned int crc32(const uint8_t *message, size_t len)
 {
     return ~crc32_continue(message, len, 0xFFFFFFFF);
 }

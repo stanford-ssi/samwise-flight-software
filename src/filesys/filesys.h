@@ -74,6 +74,9 @@ static uint8_t lookahead_buffer[FILESYS_CFG_LOOKAHEAD_SIZE] = {0};
 // configuration of the filesystem is provided by this struct
 extern const struct lfs_config filesys_lfs_cfg;
 
+// configuration of file operations (always use lfs_file_opencfg with this)
+extern const struct lfs_file_config filesys_lfs_file_cfg;
+
 /**
  * Mounts the filesystem & initializes the overall filesys system.
  * This MUST be run before any other filesystem operations.
