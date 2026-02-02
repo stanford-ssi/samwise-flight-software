@@ -117,10 +117,11 @@ send_ftp_cycle_info_packet(slate_t *slate, FTP_Result result,
     uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
                         sizeof(FTP_PACKET_TRACKER_T)];
 
+    const FTP_PACKET_SEQUENCE_T packet_end = ftp_get_last_packet(slate);
+
     uint8_t *result_data_ptr = result_data;
     memcpy_inc(&result_data_ptr, &packet_start, sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&result_data_ptr, &ftp_get_last_packet(slate),
-               sizeof(FTP_PACKET_SEQUENCE_T));
+    memcpy_inc(&result_data_ptr, &packet_end, sizeof(FTP_PACKET_SEQUENCE_T));
     memcpy_inc(&result_data_ptr, &packets_received_tracker,
                sizeof(FTP_PACKET_TRACKER_T));
 

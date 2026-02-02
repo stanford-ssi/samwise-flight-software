@@ -31,7 +31,7 @@
  *
  * Additional Data (varies based on FTP_Result) is written in comments below.
  */
-typedef enum
+typedef enum __attribute__((packed))
 {
     /**
      *  FILESYS_INIT_ERROR:
@@ -178,6 +178,12 @@ typedef enum
      */
     FTP_ERROR, // Generic error
 } FTP_Result;
+
+_Static_assert(sizeof(FTP_Result) == 1,
+               "FTP_Result should be 1 byte. This assertion is to ensure no "
+               "issues come with changing compilers, as C does not provide a "
+               "way to change the size of enums. This should be fine with GCC "
+               "with __attribute__((packed)).");
 
 // number of bytes used to identify FTP result
 #define FTP_RESULT_MNEMONIC_SIZE 1
