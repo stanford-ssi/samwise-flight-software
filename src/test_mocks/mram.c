@@ -6,23 +6,13 @@
 
 #define MOCK_MRAM_SIZE FILESYS_BLOCK_SIZE *FILESYS_BLOCK_COUNT
 
-#ifdef MOCK_MRAM_DEBUG
-#define MOCK_MRAM_LOG_DEBUG(fmt, ...)                                          \
-    do                                                                         \
-    {                                                                          \
-        LOG_DEBUG("[Mock MRAM] " fmt, ##__VA_ARGS__);                          \
-    } while (0)
-#else
-#define MOCK_MRAM_LOG_DEBUG(fmt, ...)
-#endif
-
 static uint8_t mock_mram[MOCK_MRAM_SIZE];
 static bool write_enabled = false;
 
 void mram_init(void)
 {
     write_enabled = true;
-    MOCK_MRAM_LOG_DEBUG("Initialized\n");
+    printf("[Mock MRAM] Initialized\n");
 }
 
 // NOTE: This function only works on read/write permissions on the
@@ -35,63 +25,62 @@ uint8_t mram_read_status(void)
 void mram_write_enable(void)
 {
     write_enabled = true;
-    MOCK_MRAM_LOG_DEBUG("Write enabled\n");
+    printf("[Mock MRAM] Write enabled\n");
 }
 
 void mram_write_disable(void)
 {
     write_enabled = false;
-    MOCK_MRAM_LOG_DEBUG("Write disabled\n");
+    printf("[Mock MRAM] Write disabled\n");
 }
 
 void mram_sleep(void)
 {
-    MOCK_MRAM_LOG_DEBUG("Entering sleep mode\n");
+    printf("[Mock MRAM] Entering sleep mode\n");
 }
 
 void mram_wake(void)
 {
-    MOCK_MRAM_LOG_DEBUG("Waking up\n");
+    printf("[Mock MRAM] Waking up\n");
 }
 
 void mram_read(uint32_t address, uint8_t *data, size_t length)
 {
     if (address + length > MOCK_MRAM_SIZE)
     {
-        LOG_ERROR("[Mock MRAM] Read out of bounds\n");
+        printf("[Mock MRAM] Read out of bounds\n");
         return;
     }
     memcpy(data, &mock_mram[address], length);
-    MOCK_MRAM_LOG_DEBUG("Read %zu bytes from address 0x%06X\n", length,
-                        address);
+    printf("[Mock MRAM] Read %zu bytes from address 0x%06X\n", length, address);
 }
 
 void mram_clear(uint32_t address, size_t length)
 {
     if (address + length > MOCK_MRAM_SIZE)
     {
-        LOG_ERROR("[Mock MRAM] Clear out of bounds\n");
+        printf("[Mock MRAM] Clear out of bounds\n");
         return;
     }
     memset(&mock_mram[address], 0, length);
-    MOCK_MRAM_LOG_DEBUG("Cleared %zu bytes at address 0x%06X\n", length,
-                        address);
+    printf("[Mock MRAM] Cleared %zu bytes at address 0x%06X\n", length,
+           address);
 }
 
 bool mram_write(uint32_t address, const uint8_t *data, size_t length)
 {
     if (!write_enabled)
     {
-        LOG_ERROR("[Mock MRAM] Write failed: write not enabled\n");
+        printf("[Mock MRAM] Write failed: write not enabled\n");
         return false;
     }
     if (address + length > MOCK_MRAM_SIZE)
     {
-        LOG_ERROR("[Mock MRAM] Write out of bounds\n");
+        printf("[Mock MRAM] Write out of bounds\n");
         return false;
     }
     memcpy(&mock_mram[address], data, length);
-    MOCK_MRAM_LOG_DEBUG("Wrote %zu bytes to address 0x%06X\n", length, address);
+    printf("[Mock MRAM] Wrote %zu bytes to address 0x%06X\n", length, address);
     return true;
 }
 
@@ -108,22 +97,22 @@ bool mram_ranges_overlap(uint32_t addr1, size_t len1, uint32_t addr2,
 
 bool mram_register_allocation(uint32_t address, size_t length)
 {
-    MOCK_MRAM_LOG_DEBUG("Registered allocation at address 0x%06X, length %zu\n",
-                        address, length);
+    printf("[Mock MRAM] Registered allocation at address 0x%06X, length %zu\n",
+           address, length);
     return true;
 }
 
 bool mram_check_collision(uint32_t address, size_t length)
 {
     // Mock implementation: Always return false (no collision)
-    MOCK_MRAM_LOG_DEBUG("Checked collision at address 0x%06X, length %zu\n",
-                        address, length);
+    printf("[Mock MRAM] Checked collision at address 0x%06X, length %zu\n",
+           address, length);
     return false;
 }
 
 bool mram_free_allocation(uint32_t address)
 {
     // Mock implementation: Always return true (successful free)
-    MOCK_MRAM_LOG_DEBUG("Freed allocation at address 0x%06X\n", address);
+    printf("[Mock MRAM] Freed allocation at address 0x%06X\n", address);
     return true;
 }
