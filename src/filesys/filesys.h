@@ -50,6 +50,8 @@ enum filesys_error
     FILESYS_ERR_WRITE_MRAM = -15,          // Failed to write to MRAM
 };
 
+typedef int32_t filesys_error_t;
+
 // Size of block caches in bytes. Each cache buffers a portion of a block in
 // RAM. The littlefs needs a read cache, a program cache, and one additional
 // cache per file. Larger caches can improve performance by storing more
@@ -81,19 +83,28 @@ extern const struct lfs_file_config filesys_lfs_file_cfg;
  * Mounts the filesystem & initializes the overall filesys system.
  * This MUST be run before any other filesystem operations.
  *
+ * @param slate Pointer to the slate structure.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return A negative error code on failure.
  */
-int8_t filesys_initialize(slate_t *slate);
+filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code);
 
 /**
  * Formats the filesystem on MRAM.
  * This is a destructive operation that erases all data on the filesystem.
  *
  * @param slate Pointer to the slate structure.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return A negative error code on failure.
  */
-int8_t filesys_reformat_initialize(slate_t *slate);
+filesys_error_t filesys_reformat_initialize(slate_t *slate,
+                                            lfs_ssize_t *lfs_error_code);
 
+// TODO: Make all return statements make sense, including error_code
 /**
  * Initializes writing to a file in the filesystem.
  *
@@ -101,21 +112,28 @@ int8_t filesys_reformat_initialize(slate_t *slate);
  * @param fname The name of the file to buffer.
  * @param file_size The size of the file to buffer.
  * @param file_crc The CRC of the file to buffer.
- * @param blocksLeftAfterWrite Pointer to store the amount of blocks left
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
+ * @param blocks_left_after_write Pointer to store the amount of blocks left
  * after the write. Note if this is negative, there is not enough space to write
  * the file. This is not written if the function returns -1 or -2.
- * @return FILESYS_ERR_FILE_ALREADY_WRITING if a file is already being written,
- *         FILESYS_ERR_GET_FS_SIZE if there was an error getting the filesystem
- * size, FILESYS_ERR_NOT_ENOUGH_SPACE if there is not enough space to write the
- * file, FILESYS_ERR_OPEN_FILE if there was an error opening the file for
- * writing/appending, FILESYS_ERR_SET_CRC_ATTR if there was an error setting the
- * CRC attribute, FILESYS_OK on success.
+ * @return // FILESYS_ERR_FILE_ALREADY_WRITING if a file is already being
+ * written,
+ * // FILESYS_ERR_GET_FS_SIZE if there was an error getting the filesystem size,
+ * // FILESYS_ERR_NOT_ENOUGH_SPACE if there is not enough space to write the
+ * file,
+ * // FILESYS_ERR_OPEN_FILE if there was an error opening the file for
+ * writing/appending,
+ * // FILESYS_ERR_SET_CRC_ATTR if there was an error setting the CRC attribute,
+ * // FILESYS_OK on success.
  */
-int8_t filesys_start_file_write(slate_t *slate,
-                                FILESYS_BUFFERED_FNAME_STR_T fname_str,
-                                FILESYS_BUFFERED_FILE_LEN_T file_size,
-                                FILESYS_BUFFERED_FILE_CRC_T file_crc,
-                                lfs_ssize_t *blocksLeftAfterWrite);
+filesys_error_t filesys_start_file_write(slate_t *slate,
+                                         FILESYS_BUFFERED_FNAME_STR_T fname_str,
+                                         FILESYS_BUFFERED_FILE_LEN_T file_size,
+                                         FILESYS_BUFFERED_FILE_CRC_T file_crc,
+                                         lfs_ssize_t *lfs_error_code,
+                                         lfs_ssize_t *blocks_left_after_write);
 
 /**
  * Writes data to the current file buffer at the specified offset.
@@ -126,10 +144,15 @@ int8_t filesys_start_file_write(slate_t *slate,
  * FILESYS_BUFFER_SIZE).
  * @param offset The offset in the buffer to start writing at. (Must not exceed
  * FILESYS_BUFFER_SIZE).
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  */
-int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
-                                    FILESYS_BUFFER_SIZE_T n_bytes,
-                                    FILESYS_BUFFER_SIZE_T offset);
+filesys_error_t filesys_write_data_to_buffer(slate_t *slate,
+                                             const uint8_t *data,
+                                             FILESYS_BUFFER_SIZE_T n_bytes,
+                                             FILESYS_BUFFER_SIZE_T offset,
+                                             lfs_ssize_t *lfs_error_code);
 
 /**
  * Writes the current buffered state to MRAM as a block, and mark the buffer
@@ -138,10 +161,14 @@ int8_t filesys_write_data_to_buffer(slate_t *slate, const uint8_t *data,
  * @param slate Pointer to the slate structure.
  * @param n_bytes The number of bytes to write for this buffer. Use
  * FILESYS_BUFFER_SIZE to write the entire buffer to MRAM.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return The number of bytes written, or a negative error code on failure.
  */
-int8_t filesys_write_buffer_to_mram(slate_t *slate,
-                                    FILESYS_BUFFER_SIZE_T n_bytes);
+filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
+                                             FILESYS_BUFFER_SIZE_T n_bytes,
+                                             lfs_ssize_t *lfs_error_code);
 
 /**
  * Computes the CRC of the file currently being written.
@@ -149,20 +176,28 @@ int8_t filesys_write_buffer_to_mram(slate_t *slate,
  * @param slate Pointer to the slate structure.
  * @param error_code Pointer to store error code in case of failure, or
  * FILESYS_OK on success.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return The computed CRC value.
  */
-unsigned int filesys_compute_crc(slate_t *slate, int8_t *error_code);
+unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
+                                 lfs_ssize_t *lfs_error_code);
 
 /**
  * Validates the CRC of the file currently being written against the stored CRC
  * (on _CRC attribute).
  *
  * @param slate Pointer to the slate structure.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return FILESYS_CRC_CORRECT if the CRC is correct,
  *         FILESYS_CRC_INCORRECT if incorrect,
  *         FILESYS_CRC_NO_FILE if no file is being written.
  */
-int8_t filesys_is_crc_correct(slate_t *slate);
+filesys_error_t filesys_is_crc_correct(slate_t *slate,
+                                       lfs_ssize_t *lfs_error_code);
 
 /**
  * Marks the filesystem as no longer writing a file. If the buffer is currently
@@ -170,13 +205,17 @@ int8_t filesys_is_crc_correct(slate_t *slate);
  * write it to MRAM before completing.
  *
  * @param slate Pointer to the slate structure.
- * @return FILESYS_ERR_BUFFER_DIRTY if the buffer is dirty,
- *         FILESYS_ERR_CLOSE_FILE if there was an error closing the file,
- *         FILESYS_ERR_CRC_CHECK if there was an error during CRC check,
- *         FILESYS_ERR_CRC_MISMATCH if the CRC did not match,
- *         FILESYS_OK on success.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
+ * @return // FILESYS_ERR_BUFFER_DIRTY if the buffer is dirty,
+ *         // FILESYS_ERR_CLOSE_FILE if there was an error closing the file,
+ *         // FILESYS_ERR_CRC_CHECK if there was an error during CRC check,
+ *         // FILESYS_ERR_CRC_MISMATCH if the CRC did not match,
+ *         // FILESYS_OK on success.
  */
-int8_t filesys_complete_file_write(slate_t *slate);
+filesys_error_t filesys_complete_file_write(slate_t *slate,
+                                            lfs_ssize_t *lfs_error_code);
 
 /**
  * Marks the current buffer as clean. DESTRUCTIVE OPERATION.
@@ -192,9 +231,13 @@ void filesys_clear_buffer(slate_t *slate);
  * completely cancelling the write operation. DESTRUCTIVE OPERATION.
  *
  * @param slate Pointer to the slate structure.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error. Note that LFS can be OK but filesys can
+ * still fail (e.g. not enough space in buffer).
  * @return FILESYS_ERR_NO_FILE_WRITING if no file is being written,
  *         FILESYS_ERR_CLOSE_FILE if there was an error closing the file,
  *         FILESYS_ERR_DELETE_FILE if there was an error deleting the file,
  *         FILESYS_OK on success.
  */
-int8_t filesys_cancel_file_write(slate_t *slate);
+filesys_error_t filesys_cancel_file_write(slate_t *slate,
+                                          lfs_ssize_t *lfs_error_code);
