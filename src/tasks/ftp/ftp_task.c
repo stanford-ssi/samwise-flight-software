@@ -5,13 +5,13 @@
 void ftp_send_result_packet_custom_file(
     slate_t *slate, FILESYS_BUFFERED_FNAME_STR_T buffered_fname_str,
     FILESYS_BUFFERED_FILE_LEN_T buffered_file_len,
-    FILESYS_BUFFERED_FILE_CRC_T buffered_file_crc, FTP_Result result,
+    FILESYS_BUFFERED_FILE_CRC_T buffered_file_crc, ftp_result_t result,
     const void *additional_data, size_t additional_data_len)
 {
     const size_t packet_len = sizeof(FILESYS_BUFFERED_FNAME_STR_T) +
                               sizeof(FILESYS_BUFFERED_FILE_LEN_T) +
                               sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
-                              sizeof(FTP_Result) + additional_data_len;
+                              sizeof(ftp_result_t) + additional_data_len;
 
     if (packet_len > PACKET_DATA_SIZE)
     {
@@ -34,7 +34,7 @@ void ftp_send_result_packet_custom_file(
     memcpy_inc(&data_ptr, &buffered_file_crc,
                sizeof(FILESYS_BUFFERED_FILE_CRC_T));
 
-    memcpy_inc(&data_ptr, &result, sizeof(FTP_Result));
+    memcpy_inc(&data_ptr, &result, sizeof(ftp_result_t));
 
     if (additional_data != NULL && additional_data_len > 0)
         memcpy_inc(&data_ptr, additional_data, additional_data_len);
@@ -52,7 +52,7 @@ void ftp_send_result_packet_custom_file(
         LOG_INFO("[FTP] Sent FTP result packet %d", result);
 }
 
-void ftp_send_result_packet_no_file(slate_t *slate, FTP_Result result,
+void ftp_send_result_packet_no_file(slate_t *slate, ftp_result_t result,
                                     const void *additional_data,
                                     size_t additional_data_len)
 {
@@ -60,7 +60,7 @@ void ftp_send_result_packet_no_file(slate_t *slate, FTP_Result result,
                                        additional_data, additional_data_len);
 }
 
-void ftp_send_result_packet(slate_t *slate, FTP_Result result,
+void ftp_send_result_packet(slate_t *slate, ftp_result_t result,
                             const void *additional_data,
                             size_t additional_data_len)
 {
@@ -91,7 +91,8 @@ inline static FTP_PACKET_SEQUENCE_T ftp_get_last_packet(slate_t *slate)
  * FTP_FILE_WRITE_MRAM_ERROR, FTP_FILE_WRITE_BUFFER_ERROR,
  * and FTP_CANCEL_ERROR
  */
-inline static void send_ftp_lfs_error_packet(slate_t *slate, FTP_Result result,
+inline static void send_ftp_lfs_error_packet(slate_t *slate,
+                                             ftp_result_t result,
                                              lfs_ssize_t lfs_error_code)
 {
     assert(result == FILESYS_INIT_ERROR || result == FILESYS_REFORMAT_ERROR ||
@@ -107,7 +108,7 @@ inline static void send_ftp_lfs_error_packet(slate_t *slate, FTP_Result result,
  * FTP_ERROR_PACKET_OUT_OF_RANGE
  */
 inline static void
-send_ftp_cycle_info_packet(slate_t *slate, FTP_Result result,
+send_ftp_cycle_info_packet(slate_t *slate, ftp_result_t result,
                            FTP_PACKET_SEQUENCE_T packet_start,
                            FTP_PACKET_TRACKER_T packets_received_tracker)
 {
@@ -206,7 +207,7 @@ void ftp_process_file_start_write_command(
         memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
                    sizeof(blocksLeftAfterWrite));
 
-        ftp_send_result_packet(slate, FTP_ERROR_RECEIVE, err_data,
+        ftp_send_result_packet(slate, FTP_ERROR_START_FILE_WRITE, err_data,
                                sizeof(err_data));
         return;
     }
@@ -222,7 +223,7 @@ void ftp_process_file_start_write_command(
         memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
                    sizeof(blocksLeftAfterWrite));
 
-        ftp_send_result_packet(slate, FTP_ERROR_RECEIVE, err_data,
+        ftp_send_result_packet(slate, FTP_ERROR_START_FILE_WRITE, err_data,
                                sizeof(err_data));
         return;
     }

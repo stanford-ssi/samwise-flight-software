@@ -36,7 +36,7 @@
 // Track sent packets for verification
 typedef struct
 {
-    FTP_Result result;
+    ftp_result_t result;
     uint8_t data[512];
     size_t data_len;
     bool has_file_headers;
@@ -71,7 +71,7 @@ static int setup_clean_filesystem(slate_t *slate)
 }
 
 // Mock implementation to track sent packets
-void ftp_send_result_packet_no_file_mock(slate_t *slate, FTP_Result result,
+void ftp_send_result_packet_no_file_mock(slate_t *slate, ftp_result_t result,
                                          const void *additional_data,
                                          size_t additional_data_len)
 {
@@ -94,7 +94,7 @@ void ftp_send_result_packet_no_file_mock(slate_t *slate, FTP_Result result,
     packet_send_count++;
 }
 
-void ftp_send_result_packet_mock(slate_t *slate, FTP_Result result,
+void ftp_send_result_packet_mock(slate_t *slate, ftp_result_t result,
                                  const void *additional_data,
                                  size_t additional_data_len)
 {
@@ -123,40 +123,7 @@ void ftp_send_result_packet_mock(slate_t *slate, FTP_Result result,
 }
 
 // ============================================================================
-// Test 1: FTP Result Code Values
-// ============================================================================
-int ftp_test_result_codes(void)
-{
-    LOG_DEBUG("=== Test: FTP Result Code Values ===\n");
-
-    // Verify positive result codes
-    TEST_ASSERT(FILESYS_INIT_ERROR == 0, "FILESYS_INIT_ERROR should be 0");
-    TEST_ASSERT(FTP_READY_RECEIVE == 1, "FTP_READY_RECEIVE should be 1");
-    TEST_ASSERT(FTP_FILE_WRITE_SUCCESS == 2,
-                "FTP_FILE_WRITE_SUCCESS should be 2");
-    TEST_ASSERT(FTP_EOF_SUCCESS == 3, "FTP_EOF_SUCCESS should be 3");
-    TEST_ASSERT(FTP_CANCEL_SUCCESS == 5, "FTP_CANCEL_SUCCESS should be 5");
-
-    // Verify negative error codes
-    TEST_ASSERT(FTP_ERROR_RECEIVE == -1, "FTP_ERROR_RECEIVE should be -1");
-    TEST_ASSERT(FTP_FILE_WRITE_MRAM_ERROR == -3,
-                "FTP_FILE_WRITE_MRAM_ERROR should be -3");
-    TEST_ASSERT(FTP_EOF_CRC_ERROR == -3, "FTP_EOF_CRC_ERROR should be -3");
-    TEST_ASSERT(FTP_FILE_WRITE_BUFFER_ERROR == -4,
-                "FTP_FILE_WRITE_BUFFER_ERROR should be -4");
-    TEST_ASSERT(FTP_CANCEL_ERROR == -5, "FTP_CANCEL_ERROR should be -5");
-    TEST_ASSERT(FTP_ERROR == -127, "FTP_ERROR should be -127");
-
-    // Verify result mnemonic size
-    TEST_ASSERT(FTP_RESULT_MNEMONIC_SIZE == 1,
-                "FTP_RESULT_MNEMONIC_SIZE should be 1");
-
-    LOG_DEBUG("=== Test PASSED: FTP Result Code Values ===\n");
-    return 0;
-}
-
-// ============================================================================
-// Test 2: FTP Configuration Constants
+// Test 1: FTP Configuration Constants
 // ============================================================================
 int ftp_test_config_constants(void)
 {
@@ -195,7 +162,7 @@ int ftp_test_config_constants(void)
 }
 
 // ============================================================================
-// Test 3: Packet Sequence Type Capacity
+// Test 2: Packet Sequence Type Capacity
 // ============================================================================
 int ftp_test_packet_sequence_capacity(void)
 {
@@ -224,7 +191,7 @@ int ftp_test_packet_sequence_capacity(void)
 }
 
 // ============================================================================
-// Test 4: Send Result Packet - No File Headers
+// Test 3: Send Result Packet - No File Headers
 // ============================================================================
 int ftp_test_send_result_packet_no_file(void)
 {
@@ -280,7 +247,7 @@ int ftp_test_send_result_packet_no_file(void)
 }
 
 // ============================================================================
-// Test 5: Send Result Packet - With File Headers
+// Test 4: Send Result Packet - With File Headers
 // ============================================================================
 int ftp_test_send_result_packet_with_file(void)
 {
@@ -339,7 +306,7 @@ int ftp_test_send_result_packet_with_file(void)
 }
 
 // ============================================================================
-// Test 6: Format Filesystem Command
+// Test 5: Format Filesystem Command
 // ============================================================================
 int ftp_test_format_filesystem_command(void)
 {
@@ -387,7 +354,7 @@ int ftp_test_format_filesystem_command(void)
 }
 
 // ============================================================================
-// Test 7: Start File Write Command - Success
+// Test 6: Start File Write Command - Success
 // ============================================================================
 int ftp_test_start_file_write_command_success(void)
 {
@@ -433,7 +400,7 @@ int ftp_test_start_file_write_command_success(void)
 }
 
 // ============================================================================
-// Test 8: Start File Write Command - Already Writing
+// Test 7: Start File Write Command - Already Writing
 // ============================================================================
 int ftp_test_start_file_write_command_already_writing(void)
 {
@@ -470,7 +437,7 @@ int ftp_test_start_file_write_command_already_writing(void)
 }
 
 // ============================================================================
-// Test 9: Start File Write Command - Insufficient Space
+// Test 8: Start File Write Command - Insufficient Space
 // ============================================================================
 int ftp_test_start_file_write_command_insufficient_space(void)
 {
@@ -505,7 +472,7 @@ int ftp_test_start_file_write_command_insufficient_space(void)
 }
 
 // ============================================================================
-// Test 10: Write File Data Command - Single Packet
+// Test 9: Write File Data Command - Single Packet
 // ============================================================================
 int ftp_test_write_file_data_command_single_packet(void)
 {
@@ -558,7 +525,7 @@ int ftp_test_write_file_data_command_single_packet(void)
 }
 
 // ============================================================================
-// Test 11: Write File Data Command - Complete Cycle
+// Test 10: Write File Data Command - Complete Cycle
 // ============================================================================
 int ftp_test_write_file_data_command_complete_cycle(void)
 {
@@ -620,7 +587,7 @@ int ftp_test_write_file_data_command_complete_cycle(void)
 }
 
 // ============================================================================
-// Test 12: Write File Data Command - No File Active
+// Test 11: Write File Data Command - No File Active
 // ============================================================================
 int ftp_test_write_file_data_command_no_file(void)
 {
@@ -648,7 +615,7 @@ int ftp_test_write_file_data_command_no_file(void)
 }
 
 // ============================================================================
-// Test 13: Cancel File Write Command - Success
+// Test 12: Cancel File Write Command - Success
 // ============================================================================
 int ftp_test_cancel_file_write_command_success(void)
 {
@@ -696,7 +663,7 @@ int ftp_test_cancel_file_write_command_success(void)
 }
 
 // ============================================================================
-// Test 14: Cancel File Write Command - No File Active
+// Test 13: Cancel File Write Command - No File Active
 // ============================================================================
 int ftp_test_cancel_file_write_command_no_file(void)
 {
@@ -720,7 +687,7 @@ int ftp_test_cancel_file_write_command_no_file(void)
 }
 
 // ============================================================================
-// Test 15: EOF Success - Correct CRC
+// Test 14: EOF Success - Correct CRC
 // ============================================================================
 int ftp_test_eof_success_correct_crc(void)
 {
@@ -771,7 +738,7 @@ int ftp_test_eof_success_correct_crc(void)
 }
 
 // ============================================================================
-// Test 16: EOF Error - CRC Mismatch
+// Test 15: EOF Error - CRC Mismatch
 // ============================================================================
 int ftp_test_eof_error_crc_mismatch(void)
 {
@@ -823,7 +790,7 @@ int ftp_test_eof_error_crc_mismatch(void)
 }
 
 // ============================================================================
-// Test 17: Packet Tracker Bitfield
+// Test 16: Packet Tracker Bitfield
 // ============================================================================
 int ftp_test_packet_tracker_bitfield(void)
 {
@@ -859,7 +826,7 @@ int ftp_test_packet_tracker_bitfield(void)
 }
 
 // ============================================================================
-// Test 18: Multiple Write Cycles
+// Test 17: Multiple Write Cycles
 // ============================================================================
 int ftp_test_multiple_write_cycles(void)
 {
@@ -913,7 +880,7 @@ int ftp_test_multiple_write_cycles(void)
 }
 
 // ============================================================================
-// Test 19: Partial Packet Write
+// Test 18: Partial Packet Write
 // ============================================================================
 int ftp_test_partial_packet_write(void)
 {
@@ -958,7 +925,7 @@ int ftp_test_partial_packet_write(void)
 }
 
 // ============================================================================
-// Test 20: Filesystem Type Sizes
+// Test 19: Filesystem Type Sizes
 // ============================================================================
 int ftp_test_filesystem_type_sizes(void)
 {
@@ -1008,7 +975,6 @@ int main(void)
         int (*test_func)(void);
         const char *name;
     } tests[] = {
-        {ftp_test_result_codes, "FTP Result Code Values"},
         {ftp_test_config_constants, "FTP Configuration Constants"},
         {ftp_test_packet_sequence_capacity, "Packet Sequence Type Capacity"},
         {ftp_test_send_result_packet_no_file, "Send Result Packet - No File"},

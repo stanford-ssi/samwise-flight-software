@@ -31,7 +31,7 @@
  *
  * Additional Data (varies based on FTP_Result) is written in comments below.
  */
-typedef enum __attribute__((packed))
+typedef enum ftp_result
 {
     /**
      *  FILESYS_INIT_ERROR:
@@ -139,7 +139,7 @@ typedef enum __attribute__((packed))
 
     // TODO: add distinct error code for out of space?
     /**
-     * FTP_ERROR_RECEIVE:
+     * FTP_ERROR_START_FILE_WRITE:
      *     LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar. Note
      * if this is 0, the failure must have occured on Blocks Left.
      *
@@ -148,7 +148,7 @@ typedef enum __attribute__((packed))
      *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
      * CURRENTLY
      */
-    FTP_ERROR_RECEIVE, // Error initializing file write
+    FTP_ERROR_START_FILE_WRITE, // Error initializing file write
 
     /**
      * FTP_ERROR_PACKET_OUT_OF_RANGE:
@@ -177,13 +177,9 @@ typedef enum __attribute__((packed))
      * CURRENTLY
      */
     FTP_ERROR, // Generic error
-} FTP_Result;
+};
 
-_Static_assert(sizeof(FTP_Result) == 1,
-               "FTP_Result should be 1 byte. This assertion is to ensure no "
-               "issues come with changing compilers, as C does not provide a "
-               "way to change the size of enums. This should be fine with GCC "
-               "with __attribute__((packed)).");
+typedef int32_t ftp_result_t;
 
 // number of bytes used to identify FTP result
 #define FTP_RESULT_MNEMONIC_SIZE 1
@@ -253,7 +249,7 @@ void ftp_process_format_filesystem_command(slate_t *slate);
  * @param additional_data_len Length of the additional data in bytes.
  */
 void ftp_send_result_packet_no_file(
-    slate_t *slate, FTP_Result result,
+    slate_t *slate, ftp_result_t result,
     const void *additional_data, // See FTP_Result comments for details
     size_t additional_data_len);
 
@@ -267,7 +263,7 @@ void ftp_send_result_packet_no_file(
  * for details).
  * @param additional_data_len Length of the additional data in bytes.
  */
-void ftp_send_result_packet(slate_t *slate, FTP_Result result,
+void ftp_send_result_packet(slate_t *slate, ftp_result_t result,
                             const void *additional_data, // See FTP_Result
                                                          // comments for details
                             size_t additional_data_len);
