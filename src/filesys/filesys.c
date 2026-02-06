@@ -25,15 +25,15 @@ const struct lfs_config filesys_lfs_cfg = {
     .lookahead_size = FILESYS_CFG_LOOKAHEAD_SIZE,
     .block_cycles = 500,
 
-    // .prog_buffer = prog_buffer,
-    // .read_buffer = read_buffer,
-    // .lookahead_buffer = lookahead_buffer,
+    .prog_buffer = prog_buffer,
+    .read_buffer = read_buffer,
+    .lookahead_buffer = lookahead_buffer,
 
     .name_max = sizeof(FILESYS_BUFFERED_FNAME_STR_T),
 };
 
 const struct lfs_file_config filesys_lfs_file_cfg = {
-    // .buffer = cache_buffer,
+    .buffer = cache_buffer,
 };
 
 void filesys_file_open(lfs_t *lfs, lfs_file_t *file, const char *fname,
@@ -67,6 +67,7 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
 
     // mount the filesystem
     mram_write_enable();
+    mram_init();
     int err = lfs_mount(&slate->lfs, &filesys_lfs_cfg);
 
     if (err < 0)
@@ -89,6 +90,7 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
     *lfs_error_code = LFS_ERR_OK;
 
     mram_write_enable();
+    mram_init();
     int err = lfs_format(&slate->lfs, &filesys_lfs_cfg);
 
     if (err < 0)
