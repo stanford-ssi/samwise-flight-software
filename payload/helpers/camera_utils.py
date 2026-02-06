@@ -13,22 +13,22 @@ VID_DIR = "/home/pi/videos"
 log = logging.getLogger(__name__)
 
 def capture_raw_image(image_id: str, config_profile: str, camera_name: str, camera_num: int) -> int:
-    # Take a photo using the camera using supplied configuration (flags to pass into libcamera)
+    # Take a photo using the camera using supplied configuration (flags to pass into rpicam)
     # Saves the image to images/{image_id}_raw.png
     # Returns the size of the file in bytes
 
     select_camera(camera_name)
 
-    # Read config data (libcamera-still flags) from file
+    # Read config data (rpicam-still flags) from file
     with open(f"{CODE_DIR}/photo_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
 
     camera_flags = camera_flags_dict[config_profile]
     log.info(f"Taking photo with camera '{camera_name}' profile '{config_file}', flags '{camera_flags}'")
 
-    # Take image using `libcamera-still``
+    # Take image using `rpicam-still``
     image_filepath = f"{IMAGES_DIR}/{image_id}_raw.jpg"
-    os.system(f"libcamera-still -o {image_filepath} {camera_flags} --camera {camera_num}")
+    os.system(f"rpicam-still -o {image_filepath} {camera_flags} --camera {camera_num}")
 
     return os.path.getsize(image_filepath)
 
@@ -95,7 +95,7 @@ def capture_raw_vid(vid_id: str, libcamera_config_profile: str, camera_name: str
     camera_flags = camera_flags_dict['libcamera'][libcamera_config_profile]
     log.info(f"Taking video '{vid_id}' with camera '{camera_name}'")
     vid_filepath = f"{VID_DIR}/{vid_id}_raw.h265"
-    os.system(f"libcamera-vid -o {vid_filepath} {camera_flags} --camera {camera_num}")
+    os.system(f"rpicam-vid -o {vid_filepath} {camera_flags} --camera {camera_num}")
     return os.path.getsize(vid_filepath)
 
 
