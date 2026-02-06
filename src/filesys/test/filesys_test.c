@@ -43,7 +43,7 @@ int8_t filesys_test_write_whole_buffer(slate_t *slate, uint8_t *buffer,
                                        FILESYS_BUFFERED_FILE_LEN_T len)
 {
     lfs_ssize_t lfs_error_code;
-    for (FILESYS_BUFFER_SIZE_T i = 0; i < len; i += FILESYS_BUFFER_SIZE)
+    for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < len; i += FILESYS_BUFFER_SIZE)
     {
         const FILESYS_BUFFER_SIZE_T to_write =
             (len - i) < FILESYS_BUFFER_SIZE ? (len - i) : FILESYS_BUFFER_SIZE;
@@ -988,19 +988,25 @@ int filesys_test_write_long_file_crc32_success()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
+    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    FILESYS_BUFFERED_FILE_LEN_T file_size =
+        200000; // Larger than buffer size, will require multiple writes
+
     // Write first file
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname = "M1";
-    uint8_t buffer[200000]; // Random very large number of bytes
+    uint8_t buffer[file_size]; // Random very large number of bytes
+    LOG_INFO("Initial filesystem size (in blocks): %d\n", (int)initial_fs_size);
+    LOG_INFO("File size: %u bytes\n", file_size);
 
     for (int i = 0; i < sizeof(buffer); i++)
-        buffer[i] = (i * 7) % 256; // somewhat random data
+        buffer[i] = i % 256; // somewhat random data
 
-    // Generated with zlib.crc32(bytes((i * 7) % 256 for i in range(200000))) in
+    // Generated with zlib.crc32(bytes(i % 256 for i in range(200000))) in
     // Python.
     filesys_error_t code =
-        filesys_start_file_write(&test_slate, fname, sizeof(buffer), 1728936560,
+        filesys_start_file_write(&test_slate, fname, sizeof(buffer), 540207777,
                                  &lfs_error_code, &blocks_left);
 
     TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
@@ -1075,7 +1081,7 @@ int filesys_test_second_file_out_of_space_should_fail()
 
     // Write first file that takes up most of the filesystem
     FILESYS_BUFFERED_FILE_LEN_T file1_size =
-        FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE - 300000; // Leave ~60KB free
+        FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE - 10240; // Leave 10KB free
 
     uint8_t large_buffer[file1_size];
     for (int i = 0; i < file1_size; i++)
@@ -1088,9 +1094,9 @@ int filesys_test_second_file_out_of_space_should_fail()
                 "FILESYS_BLOCK_SIZE must equal 524288 for this test");
 
     // Generated with zlib.crc32(bytes((i * 3) % 256 for i in range(524288 -
-    // 60000))) in Python
+    // 10240))) in Python
     filesys_error_t code =
-        filesys_start_file_write(&test_slate, fname1, file1_size, 3631967889,
+        filesys_start_file_write(&test_slate, fname1, file1_size, 205735360,
                                  &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
@@ -1098,7 +1104,8 @@ int filesys_test_second_file_out_of_space_should_fail()
     TEST_ASSERT(blocks_left >= 0, "Should have space for first file");
 
     // Write the data in chunks
-    for (FILESYS_BUFFER_SIZE_T i = 0; i < file1_size; i += FILESYS_BUFFER_SIZE)
+    for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file1_size;
+         i += FILESYS_BUFFER_SIZE)
     {
         const FILESYS_BUFFER_SIZE_T to_write =
             (file1_size - i) < FILESYS_BUFFER_SIZE ? (file1_size - i)
@@ -1122,19 +1129,19 @@ int filesys_test_second_file_out_of_space_should_fail()
     }
 
     // Make sure we can read back the first file correctly
-    // uint8_t read_buffer[file1_size];
-    // lfs_file_t file;
-    // int err = lfs_file_opencfg(&test_slate.lfs, &file, fname1, LFS_O_RDONLY,
-    //                            &filesys_lfs_file_cfg);
-    // LOG_DEBUG("Opened first file for reading, err=%d\n", err);
-    // TEST_ASSERT(err == 0, "Should open first file for reading");
-    // lfs_ssize_t read_bytes =
-    //     lfs_file_read(&test_slate.lfs, &file, read_buffer, file1_size);
-    // LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
-    // TEST_ASSERT(read_bytes == file1_size, "Should read back full first
-    // file"); TEST_ASSERT(memcmp(large_buffer, read_buffer, file1_size) == 0,
-    //             "Read back data should match written data");
-    // lfs_file_close(&test_slate.lfs, &file);
+    uint8_t read_buffer[file1_size];
+    lfs_file_t file;
+    int err = lfs_file_opencfg(&test_slate.lfs, &file, fname1, LFS_O_RDONLY,
+                               &filesys_lfs_file_cfg);
+    LOG_DEBUG("Opened first file for reading, err=%d\n", err);
+    TEST_ASSERT(err == 0, "Should open first file for reading");
+    lfs_ssize_t read_bytes =
+        lfs_file_read(&test_slate.lfs, &file, read_buffer, file1_size);
+    LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
+    TEST_ASSERT(read_bytes == file1_size, "Should read back full first file");
+    TEST_ASSERT(memcmp(large_buffer, read_buffer, file1_size) == 0,
+                "Read back data should match written data");
+    lfs_file_close(&test_slate.lfs, &file);
 
     // Complete first file
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1161,6 +1168,122 @@ int filesys_test_second_file_out_of_space_should_fail()
 }
 
 // ============================================================================
+// Test 23: Raw LFS write and verify large file (510KB)
+// ============================================================================
+int filesys_test_raw_lfs_write_large_file_success()
+{
+    LOG_DEBUG("=== Test: Raw LFS Write Large File (510KB) ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RW";
+
+    const size_t LARGE_FILE_SIZE = 510000;
+    uint8_t *large_buffer = malloc(LARGE_FILE_SIZE);
+    TEST_ASSERT(large_buffer != NULL, "Should allocate large buffer");
+
+    // Fill with test pattern
+    for (int i = 0; i < LARGE_FILE_SIZE; i++)
+        large_buffer[i] = i % 256;
+
+    // Open file for writing using LFS directly
+    lfs_file_t lfs_file;
+    int err =
+        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+                         LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
+    if (err < 0)
+    {
+        LOG_ERROR("Failed to open file for writing: %d\n", err);
+        free(large_buffer);
+        return -1;
+    }
+    TEST_ASSERT(err == 0, "lfs_file_opencfg should succeed");
+
+    // Write entire buffer
+    lfs_ssize_t written = lfs_file_write(&test_slate.lfs, &lfs_file,
+                                         large_buffer, LARGE_FILE_SIZE);
+    if (written < 0)
+    {
+        LOG_ERROR("Failed to write file: %d\n", (int)written);
+        lfs_file_close(&test_slate.lfs, &lfs_file);
+        free(large_buffer);
+        return -1;
+    }
+    TEST_ASSERT(written == LARGE_FILE_SIZE, "Should write entire buffer");
+
+    // Close file
+    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    TEST_ASSERT(err == 0, "lfs_file_close should succeed after write");
+
+    LOG_DEBUG("Successfully wrote %d bytes\n", (int)written);
+
+    // Read back and verify
+    err = lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname, LFS_O_RDONLY,
+                           &filesys_lfs_file_cfg);
+    if (err < 0)
+    {
+        LOG_ERROR("Failed to open file for reading: %d\n", err);
+        free(large_buffer);
+        return -1;
+    }
+    TEST_ASSERT(err == 0, "lfs_file_opencfg for read should succeed");
+
+    uint8_t *read_buffer = malloc(LARGE_FILE_SIZE);
+    if (!read_buffer)
+    {
+        LOG_ERROR("Failed to allocate read buffer\n");
+        lfs_file_close(&test_slate.lfs, &lfs_file);
+        free(large_buffer);
+        return -1;
+    }
+    TEST_ASSERT(read_buffer != NULL, "Should allocate read buffer");
+
+    lfs_ssize_t read_bytes =
+        lfs_file_read(&test_slate.lfs, &lfs_file, read_buffer, LARGE_FILE_SIZE);
+    if (read_bytes < 0)
+    {
+        LOG_ERROR("Failed to read file: %d\n", (int)read_bytes);
+        free(read_buffer);
+        free(large_buffer);
+        lfs_file_close(&test_slate.lfs, &lfs_file);
+        return -1;
+    }
+    TEST_ASSERT(read_bytes == LARGE_FILE_SIZE, "Should read entire file");
+
+    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");
+
+    // Verify data integrity
+    int mismatch_count = 0;
+    for (int i = 0; i < LARGE_FILE_SIZE; i++)
+    {
+        if (read_buffer[i] != large_buffer[i])
+        {
+            if (mismatch_count < 10)
+            {
+                LOG_ERROR("Data mismatch at byte %d: expected %u, got %u\n", i,
+                          large_buffer[i], read_buffer[i]);
+            }
+            mismatch_count++;
+        }
+    }
+
+    free(read_buffer);
+    free(large_buffer);
+
+    TEST_ASSERT(mismatch_count == 0, "All bytes should match original data");
+
+    LOG_DEBUG("Successfully verified %d bytes\n", (int)read_bytes);
+    LOG_DEBUG("=== Test PASSED: Raw LFS Write Large File (510KB) ===\n");
+
+#undef LARGE_FILE_SIZE
+    return 0;
+}
+
+// ============================================================================
 // Main test runner
 // ============================================================================
 int main()
@@ -1180,7 +1303,7 @@ int main()
         const char *name;
     } tests[] = {
         {filesys_test_write_readback_success, "Write and Readback"},
-        {filesys_test_initialize_reformat_success, "Initialize and Reformat "},
+        {filesys_test_initialize_reformat_success, "Initialize and Reformat"},
         {filesys_test_start_file_write_already_writing_should_fail,
          "Start File Write - Already Writing"},
         {filesys_test_write_data_to_buffer_bounds_should_fail,
@@ -1208,12 +1331,14 @@ int main()
         {filesys_test_write_at_offset_success, "Write at Offset"},
         {filesys_test_multiple_files_commit_success,
          "Multiple File Writes Committed"},
-        // {filesys_test_write_long_file_crc32_success,
-        //  "Write Really Long File with CRC32"},
-        // {filesys_test_file_too_large_should_fail,
-        //  "File Too Large for Filesystem"},
-        // {filesys_test_second_file_out_of_space_should_fail,
-        //  "Second File Runs Out of Space"},
+        {filesys_test_write_long_file_crc32_success,
+         "Write Really Long File with CRC32"},
+        {filesys_test_file_too_large_should_fail,
+         "File Too Large for Filesystem"},
+        {filesys_test_second_file_out_of_space_should_fail,
+         "Second File Runs Out of Space"},
+        {filesys_test_raw_lfs_write_large_file_success,
+         "Raw LFS Write Large File (510KB)"},
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);
