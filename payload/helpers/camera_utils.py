@@ -17,6 +17,10 @@ def capture_raw_image(image_id: str, config_profile: str, camera_name: str, came
     # Saves the image to images/{image_id}_raw.png
     # Returns the size of the file in bytes
 
+    # Due to changes in setup.py because of pin conflicts with the multiplexer, select_camera is currently dysfunctional.
+    # Instead, camera_num should be passed in the command to specify which camera to use.
+    # select_camera(camera_name)  
+
     # Read config data (rpicam-still flags) from file
     with open(f"{CODE_DIR}/photo_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
@@ -25,6 +29,7 @@ def capture_raw_image(image_id: str, config_profile: str, camera_name: str, came
     log.info(f"Taking photo with camera '{camera_name}' profile '{config_file}', flags '{camera_flags}'")
 
     # Take image using `rpicam-still``
+    # Due to the removal of calling select_camera, the camera being used should be passed as a commmand flag
     image_filepath = f"{IMAGES_DIR}/{image_id}_raw.jpg"
     os.system(f"rpicam-still -o {image_filepath} {camera_flags} --camera {camera_num}")
 
@@ -87,11 +92,16 @@ def split_compressed_image(image_id: str, cells_x: int, cells_y: int, quality: i
     return sum(cell_sizes) // len(cell_sizes), max(cell_sizes)
 
 def capture_raw_vid(vid_id: str, libcamera_config_profile: str, camera_name: str, camera_num: int) -> int:
+    # Due to changes in setup.py because of pin conflicts with the multiplexer, select_camera is currently dysfunctional.
+    # Instead, camera_num should be passed in the command to specify which camera to use.
+    # select_camera(camera_name)
+
     with open(f"{CODE_DIR}/vid_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
     camera_flags = camera_flags_dict['libcamera'][libcamera_config_profile]
     log.info(f"Taking video '{vid_id}' with camera '{camera_name}'")
     vid_filepath = f"{VID_DIR}/{vid_id}_raw.h265"
+    # Due to the removal of calling select_camera, the camera being used should be passed as a commmand flag
     os.system(f"rpicam-vid -o {vid_filepath} {camera_flags} --camera {camera_num}")
     return os.path.getsize(vid_filepath)
 
