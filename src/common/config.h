@@ -57,13 +57,31 @@ typedef uint16_t FTP_PACKET_SEQUENCE_T;
  */
 // Size of buffer used for filesystem writes
 #define FILESYS_BUFFER_SIZE (FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE)
+
+_Static_assert(
+    FILESYS_BUFFER_SIZE >= FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE,
+    "FILESYS_BUFFER_SIZE must be at least as large as the maximum "
+    "data payload size for the number of packets per cycle for FTP support");
+
 typedef uint16_t
     FILESYS_BUFFER_SIZE_T; // Must be able to hold FILESYS_BUFFER_SIZE
+
+_Static_assert(
+    FILESYS_BUFFER_SIZE <=
+        (1ULL << (sizeof(FILESYS_BUFFER_SIZE_T) * __CHAR_BIT__)),
+    "FILESYS_BUFFER_SIZE exceeds maximum representable buffer size in "
+    "FILESYS_BUFFER_SIZE_T");
 
 // Size of buffer used for filesystem reads (specifically for computing CRC)
 #define FILESYS_READ_BUFFER_SIZE 256
 typedef uint16_t FILESYS_READ_BUFFER_SIZE_T; // Must be able to hold
                                              // FILESYS_READ_BUFFER_SIZE
+
+_Static_assert(
+    FILESYS_READ_BUFFER_SIZE <=
+        (1ULL << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * __CHAR_BIT__)),
+    "FILESYS_READ_BUFFER_SIZE exceeds maximum representable buffer size "
+    "in FILESYS_READ_BUFFER_SIZE_T");
 
 // Note: Only one file can be buffered at a time, so there is no configuration
 // for FILESYS_MAX_BUFFERED_FILES.
