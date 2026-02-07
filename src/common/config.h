@@ -27,6 +27,11 @@
 // A bit set means the corresponding packet in this cycle was received.
 typedef uint8_t FTP_PACKET_TRACKER_T;
 
+_Static_assert(FTP_NUM_PACKETS_PER_CYCLE <=
+                   (sizeof(FTP_PACKET_TRACKER_T) * __CHAR_BIT__),
+               "FTP_NUM_PACKETS_PER_CYCLE must be less than or equal to the "
+               "number of bits in FTP_PACKET_TRACKER_T");
+
 // Automatically calculated size of maximum data payload in bytes per packet
 #define FTP_DATA_PAYLOAD_SIZE                                                  \
     (PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE -                                \
@@ -35,8 +40,14 @@ typedef uint8_t FTP_PACKET_TRACKER_T;
 // Maximum length of a file, as determined by the number of bytes for sequence
 // id and the maximum data payload size
 #define FTP_MAX_FILE_LEN                                                       \
-    (1 << (sizeof(FTP_PACKET_SEQUENCE_T) * __CHAR_BIT__)) *                    \
+    (1ULL << (sizeof(FTP_PACKET_SEQUENCE_T) * __CHAR_BIT__)) *                 \
         FTP_DATA_PAYLOAD_SIZE
+
+_Static_assert(FTP_MAX_FILE_LEN <=
+                   (1ULL << (sizeof(FILESYS_BUFFERED_FILE_LEN_T) *
+                             __CHAR_BIT__)),
+               "FTP_MAX_FILE_LEN exceeds maximum representable file length in "
+               "FILESYS_BUFFERED_FILE_LEN_T");
 
 // Type used to represent packet sequence IDs
 typedef uint16_t FTP_PACKET_SEQUENCE_T;
