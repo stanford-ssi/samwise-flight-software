@@ -17,10 +17,5 @@ def initialize():
     gpio.setmode(gpio.BCM)
     gpio.setwarnings(False)
 
-    # Pins for multiplexer
-    gpio.setup(MULTIPLEXER_PIN1, gpio.OUT)
-    gpio.setup(MULTIPLEXER_PIN2, gpio.OUT)
-    gpio.setup(MULTIPLEXER_PIN3, gpio.OUT)
-
     # Radio enable
     gpio.setup(RADIO_2400_ENABLE, gpio.OUT)

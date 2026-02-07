@@ -17,8 +17,6 @@ def capture_raw_image(image_id: str, config_profile: str, camera_name: str, came
     # Saves the image to images/{image_id}_raw.png
     # Returns the size of the file in bytes
 
-    select_camera(camera_name)
-
     # Read config data (rpicam-still flags) from file
     with open(f"{CODE_DIR}/photo_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
@@ -89,7 +87,6 @@ def split_compressed_image(image_id: str, cells_x: int, cells_y: int, quality: i
     return sum(cell_sizes) // len(cell_sizes), max(cell_sizes)
 
 def capture_raw_vid(vid_id: str, libcamera_config_profile: str, camera_name: str, camera_num: int) -> int:
-    select_camera(camera_name)
     with open(f"{CODE_DIR}/vid_config.json", "r") as config_file:
         camera_flags_dict = json.loads(config_file.read())
     camera_flags = camera_flags_dict['libcamera'][libcamera_config_profile]
