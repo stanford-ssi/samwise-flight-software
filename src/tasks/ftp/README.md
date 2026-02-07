@@ -35,13 +35,13 @@ _FTP-specific:_
 
 _SAMWISE Hardware:_
 * **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime. // TODO: How much storage is in RAM?
-* **MRAM**: Magnetoresistive RAM, the permanent (non-volatile) memory used for file storage on the satellite. Essentially, think of it like an SSD, not a RAM. This has ~512KB of storage space.
+* **MRAM**: Magnetoresistive RAM, the permanent (non-volatile) memory used for file storage on the satellite. Essentially, think of it like an SSD, not a RAM. This has 512KiB of storage space.
 
 _Filesys:_
 * **Filesys**: The abstraction layer that is used to write to MRAM (see `src/filesys`).
-* [**Little-FS**](https://github.com/littlefs-project/littlefs): A library used to create a very small filesystem on MRAM, which Filesys abstracts over. This is used over ext4 or FAT32 for example as we need really small overheads and low amount of RAM usage, both of which are definitely not given by other solutions which are meant for full scale/large storages. It also provides protection against faults and corruption by creating a copy whenever it writes.
+* [**Little-FS**](https://github.com/littlefs-project/littlefs): A library used to create a very small filesystem on MRAM, which Filesys abstracts over. This is used over ext4 or FAT32 for example as we need really small overheads on MRAM and low amount of RAM usage, both of which are definitely not given by other solutions which are meant for full scale/large storages. Its designed to minimize the amount of reads & writes it performs to its storage device to reduce wearing, which helps us ensure the lifetime of the MRAM. (Even if we write a significant portion to MRAM, little-fs reduces the number of writes/reads substantially over traditional filesystems). It also provides protection against faults and corruption by creating a copy whenever it writes.
     * There are a lot of definitions of errors, function names, etc. in [`lfs.h`](https://github.com/littlefs-project/littlefs/blob/master/lfs.h), which is very useful if you run into issues.
-* **Block**: This is a definition in little-fs, which is mapped to the smallest write size on MRAM, or a standardized block where data can be easily chunked into for little-fs's needs. Note that blocks are different than buffer - we don't really care about blocks in FTP (this is much more important in `filesys`, which abstract stuff like this away), but this is still important to know.
+* **Block**: This is a definition only used for little-fs itself, which is what it uses as the minimum amount it will ever write to MRAM, a standardized block where data can be easily chunked into for little-fs's needs. This is configured in the filesys wrapper around LFS, and is defined by us. Note that blocks (little-fs only, minimum write size) are different than buffer (FTP storage of packets in RAM) - we don't really care about blocks in FTP (this is much more important in `filesys`, which abstract stuff like this away), but this still can come up as confusion.
 
 ## Overall Design
 
@@ -101,9 +101,9 @@ We implement the following functions:
 * start file write
 * write packet to buffer (automatically writes to file if all packets are received)
 * cancel file write
-* remove file // TODO
-* list all files, their CRC32s, file sizes, & other metadata // TODO
-* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart) // TODO
+* remove file
+* list all files, their CRC32s, file sizes, & other metadata
+* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart)
 
 Note this means we also **do not have** some common functionalities:
 * upload multiple files at once
@@ -144,10 +144,17 @@ _Too low:_
 ## Testing
 We want to be able to test on each level possible. So:
 1. We test our MRAM drivers with unit tests. This should be done on the hardware, so something like [#237](https://github.com/stanford-ssi/samwise-flight-software/issues/237) needs to be implemented. 
+    * NO mock of MRAM.
 2. We test our Filesys implementation with unit tests, to see if the API to the MRAM works properly, including writing functionality (e.g. data -> buffer -> mram cycle)
-3. We have "unit tests" in FTP that will send fake packets to poke around certain functionality or code paths. This tests the logic behind file writes and especially how codes are sent back.
-4. We will have a full-scale test of the entire system with mocked out functions, using a test_scheduler and visualization library.
-5. Full on-hardware test, lumping everything together onto the testing satellite.
+    * MRAM is mocked out here.
+3. Test our Filesys implementation on the actual hardware, to make sure LFS is truly being used properly.
+    * NO mock of MRAM.
+4. We have "unit tests" in FTP that will send fake packets to poke around certain functionality or code paths. This tests the logic behind file writes and especially how codes are sent back.
+    * MRAM is mocked out here.
+5. We will have a full-scale test of the entire system with mocked out functions, using a test_scheduler and visualization library.
+    * MRAM is mocked out here.
+6. Full on-hardware test, lumping everything together onto the testing satellite.
+    * This is the full test of everything, so nothing is mocked at all!
 
 There are a few considerations (really with testing of anything), that I can reiterate here:
 * Make sure that there is NO CRASHING BEHAVIOR! We never want to terminate the program on error.
@@ -218,7 +225,6 @@ This will clear the buffer, remove any existing parts of the file from MRAM, and
 Note that if the FTP system is completely botched, reformatting should be the best option to attempt to completely fix it.
 
 ### 3. Removing a file
-// TODO: Implement removing a file
 To remove a file, simply send a FTP_REMOVE_FILE command with the following body:
 ```c
 uint16_t fname; // Name of the file
@@ -242,6 +248,17 @@ flowchart LR
     ftp_task --> RAM[(RAM Buffers)]
     ftp_task --> filesys --> lfs(little_fs) --> MRAM[(MRAM)]
 ```
+
+## Useful Constants
+All of these are present in `config.h`:
+* `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle.
+* `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
+* `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
+* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 5 = 1025 bytes`.
+
+Here are some other calculations to justify design decisions:
+* The file length is stored in a 32-bit unsigned integer, which allows `2^32 = 4294967296 bytes = 4096 MiB` maximum. Note this should never be reached, it just should be greater than `FTP_MAX_FILE_LEN`.
+* A maximum of `2^16 - 2 = 65534` file names can be stored on filesys. **Note that `0x0` in a filename for any of the bytes is not allowed, as LFS handles these as C-strings!** (Hence the subtraction by 2).
 
 ## Packet Formatting (Ground Station -> SAMWISE)
 **NOTE:** This only shows the `data` field of a sample packet, as defined by the radio task. There are many more attributes that must be added outside of these FTP-specific ones!
