@@ -1,0 +1,26 @@
+load("//build:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "print_task",
+    srcs = ["print_task.c"],
+    hdrs = ["print_task.h"],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/drivers/logger",
+        "//src/drivers/neopixel",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+samwise_test(
+    name = "print_test",
+    srcs = ["test/print_test.c"],
+    deps = [
+        ":print_task",
+    ],
+)

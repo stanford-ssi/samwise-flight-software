@@ -1,0 +1,18 @@
+"""
+Common headers and definitions for SAMWISE flight software.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "common",
+    hdrs = [
+        "bit-support.h",
+        "config.h",
+        "macros.h",
+        "pins.h",
+        "typedefs.h",
+        "utils.h",
+    ],
+    includes = ["."],
+)

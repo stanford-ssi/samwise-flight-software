@@ -1,0 +1,17 @@
+"""
+Utility functions for SAMWISE flight software.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "utils",
+    hdrs = [
+        "safe_sleep.h",
+        "str_utils.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+    ],
+)

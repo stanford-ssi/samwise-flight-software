@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "payload_task",
+    srcs = ["payload_task.c"],
+    hdrs = ["payload_task.h"],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler",
+        "//src/utils",
+        "//src/tasks/command:command_parser",
+        "//src/drivers/payload_uart",
+        "//src/drivers/neopixel",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)

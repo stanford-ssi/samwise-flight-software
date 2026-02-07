@@ -1,0 +1,36 @@
+load("//build:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "running_state",
+    srcs = ["running_state.c"],
+    hdrs = ["running_state.h"],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/drivers/neopixel",
+        # Task dependencies
+        "//src/tasks/adcs:adcs_task",
+        "//src/tasks/beacon:beacon_task",
+        "//src/tasks/blink:blink_task",
+        "//src/tasks/command:command_task",
+        "//src/tasks/diagnostics:diagnostics_task",
+        "//src/tasks/payload:payload_task",
+        "//src/tasks/print:print_task",
+        "//src/tasks/radio:radio_task",
+        "//src/tasks/telemetry:telemetry_task",
+        "//src/tasks/watchdog:watchdog_task",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+samwise_test(
+    name = "running_state_test",
+    srcs = ["test/test_running_state.c"],
+    deps = [
+        ":running_state",
+    ],
+)

@@ -1,0 +1,34 @@
+"""SAMWISE Flight Software - Bazel Module Definition
+
+This module defines the build configuration for the SAMWISE satellite flight software,
+targeting the RP2350 microcontroller on the PiCubed board.
+"""
+
+module(
+    name = "samwise",
+    version = "0.1.0",
+)
+
+# Platform definitions for cross-compilation
+bazel_dep(name = "platforms", version = "0.0.10")
+
+# Pico SDK with native Bazel support from Bazel Central Registry
+bazel_dep(name = "pico-sdk", version = "2.1.0")
+
+# Configure pico-sdk for SAMWISE PiCubed board (RP2350)
+pico_sdk = use_extension("@pico-sdk//bazel:extensions.bzl", "pico_sdk_extension")
+pico_sdk.config(
+    PICO_BOARD = "samwise_picubed",
+    PICO_PLATFORM = "rp2350",
+)
+
+# # Configure to use local ARM GCC toolchain (avoids download issues)
+# pico_sdk.toolchain(
+#     PICO_TOOLCHAIN_PATH = "/Users/yaoyiheng/.pico-sdk/toolchain/13_2_Rel1",
+# )
+
+# Register pico-sdk toolchains for macOS (both Intel and Apple Silicon)
+register_toolchains(
+    "@pico-sdk//bazel/toolchain:mac-aarch64-rp2350",
+    "@pico-sdk//bazel/toolchain:mac-x86_64-rp2350",
+)

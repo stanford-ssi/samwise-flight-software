@@ -1,0 +1,23 @@
+"""
+Packet handling with HMAC-SHA256 authentication for SAMWISE flight software.
+
+This module provides packet authentication using TinyCrypt's HMAC implementation.
+Authentication can be enabled by defining PACKET_HMAC_PSK at build time.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "packet",
+    srcs = ["packet.c"],
+    hdrs = ["packet.h"],
+    deps = [
+        "//src/common",
+        "//lib/tinycrypt",
+    ],
+)
+
+cc_library(
+    name = "adcs_packet",
+    hdrs = ["adcs_packet.h"],
+)

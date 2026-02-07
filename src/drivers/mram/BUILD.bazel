@@ -1,0 +1,28 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real MRAM driver (for embedded targets)
+cc_library(
+    name = "mram",
+    srcs = ["mram.c"],
+    hdrs = ["mram.h"],
+    deps = [
+        "//src/common",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
+        "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock MRAM driver (for host tests)
+# No dedicated mock yet, using empty implementation
+cc_library(
+    name = "mram_mock",
+    srcs = [],
+    hdrs = ["mram.h"],
+    deps = [
+        "//src/common",
+    ],
+    target_compatible_with = ["//platforms:host"],
+    testonly = True,
+)

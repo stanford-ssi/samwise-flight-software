@@ -4,6 +4,18 @@
 **/.vite
 **/env
 .vscode
-build*
+
+# CMake build output directories
+build/
+build-*/
+
+# Build scripts (should not be ignored)
 !build_debug.sh
 !build_tests.sh
+
+# Bazel build artifacts
+bazel-*
+.bazelrc.local
+
+# CMake build artifacts
+**/CMakeFiles

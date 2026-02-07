@@ -1,0 +1,27 @@
+"""Board definitions for SAMWISE Flight Software
+
+This package exposes the custom board header file (samwise_picubed.h) which
+defines pin mappings and board-specific configuration for the PiCubed satellite.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Export the board header file so it can be included in the build
+# The board header is based on the Raspberry Pi Pico 2 (RP2350) with custom
+# pin definitions for the PiCubed satellite platform.
+cc_library(
+    name = "samwise_picubed",
+    hdrs = ["samwise_picubed.h"],
+    includes = ["."],
+    deps = [
+        # Board headers don't typically have dependencies, but we ensure
+        # the pico-sdk base headers are available
+        "@pico-sdk//src/common/pico_base_headers",
+    ],
+)
+
+# Alias for convenience when referencing the board
+alias(
+    name = "board_header",
+    actual = ":samwise_picubed",
+)

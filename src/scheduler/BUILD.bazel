@@ -1,0 +1,47 @@
+"""
+Task scheduler and state machine for SAMWISE flight software.
+
+The scheduler manages task dispatching and state transitions. It implements
+a cooperative multitasking system where tasks are dispatched periodically
+based on their configured dispatch periods.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# State machine header-only library (without states.h to avoid circular deps)
+cc_library(
+    name = "state_machine",
+    hdrs = ["state_machine.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+    ],
+)
+
+# States aggregation header (includes all state headers)
+# This creates a circular dependency and should only be used by scheduler
+cc_library(
+    name = "states_hdrs",
+    hdrs = ["states.h"],
+    deps = [
+        ":state_machine",
+        "//src/common",
+    ],
+)
+
+# Main scheduler library
+cc_library(
+    name = "scheduler",
+    srcs = ["scheduler.c"],
+    hdrs = ["scheduler.h"],
+    deps = [
+        ":state_machine",
+        ":states_hdrs",
+        "//src/common",
+        "//src/states/init:init_state",
+        "//src/states/running:running_state",
+        "//src/states/bringup:bringup_state",
+        "//src/states/burn_wire:burn_wire_state",
+        "//src/states/burn_wire_reset:burn_wire_reset_state",
+    ],
+)

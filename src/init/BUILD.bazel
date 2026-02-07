@@ -1,0 +1,17 @@
+"""
+Initialization routines for SAMWISE flight software.
+
+This module handles system initialization including hardware setup,
+peripheral configuration, and state machine initialization.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "init",
+    srcs = ["init.c"],
+    hdrs = ["init.h"],
+    deps = [
+        "//src/common",
+    ],
+)

@@ -1,0 +1,21 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "telemetry_task",
+    srcs = ["telemetry_task.c"],
+    hdrs = ["telemetry_task.h"],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/drivers/adm1176",
+        "//src/drivers/mppt",
+        "//src/drivers/device_status",
+        "//src/drivers/logger",
+        "//src/drivers/rfm9x",
+        "//src/drivers/neopixel",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)

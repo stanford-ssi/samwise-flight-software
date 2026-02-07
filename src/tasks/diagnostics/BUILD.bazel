@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "diagnostics_task",
+    srcs = ["diagnostics_task.c"],
+    hdrs = ["diagnostics_task.h"],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/drivers/adm1176",
+        "//src/drivers/logger",
+        "//src/drivers/rfm9x",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)

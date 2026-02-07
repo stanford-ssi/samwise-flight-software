@@ -1,0 +1,36 @@
+"""
+Error handling for SAMWISE flight software.
+
+This module provides both production error handling and mock implementations
+for testing. The production version may include hardware-specific behavior
+(e.g., LED blinking), while the mock version is suitable for unit tests.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Production error handling
+cc_library(
+    name = "error",
+    srcs = ["error.c"],
+    hdrs = ["error.h"],
+    deps = [
+        "//src/common",
+        "//src/utils",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock error handling (co-located with production)
+# Note: The mock implementation is in src/test_mocks/error.c
+# but shares the same header interface
+cc_library(
+    name = "error_mock",
+    srcs = ["//src/test_mocks:error.c"],
+    hdrs = ["error.h"],
+    deps = [
+        "//src/common",
+        "//src/utils",
+    ],
+    target_compatible_with = ["//platforms:host"],
+    testonly = True,
+)

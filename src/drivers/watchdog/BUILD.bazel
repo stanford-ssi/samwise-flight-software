@@ -1,0 +1,27 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real watchdog driver (for embedded targets)
+cc_library(
+    name = "watchdog",
+    srcs = ["watchdog.c"],
+    hdrs = ["watchdog.h"],
+    deps = [
+        "//src/common",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock watchdog driver (for host tests)
+# Stubs in driver_stubs.c
+cc_library(
+    name = "watchdog_mock",
+    srcs = ["//src/test_mocks:driver_stubs.c"],
+    hdrs = ["watchdog.h"],
+    deps = [
+        "//src/common",
+    ],
+    target_compatible_with = ["//platforms:host"],
+    testonly = True,
+)

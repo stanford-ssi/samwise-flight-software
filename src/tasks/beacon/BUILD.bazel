@@ -1,0 +1,29 @@
+load("//build:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "beacon_task",
+    srcs = ["beacon_task.c"],
+    hdrs = ["beacon_task.h"],
+    deps = [
+        "//src/common",
+        "//src/drivers/neopixel",
+        "//src/packet:adcs_packet",
+        "//src/packet",
+        "//src/scheduler:state_machine",
+        "//src/slate",
+        "//src/utils",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/common/pico_util:pico_util",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+samwise_test(
+    name = "beacon_test",
+    srcs = ["test/beacon_test.c"],
+    deps = [
+        ":beacon_task",
+    ],
+)
