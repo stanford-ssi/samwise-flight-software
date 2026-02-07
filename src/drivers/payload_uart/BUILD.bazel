@@ -29,6 +29,5 @@ cc_library(
         "//src/drivers/logger:logger_mock",
         "//src/slate",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

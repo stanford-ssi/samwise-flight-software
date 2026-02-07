@@ -82,62 +82,11 @@ cc_library(
     deps = [":pico_stdlib_mock"],
 )
 
-# Logger mock (SAMWISE driver mock)
-cc_library(
-    name = "logger_mock",
-    srcs = ["logger.c"],
-    testonly = True,
-    includes = ["."],
-)
-
-# Neopixel mock (SAMWISE driver mock)
-cc_library(
-    name = "neopixel_mock",
-    srcs = ["neopixel.c"],
-    hdrs = ["neopixel.h"],
-    testonly = True,
-    includes = ["."],
-)
-
-# Error handling mock (SAMWISE module mock)
-cc_library(
-    name = "error_mock",
-    srcs = ["error.c"],
-    hdrs = ["error.h"],
-    testonly = True,
-    includes = ["."],
-)
-
-# Driver stubs (generic driver mocks)
-cc_library(
-    name = "driver_stubs",
-    srcs = ["driver_stubs.c"],
-    testonly = True,
-    includes = ["."],
-)
-
-# State mocks (for state machine testing)
-cc_library(
-    name = "state_mocks",
-    hdrs = [
-        "bringup_state.h",
-        "burn_wire_reset_state.h",
-        "burn_wire_state.h",
-        "init_state.h",
-        "running_state.h",
-        "states.h",
-    ],
-    testonly = True,
-    includes = ["."],
-)
-
-# Complete test mocks library (aggregates all mocks)
+# Complete test mocks library (aggregates all Pico SDK hardware mocks)
 cc_library(
     name = "test_mocks",
     testonly = True,
     deps = [
-        ":driver_stubs",
-        ":error_mock",
         ":hardware_flash_mock",
         ":hardware_gpio_mock",
         ":hardware_i2c_mock",
@@ -145,10 +94,7 @@ cc_library(
         ":hardware_resets_mock",
         ":hardware_spi_mock",
         ":hardware_sync_mock",
-        ":logger_mock",
-        ":neopixel_mock",
         ":pico_stdlib_mock",
         ":pico_time_mock",
-        ":state_mocks",
     ],
 )

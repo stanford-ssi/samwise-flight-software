@@ -21,7 +21,7 @@ cc_library(
     hdrs = ["onboard_led.h"],
     deps = [
         "//src/common",
+        "//src/packet:adcs_packet",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

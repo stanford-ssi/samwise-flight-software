@@ -8,6 +8,7 @@ cc_library(
     deps = [
         "//src/common",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/pico_stdio:pico_stdio",
     ],
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
@@ -15,11 +16,11 @@ cc_library(
 # Mock logger driver (for host tests)
 cc_library(
     name = "logger_mock",
-    srcs = ["//src/test_mocks:logger.c"],
+    srcs = ["logger_mock.c"],
     hdrs = ["logger.h"],
     deps = [
         "//src/common",
+        "//src/test_mocks",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

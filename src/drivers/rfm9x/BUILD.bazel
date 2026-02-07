@@ -18,16 +18,18 @@ cc_library(
 )
 
 # Mock RFM9X driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "rfm9x_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["rfm9x_mock.c"],
     hdrs = ["rfm9x.h"],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
         "//src/packet",
+        "//src/test_mocks:hardware_spi_mock",
+        "//src/test_mocks:hardware_resets_mock",
+        "//src/test_mocks:pico_stdlib_mock",
+        "//src/test_mocks:pico_time_mock",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

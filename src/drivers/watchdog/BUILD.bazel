@@ -22,6 +22,5 @@ cc_library(
     deps = [
         "//src/common",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

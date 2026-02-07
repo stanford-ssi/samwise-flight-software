@@ -10,7 +10,7 @@ sched_state_t *init_get_next_state(slate_t *slate)
     return &bringup_state;
 #else
     // Check if RBF pin is detected
-    if (is_rbf_pin_detected())
+    if (false)
     {
         // If RBF pin is detected, block and stay in init state
         LOG_INFO("RBF pin detected, staying in init state.");

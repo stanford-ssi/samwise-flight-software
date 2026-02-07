@@ -16,16 +16,17 @@ cc_library(
 )
 
 # Mock MPPT driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "mppt_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["mppt_mock.c"],
     hdrs = ["mppt.h"],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
         "//src/utils",
+        "//src/test_mocks:hardware_i2c_mock",
+        "//src/test_mocks:pico_stdlib_mock",
+        "//src/test_mocks:pico_time_mock",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

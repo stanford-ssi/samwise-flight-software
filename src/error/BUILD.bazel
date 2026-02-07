@@ -20,17 +20,14 @@ cc_library(
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
-# Mock error handling (co-located with production)
-# Note: The mock implementation is in src/test_mocks/error.c
-# but shares the same header interface
+# Mock error handling for host tests
 cc_library(
     name = "error_mock",
-    srcs = ["//src/test_mocks:error.c"],
+    srcs = ["error_mock.c"],
     hdrs = ["error.h"],
     deps = [
         "//src/common",
         "//src/utils",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

@@ -29,6 +29,17 @@ cc_library(
     ],
 )
 
+# Mock state definitions for host tests
+cc_library(
+    name = "state_mock",
+    srcs = ["state_mock.c"],
+    deps = [
+        ":state_machine",
+        "//src/common",
+    ],
+    testonly = True,
+)
+
 # Main scheduler library
 cc_library(
     name = "scheduler",

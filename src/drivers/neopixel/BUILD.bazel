@@ -21,12 +21,11 @@ cc_library(
 # Mock neopixel driver (for host tests)
 cc_library(
     name = "neopixel_mock",
-    srcs = ["//src/test_mocks:neopixel.c"],
+    srcs = ["neopixel_mock.c"],
     hdrs = ["neopixel.h"],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )

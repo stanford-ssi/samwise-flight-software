@@ -10,10 +10,11 @@ module(
 )
 
 # Platform definitions for cross-compilation
-bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "platforms", version = "0.0.11")
 
 # Pico SDK with native Bazel support from Bazel Central Registry
-bazel_dep(name = "pico-sdk", version = "2.1.0")
+# bazel_dep(name = "pico-sdk", version = "2.2.0")
+bazel_dep(name = "pico-sdk", version = "2.2.2-develop.bcr.20260105-1cc19a21")
 
 # Configure pico-sdk for SAMWISE PiCubed board (RP2350)
 pico_sdk = use_extension("@pico-sdk//bazel:extensions.bzl", "pico_sdk_extension")

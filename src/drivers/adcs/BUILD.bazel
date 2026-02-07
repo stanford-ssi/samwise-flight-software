@@ -20,14 +20,15 @@ cc_library(
 # Stubs in driver_stubs.c
 cc_library(
     name = "adcs_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["adcs_driver_mock.c"],
     hdrs = ["adcs_driver.h"],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
-        "//src/packet:packet",
+        "//src/packet",
+        "//src/packet:adcs_packet",
         "//src/slate",
+        "//src/test_mocks",
     ],
-    target_compatible_with = ["//platforms:host"],
     testonly = True,
 )
