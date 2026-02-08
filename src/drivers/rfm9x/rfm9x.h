@@ -1,16 +1,22 @@
 #pragma once
 
+#ifndef TEST
 #include "hardware/resets.h"
 #include "hardware/spi.h"
-
 #include "pico/stdlib.h"
 #include "pico/time.h"
-
 #include "bit-support.h"
 #include "logger.h"
 #include "macros.h"
 #include "packet.h"
 #include "pins.h"
+#else
+#include "pico/types.h"
+#include "packet.h"
+#include <stdbool.h>
+#include <stdint.h>
+typedef struct { uint8_t dummy; } spi_inst_t;
+#endif
 
 #define PAYLOAD_SIZE                                                           \
     PACKET_SIZE - 4 // 4 bytes for header (destination, node, identifier, flags)

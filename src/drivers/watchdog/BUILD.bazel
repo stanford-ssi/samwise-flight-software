@@ -5,6 +5,7 @@ cc_library(
     name = "watchdog",
     srcs = ["watchdog.c"],
     hdrs = ["watchdog.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
@@ -13,14 +14,31 @@ cc_library(
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
+# Header-only target for type definitions (used by slate in test builds)
+cc_library(
+    name = "watchdog_hdrs",
+    hdrs = ["watchdog.h"],
+    includes = ["."],
+    deps = select({
+        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+        "//conditions:default": [
+            "//src/common",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+        ],
+    }),
+)
+
 # Mock watchdog driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "watchdog_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["watchdog_mock.c"],
     hdrs = ["watchdog.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/error:error_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

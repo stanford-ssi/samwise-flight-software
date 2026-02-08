@@ -5,6 +5,7 @@ cc_library(
     name = "mppt",
     srcs = ["mppt.c"],
     hdrs = ["mppt.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -20,13 +21,13 @@ cc_library(
     name = "mppt_mock",
     srcs = ["mppt_mock.c"],
     hdrs = ["mppt.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
         "//src/utils",
-        "//src/test_mocks:hardware_i2c_mock",
-        "//src/test_mocks:pico_stdlib_mock",
-        "//src/test_mocks:pico_time_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

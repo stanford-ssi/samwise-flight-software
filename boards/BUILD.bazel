@@ -13,11 +13,6 @@ cc_library(
     name = "samwise_picubed",
     hdrs = ["samwise_picubed.h"],
     includes = ["."],
-    deps = [
-        # Board headers don't typically have dependencies, but we ensure
-        # the pico-sdk base headers are available
-        "@pico-sdk//src/common/pico_base_headers",
-    ],
 )
 
 # Alias for convenience when referencing the board

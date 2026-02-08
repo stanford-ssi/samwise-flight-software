@@ -11,13 +11,20 @@ cc_library(
     name = "packet",
     srcs = ["packet.c"],
     hdrs = ["packet.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/drivers/logger",
         "//lib/tinycrypt",
-    ],
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ] + select({
+        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+        "//conditions:default": [],
+    }),
 )
 
 cc_library(
     name = "adcs_packet",
     hdrs = ["adcs_packet.h"],
+    includes = ["."],
 )

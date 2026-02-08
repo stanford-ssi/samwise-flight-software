@@ -5,6 +5,7 @@ cc_library(
     name = "rfm9x",
     srcs = ["rfm9x.c"],
     hdrs = ["rfm9x.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -17,19 +18,37 @@ cc_library(
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
+# Header-only target for type definitions (used by slate in test builds)
+cc_library(
+    name = "rfm9x_hdrs",
+    hdrs = ["rfm9x.h"],
+    includes = ["."],
+    deps = [
+        "//src/packet",
+    ] + select({
+        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+        "//conditions:default": [
+            "//src/common",
+            "//src/drivers/logger",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+            "@pico-sdk//src/rp2_common/hardware_resets:hardware_resets",
+        ],
+    }),
+)
+
 # Mock RFM9X driver (for host tests)
 cc_library(
     name = "rfm9x_mock",
     srcs = ["rfm9x_mock.c"],
     hdrs = ["rfm9x.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
         "//src/packet",
-        "//src/test_mocks:hardware_spi_mock",
-        "//src/test_mocks:hardware_resets_mock",
-        "//src/test_mocks:pico_stdlib_mock",
-        "//src/test_mocks:pico_time_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

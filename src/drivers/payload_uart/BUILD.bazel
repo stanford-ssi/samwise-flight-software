@@ -5,6 +5,7 @@ cc_library(
     name = "payload_uart",
     srcs = ["payload_uart.c"],
     hdrs = ["payload_uart.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -19,15 +20,17 @@ cc_library(
 )
 
 # Mock payload UART driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "payload_uart_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["payload_uart_mock.c"],
     hdrs = ["payload_uart.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
         "//src/slate",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

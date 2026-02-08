@@ -14,5 +14,8 @@ cc_library(
         "typedefs.h",
         "utils.h",
     ],
+    deps = [
+        "@pico-sdk//src/rp2_common/hardware_pwm:hardware_pwm",
+    ],
     includes = ["."],
 )

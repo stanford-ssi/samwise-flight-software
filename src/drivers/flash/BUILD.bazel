@@ -5,6 +5,7 @@ cc_library(
     name = "flash",
     srcs = ["flash.c"],
     hdrs = ["flash.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
@@ -18,10 +19,13 @@ cc_library(
 # Note: No dedicated flash mock in test_mocks, using driver_stubs
 cc_library(
     name = "flash_mock",
-    srcs = [],  # Stubbed in driver_stubs.c if needed
+    srcs = [],
     hdrs = ["flash.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/error:error_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

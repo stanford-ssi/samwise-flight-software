@@ -5,6 +5,7 @@ cc_library(
     name = "adm1176",
     srcs = ["adm1176.c"],
     hdrs = ["adm1176.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
@@ -14,13 +15,15 @@ cc_library(
 )
 
 # Mock ADM1176 driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "adm1176_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["adm1176_mock.c"],
     hdrs = ["adm1176.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/error:error_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

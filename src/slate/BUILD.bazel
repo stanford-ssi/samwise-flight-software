@@ -11,8 +11,16 @@ cc_library(
     name = "slate",
     srcs = ["slate.c"],
     hdrs = ["slate.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/drivers/onboard_led:onboard_led_hdrs",
+        "//src/drivers/rfm9x:rfm9x_hdrs",
+        "//src/drivers/watchdog:watchdog_hdrs",
+        "//src/packet:adcs_packet",
         "//src/scheduler:state_machine",
-    ],
+    ] + select({
+        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+        "//conditions:default": [],
+    }),
 )

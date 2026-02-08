@@ -8,6 +8,7 @@ cc_library(
         "neopixel.h",
         "ws2812.pio.h",
     ],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -23,9 +24,12 @@ cc_library(
     name = "neopixel_mock",
     srcs = ["neopixel_mock.c"],
     hdrs = ["neopixel.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

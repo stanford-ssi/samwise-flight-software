@@ -5,6 +5,7 @@ cc_library(
     name = "adcs",
     srcs = ["adcs_driver.c"],
     hdrs = ["adcs_driver.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -22,6 +23,7 @@ cc_library(
     name = "adcs_mock",
     srcs = ["adcs_driver_mock.c"],
     hdrs = ["adcs_driver.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",

@@ -5,12 +5,17 @@
  * Sets neopixel states on Picube
  */
 #pragma once
-#include "common/pins.h"
+
+#ifndef TEST
+#include "pins.h"
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
 #include "logger.h"
 #include "pico/stdlib.h"
 #include "ws2812.pio.h"
+#else
+#include <stdint.h>
+#endif
 
 void neopixel_init();
 void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b);

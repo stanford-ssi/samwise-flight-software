@@ -4,6 +4,7 @@
 package(default_visibility = ["//visibility:public"])
 
 # Pico stdlib mock (standard library functions for Pico)
+# Not testonly because shared libraries (packet, slate) need pico/types.h in host builds
 cc_library(
     name = "pico_stdlib_mock",
     hdrs = [
@@ -12,7 +13,6 @@ cc_library(
         "pico/unique_id.h",
         "pico/util/queue.h",
     ],
-    testonly = True,
     includes = ["."],
 )
 

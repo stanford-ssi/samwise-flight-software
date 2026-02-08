@@ -5,6 +5,7 @@ cc_library(
     name = "burn_wire",
     srcs = ["burn_wire.c"],
     hdrs = ["burn_wire.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
@@ -17,15 +18,17 @@ cc_library(
 )
 
 # Mock burn wire driver (for host tests)
-# Stubs in driver_stubs.c
 cc_library(
     name = "burn_wire_mock",
-    srcs = ["//src/test_mocks:driver_stubs.c"],
+    srcs = ["burn_wire_mock.c"],
     hdrs = ["burn_wire.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
         "//src/slate",
+        "//src/test_mocks",
     ],
     testonly = True,
 )

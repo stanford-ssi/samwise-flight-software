@@ -36,8 +36,31 @@ cc_library(
     deps = [
         ":state_machine",
         "//src/common",
+        "//src/error:error_mock",
+        "//src/slate",
+        "//src/test_mocks",
     ],
     testonly = True,
+)
+
+# Scheduler header-only library (for test infrastructure)
+cc_library(
+    name = "scheduler_hdrs",
+    hdrs = ["scheduler.h"],
+    includes = ["."],
+    testonly = True,
+    deps = [
+        ":state_machine",
+        "//src/common",
+        "//src/slate",
+    ] + select({
+        "//build:test_mode": [
+            "//src/error:error_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_time_mock",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 # Main scheduler library

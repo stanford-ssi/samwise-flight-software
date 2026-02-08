@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/config.h"
+#include "config.h"
 #include "drivers/watchdog/watchdog.h"
 #include "pico/time.h"
 #include <slate.h>

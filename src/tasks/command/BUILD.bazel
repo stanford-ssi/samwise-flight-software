@@ -9,6 +9,7 @@ cc_library(
         "//src/common",
         "//src/slate",
         "//src/packet",
+        "//src/drivers/payload_uart",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pico-sdk//src/common/pico_util:pico_util",
     ],

@@ -7,7 +7,7 @@ cc_library(
     deps = [
         "//src/common",
         "//src/slate",
-        "//src/scheduler",
+        "//src/scheduler:state_machine",
         "//src/utils",
         "//src/tasks/command:command_parser",
         "//src/drivers/payload_uart",

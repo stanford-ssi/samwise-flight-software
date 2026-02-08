@@ -8,7 +8,7 @@
 #include "command_parser.h"
 #include "macros.h"
 #include "payload_uart.h"
-#include "scheduler.h"
+#include "state_machine.h"
 #include "slate.h"
 
 // LED Color for payload task - Purple

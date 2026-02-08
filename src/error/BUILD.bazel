@@ -13,9 +13,11 @@ cc_library(
     name = "error",
     srcs = ["error.c"],
     hdrs = ["error.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/utils",
+        "//src/drivers/neopixel",
     ],
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
@@ -25,8 +27,10 @@ cc_library(
     name = "error_mock",
     srcs = ["error_mock.c"],
     hdrs = ["error.h"],
+    includes = ["."],
     deps = [
         "//src/common",
+        "//src/test_mocks",
         "//src/utils",
     ],
     testonly = True,

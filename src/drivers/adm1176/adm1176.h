@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common/config.h"
-#include "common/pins.h"
+#include "config.h"
+#include "pins.h"
 #include "hardware/i2c.h"
 #include "macros.h"
 
