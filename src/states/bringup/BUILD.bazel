@@ -8,6 +8,7 @@ cc_library(
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
         # Task dependencies
         "//src/tasks/diagnostics:diagnostics_task",
         "//src/tasks/watchdog:watchdog_task",

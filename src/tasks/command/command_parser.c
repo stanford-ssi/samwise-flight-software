@@ -13,10 +13,8 @@
 #include "packet.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
-#include "states.h"
+#include "state_ids.h"
 #include "str_utils.h"
-
-extern sched_state_t *overridden_state;
 
 /// @brief Parse packet and dispatch command to appropriate queue
 void dispatch_command(slate_t *slate, packet_t *packet)
@@ -93,23 +91,23 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                      command_payload);
             if (strcmp(command_payload, "running_state") == 0)
             {
-                slate->manual_override_state = &running_state;
+                slate->manual_override_state_id = STATE_RUNNING;
             }
             else if (strcmp(command_payload, "init_state") == 0)
             {
-                slate->manual_override_state = &init_state;
+                slate->manual_override_state_id = STATE_INIT;
             }
             else if (strcmp(command_payload, "burn_wire_state") == 0)
             {
-                slate->manual_override_state = &burn_wire_state;
+                slate->manual_override_state_id = STATE_BURN_WIRE;
             }
             else if (strcmp(command_payload, "burn_wire_reset_state") == 0)
             {
-                slate->manual_override_state = &burn_wire_reset_state;
+                slate->manual_override_state_id = STATE_BURN_WIRE_RESET;
             }
             else
             {
-                slate->manual_override_state = NULL;
+                slate->manual_override_state_id = STATE_NONE;
                 LOG_ERROR("Unknown state override command: %s",
                           command_payload);
             }

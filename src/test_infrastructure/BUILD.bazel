@@ -13,6 +13,8 @@ cc_library(
         "//src/drivers/logger:logger_mock",
         "//src/scheduler:scheduler_hdrs",
         "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
+        "//src/scheduler:state_registry",
         "//src/slate",
         "//src/test_mocks",
     ],

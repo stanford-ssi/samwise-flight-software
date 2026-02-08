@@ -6,6 +6,8 @@
 #include "test_scheduler_helpers.h"
 #include "logger.h"
 #include "pico/stdlib.h"
+#include "state_registry.h"
+#include "state_ids.h"
 #include <string.h>
 
 // =============================================================================
@@ -112,7 +114,7 @@ void test_state_init_tasks(sched_state_t *state, slate_t *slate)
 
 void test_sched_dispatch(slate_t *slate)
 {
-    sched_state_t *current_state_info = slate->current_state;
+    sched_state_t *current_state_info = state_registry_get(slate->current_state_id);
 
     // Loop through all of this state's tasks
     for (size_t i = 0; i < current_state_info->num_tasks; i++)
@@ -151,20 +153,20 @@ void test_sched_dispatch(slate_t *slate)
         1000;
 
     // Handle state transitions (simplified from scheduler.c)
-    sched_state_t *next_state;
-    if (slate->manual_override_state != NULL)
+    state_id_t next_state_id;
+    if (slate->manual_override_state_id != STATE_NONE)
     {
-        next_state = slate->manual_override_state;
-        slate->manual_override_state = NULL;
+        next_state_id = slate->manual_override_state_id;
+        slate->manual_override_state_id = STATE_NONE;
     }
     else
     {
-        next_state = current_state_info->get_next_state(slate);
+        next_state_id = current_state_info->get_next_state(slate);
     }
 
-    if (next_state != current_state_info)
+    if (next_state_id != slate->current_state_id)
     {
-        slate->current_state = next_state;
+        slate->current_state_id = next_state_id;
         slate->entered_current_state_time = get_absolute_time();
         slate->time_in_current_state_ms = 0;
     }

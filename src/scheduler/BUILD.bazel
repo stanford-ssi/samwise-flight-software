@@ -8,24 +8,36 @@ based on their configured dispatch periods.
 
 package(default_visibility = ["//visibility:public"])
 
+# State ID enum (zero dependencies, breaks circular deps)
+cc_library(
+    name = "state_ids",
+    hdrs = ["state_ids.h"],
+    includes = ["."],
+)
+
 # State machine header-only library (without states.h to avoid circular deps)
 cc_library(
     name = "state_machine",
     hdrs = ["state_machine.h"],
     includes = ["."],
     deps = [
+        ":state_ids",
         "//src/common",
-    ],
+    ] + select({
+        "//build:test_mode": ["//src/test_mocks:pico_time_mock"],
+        "//conditions:default": ["@pico-sdk//src/common/pico_time"],
+    }),
 )
 
-# States aggregation header (includes all state headers)
-# This creates a circular dependency and should only be used by scheduler
+# Central state registry
 cc_library(
-    name = "states_hdrs",
-    hdrs = ["states.h"],
+    name = "state_registry",
+    srcs = ["state_registry.c"],
+    hdrs = ["state_registry.h"],
+    includes = ["."],
     deps = [
+        ":state_ids",
         ":state_machine",
-        "//src/common",
     ],
 )
 
@@ -35,6 +47,7 @@ cc_library(
     srcs = ["state_mock.c"],
     deps = [
         ":state_machine",
+        ":state_ids",
         "//src/common",
         "//src/error:error_mock",
         "//src/slate",
@@ -51,6 +64,8 @@ cc_library(
     testonly = True,
     deps = [
         ":state_machine",
+        ":state_registry",
+        ":state_ids",
         "//src/common",
         "//src/slate",
     ] + select({
@@ -70,7 +85,8 @@ cc_library(
     hdrs = ["scheduler.h"],
     deps = [
         ":state_machine",
-        ":states_hdrs",
+        ":state_registry",
+        ":state_ids",
         "//src/common",
         "//src/states/init:init_state",
         "//src/states/running:running_state",

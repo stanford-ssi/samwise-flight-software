@@ -8,7 +8,7 @@ cc_library(
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
-        "//src/scheduler:states_hdrs",
+        "//src/scheduler:state_ids",
         "//src/drivers/flash",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
     ],

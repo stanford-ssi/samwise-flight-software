@@ -7,45 +7,54 @@
  */
 
 #include "scheduler.h"
-#include "states.h"
+#include "state_registry.h"
 
-/*
- * Include the actual state machine
- */
-static const sched_state_t *all_states[] = {&init_state,
+#include "init_state.h"
+#include "running_state.h"
+#include "burn_wire_state.h"
+#include "burn_wire_reset_state.h"
 #ifdef BRINGUP
-                                            &bringup_state,
+#include "bringup_state.h"
 #endif
-                                            &running_state};
-static sched_state_t *const initial_state = &init_state;
+
 static size_t n_tasks = 0;
-static sched_task_t *all_tasks[num_states * MAX_TASKS_PER_STATE];
+static sched_task_t *all_tasks[STATE_COUNT * MAX_TASKS_PER_STATE];
 
 /**
  * Initialize the state machine.
- *
- * @param slate     Pointer to the slate.
  */
 void sched_init(slate_t *slate)
 {
+    // Register all states
+    state_registry_register(STATE_INIT, &init_state);
+    state_registry_register(STATE_RUNNING, &running_state);
+    state_registry_register(STATE_BURN_WIRE, &burn_wire_state);
+    state_registry_register(STATE_BURN_WIRE_RESET, &burn_wire_reset_state);
+#ifdef BRINGUP
+    state_registry_register(STATE_BRINGUP, &bringup_state);
+#endif
+
+    size_t num_states = state_registry_count();
+
     /*
      * Check that each state has a valid number of tasks, and enumerate all
      * tasks.
      */
     for (size_t i = 0; i < num_states; i++)
     {
-        ASSERT(all_states[i]->num_tasks <= MAX_TASKS_PER_STATE);
-        for (size_t j = 0; j < all_states[i]->num_tasks; j++)
+        sched_state_t *state = state_registry_get_by_index(i);
+        ASSERT(state->num_tasks <= MAX_TASKS_PER_STATE);
+        for (size_t j = 0; j < state->num_tasks; j++)
         {
             bool is_duplicate = 0;
             for (size_t k = 0; k < n_tasks; k++)
             {
-                if (all_tasks[k] == all_states[i]->task_list[j])
+                if (all_tasks[k] == state->task_list[j])
                     is_duplicate = 1;
             }
             if (!is_duplicate)
             {
-                all_tasks[n_tasks] = all_states[i]->task_list[j];
+                all_tasks[n_tasks] = state->task_list[j];
                 n_tasks++;
             }
         }
@@ -71,7 +80,8 @@ void sched_init(slate_t *slate)
     /*
      * Enter the init state by default
      */
-    slate->current_state = initial_state;
+    slate->current_state_id = STATE_INIT;
+    slate->manual_override_state_id = STATE_NONE;
     slate->entered_current_state_time = get_absolute_time();
     slate->time_in_current_state_ms = 0;
 
@@ -81,12 +91,11 @@ void sched_init(slate_t *slate)
 /**
  * Dispatch the state machine. Runs any of the current state's tasks which are
  * due, and transitions into the next state.
- *
- * @param slate     Pointer to the slate.
  */
 void sched_dispatch(slate_t *slate)
 {
-    sched_state_t *current_state_info = slate->current_state;
+    sched_state_t *current_state_info =
+        state_registry_get(slate->current_state_id);
 
     /*
      * Loop through all of this state's tasks
@@ -115,24 +124,26 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    sched_state_t *next_state;
-    if (slate->manual_override_state != NULL)
+    state_id_t next_state_id;
+    if (slate->manual_override_state_id != STATE_NONE)
     {
-        LOG_INFO("sched: Manual state override to %s",
-                 slate->manual_override_state->name);
-        next_state = slate->manual_override_state;
-        slate->manual_override_state = NULL;
+        sched_state_t *override =
+            state_registry_get(slate->manual_override_state_id);
+        LOG_INFO("sched: Manual state override to %s", override->name);
+        next_state_id = slate->manual_override_state_id;
+        slate->manual_override_state_id = STATE_NONE;
     }
     else
     {
-        next_state = current_state_info->get_next_state(slate);
+        next_state_id = current_state_info->get_next_state(slate);
     }
 
-    if (next_state != current_state_info)
+    if (next_state_id != slate->current_state_id)
     {
-        LOG_DEBUG("sched: Transitioning to state %s", next_state->name);
+        sched_state_t *next = state_registry_get(next_state_id);
+        LOG_DEBUG("sched: Transitioning to state %s", next->name);
 
-        slate->current_state = next_state;
+        slate->current_state_id = next_state_id;
         slate->entered_current_state_time = get_absolute_time();
         slate->time_in_current_state_ms = 0;
     }

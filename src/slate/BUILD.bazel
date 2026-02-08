@@ -18,7 +18,7 @@ cc_library(
         "//src/drivers/rfm9x:rfm9x_hdrs",
         "//src/drivers/watchdog:watchdog_hdrs",
         "//src/packet:adcs_packet",
-        "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
     ] + select({
         "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
         "//conditions:default": [],
