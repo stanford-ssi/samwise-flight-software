@@ -6,6 +6,7 @@ add_library(test_mocks
     neopixel.c
     driver_stubs.c
     pico/time.c
+    mram.c
 )
 
 # Define TEST macro for conditional compilation in mocks
@@ -32,6 +33,7 @@ target_include_directories(test_mocks PUBLIC
     "${PROJECT_SOURCE_DIR}/src/drivers/adm1176"
     "${PROJECT_SOURCE_DIR}/src/drivers/mppt"
     "${PROJECT_SOURCE_DIR}/src/drivers/device_status"
+    "${PROJECT_SOURCE_DIR}/src/drivers/mram"
     "${PROJECT_SOURCE_DIR}/src/utils"
     "${PROJECT_SOURCE_DIR}/lib/tinycrypt/lib/include"
 )

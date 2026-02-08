@@ -7,6 +7,7 @@ target_link_libraries(bringup_state PUBLIC
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,common>
   $<IF:$<BOOL:${BUILD_TESTS}>,test_mocks,slate>
   diagnostics_task
+  hardware_test_task
   print_task
   watchdog_task
   running_state
