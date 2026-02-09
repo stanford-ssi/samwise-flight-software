@@ -4,14 +4,22 @@ cc_library(
     name = "adcs_task",
     srcs = ["adcs_task.c"],
     hdrs = ["adcs_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
-        "//src/drivers/adcs",
-        "//src/drivers/neopixel",
         "//src/packet:adcs_packet",
         "//src/scheduler:state_machine",
         "//src/slate",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/adcs:adcs_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/adcs",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

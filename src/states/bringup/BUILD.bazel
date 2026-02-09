@@ -4,6 +4,7 @@ cc_library(
     name = "bringup_state",
     srcs = ["bringup_state.c"],
     hdrs = ["bringup_state.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
@@ -12,7 +13,12 @@ cc_library(
         # Task dependencies
         "//src/tasks/diagnostics:diagnostics_task",
         "//src/tasks/watchdog:watchdog_task",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

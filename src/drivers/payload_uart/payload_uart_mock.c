@@ -1,6 +1,6 @@
 #include "payload_uart.h"
 
-bool payload_uart_init()
+bool payload_uart_init(slate_t *slate)
 {
     return true;
 }

@@ -6,9 +6,8 @@
 #include "pico/time.h"
 #include "pins.h"
 #else
-#include "pico/types.h"
+#include "typedefs.h"
 #include <stdbool.h>
-#include <stdint.h>
 #endif
 
 struct watchdog

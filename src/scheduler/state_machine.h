@@ -3,12 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#ifndef TEST
-#include "pico/time.h"
-#else
-#include "pico_time_mock.h"
-#endif
-
 #include "state_ids.h"
 #include "typedefs.h"
 

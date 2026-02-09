@@ -23,10 +23,7 @@ cc_library(
     deps = [
         ":state_ids",
         "//src/common",
-    ] + select({
-        "//build:test_mode": ["//src/test_mocks:pico_time_mock"],
-        "//conditions:default": ["@pico-sdk//src/common/pico_time"],
-    }),
+    ],
 )
 
 # Central state registry
@@ -93,5 +90,17 @@ cc_library(
         "//src/states/bringup:bringup_state",
         "//src/states/burn_wire:burn_wire_state",
         "//src/states/burn_wire_reset:burn_wire_reset_state",
-    ],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/error:error_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_time_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/error",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

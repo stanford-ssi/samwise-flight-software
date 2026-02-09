@@ -11,7 +11,9 @@
 
 #pragma once
 
+#ifndef TEST
 #include "pico/types.h"
+#endif
 #include "pico/util/queue.h"
 
 #include "state_ids.h"

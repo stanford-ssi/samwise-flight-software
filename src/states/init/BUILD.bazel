@@ -4,15 +4,24 @@ cc_library(
     name = "init_state",
     srcs = ["init_state.c"],
     hdrs = ["init_state.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
         "//src/scheduler:state_ids",
-        "//src/drivers/logger",
-        "//src/drivers/neopixel",
-        "//src/drivers/device_status",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/drivers/device_status:device_status_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/neopixel",
+            "//src/drivers/device_status",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

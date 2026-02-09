@@ -21,6 +21,7 @@ pico_sdk = use_extension("@pico-sdk//bazel:extensions.bzl", "pico_sdk_extension"
 pico_sdk.config(
     PICO_BOARD = "samwise_picubed",
     PICO_PLATFORM = "rp2350",
+    PICO_STDIO_USB = True,
 )
 
 # # Configure to use local ARM GCC toolchain (avoids download issues)

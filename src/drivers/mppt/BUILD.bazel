@@ -29,5 +29,4 @@ cc_library(
         "//src/utils",
         "//src/test_mocks",
     ],
-    testonly = True,
 )

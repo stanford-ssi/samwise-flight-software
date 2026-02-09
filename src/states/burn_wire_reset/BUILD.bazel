@@ -4,13 +4,22 @@ cc_library(
     name = "burn_wire_reset_state",
     srcs = ["burn_wire_reset_state.c"],
     hdrs = ["burn_wire_reset_state.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
         "//src/scheduler:state_ids",
-        "//src/drivers/flash",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/flash:flash_mock",
+            "//src/drivers/logger:logger_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/flash",
+            "//src/drivers/logger",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

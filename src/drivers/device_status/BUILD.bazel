@@ -25,5 +25,4 @@ cc_library(
         "//src/error:error_mock",
         "//src/test_mocks",
     ],
-    testonly = True,
 )

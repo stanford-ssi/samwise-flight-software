@@ -7,6 +7,9 @@
 
 #include "adcs_packet.h"
 #include "beacon_task.h"
+#include "error.h"
+#include "logger.h"
+#include "state_registry.h"
 #include <stdio.h>
 
 /**
@@ -15,11 +18,14 @@
 slate_t slate;
 uint8_t tmp_data[252];
 
+static state_id_t mock_get_next_state(slate_t *s) { return STATE_INIT; }
+
 sched_state_t mock_state = {
     .name = "mock_state",
+    .id = STATE_INIT,
     .num_tasks = 0,
     .task_list = {NULL},
-    .get_next_state = NULL,
+    .get_next_state = mock_get_next_state,
 };
 
 void mock_slate(slate_t *slate)
@@ -27,9 +33,12 @@ void mock_slate(slate_t *slate)
     // Reset slate to empty first
     memset(slate, 0, sizeof(slate_t));
 
+    // Register mock state so state_registry_get can find it
+    state_registry_register(STATE_INIT, &mock_state);
+
     // Mock values into slate
     slate->time_in_current_state_ms = 12345;
-    slate->current_state = &mock_state;
+    slate->current_state_id = STATE_INIT;
     slate->adcs_telemetry = (adcs_packet_t){
         .w = 1.0,
         .q0 = 0.1,

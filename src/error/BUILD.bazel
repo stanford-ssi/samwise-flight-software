@@ -16,10 +16,13 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/utils",
-        "//src/drivers/neopixel",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [],
+        "//conditions:default": [
+            "//src/drivers/neopixel",
+            "//src/utils",
+        ],
+    }),
 )
 
 # Mock error handling for host tests
@@ -30,8 +33,5 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/test_mocks",
-        "//src/utils",
     ],
-    testonly = True,
 )

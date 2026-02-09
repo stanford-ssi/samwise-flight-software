@@ -8,6 +8,7 @@
 #include "flash.h"
 #include "neopixel.h"
 #include "safe_sleep.h"
+#include "logger.h"
 
 void burn_wire_task_init(slate_t *slate)
 {

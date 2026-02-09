@@ -6,21 +6,33 @@ cc_library(
     name = "radio_task",
     srcs = ["radio_task.c"],
     hdrs = ["radio_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
         "//src/packet",
-        "//src/error",
         "//src/utils",
-        "//src/drivers/rfm9x",
-        "//src/drivers/neopixel",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/common/pico_util:pico_util",
-        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
-        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/rfm9x:rfm9x_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/error:error_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
+            "//src/test_mocks:hardware_spi_mock",
+            "//src/test_mocks:hardware_gpio_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/rfm9x",
+            "//src/drivers/neopixel",
+            "//src/error",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/common/pico_util:pico_util",
+            "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+            "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+        ],
+    }),
 )
 
 samwise_test(

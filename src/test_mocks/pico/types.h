@@ -4,6 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Mock pico types for tests
-typedef uint64_t absolute_time_t;
-typedef unsigned int uint;
+// Pico-sdk type definitions for host builds
+// Canonical definitions are in typedefs.h; re-include is safe with compatible typedefs
+#include "typedefs.h"

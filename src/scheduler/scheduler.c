@@ -8,6 +8,8 @@
 
 #include "scheduler.h"
 #include "state_registry.h"
+#include "error.h"
+#include "logger.h"
 
 #include "init_state.h"
 #include "running_state.h"

@@ -43,6 +43,7 @@ cc_binary(
 
         # Pico-SDK libraries
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
         "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
         "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
         "@pico-sdk//src/rp2_common/pico_unique_id",
@@ -54,6 +55,8 @@ cc_binary(
         "//lib/tinycrypt",
     ],
     copts = [
+        # Force-include the board header before any other headers
+        "-include", "samwise_picubed.h",
         # Include board headers directory
         "-I$(GENDIR)/boards",
         "-Iboards",
@@ -76,6 +79,9 @@ cc_binary(
         "//conditions:default": [],
     }),
     local_defines = [
+        # USB stdio configuration
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
         # Commit hash can be set with --define=COMMIT_HASH=<hash>
         # If not set, defaults to "unknown"
         'COMMIT_HASH=\\"unknown\\"',

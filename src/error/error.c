@@ -11,7 +11,12 @@
  */
 
 #include "error.h"
+#ifdef TEST
+#include <stdio.h>
+#include <stdlib.h>
+#else
 #include "safe_sleep.h"
+#endif
 
 /**
  * This function should be called if we encounter an unrecoverable error. In
@@ -24,7 +29,9 @@
  */
 void fatal_error(char *msg)
 {
-#ifdef FLIGHT
+#ifdef TEST
+    fprintf(stderr, "Fatal error occurred: %s\n", msg ? msg : "unknown");
+#elif defined(FLIGHT)
     return;
 #else
     while (1)

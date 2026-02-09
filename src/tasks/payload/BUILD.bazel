@@ -4,16 +4,25 @@ cc_library(
     name = "payload_task",
     srcs = ["payload_task.c"],
     hdrs = ["payload_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
         "//src/utils",
         "//src/tasks/command:command_parser",
-        "//src/drivers/payload_uart",
-        "//src/drivers/neopixel",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/payload_uart:payload_uart_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:hardware_uart_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/payload_uart",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+        ],
+    }),
 )

@@ -4,7 +4,7 @@
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #else
-#include "pico/types.h"
+#include "typedefs.h"
 #include <stdbool.h>
 #endif
 

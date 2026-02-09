@@ -13,7 +13,18 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/drivers/watchdog",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
+        "//src/slate",
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/watchdog:watchdog_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_time_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/watchdog",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

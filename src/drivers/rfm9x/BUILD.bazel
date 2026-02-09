@@ -24,11 +24,13 @@ cc_library(
     hdrs = ["rfm9x.h"],
     includes = ["."],
     deps = [
+        "//src/common",
         "//src/packet",
     ] + select({
-        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+        "//build:test_mode": [
+            "//src/test_mocks:hardware_spi_mock",
+        ],
         "//conditions:default": [
-            "//src/common",
             "//src/drivers/logger",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
@@ -45,10 +47,7 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/drivers/logger:logger_mock",
-        "//src/error:error_mock",
         "//src/packet",
-        "//src/test_mocks",
+        "//src/test_mocks:hardware_spi_mock",
     ],
-    testonly = True,
 )

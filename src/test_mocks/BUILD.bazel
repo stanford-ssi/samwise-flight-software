@@ -3,24 +3,40 @@
 
 package(default_visibility = ["//visibility:public"])
 
+# Pico unique_id mock
+cc_library(
+    name = "pico_unique_id_mock",
+    hdrs = ["pico/unique_id.h"],
+    includes = ["."],
+)
+
+# Pico util mock (queue functions)
+cc_library(
+    name = "pico_util_mock",
+    hdrs = ["pico/util/queue.h"],
+    includes = ["."],
+    deps = ["//src/common"],
+)
+
 # Pico stdlib mock (standard library functions for Pico)
-# Not testonly because shared libraries (packet, slate) need pico/types.h in host builds
 cc_library(
     name = "pico_stdlib_mock",
     hdrs = [
         "pico/stdlib.h",
         "pico/types.h",
-        "pico/unique_id.h",
-        "pico/util/queue.h",
     ],
     includes = ["."],
+    deps = [
+        "//src/common",
+        ":pico_unique_id_mock",
+        ":pico_util_mock",
+    ],
 )
 
 # Hardware SPI mock
 cc_library(
     name = "hardware_spi_mock",
     hdrs = ["hardware/spi.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -28,7 +44,6 @@ cc_library(
 cc_library(
     name = "hardware_i2c_mock",
     hdrs = ["hardware/i2c.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -36,7 +51,6 @@ cc_library(
 cc_library(
     name = "hardware_pwm_mock",
     hdrs = ["hardware/pwm.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -44,7 +58,6 @@ cc_library(
 cc_library(
     name = "hardware_gpio_mock",
     hdrs = ["hardware/gpio.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -52,7 +65,6 @@ cc_library(
 cc_library(
     name = "hardware_flash_mock",
     hdrs = ["hardware/flash.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -60,7 +72,6 @@ cc_library(
 cc_library(
     name = "hardware_resets_mock",
     hdrs = ["hardware/resets.h"],
-    testonly = True,
     includes = ["."],
 )
 
@@ -68,7 +79,13 @@ cc_library(
 cc_library(
     name = "hardware_sync_mock",
     hdrs = ["hardware/sync.h"],
-    testonly = True,
+    includes = ["."],
+)
+
+# Hardware UART mock
+cc_library(
+    name = "hardware_uart_mock",
+    hdrs = ["hardware/uart.h"],
     includes = ["."],
 )
 
@@ -77,7 +94,6 @@ cc_library(
     name = "pico_time_mock",
     srcs = ["pico/time.c"],
     hdrs = ["pico/time.h"],
-    testonly = True,
     includes = ["."],
     deps = [":pico_stdlib_mock"],
 )
@@ -85,7 +101,6 @@ cc_library(
 # Complete test mocks library (aggregates all Pico SDK hardware mocks)
 cc_library(
     name = "test_mocks",
-    testonly = True,
     deps = [
         ":hardware_flash_mock",
         ":hardware_gpio_mock",
@@ -94,7 +109,10 @@ cc_library(
         ":hardware_resets_mock",
         ":hardware_spi_mock",
         ":hardware_sync_mock",
+        ":hardware_uart_mock",
         ":pico_stdlib_mock",
         ":pico_time_mock",
+        ":pico_unique_id_mock",
+        ":pico_util_mock",
     ],
 )

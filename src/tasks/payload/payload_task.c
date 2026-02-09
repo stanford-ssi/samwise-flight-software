@@ -7,6 +7,7 @@
 #include "neopixel.h"
 #include "safe_sleep.h"
 #include <stdio.h>
+#include "logger.h"
 
 #define MAX_RECEIVED_LEN 1024
 #define SEQUENCE_NUMBER_DUMMY 999
@@ -229,11 +230,13 @@ void power_on_off_payload_test(slate_t *slate)
         return;
     }
 
+#ifndef TEST
     LOG_INFO("Checking RPI_ENAB pin to see if it reads 0...");
     if (!gpio_get_out_level(SAMWISE_RPI_ENAB))
     {
         LOG_INFO("RPI_ENAB is pulled low...");
     }
+#endif
 
     LOG_INFO("Test ran successfully, exiting test...");
 }

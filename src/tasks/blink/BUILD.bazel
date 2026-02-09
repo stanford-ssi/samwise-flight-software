@@ -4,12 +4,19 @@ cc_library(
     name = "blink_task",
     srcs = ["blink_task.c"],
     hdrs = ["blink_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
-        "//src/drivers/onboard_led",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/onboard_led:onboard_led_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/onboard_led",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )

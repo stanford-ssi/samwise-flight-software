@@ -6,20 +6,31 @@ cc_library(
     name = "print_task",
     srcs = ["print_task.c"],
     hdrs = ["print_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
-        "//src/drivers/logger",
-        "//src/drivers/neopixel",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    ] + select({
+        "//build:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
 )
 
 samwise_test(
     name = "print_test",
-    srcs = ["test/print_test.c"],
+    srcs = [
+        "test/print_test.c",
+        "test/print_test.h",
+    ],
     deps = [
         ":print_task",
     ],

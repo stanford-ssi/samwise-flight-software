@@ -11,11 +11,11 @@
 #include "packet.h"
 #include "pins.h"
 #else
-#include "pico/types.h"
+#include "hardware/spi.h"
+#include "typedefs.h"
 #include "packet.h"
 #include <stdbool.h>
 #include <stdint.h>
-typedef struct { uint8_t dummy; } spi_inst_t;
 #endif
 
 #define PAYLOAD_SIZE                                                           \

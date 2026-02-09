@@ -19,8 +19,8 @@ cc_library(
     name = "onboard_led_hdrs",
     hdrs = ["onboard_led.h"],
     includes = ["."],
-    deps = select({
-        "//build:test_mode": ["//src/test_mocks:pico_stdlib_mock"],
+    deps = ["//src/common"] + select({
+        "//build:test_mode": [],
         "//conditions:default": [
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
@@ -36,8 +36,5 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/error:error_mock",
-        "//src/test_mocks",
     ],
-    testonly = True,
 )

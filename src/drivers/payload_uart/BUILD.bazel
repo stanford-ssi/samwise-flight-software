@@ -32,5 +32,4 @@ cc_library(
         "//src/slate",
         "//src/test_mocks",
     ],
-    testonly = True,
 )
