@@ -28,17 +28,14 @@ jobs:
       - name: Setup Project
         run: ./configure.sh
 
-      - name: Mount bazel cache
-        uses: actions/cache@v4
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@v1
         with:
-          path: "~/.cache/bazel"
-          key: bazel-tests-${{ hashFiles('.bazelrc', 'MODULE.bazel', 'bzl/**') }}
-          restore-keys: |
-            bazel-tests-
-            bazel-
+          disk-cache: true
+          repository-cache: true
 
       - name: Run all tests
-        run: bazel test //src/... --config=tests --test_output=errors
+        run: bazel test //src/... --test_output=errors
 
       - name: Archive test visualization logs
         if: always()
