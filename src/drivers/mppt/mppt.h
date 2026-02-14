@@ -3,7 +3,6 @@
 #pragma once
 
 #include "config.h"
-#include "pins.h"
 #include "hardware/i2c.h"
 #include "logger.h"
 #include "macros.h"

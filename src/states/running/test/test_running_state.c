@@ -174,7 +174,8 @@ void test_scheduler_execution()
 
     // Register the running state in the state registry so scheduler can find it
     state_registry_register(STATE_RUNNING, &running_state);
-    LOG_DEBUG("Found running state: %s", state_registry_get(test_slate.current_state_id)->name);
+    LOG_DEBUG("Found running state: %s",
+              state_registry_get(test_slate.current_state_id)->name);
 
     // Initialize all tasks
     test_state_init_tasks(&running_state, &test_slate);

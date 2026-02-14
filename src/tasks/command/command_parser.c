@@ -9,13 +9,13 @@
  */
 
 #include "command_parser.h"
+#include "logger.h"
 #include "macros.h"
 #include "packet.h"
 #include "payload_uart.h"
 #include "rfm9x.h"
 #include "state_ids.h"
 #include "str_utils.h"
-#include "logger.h"
 
 /// @brief Parse packet and dispatch command to appropriate queue
 void dispatch_command(slate_t *slate, packet_t *packet)

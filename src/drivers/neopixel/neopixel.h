@@ -7,11 +7,11 @@
 #pragma once
 
 #ifndef TEST
-#include "pins.h"
 #include "hardware/clocks.h"
 #include "hardware/pio.h"
 #include "logger.h"
 #include "pico/stdlib.h"
+#include "pins.h"
 #include "ws2812.pio.h"
 #else
 #include <stdint.h>

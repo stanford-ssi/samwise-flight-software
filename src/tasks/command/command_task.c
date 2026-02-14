@@ -7,11 +7,11 @@
 
 #include "command_task.h"
 #include "command_parser.h"
+#include "logger.h"
 #include "macros.h"
 #include "neopixel.h"
 #include "pico/stdlib.h"
 #include "slate.h"
-#include "logger.h"
 
 const int PAYLOAD_DATA_CAPACITY = 32;
 

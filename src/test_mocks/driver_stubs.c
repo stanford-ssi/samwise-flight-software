@@ -101,7 +101,6 @@ void watchdog_feed(struct watchdog *wd)
 {
 }
 
-
 // Onboard LED stubs
 void onboard_led_toggle(struct onboard_led *led)
 {
@@ -128,13 +127,25 @@ void payload_turn_off(slate_t *slate)
 }
 
 // External state declarations for tests
-#include "state_machine.h"
 #include "state_ids.h"
+#include "state_machine.h"
 
-static state_id_t mock_init_next(slate_t *s) { return STATE_INIT; }
-static state_id_t mock_burn_wire_next(slate_t *s) { return STATE_BURN_WIRE; }
-static state_id_t mock_burn_wire_reset_next(slate_t *s) { return STATE_BURN_WIRE_RESET; }
-static state_id_t mock_bringup_next(slate_t *s) { return STATE_BRINGUP; }
+static state_id_t mock_init_next(slate_t *s)
+{
+    return STATE_INIT;
+}
+static state_id_t mock_burn_wire_next(slate_t *s)
+{
+    return STATE_BURN_WIRE;
+}
+static state_id_t mock_burn_wire_reset_next(slate_t *s)
+{
+    return STATE_BURN_WIRE_RESET;
+}
+static state_id_t mock_bringup_next(slate_t *s)
+{
+    return STATE_BRINGUP;
+}
 
 sched_state_t init_state = {.id = STATE_INIT,
                             .name = "init",
@@ -150,7 +161,8 @@ sched_state_t burn_wire_reset_state = {.id = STATE_BURN_WIRE_RESET,
                                        .name = "burn_wire_reset",
                                        .num_tasks = 0,
                                        .task_list = {NULL},
-                                       .get_next_state = mock_burn_wire_reset_next};
+                                       .get_next_state =
+                                           mock_burn_wire_reset_next};
 sched_state_t bringup_state = {.id = STATE_BRINGUP,
                                .name = "bringup",
                                .num_tasks = 0,

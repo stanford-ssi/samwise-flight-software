@@ -7,8 +7,8 @@
  */
 
 #include "radio_task.h"
-#include "neopixel.h"
 #include "logger.h"
+#include "neopixel.h"
 
 static slate_t *s;
 

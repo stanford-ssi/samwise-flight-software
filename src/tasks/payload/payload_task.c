@@ -4,10 +4,10 @@
  */
 
 #include "payload_task.h"
+#include "logger.h"
 #include "neopixel.h"
 #include "safe_sleep.h"
 #include <stdio.h>
-#include "logger.h"
 
 #define MAX_RECEIVED_LEN 1024
 #define SEQUENCE_NUMBER_DUMMY 999

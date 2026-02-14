@@ -11,8 +11,8 @@
 
 #include "scheduler.h"
 #include "slate.h"
-#include "state_machine.h"
 #include "state_ids.h"
+#include "state_machine.h"
 #include "state_registry.h"
 #include <stdint.h>
 #include <stdio.h>

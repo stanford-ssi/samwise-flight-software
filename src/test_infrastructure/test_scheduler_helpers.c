@@ -6,8 +6,8 @@
 #include "test_scheduler_helpers.h"
 #include "logger.h"
 #include "pico/stdlib.h"
-#include "state_registry.h"
 #include "state_ids.h"
+#include "state_registry.h"
 #include <string.h>
 
 // =============================================================================
@@ -114,7 +114,8 @@ void test_state_init_tasks(sched_state_t *state, slate_t *slate)
 
 void test_sched_dispatch(slate_t *slate)
 {
-    sched_state_t *current_state_info = state_registry_get(slate->current_state_id);
+    sched_state_t *current_state_info =
+        state_registry_get(slate->current_state_id);
 
     // Loop through all of this state's tasks
     for (size_t i = 0; i < current_state_info->num_tasks; i++)

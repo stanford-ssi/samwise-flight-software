@@ -4,8 +4,8 @@
 // Note: We declare the state externals but don't include their headers
 // since those may have dependencies not available in test builds
 
-#include "state_machine.h"
 #include "state_ids.h"
+#include "state_machine.h"
 
 // State declarations - actual definitions are in driver_stubs.c
 extern sched_state_t init_state;

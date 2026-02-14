@@ -18,7 +18,10 @@
 slate_t slate;
 uint8_t tmp_data[252];
 
-static state_id_t mock_get_next_state(slate_t *s) { return STATE_INIT; }
+static state_id_t mock_get_next_state(slate_t *s)
+{
+    return STATE_INIT;
+}
 
 sched_state_t mock_state = {
     .name = "mock_state",

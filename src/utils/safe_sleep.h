@@ -1,8 +1,8 @@
 #pragma once
 
 #include "config.h"
-#include "watchdog.h"
 #include "pico/time.h"
+#include "watchdog.h"
 #include <slate.h>
 #include <stdint.h>
 
