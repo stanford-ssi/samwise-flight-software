@@ -27,7 +27,7 @@ cc_library(
         "//src/common",
         "//src/packet",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/test_mocks:hardware_spi_mock",
         ],
         "//conditions:default": [

@@ -11,7 +11,7 @@ cc_library(
         "//src/scheduler:state_machine",
         "//src/utils",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/burn_wire:burn_wire_mock",
             "//src/drivers/flash:flash_mock",
             "//src/drivers/neopixel:neopixel_mock",

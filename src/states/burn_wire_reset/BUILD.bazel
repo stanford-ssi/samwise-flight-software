@@ -11,7 +11,7 @@ cc_library(
         "//src/scheduler:state_machine",
         "//src/scheduler:state_ids",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/flash:flash_mock",
             "//src/drivers/logger:logger_mock",
             "//src/test_mocks:pico_stdlib_mock",

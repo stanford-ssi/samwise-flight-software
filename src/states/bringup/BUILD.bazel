@@ -14,7 +14,7 @@ cc_library(
         "//src/tasks/diagnostics:diagnostics_task",
         "//src/tasks/watchdog:watchdog_task",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/test_mocks:pico_stdlib_mock",
         ],
         "//conditions:default": [

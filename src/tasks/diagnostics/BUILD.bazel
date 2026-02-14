@@ -10,7 +10,7 @@ cc_library(
         "//src/slate",
         "//src/scheduler:state_machine",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/adm1176:adm1176_mock",
             "//src/drivers/logger:logger_mock",
             "//src/drivers/rfm9x:rfm9x_mock",

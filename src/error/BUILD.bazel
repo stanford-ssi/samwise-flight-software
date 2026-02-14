@@ -17,7 +17,7 @@ cc_library(
     deps = [
         "//src/common",
     ] + select({
-        "//build:test_mode": [],
+        "//bzl:test_mode": [],
         "//conditions:default": [
             "//src/drivers/neopixel",
             "//src/utils",

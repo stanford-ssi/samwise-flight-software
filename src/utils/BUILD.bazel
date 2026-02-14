@@ -15,7 +15,7 @@ cc_library(
         "//src/common",
         "//src/slate",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
             "//src/drivers/watchdog:watchdog_mock",
             "//src/test_mocks:pico_stdlib_mock",

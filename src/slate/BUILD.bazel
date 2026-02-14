@@ -20,7 +20,7 @@ cc_library(
         "//src/packet:adcs_packet",
         "//src/scheduler:state_ids",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [

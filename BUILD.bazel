@@ -61,21 +61,21 @@ cc_binary(
         "-I$(GENDIR)/boards",
         "-Iboards",
     ] + select({
-        "//build:pico_profile": [
+        "//bzl:pico_profile": [
             "-DPICO",
         ],
-        "//build:picubed_flight_profile": [
+        "//bzl:picubed_flight_profile": [
             "-DFLIGHT",
         ],
-        "//build:picubed_bringup_profile": [
+        "//bzl:picubed_bringup_profile": [
             "-DBRINGUP",
         ],
         "//conditions:default": [],
     }),
     defines = select({
-        "//build:pico_profile": ["PICO"],
-        "//build:picubed_flight_profile": ["FLIGHT"],
-        "//build:picubed_bringup_profile": ["BRINGUP"],
+        "//bzl:pico_profile": ["PICO"],
+        "//bzl:picubed_flight_profile": ["FLIGHT"],
+        "//bzl:picubed_bringup_profile": ["BRINGUP"],
         "//conditions:default": [],
     }),
     local_defines = [

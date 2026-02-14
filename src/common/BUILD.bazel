@@ -15,7 +15,7 @@ cc_library(
         "utils.h",
     ],
     deps = select({
-        "//build:test_mode": [],
+        "//bzl:test_mode": [],
         "//conditions:default": [
             "@pico-sdk//src/common/pico_time",
             "@pico-sdk//src/rp2_common/hardware_pwm:hardware_pwm",

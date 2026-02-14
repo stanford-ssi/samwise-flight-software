@@ -11,7 +11,7 @@ cc_library(
         "//src/scheduler:state_machine",
         "//src/slate",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/adcs:adcs_mock",
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",

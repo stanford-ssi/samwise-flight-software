@@ -12,7 +12,7 @@ cc_library(
         "//src/utils",
         "//src/tasks/command:command_parser",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/payload_uart:payload_uart_mock",
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",

@@ -66,7 +66,7 @@ cc_library(
         "//src/common",
         "//src/slate",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/error:error_mock",
             "//src/test_mocks:pico_stdlib_mock",
             "//src/test_mocks:pico_time_mock",
@@ -91,7 +91,7 @@ cc_library(
         "//src/states/burn_wire:burn_wire_state",
         "//src/states/burn_wire_reset:burn_wire_reset_state",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
             "//src/error:error_mock",
             "//src/test_mocks:pico_stdlib_mock",

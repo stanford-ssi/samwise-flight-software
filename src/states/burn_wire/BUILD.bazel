@@ -13,7 +13,7 @@ cc_library(
         # Task dependencies
         "//src/tasks/burn_wire:burn_wire_task",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/burn_wire:burn_wire_mock",
             "//src/test_mocks:pico_stdlib_mock",
         ],

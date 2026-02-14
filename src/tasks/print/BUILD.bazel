@@ -1,4 +1,4 @@
-load("//build:defs.bzl", "samwise_test")
+load("//bzl:defs.bzl", "samwise_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -12,7 +12,7 @@ cc_library(
         "//src/slate",
         "//src/scheduler:state_machine",
     ] + select({
-        "//build:test_mode": [
+        "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",
