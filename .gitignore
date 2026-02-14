@@ -19,3 +19,6 @@ bazel-*
 
 # CMake build artifacts
 **/CMakeFiles
+
+# Workspace files
+.idea
