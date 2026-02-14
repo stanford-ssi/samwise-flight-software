@@ -29,9 +29,13 @@ jobs:
         run: ./configure.sh
 
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@v1
+        uses: bazel-contrib/setup-bazel@0.18.0
         with:
-          disk-cache: true
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
           repository-cache: true
 
       - name: Run all tests
