@@ -4,14 +4,16 @@ on:
   push:
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   pull_request:
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   workflow_dispatch:
 
@@ -26,21 +28,17 @@ jobs:
       - name: Setup Project
         run: ./configure.sh
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake
-
-      - name: Configure tests
-        run: cmake -B ${{ github.workspace }}/build-tests -DPROFILE=TEST -DCOMMIT_HASH=${{ github.sha }}
-
-      - name: Build tests
-        run: cmake --build ${{ github.workspace }}/build-tests --parallel 4
+      - name: Mount bazel cache
+        uses: actions/cache@v4
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-tests-${{ hashFiles('.bazelrc', 'MODULE.bazel', 'bzl/**') }}
+          restore-keys: |
+            bazel-tests-
+            bazel-
 
       - name: Run all tests
-        run: |
-          cd ${{ github.workspace }}/build-tests
-          ctest --output-on-failure --verbose
+        run: bazel test //src/... --config=tests --test_output=errors
 
       - name: Archive test visualization logs
         if: always()
@@ -48,4 +46,5 @@ jobs:
         with:
           name: test-visualization-logs
           path: |
-            ${{ github.workspace }}/build-tests/**/*_viz.json
+            bazel-testlogs/**/*_viz.json
+            bazel-bin/**/*_viz.json

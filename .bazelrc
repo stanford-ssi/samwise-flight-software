@@ -110,4 +110,9 @@ build:size --copt=-DNDEBUG
 # ============================================================================
 
 # Load user-specific configuration (e.g., for PACKET_HMAC_PSK)
+# To enable packet authentication for flight builds, either:
+#   1. Pass via command line:
+#      bazel build :samwise --config=picubed-flight --copt=-DPACKET_HMAC_PSK='"your-key"'
+#   2. Or create .bazelrc.local with:
+#      build:picubed-flight --copt=-DPACKET_HMAC_PSK='"your-32-char-key-here"'
 try-import %workspace%/.bazelrc.local
