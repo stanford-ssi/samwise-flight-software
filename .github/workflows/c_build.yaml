@@ -64,7 +64,7 @@ jobs:
           fi
 
           # Build the main binary
-          bazel build :samwise --config=${{ matrix.config }}
+          bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
 
       - name: Generate UF2 file
         run: |
