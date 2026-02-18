@@ -511,3 +511,149 @@ filesys_error_t filesys_cancel_file_write(slate_t *slate,
 
     return FILESYS_OK;
 }
+
+filesys_error_t filesys_list_files(slate_t *slate,
+                                   filesys_file_info_t *file_list,
+                                   uint16_t max_files,
+                                   uint16_t *num_files_found,
+                                   lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+    *num_files_found = 0;
+
+    lfs_dir_t dir;
+    int err = lfs_dir_open(&slate->lfs, &dir, "/");
+    if (err < 0)
+    {
+        *lfs_error_code = err;
+        LOG_ERROR("[filesys] Failed to open root directory: %d", err);
+        return FILESYS_ERR_OPEN_DIR;
+    }
+
+    struct lfs_info entry_info;
+    while (true)
+    {
+        int res = lfs_dir_read(&slate->lfs, &dir, &entry_info);
+        if (res < 0)
+        {
+            *lfs_error_code = res;
+            LOG_ERROR("[filesys] Failed to read directory entry: %d", res);
+            lfs_dir_close(&slate->lfs, &dir);
+            return FILESYS_ERR_READ_DIR;
+        }
+        if (res == 0)
+            break; // No more entries
+
+        // Skip directories (including "." and "..")
+        if (entry_info.type != LFS_TYPE_REG)
+            continue;
+
+        // Stop if the caller's list is full
+        if (*num_files_found >= max_files)
+        {
+            LOG_INFO("[filesys] file_list full (%u); stopping early",
+                     max_files);
+            break;
+        }
+
+        filesys_file_info_t *info = &file_list[*num_files_found];
+        memset(info, 0, sizeof(*info));
+
+        // Copy filename (null-terminated)
+        strncpy(info->fname, entry_info.name, sizeof(info->fname) - 1);
+        info->fname[sizeof(info->fname) - 1] = '\0';
+
+        // File size from directory entry
+        info->file_size = (FILESYS_BUFFERED_FILE_LEN_T)entry_info.size;
+
+        // --- Retrieve expected CRC from file attribute (type 0) ---
+        lfs_ssize_t attr_res =
+            lfs_getattr(&slate->lfs, entry_info.name, 0, &info->expected_crc,
+                        sizeof(info->expected_crc));
+        if (attr_res < 0)
+        {
+            LOG_ERROR("[filesys] Failed to get CRC attribute for file %s: %d",
+                      entry_info.name, attr_res);
+            info->expected_crc = 0;
+        }
+        else
+        {
+            info->flags |= FILESYS_FILE_INFO_EXPECTED_CRC_VALID;
+        }
+
+        // --- Compute CRC from on-disk file data ---
+        lfs_file_t lfs_open_file;
+        lfs_ssize_t open_lfs_err;
+        filesys_file_open(&slate->lfs, &lfs_open_file, entry_info.name,
+                          LFS_O_RDONLY, &open_lfs_err);
+
+        if (open_lfs_err < 0)
+        {
+            LOG_ERROR(
+                "[filesys] Failed to open file %s for CRC computation: %d",
+                entry_info.name, open_lfs_err);
+            info->computed_crc = 0;
+        }
+        else
+        {
+            unsigned int crc = 0xFFFFFFFF;
+            uint8_t read_buf[FILESYS_READ_BUFFER_SIZE];
+            FILESYS_BUFFERED_FILE_LEN_T remaining = entry_info.size;
+            bool crc_error = false;
+
+            while (remaining > 0)
+            {
+                lfs_size_t to_read = (remaining < FILESYS_READ_BUFFER_SIZE)
+                                         ? remaining
+                                         : FILESYS_READ_BUFFER_SIZE;
+
+                lfs_ssize_t bytes_read = lfs_file_read(
+                    &slate->lfs, &lfs_open_file, read_buf, to_read);
+                if (bytes_read < 0)
+                {
+                    LOG_ERROR("[filesys] Failed to read file %s for CRC: %d",
+                              entry_info.name, bytes_read);
+                    crc_error = true;
+                    break;
+                }
+
+                crc = crc32_continue(read_buf, bytes_read, crc);
+                remaining -= bytes_read;
+            }
+
+            lfs_ssize_t close_lfs_err;
+            filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+
+            if (!crc_error)
+            {
+                info->computed_crc = ~crc;
+                info->flags |= FILESYS_FILE_INFO_COMPUTED_CRC_VALID;
+            }
+            else
+            {
+                info->computed_crc = 0;
+            }
+        }
+
+        // Determine CRC match only when both values are valid
+        if ((info->flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID) &&
+            (info->flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID) &&
+            (info->computed_crc == info->expected_crc))
+        {
+            info->flags |= FILESYS_FILE_INFO_CRC_MATCH;
+        }
+
+        (*num_files_found)++;
+    }
+
+    err = lfs_dir_close(&slate->lfs, &dir);
+    if (err < 0)
+    {
+        *lfs_error_code = err;
+        LOG_ERROR("[filesys] Failed to close root directory: %d", err);
+        return FILESYS_ERR_CLOSE_DIR;
+    }
+
+    LOG_INFO("[filesys] Listed %u files successfully", *num_files_found);
+    return FILESYS_OK;
+}

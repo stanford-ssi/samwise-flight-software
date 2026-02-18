@@ -1284,6 +1284,369 @@ int filesys_test_raw_lfs_write_large_file_success()
 }
 
 // ============================================================================
+// Test 24: List files on empty filesystem
+// ============================================================================
+int filesys_test_list_files_empty_filesystem_success()
+{
+    LOG_DEBUG("=== Test: List Files - Empty Filesystem ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    filesys_file_info_t file_list[8];
+    uint16_t num_files_found = 0xFFFF; // Set to garbage to verify it's updated
+
+    filesys_error_t code = filesys_list_files(
+        &test_slate, file_list, 8, &num_files_found, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK,
+                "list_files should succeed on empty filesystem");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after list_files");
+    TEST_ASSERT(num_files_found == 0,
+                "num_files_found should be 0 on empty filesystem");
+
+    LOG_DEBUG("=== Test PASSED: List Files - Empty Filesystem ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 25: List files with multiple committed files
+// ============================================================================
+int filesys_test_list_files_multiple_files_success()
+{
+    LOG_DEBUG("=== Test: List Files - Multiple Files ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+
+    // Write first file: 32 bytes
+    FILESYS_BUFFERED_FNAME_STR_T fname1 = "M1";
+    uint8_t buffer1[32];
+    for (int i = 0; i < 32; i++)
+        buffer1[i] = i;
+
+    // zlib.crc32(bytes(i for i in range(32)))
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname1, 32, 2435219082, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file complete should succeed");
+
+    // Write second file: 16 bytes
+    FILESYS_BUFFERED_FNAME_STR_T fname2 = "M2";
+    uint8_t buffer2[16];
+    for (int i = 0; i < 16; i++)
+        buffer2[i] = 0xFF - i;
+
+    // zlib.crc32(bytes(0xFF - i for i in range(16)))
+    code = filesys_start_file_write(&test_slate, fname2, 16, 499544007,
+                                    &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file complete should succeed");
+
+    // Write third file: 64 bytes
+    FILESYS_BUFFERED_FNAME_STR_T fname3 = "A3";
+    uint8_t buffer3[64];
+    for (int i = 0; i < 64; i++)
+        buffer3[i] = i;
+
+    // 0x100ECE8C for 0x00..0x3F
+    code = filesys_start_file_write(&test_slate, fname3, 64, 0x100ECE8C,
+                                    &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "Third file start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer3, 64, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Third file buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Third file MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Third file complete should succeed");
+
+    // Now list all files
+    filesys_file_info_t file_list[8];
+    uint16_t num_files_found = 0;
+
+    code = filesys_list_files(&test_slate, file_list, 8, &num_files_found,
+                              &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "list_files should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after list_files");
+    TEST_ASSERT(num_files_found == 3, "Should find exactly 3 files");
+
+    // Verify all files are present (order not guaranteed, so search)
+    int found_m1 = 0, found_m2 = 0, found_a3 = 0;
+    for (uint16_t i = 0; i < num_files_found; i++)
+    {
+        if (strcmp(file_list[i].fname, "M1") == 0)
+        {
+            found_m1 = 1;
+            TEST_ASSERT(file_list[i].file_size == 32,
+                        "M1 file size should be 32");
+            TEST_ASSERT(file_list[i].flags & FILESYS_FILE_INFO_CRC_MATCH,
+                        "M1 CRC should match");
+        }
+        else if (strcmp(file_list[i].fname, "M2") == 0)
+        {
+            found_m2 = 1;
+            TEST_ASSERT(file_list[i].file_size == 16,
+                        "M2 file size should be 16");
+            TEST_ASSERT(file_list[i].flags & FILESYS_FILE_INFO_CRC_MATCH,
+                        "M2 CRC should match");
+        }
+        else if (strcmp(file_list[i].fname, "A3") == 0)
+        {
+            found_a3 = 1;
+            TEST_ASSERT(file_list[i].file_size == 64,
+                        "A3 file size should be 64");
+            TEST_ASSERT(file_list[i].flags & FILESYS_FILE_INFO_CRC_MATCH,
+                        "A3 CRC should match");
+        }
+    }
+
+    TEST_ASSERT(found_m1, "Should find file M1");
+    TEST_ASSERT(found_m2, "Should find file M2");
+    TEST_ASSERT(found_a3, "Should find file A3");
+
+    LOG_DEBUG("=== Test PASSED: List Files - Multiple Files ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 26: List files with max_files limit
+// ============================================================================
+int filesys_test_list_files_max_files_limit_success()
+{
+    LOG_DEBUG("=== Test: List Files - Max Files Limit ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+
+    // Write two files
+    FILESYS_BUFFERED_FNAME_STR_T fname1 = "L1";
+    uint8_t buffer1[32];
+    for (int i = 0; i < 32; i++)
+        buffer1[i] = i;
+
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname1, 32, 2435219082, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "First file complete should succeed");
+
+    FILESYS_BUFFERED_FNAME_STR_T fname2 = "L2";
+    uint8_t buffer2[16];
+    for (int i = 0; i < 16; i++)
+        buffer2[i] = 0xFF - i;
+
+    code = filesys_start_file_write(&test_slate, fname2, 16, 499544007,
+                                    &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Second file complete should succeed");
+
+    // List with max_files = 1 (should only return 1 even though 2 exist)
+    filesys_file_info_t file_list[1];
+    uint16_t num_files_found = 0;
+
+    code = filesys_list_files(&test_slate, file_list, 1, &num_files_found,
+                              &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "list_files should succeed with limit");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after list_files");
+    TEST_ASSERT(num_files_found == 1,
+                "Should return only 1 file when max_files is 1");
+
+    // The returned file should be one of the two we wrote
+    int valid_name = (strcmp(file_list[0].fname, "L1") == 0) ||
+                     (strcmp(file_list[0].fname, "L2") == 0);
+    TEST_ASSERT(valid_name, "Returned file should be one of the written files");
+
+    LOG_DEBUG("=== Test PASSED: List Files - Max Files Limit ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 27: List files after file cancellation
+// ============================================================================
+int filesys_test_list_files_after_cancel_success()
+{
+    LOG_DEBUG("=== Test: List Files - After Cancel ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+
+    // Start writing a file, write data, then cancel
+    FILESYS_BUFFERED_FNAME_STR_T fname = "CN";
+    uint8_t buffer[32];
+    for (int i = 0; i < 32; i++)
+        buffer[i] = i;
+
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, 32, 0x0, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer, 32, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "MRAM write should succeed");
+
+    // Cancel the write (should delete the file)
+    code = filesys_cancel_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Cancel should succeed");
+
+    // List files - should be empty since the file was cancelled
+    filesys_file_info_t file_list[8];
+    uint16_t num_files_found = 0xFFFF;
+
+    code = filesys_list_files(&test_slate, file_list, 8, &num_files_found,
+                              &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "list_files should succeed after cancel");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after list_files");
+    TEST_ASSERT(num_files_found == 0, "Should find 0 files after cancellation");
+
+    LOG_DEBUG("=== Test PASSED: List Files - After Cancel ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 28: List files - CRC mismatch detection
+// ============================================================================
+int filesys_test_list_files_crc_mismatch_success()
+{
+    LOG_DEBUG("=== Test: List Files - CRC Mismatch Detection ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+
+    // Write a file with the CORRECT CRC, then corrupt the file contents
+    // to simulate a memory error causing a CRC mismatch.
+    FILESYS_BUFFERED_FNAME_STR_T fname = "WC";
+    // Precomputed CRC for 0x00..0x3F
+    FILESYS_BUFFERED_FILE_CRC_T correct_crc = 0x100ECE8C;
+
+    uint8_t buffer[64];
+    for (uint8_t i = 0; i < 64; i++)
+        buffer[i] = i;
+
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, 64, correct_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
+
+    code = filesys_write_data_to_buffer(&test_slate, buffer, 64, 0,
+                                        &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Buffer write should succeed");
+
+    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "MRAM write should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "Complete should succeed with correct CRC");
+
+    // Now corrupt the file contents via raw LFS to simulate a memory error.
+    // Overwrite the file with different data while keeping the original CRC
+    // attribute intact.
+    lfs_file_t lfs_file;
+    int err =
+        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+                         LFS_O_WRONLY | LFS_O_TRUNC, &filesys_lfs_file_cfg);
+    TEST_ASSERT(err == 0, "Raw LFS file open for corruption should succeed");
+
+    uint8_t corrupted[64];
+    for (uint8_t i = 0; i < 64; i++)
+        corrupted[i] = 0xFF; // Different data -> different CRC
+
+    lfs_ssize_t written =
+        lfs_file_write(&test_slate.lfs, &lfs_file, corrupted, 64);
+    TEST_ASSERT(written == 64, "Raw LFS write should succeed");
+
+    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
+
+    // Now list files and check the CRC match flag
+    filesys_file_info_t file_list[8];
+    uint16_t num_files_found = 0;
+
+    code = filesys_list_files(&test_slate, file_list, 8, &num_files_found,
+                              &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "list_files should succeed");
+    TEST_ASSERT(num_files_found == 1, "Should find 1 file");
+
+    TEST_ASSERT(strcmp(file_list[0].fname, "WC") == 0,
+                "File name should be WC");
+    TEST_ASSERT(file_list[0].file_size == 64, "File size should be 64 bytes");
+    TEST_ASSERT(file_list[0].flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID,
+                "Computed CRC should be valid");
+    TEST_ASSERT(file_list[0].flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID,
+                "Expected CRC should be valid");
+    TEST_ASSERT(!(file_list[0].flags & FILESYS_FILE_INFO_CRC_MATCH),
+                "CRC match flag should NOT be set after file corruption");
+    TEST_ASSERT(file_list[0].expected_crc == correct_crc,
+                "Expected CRC should still be the original correct CRC");
+    TEST_ASSERT(file_list[0].computed_crc != correct_crc,
+                "Computed CRC should differ from original after corruption");
+
+    LOG_DEBUG("=== Test PASSED: List Files - CRC Mismatch Detection ===\n");
+    return 0;
+}
+
+// ============================================================================
 // Main test runner
 // ============================================================================
 int main()
@@ -1339,6 +1702,16 @@ int main()
          "Second File Runs Out of Space"},
         {filesys_test_raw_lfs_write_large_file_success,
          "Raw LFS Write Large File (510KB)"},
+        {filesys_test_list_files_empty_filesystem_success,
+         "List Files - Empty Filesystem"},
+        {filesys_test_list_files_multiple_files_success,
+         "List Files - Multiple Files"},
+        {filesys_test_list_files_max_files_limit_success,
+         "List Files - Max Files Limit"},
+        {filesys_test_list_files_after_cancel_success,
+         "List Files - After Cancel"},
+        {filesys_test_list_files_crc_mismatch_success,
+         "List Files - CRC Mismatch Detection"},
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);
