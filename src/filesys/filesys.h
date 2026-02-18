@@ -265,7 +265,7 @@ typedef struct __attribute__((packed))
     FILESYS_BUFFERED_FNAME_STR_T fname;    // File name (null-terminated)
     FILESYS_BUFFERED_FILE_LEN_T file_size; // File size on disk (bytes)
     FILESYS_BUFFERED_FILE_CRC_T
-        computed_crc; // CRC32 computed from on-disk data
+    computed_crc; // CRC32 computed from on-disk data
     FILESYS_BUFFERED_FILE_CRC_T expected_crc; // CRC32 stored as file attribute
     uint8_t flags; // Bitfield, see FILESYS_FILE_INFO_*
 } filesys_file_info_t;
