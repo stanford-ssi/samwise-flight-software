@@ -13,6 +13,13 @@ sched_state_t running_state = {
     .num_tasks = 3,
     .task_list = {&print_task, &watchdog_task, &diagnostics_task},
     .get_next_state = &running_get_next_state};
+#elif defined(PICO)
+sched_state_t running_state = {
+    .name = "running",
+    .num_tasks = 7,
+    .task_list = {&print_task, &watchdog_task, &blink_task, &adcs_task,
+                  &telemetry_task, &beacon_task, &command_task},
+    .get_next_state = &running_get_next_state};
 #else
 sched_state_t running_state = {
     .name = "running",

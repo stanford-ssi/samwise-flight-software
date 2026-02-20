@@ -42,3 +42,25 @@ cmake .. -DRP2350=1
 ```
 
 **Note that when switching between the RP2040 and RP2350, it is usually necessary to clear the cmake cache (by running `rm -rf build/*`)**
+
+## Using Pico on WSL (windows)
+Very specific instructions for WSL (some steps are shared with normal use). Replace Ubuntu with your favorite Linux/WSL flavor :)
+
+0. Compile with profile PICO (`source build_pico.sh`)
+1. Press and hold BOOT, plug in Pico, and then release BOOT
+2. File explorer should pop up with the directory contents
+3. Drag and drop `.uf2` file in `build_pico/src` into the pico file explorer
+4. The pico should disconnect and reconnect -- success! (hopefully)
+
+Now, to read from pico:
+
+5. Install tio if not already on Ubuntu (`sudo snap install tio --classic`)
+    * You may have to add `/snap/bin` to PATH using `.zshrc` or `.bashrc`
+6. On a Windows Terminal with Administrator Access, run `usbipd list`. You should get:
+```
+BUSID  VID:PID    DEVICE                                                        STATE
+2-5    2e8a:0009  USB Serial Device (COM8), Reset                               Shared
+````
+7. If "Not shared", run `usbipd bind --busid 2-5` (replacing busid with the actual busid from your PICO)
+8. Now, run `usbipd attach --wsl --busid 2-5`.
+9. In Ubuntu now, you should be able to interact with the pico using tio! For example, `sudo tio /dev/ttyACM0`.

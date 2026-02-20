@@ -64,7 +64,7 @@ static bool init_drivers(slate_t *slate)
     gpio_init(SAMWISE_RF_SCK_PIN);
     gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
     gpio_put(SAMWISE_RF_SCK_PIN, 0);
-#else
+#elif !defined(PICO)
     rfm9x_init(&slate->radio);
 #endif
 

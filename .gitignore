@@ -7,4 +7,5 @@
 build*
 !build_debug.sh
 !build_tests.sh
+!build_pico.sh
 .idea

@@ -8,7 +8,7 @@ sched_state_t *init_get_next_state(slate_t *slate)
 {
 #ifdef BRINGUP
     return &bringup_state;
-#else
+#elif !defined(PICO)
     // Check if RBF pin is detected
     if (is_rbf_pin_detected())
     {
