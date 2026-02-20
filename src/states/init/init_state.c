@@ -7,6 +7,8 @@ state_id_t init_get_next_state(slate_t *slate)
 {
 #ifdef BRINGUP
     return STATE_BRINGUP;
+// #elif defined(PICO)
+//     return STATE_RUNNING;
 #else
     // Check if RBF pin is detected
     if (false)
