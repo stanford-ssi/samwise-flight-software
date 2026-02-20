@@ -328,33 +328,31 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     return FILESYS_OK;
 }
 
-unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
-                                 lfs_ssize_t *lfs_error_code)
+unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
+                                      FILESYS_BUFFERED_FILE_LEN_T file_size,
+                                      filesys_error_t *error_code,
+                                      lfs_ssize_t *lfs_error_code)
 {
     *lfs_error_code = LFS_ERR_OK;
     unsigned int crc = 0xFFFFFFFF;
 
     lfs_file_t lfs_open_file;
     lfs_ssize_t open_lfs_err;
-    filesys_file_open(&slate->lfs, &lfs_open_file,
-                      slate->filesys_buffered_fname_str, LFS_O_RDONLY,
-                      &open_lfs_err);
+    filesys_file_open(lfs, &lfs_open_file, fname, LFS_O_RDONLY, &open_lfs_err);
 
     if (open_lfs_err < 0)
     {
         *lfs_error_code = open_lfs_err;
         LOG_ERROR("[filesys] Failed to open file %s for CRC computation: %d",
-                  slate->filesys_buffered_fname_str, open_lfs_err);
+                  fname, open_lfs_err);
         *error_code = FILESYS_ERR_OPEN_FILE;
         return crc;
     }
 
     // Read file in chunks and compute CRC
     uint8_t buffer[FILESYS_READ_BUFFER_SIZE];
-    lfs_file_rewind(&slate->lfs, &lfs_open_file);
 
-    FILESYS_BUFFERED_FILE_LEN_T bytes_remaining =
-        slate->filesys_buffered_file_len;
+    FILESYS_BUFFERED_FILE_LEN_T bytes_remaining = file_size;
     while (bytes_remaining > 0)
     {
         lfs_size_t to_read = (bytes_remaining < FILESYS_READ_BUFFER_SIZE)
@@ -362,20 +360,20 @@ unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
                                  : FILESYS_READ_BUFFER_SIZE;
 
         lfs_ssize_t bytes_read =
-            lfs_file_read(&slate->lfs, &lfs_open_file, buffer, to_read);
+            lfs_file_read(lfs, &lfs_open_file, buffer, to_read);
 
         if (bytes_read < 0)
         {
             *lfs_error_code = bytes_read;
-            LOG_ERROR("[filesys] Failed to read file at %d bytes left for CRC "
-                      "computation: Error code %d",
-                      bytes_remaining, bytes_read);
+            LOG_ERROR("[filesys] Failed to read file %s at %d bytes left for "
+                      "CRC computation: Error code %d",
+                      fname, bytes_remaining, bytes_read);
             *error_code = FILESYS_ERR_CRC_CHECK;
 
             // Discard error from close since we are already reporting the read
             // error
             lfs_ssize_t close_lfs_err;
-            filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+            filesys_file_close(lfs, &lfs_open_file, &close_lfs_err);
 
             return crc; // We will return the crc so far, but error_code
                         // indicates failure
@@ -386,19 +384,27 @@ unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
     }
 
     lfs_ssize_t close_lfs_err;
-    filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+    filesys_file_close(lfs, &lfs_open_file, &close_lfs_err);
 
     if (close_lfs_err < 0)
     {
         *lfs_error_code = close_lfs_err;
         LOG_ERROR("[filesys] Failed to close file %s after CRC computation: %d",
-                  slate->filesys_buffered_fname_str, close_lfs_err);
+                  fname, close_lfs_err);
         *error_code = FILESYS_ERR_CLOSE_FILE;
         return crc;
     }
 
     *error_code = FILESYS_OK;
     return ~crc;
+}
+
+unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
+                                 lfs_ssize_t *lfs_error_code)
+{
+    return filesys_compute_file_crc(
+        &slate->lfs, slate->filesys_buffered_fname_str,
+        slate->filesys_buffered_file_len, error_code, lfs_error_code);
 }
 
 filesys_error_t filesys_is_crc_correct(slate_t *slate,
@@ -518,6 +524,8 @@ filesys_error_t filesys_list_files(slate_t *slate,
                                    uint16_t *num_files_found,
                                    lfs_ssize_t *lfs_error_code)
 {
+    // Note that this current implementation only works with files in the root
+    // directory and does not support subdirectories.
     *lfs_error_code = LFS_ERR_OK;
     *num_files_found = 0;
 
@@ -582,57 +590,21 @@ filesys_error_t filesys_list_files(slate_t *slate,
         }
 
         // --- Compute CRC from on-disk file data ---
-        lfs_file_t lfs_open_file;
-        lfs_ssize_t open_lfs_err;
-        filesys_file_open(&slate->lfs, &lfs_open_file, entry_info.name,
-                          LFS_O_RDONLY, &open_lfs_err);
+        filesys_error_t crc_err;
+        lfs_ssize_t crc_lfs_err;
+        unsigned int computed = filesys_compute_file_crc(
+            &slate->lfs, entry_info.name,
+            (FILESYS_BUFFERED_FILE_LEN_T)entry_info.size, &crc_err,
+            &crc_lfs_err);
 
-        if (open_lfs_err < 0)
+        if (crc_err == FILESYS_OK)
         {
-            LOG_ERROR(
-                "[filesys] Failed to open file %s for CRC computation: %d",
-                entry_info.name, open_lfs_err);
-            info->computed_crc = 0;
+            info->computed_crc = computed;
+            info->flags |= FILESYS_FILE_INFO_COMPUTED_CRC_VALID;
         }
         else
         {
-            unsigned int crc = 0xFFFFFFFF;
-            uint8_t read_buf[FILESYS_READ_BUFFER_SIZE];
-            FILESYS_BUFFERED_FILE_LEN_T remaining = entry_info.size;
-            bool crc_error = false;
-
-            while (remaining > 0)
-            {
-                lfs_size_t to_read = (remaining < FILESYS_READ_BUFFER_SIZE)
-                                         ? remaining
-                                         : FILESYS_READ_BUFFER_SIZE;
-
-                lfs_ssize_t bytes_read = lfs_file_read(
-                    &slate->lfs, &lfs_open_file, read_buf, to_read);
-                if (bytes_read < 0)
-                {
-                    LOG_ERROR("[filesys] Failed to read file %s for CRC: %d",
-                              entry_info.name, bytes_read);
-                    crc_error = true;
-                    break;
-                }
-
-                crc = crc32_continue(read_buf, bytes_read, crc);
-                remaining -= bytes_read;
-            }
-
-            lfs_ssize_t close_lfs_err;
-            filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
-
-            if (!crc_error)
-            {
-                info->computed_crc = ~crc;
-                info->flags |= FILESYS_FILE_INFO_COMPUTED_CRC_VALID;
-            }
-            else
-            {
-                info->computed_crc = 0;
-            }
+            info->computed_crc = 0;
         }
 
         // Determine CRC match only when both values are valid
