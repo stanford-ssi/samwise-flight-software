@@ -84,6 +84,12 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
 // a reasonable upper bound to prevent infinite loops.
 #define FILESYS_MAX_LOOP_LIST_FILES FILESYS_MAX_FILES * 2
 
+// Root directory for our filesystem. Note that little-fs does not require this,
+// but it is kept here for clarity and in case we want to add support for
+// subdirectories in the future. All files are currently stored in the root
+// directory.
+#define FILESYS_ROOT_DIR "/"
+
 // TODO: What is our average file size?
 // This is currently set to 1KB blocks, which is approx. what we buffer
 // in RAM during FTP.

@@ -539,7 +539,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
     *num_files_found = 0;
 
     lfs_dir_t dir;
-    int err = lfs_dir_open(&slate->lfs, &dir, "/");
+    int err = lfs_dir_open(&slate->lfs, &dir, FILESYS_ROOT_DIR);
     if (err < 0)
     {
         *lfs_error_code = err;
