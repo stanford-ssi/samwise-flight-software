@@ -31,6 +31,14 @@ typedef uint16_t FTP_PACKET_SEQUENCE_T;
 // Number of bytes to use for storing the filename
 typedef uint16_t FILESYS_BUFFERED_FNAME_T;
 
+// Helper definition for maximum number of files that can be written based on
+// size of FILESYS_BUFFERED_FNAME_T.
+// Note that \0 cannot be in either of the two bytes used for the filename,
+// since we use null-terminated strings to store filenames. This means the
+// maximum number of files is actually 2^16 - 2 = 65534.
+#define FILESYS_MAX_FILES                                                      \
+    (1 << (sizeof(FILESYS_BUFFERED_FNAME_T) * CHAR_BIT)) - 2
+
 // Size of buffer used for filesystem writes
 #define FILESYS_BUFFER_SIZE (FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE)
 typedef uint16_t
@@ -66,6 +74,21 @@ typedef uint32_t FILESYS_BUFFERED_FILE_LEN_T;
 
 // Number of bytes to use for storing the CRC of a file
 typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
+
+// Upper bound for while loop when listing files, to prevent infinite loops in
+// case of filesystem corruption or any other issues. This should be set high
+// enough to allow listing all files on disk, but low enough to prevent infinite
+// loops.
+// We give a little overhead therefore over FILESYS_MAX_FILES to allow for some
+// unexpected extra files on disk or empty directories, but this should still be
+// a reasonable upper bound to prevent infinite loops.
+#define FILESYS_MAX_LOOP_LIST_FILES FILESYS_MAX_FILES * 2
+
+// Root directory for our filesystem. Note that little-fs does not require this,
+// but it is kept here for clarity and in case we want to add support for
+// subdirectories in the future. All files are currently stored in the root
+// directory.
+#define FILESYS_ROOT_DIR "/"
 
 // TODO: What is our average file size?
 // This is currently set to 1KB blocks, which is approx. what we buffer

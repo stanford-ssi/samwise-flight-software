@@ -48,6 +48,10 @@ enum filesys_error
     FILESYS_ERR_REFORMAT = -13,            // Failed to reformat the filesystem
     FILESYS_ERR_MOUNT = -14,               // Failed to mount the filesystem
     FILESYS_ERR_WRITE_MRAM = -15,          // Failed to write to MRAM
+    FILESYS_ERR_OPEN_DIR = -16,            // Failed to open directory
+    FILESYS_ERR_READ_DIR = -17,            // Failed to read directory entry
+    FILESYS_ERR_CLOSE_DIR = -18,           // Failed to close directory
+    FILESYS_ERR_GET_CRC_ATTR = -19,        // Failed to get CRC attribute
 };
 
 typedef int32_t filesys_error_t;
@@ -171,6 +175,29 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
                                              lfs_ssize_t *lfs_error_code);
 
 /**
+ * @brief Compute the CRC-32 of an on-disk file by reading it in chunks.
+ *
+ * This function reads the specified file from the filesystem in chunks and
+ * computes the CRC-32 value incrementally. It handles files of any size by
+ * using a fixed-size buffer for reading.
+ *
+ * If wanting to run on the currently buffered file, use filesys_compute_crc
+ * instead, which calls this function with the appropriate parameters.
+ *
+ * @param lfs            Pointer to the mounted littlefs instance.
+ * @param fname          Null-terminated filename to read.
+ * @param file_size      Number of bytes expected in the file.
+ * @param error_code     Set to FILESYS_OK on success, or an appropriate
+ *                       filesys error on failure.
+ * @param lfs_error_code Set to the underlying LFS error, or LFS_ERR_OK.
+ * @return The finalized CRC on success, or an intermediate value on error
+ *         (check *error_code).
+ */
+static unsigned int filesys_compute_file_crc(
+    lfs_t *lfs, const char *fname, FILESYS_BUFFERED_FILE_LEN_T file_size,
+    filesys_error_t *error_code, lfs_ssize_t *lfs_error_code);
+
+/**
  * Computes the CRC of the file currently being written.
  *
  * @param slate Pointer to the slate structure.
@@ -241,3 +268,57 @@ void filesys_clear_buffer(slate_t *slate);
  */
 filesys_error_t filesys_cancel_file_write(slate_t *slate,
                                           lfs_ssize_t *lfs_error_code);
+
+/**
+ * Information about a single file on the filesystem.
+ * Populated by filesys_list_files for each file found.
+ *
+ * Packed to minimize memory footprint. Boolean flags are stored in a single
+ * uint8_t using explicit bit masks so the layout is deterministic across
+ * compilers.
+ */
+
+// Bit masks for filesys_file_info_t.flags
+#define FILESYS_FILE_INFO_CRC_MATCH 0x01          // computed == expected CRC
+#define FILESYS_FILE_INFO_COMPUTED_CRC_VALID 0x02 // computed CRC is valid
+#define FILESYS_FILE_INFO_EXPECTED_CRC_VALID 0x04 // expected CRC attr was read
+
+typedef struct __attribute__((packed))
+{
+    FILESYS_BUFFERED_FNAME_STR_T fname;    // File name (null-terminated)
+    FILESYS_BUFFERED_FILE_LEN_T file_size; // File size on disk (bytes)
+    FILESYS_BUFFERED_FILE_CRC_T
+    computed_crc; // CRC32 computed from on-disk data
+    FILESYS_BUFFERED_FILE_CRC_T expected_crc; // CRC32 stored as file attribute
+    uint8_t flags; // Bitfield, see FILESYS_FILE_INFO_*
+} filesys_file_info_t;
+
+/**
+ * Lists all files on the filesystem, computing each file's on-disk CRC32
+ * and retrieving its stored (expected) CRC32 attribute. Results are written
+ * into the caller-provided array.
+ *
+ * If CRC computation or attribute retrieval fails for a particular file, the
+ * corresponding _valid flag in filesys_file_info_t is set to 0 and listing
+ * continues.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file_list Pointer to a caller-allocated array of filesys_file_info_t
+ *        that will be populated with file information.
+ * @param max_files Maximum number of entries that file_list can hold (array
+ *        capacity). If there are more files on disk than max_files, only
+ *        max_files entries are written.
+ * @param num_files_found Pointer to a variable that will receive the total
+ *        number of files written to file_list.
+ * @param lfs_error_code Pointer to store the first LFS error code encountered.
+ *        LFS_ERR_OK if no LFS error occurred.
+ * @return FILESYS_OK on success,
+ *         FILESYS_ERR_OPEN_DIR if the root directory could not be opened,
+ *         FILESYS_ERR_READ_DIR if a directory read failed,
+ *         FILESYS_ERR_CLOSE_DIR if the directory could not be closed.
+ */
+filesys_error_t filesys_list_files(slate_t *slate,
+                                   filesys_file_info_t *file_list,
+                                   uint16_t max_files,
+                                   uint16_t *num_files_found,
+                                   lfs_ssize_t *lfs_error_code);
