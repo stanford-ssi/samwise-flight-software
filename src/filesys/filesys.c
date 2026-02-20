@@ -402,6 +402,15 @@ unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
 unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
                                  lfs_ssize_t *lfs_error_code)
 {
+    if (!slate->filesys_is_writing_file)
+    {
+        LOG_ERROR("[filesys] Cannot compute CRC; no file is currently being "
+                  "written.");
+        *error_code = FILESYS_ERR_NO_FILE_WRITING;
+        *lfs_error_code = LFS_ERR_OK; // No LFS error, just filesys error
+        return 0;
+    }
+
     return filesys_compute_file_crc(
         &slate->lfs, slate->filesys_buffered_fname_str,
         slate->filesys_buffered_file_len, error_code, lfs_error_code);
@@ -539,7 +548,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
     }
 
     struct lfs_info entry_info;
-    while (true)
+    for (size_t i = 0; i < FILESYS_MAX_LOOP_LIST_FILES; i++)
     {
         int res = lfs_dir_read(&slate->lfs, &dir, &entry_info);
         if (res < 0)

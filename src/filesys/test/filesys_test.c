@@ -20,6 +20,74 @@
         }                                                                      \
     } while (0)
 
+/*
+ * Some example files that are used below. No buffers should be written that are
+ * not in this list.
+ *
+ * To calculate a crc, run it through Python's ZLib. for example:
+ * hex(zlib.crc32(bytes(i for i in range(64))))
+ */
+
+static const uint8_t filesys_test_example_file_1_buf[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+    0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B,
+    0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36,
+    0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F};
+
+static const unsigned int filesys_test_example_file_1_crc =
+    0x100ece8c; // Precomputed CRC for 0x00..0x3F
+
+static const uint8_t filesys_test_example_file_2_buf[] = {
+    0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8,
+    0xF7, 0xF6, 0xF5, 0xF4, 0xF3, 0xF2, 0xF1, 0xF0,
+};
+
+static const unsigned int filesys_test_example_file_2_crc =
+    0x1dc66fc7; // Precomputed CRC for 0xFF..0xF0
+
+// Buffer: 0x00..0x1F (32 bytes incrementing from 0)
+static const uint8_t filesys_test_example_file_3_buf[] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+    0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+    0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F};
+
+static const unsigned int filesys_test_example_file_3_crc =
+    0x91267e8a; // CRC for 0x00..0x1F
+
+// Buffer: 16 bytes of 0xAA
+static const uint8_t filesys_test_example_file_4_buf[] = {
+    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+    0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+
+static const unsigned int filesys_test_example_file_4_crc =
+    0xc79b40e0; // CRC for 16 bytes of 0xAA
+
+// Buffer: 16 bytes of 0xBB
+static const uint8_t filesys_test_example_file_5_buf[] = {
+    0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
+    0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB};
+
+static const unsigned int filesys_test_example_file_5_crc =
+    0x43e93ced; // CRC for 16 bytes of 0xBB
+
+// Buffer: 64 bytes of 0xFF
+static const uint8_t filesys_test_example_file_6_buf[] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+static const unsigned int filesys_test_example_file_6_crc =
+    0x0f6187ba; // CRC for 64 bytes of 0xFF
+
+// Buffer: 64 bytes incrementing (same as example_file_1, for reference)
+// Note: filesys_test_example_file_1_buf is 0x00..0x3F
+// with CRC filesys_test_example_file_1_crc = 0x100ece8c
+
 // Helper function to initialize a clean filesystem for testing
 inline static int filesys_test_setup_clean_filesystem(slate_t *slate)
 {
@@ -76,11 +144,10 @@ int filesys_test_write_readback_success()
     lfs_ssize_t blocks_left;
 
     FILESYS_BUFFERED_FNAME_STR_T fname_str = "A3";
-    FILESYS_BUFFERED_FILE_CRC_T crc =
-        0x100ECE8C; // Precomputed CRC for 0x00..0x3F
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname_str, 64, crc, &lfs_error_code, &blocks_left);
+        &test_slate, fname_str, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
 
     if (code != FILESYS_OK)
     {
@@ -96,12 +163,9 @@ int filesys_test_write_readback_success()
         test_slate.filesys_is_writing_file,
         "filesys_is_writing_file should be true after start_file_write");
 
-    uint8_t buffer[64];
-    for (uint8_t i = 0; i < 64; i++)
-        buffer[i] = i;
-
-    code = filesys_write_data_to_buffer(&test_slate, buffer, sizeof(buffer), 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
 
     TEST_ASSERT(code == FILESYS_OK,
                 "write_data_to_buffer should write full buffer size");
@@ -111,8 +175,8 @@ int filesys_test_write_readback_success()
     TEST_ASSERT(test_slate.filesys_buffer_is_dirty,
                 "Buffer should be dirty after write_data_to_buffer");
 
-    code = filesys_write_buffer_to_mram(&test_slate, sizeof(buffer),
-                                        &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
 
     TEST_ASSERT(code == FILESYS_OK,
                 "write_buffer_to_mram should write full buffer size");
@@ -149,10 +213,10 @@ int filesys_test_write_readback_success()
     lfs_file_close(&test_slate.lfs, &read_file);
 
     for (size_t i = 0; i < sizeof(read_buffer); i++)
-        if (read_buffer[i] != buffer[i])
+        if (read_buffer[i] != filesys_test_example_file_1_buf[i])
         {
             LOG_ERROR("Data mismatch at byte %zu: expected %u, got %u\n", i,
-                      buffer[i], read_buffer[i]);
+                      filesys_test_example_file_1_buf[i], read_buffer[i]);
             return -1;
         }
 
@@ -202,17 +266,19 @@ int filesys_test_start_file_write_already_writing_should_fail()
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
-    FILESYS_BUFFERED_FNAME_STR_T fname1 = "F1";
-    FILESYS_BUFFERED_FNAME_STR_T fname2 = "F2";
+    FILESYS_BUFFERED_FNAME_STR_T fname1 = "F1"; // example file 3
+    FILESYS_BUFFERED_FNAME_STR_T fname2 = "F2"; // example file 2
 
     // Start first file write
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, 64, 0x12345678, &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First start_file_write should succeed");
 
     // Try to start a second file write while first is in progress
-    code = filesys_start_file_write(&test_slate, fname2, 64, 0x87654321,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname2, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_ERR_FILE_ALREADY_WRITING,
                 "Second start_file_write should fail with "
                 "FILESYS_ERR_FILE_ALREADY_WRITING");
@@ -237,7 +303,7 @@ int filesys_test_write_data_to_buffer_bounds_should_fail()
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
-    FILESYS_BUFFERED_FNAME_STR_T fname = "BT";
+    FILESYS_BUFFERED_FNAME_STR_T fname = "BT"; // no example file
 
     filesys_error_t code = filesys_start_file_write(
         &test_slate, fname, 256, 0x0, &lfs_error_code, &blocks_left);
@@ -419,7 +485,7 @@ int filesys_test_cancel_file_write_success()
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
-    FILESYS_BUFFERED_FNAME_STR_T fname = "CA";
+    FILESYS_BUFFERED_FNAME_STR_T fname = "CA"; // example file 3
 
     filesys_error_t code = filesys_start_file_write(
         &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
@@ -427,19 +493,18 @@ int filesys_test_cancel_file_write_success()
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    // Write some data
-    uint8_t buffer[32];
-    for (int i = 0; i < 32; i++)
-        buffer[i] = i;
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 32, 0,
-                                        &lfs_error_code);
+    // Write some data using pre-defined buffer
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
     // Write buffer to MRAM
-    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file MRAM write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -546,25 +611,22 @@ int filesys_test_crc_correct_success()
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
-    FILESYS_BUFFERED_FNAME_STR_T fname = "CR";
-    // CRC32 for bytes 0x00..0x3F (64 bytes)
-    FILESYS_BUFFERED_FILE_CRC_T correct_crc = 0x100ECE8C;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "CR"; // example file 1
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, correct_crc, &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
 
-    uint8_t buffer[64];
-    for (uint8_t i = 0; i < 64; i++)
-        buffer[i] = i;
-
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 64, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK,
-                "write_buffer_to_mram should write 64 bytes");
+                "write_buffer_to_mram should write all bytes");
 
     // Check CRC
     filesys_error_t crc_result =
@@ -599,24 +661,22 @@ int filesys_test_crc_incorrect_should_fail()
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname = "IC";
-    // Intentionally wrong CRC
-    FILESYS_BUFFERED_FILE_CRC_T wrong_crc = 0xDEADBEEF;
 
+    // Use example file 1 data but with intentionally wrong CRC
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, wrong_crc, &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf), 0xDEADBEEF,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
 
-    uint8_t buffer[64];
-    for (uint8_t i = 0; i < 64; i++)
-        buffer[i] = i;
-
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 64, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK,
-                "write_buffer_to_mram should write 64 bytes");
+                "write_buffer_to_mram should write all bytes");
 
     // Check CRC - should fail
     filesys_error_t crc_result =
@@ -678,19 +738,17 @@ int filesys_test_multiple_files_success()
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "M1";
-    uint8_t buffer1[32];
-    for (int i = 0; i < 32; i++)
-        buffer1[i] = i;
 
-    // Use a simple CRC (we'll compute it properly for this test data)
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, 32, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf), 0x0,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -710,24 +768,24 @@ int filesys_test_multiple_files_success()
 
     // Write second file
     FILESYS_BUFFERED_FNAME_STR_T fname2 = "M2";
-    uint8_t buffer2[16];
-    for (int i = 0; i < 16; i++)
-        buffer2[i] = 0xFF - i;
 
-    code = filesys_start_file_write(&test_slate, fname2, 16, 0x0,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(&test_slate, fname2,
+                                    sizeof(filesys_test_example_file_2_buf),
+                                    0x0, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -797,37 +855,33 @@ int filesys_test_multi_chunk_write_success()
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    // First chunk: write 64 bytes
-    uint8_t chunk1[64];
-    for (int i = 0; i < 64; i++)
-        chunk1[i] = i;
-
-    code = filesys_write_data_to_buffer(&test_slate, chunk1, 64, 0,
-                                        &lfs_error_code);
+    // First chunk: write example file 1 data (64 bytes)
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First chunk write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First chunk MRAM write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_buffer_to_mram");
 
-    // Second chunk: write another 64 bytes
-    uint8_t chunk2[64];
-    for (int i = 0; i < 64; i++)
-        chunk2[i] = 64 + i;
-
-    code = filesys_write_data_to_buffer(&test_slate, chunk2, 64, 0,
-                                        &lfs_error_code);
+    // Second chunk: write another 64 bytes (offset into the file)
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second chunk write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second chunk MRAM write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -858,23 +912,19 @@ int filesys_test_write_at_offset_success()
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    // Write at different offsets
-    uint8_t data1[16] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                         0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
-    uint8_t data2[16] = {0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
-                         0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB};
-
-    // Write first 16 bytes at offset 0
-    code = filesys_write_data_to_buffer(&test_slate, data1, 16, 0,
-                                        &lfs_error_code);
+    // Write first 16 bytes at offset 0 (0xAA pattern)
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Write at offset 0 should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
-    // Write next 16 bytes at offset 32 (leaving a gap)
-    code = filesys_write_data_to_buffer(&test_slate, data2, 16, 32,
-                                        &lfs_error_code);
+    // Write next 16 bytes at offset 32 (leaving a gap) (0xBB pattern)
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_5_buf,
+        sizeof(filesys_test_example_file_5_buf), 32, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Write at offset 32 should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -908,19 +958,17 @@ int filesys_test_multiple_files_commit_success()
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "M1";
-    uint8_t buffer1[32];
-    for (int i = 0; i < 32; i++)
-        buffer1[i] = i;
 
-    // Generated with zlib.crc32(bytes(i for i in range(32))) in Python
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, 32, 2435219082, &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -941,25 +989,24 @@ int filesys_test_multiple_files_commit_success()
 
     // Write second file
     FILESYS_BUFFERED_FNAME_STR_T fname2 = "M2";
-    uint8_t buffer2[16];
-    for (int i = 0; i < 16; i++)
-        buffer2[i] = 0xFF - i;
 
-    // Generated with zlib.crc32(bytes(0xFF - i for i in range(16))) in Python
-    code = filesys_start_file_write(&test_slate, fname2, 16, 499544007,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname2, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
         "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -1327,20 +1374,19 @@ int filesys_test_list_files_multiple_files_success()
 
     // Write first file: 32 bytes
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "M1";
-    uint8_t buffer1[32];
-    for (int i = 0; i < 32; i++)
-        buffer1[i] = i;
 
-    // zlib.crc32(bytes(i for i in range(32)))
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, 32, 2435219082, &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1348,41 +1394,39 @@ int filesys_test_list_files_multiple_files_success()
 
     // Write second file: 16 bytes
     FILESYS_BUFFERED_FNAME_STR_T fname2 = "M2";
-    uint8_t buffer2[16];
-    for (int i = 0; i < 16; i++)
-        buffer2[i] = 0xFF - i;
 
-    // zlib.crc32(bytes(0xFF - i for i in range(16)))
-    code = filesys_start_file_write(&test_slate, fname2, 16, 499544007,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname2, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file complete should succeed");
 
-    // Write third file: 64 bytes
+    // Write third file: 64 bytes (same as example file 1)
     FILESYS_BUFFERED_FNAME_STR_T fname3 = "A3";
-    uint8_t buffer3[64];
-    for (int i = 0; i < 64; i++)
-        buffer3[i] = i;
 
-    // 0x100ECE8C for 0x00..0x3F
-    code = filesys_start_file_write(&test_slate, fname3, 64, 0x100ECE8C,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname3, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Third file start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer3, 64, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Third file buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Third file MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1453,38 +1497,38 @@ int filesys_test_list_files_max_files_limit_success()
 
     // Write two files
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "L1";
-    uint8_t buffer1[32];
-    for (int i = 0; i < 32; i++)
-        buffer1[i] = i;
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, 32, 2435219082, &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer1, 32, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "First file complete should succeed");
 
     FILESYS_BUFFERED_FNAME_STR_T fname2 = "L2";
-    uint8_t buffer2[16];
-    for (int i = 0; i < 16; i++)
-        buffer2[i] = 0xFF - i;
 
-    code = filesys_start_file_write(&test_slate, fname2, 16, 499544007,
-                                    &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname2, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer2, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 16, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Second file MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1527,19 +1571,19 @@ int filesys_test_list_files_after_cancel_success()
 
     // Start writing a file, write data, then cancel
     FILESYS_BUFFERED_FNAME_STR_T fname = "CN";
-    uint8_t buffer[32];
-    for (int i = 0; i < 32; i++)
-        buffer[i] = i;
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 32, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_3_buf), 0x0,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 32, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 32, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "MRAM write should succeed");
 
     // Cancel the write (should delete the file)
@@ -1578,22 +1622,19 @@ int filesys_test_list_files_crc_mismatch_success()
     // Write a file with the CORRECT CRC, then corrupt the file contents
     // to simulate a memory error causing a CRC mismatch.
     FILESYS_BUFFERED_FNAME_STR_T fname = "WC";
-    // Precomputed CRC for 0x00..0x3F
-    FILESYS_BUFFERED_FILE_CRC_T correct_crc = 0x100ECE8C;
-
-    uint8_t buffer[64];
-    for (uint8_t i = 0; i < 64; i++)
-        buffer[i] = i;
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, correct_crc, &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
 
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 64, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "Buffer write should succeed");
 
-    code = filesys_write_buffer_to_mram(&test_slate, 64, &lfs_error_code);
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "MRAM write should succeed");
 
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1608,13 +1649,11 @@ int filesys_test_list_files_crc_mismatch_success()
                          LFS_O_WRONLY | LFS_O_TRUNC, &filesys_lfs_file_cfg);
     TEST_ASSERT(err == 0, "Raw LFS file open for corruption should succeed");
 
-    uint8_t corrupted[64];
-    for (uint8_t i = 0; i < 64; i++)
-        corrupted[i] = 0xFF; // Different data -> different CRC
-
-    lfs_ssize_t written =
-        lfs_file_write(&test_slate.lfs, &lfs_file, corrupted, 64);
-    TEST_ASSERT(written == 64, "Raw LFS write should succeed");
+    lfs_ssize_t written = lfs_file_write(
+        &test_slate.lfs, &lfs_file, filesys_test_example_file_6_buf,
+        sizeof(filesys_test_example_file_6_buf));
+    TEST_ASSERT(written == sizeof(filesys_test_example_file_6_buf),
+                "Raw LFS write should succeed");
 
     err = lfs_file_close(&test_slate.lfs, &lfs_file);
     TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
@@ -1630,16 +1669,18 @@ int filesys_test_list_files_crc_mismatch_success()
 
     TEST_ASSERT(strcmp(file_list[0].fname, "WC") == 0,
                 "File name should be WC");
-    TEST_ASSERT(file_list[0].file_size == 64, "File size should be 64 bytes");
+    TEST_ASSERT(file_list[0].file_size ==
+                    sizeof(filesys_test_example_file_1_buf),
+                "File size should match example file 1");
     TEST_ASSERT(file_list[0].flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID,
                 "Computed CRC should be valid");
     TEST_ASSERT(file_list[0].flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID,
                 "Expected CRC should be valid");
     TEST_ASSERT(!(file_list[0].flags & FILESYS_FILE_INFO_CRC_MATCH),
                 "CRC match flag should NOT be set after file corruption");
-    TEST_ASSERT(file_list[0].expected_crc == correct_crc,
+    TEST_ASSERT(file_list[0].expected_crc == filesys_test_example_file_1_crc,
                 "Expected CRC should still be the original correct CRC");
-    TEST_ASSERT(file_list[0].computed_crc != correct_crc,
+    TEST_ASSERT(file_list[0].computed_crc != filesys_test_example_file_1_crc,
                 "Computed CRC should differ from original after corruption");
 
     LOG_DEBUG("=== Test PASSED: List Files - CRC Mismatch Detection ===\n");
