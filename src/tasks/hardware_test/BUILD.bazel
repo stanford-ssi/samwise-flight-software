@@ -2,20 +2,14 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "hardware_test_task",
-    srcs = [
-        "hardware_test_task.c",
-        "test/mram_test.c",
-    ],
-    hdrs = [
-        "hardware_test_task.h",
-        "test/hardware_tests.h",
-        "test/hardware_test_assert.h",
-    ],
-    includes = [".", "test"],
+    srcs = ["hardware_test_task.c"],
+    hdrs = ["hardware_test_task.h"],
+    includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
+        "//src/tasks/hardware_test/test:hardware_test_lib",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/payload_uart:payload_uart_mock",
