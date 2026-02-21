@@ -16,10 +16,9 @@ cc_library(
 )
 
 # Mock MRAM driver (for host tests)
-# No dedicated mock yet, using empty implementation
 cc_library(
     name = "mram_mock",
-    srcs = [],
+    srcs = ["mram_mock.c"],
     hdrs = ["mram.h"],
     includes = ["."],
     deps = [

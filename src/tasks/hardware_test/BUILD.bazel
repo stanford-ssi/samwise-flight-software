@@ -1,0 +1,26 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "hardware_test_task",
+    srcs = ["hardware_test_task.c"],
+    hdrs = ["hardware_test_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/payload_uart:payload_uart_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:hardware_uart_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/payload_uart",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+        ],
+    }),
+)
