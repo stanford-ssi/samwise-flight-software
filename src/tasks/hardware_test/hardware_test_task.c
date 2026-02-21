@@ -1,4 +1,4 @@
-#ifdef BRINGUP
+#if defined(BRINGUP) || defined(PICO)
 
 #include "hardware_test_task.h"
 #include "test/hardware_tests.h"

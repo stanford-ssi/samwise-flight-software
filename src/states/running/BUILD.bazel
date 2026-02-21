@@ -18,6 +18,7 @@ cc_library(
         "//src/tasks/blink:blink_task",
         "//src/tasks/command:command_task",
         "//src/tasks/diagnostics:diagnostics_task",
+        "//src/tasks/hardware_test:hardware_test_task",
         "//src/tasks/payload:payload_task",
         "//src/tasks/print:print_task",
         "//src/tasks/radio:radio_task",

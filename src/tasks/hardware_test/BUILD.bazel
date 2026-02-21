@@ -2,9 +2,16 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "hardware_test_task",
-    srcs = ["hardware_test_task.c"],
-    hdrs = ["hardware_test_task.h"],
-    includes = ["."],
+    srcs = [
+        "hardware_test_task.c",
+        "test/mram_test.c",
+    ],
+    hdrs = [
+        "hardware_test_task.h",
+        "test/hardware_tests.h",
+        "test/hardware_test_assert.h",
+    ],
+    includes = [".", "test"],
     deps = [
         "//src/common",
         "//src/slate",
@@ -15,12 +22,14 @@ cc_library(
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",
             "//src/test_mocks:hardware_uart_mock",
+            "//src/drivers/mram:mram_mock",
         ],
         "//conditions:default": [
             "//src/drivers/payload_uart",
             "//src/drivers/neopixel",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+            "//src/drivers/mram",
         ],
     }),
 )

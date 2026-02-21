@@ -158,7 +158,7 @@ void test_mram_read_status(void)
     LOG_DEBUG("test_mram_read_status passed.\n");
 }
 
-#ifdef BRINGUP
+#if defined(BRINGUP) || defined(PICO)
 void mram_test_main(void)
 #else
 int main(void)
@@ -173,7 +173,7 @@ int main(void)
     // test_mram_clear();
     test_mram_read_status();
     LOG_DEBUG("All MRAM tests done.\n");
-#ifndef BRINGUP
+#if !defined(BRINGUP) && !defined(PICO)
     return 0;
 #endif
 }
