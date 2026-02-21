@@ -48,7 +48,7 @@ build:picubed-flight --define=PICO_PLATFORM=rp2350
 build:picubed-flight --define=FLIGHT=1
 build:picubed-flight --copt=-DFLIGHT=1
 build:picubed-flight --compilation_mode=opt
-build:picubed-flight --copt=-Os  # Optimize for size
+build:picubed-flight --copt=-O3  # Optimize for size
 build:picubed-flight --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 
 # PiCubed Bringup Profile (RP2350 for board bring-up testing)
@@ -59,6 +59,7 @@ build:picubed-bringup --define=PICO_PLATFORM=rp2350
 build:picubed-bringup --define=BRINGUP=1
 build:picubed-bringup --copt=-DBRINGUP=1
 build:picubed-bringup --compilation_mode=dbg
+build:picubed-bringup --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 
 # OTA MVP Blink Variant (for testing OTA partition switching)
 build:ota-blink --define=BLINK=1
