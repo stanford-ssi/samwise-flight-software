@@ -1,69 +1,122 @@
 # Building executable
 
-## Pre-requisite
+## Pre-requisites
 
-Download and install gcc-arm-none-eabi compiler: https://github.com/stanford-ssi/samwise-flight-software/blob/main/docs/ONBOARDING.md#linux
+1. **Bazel**: Install [Bazelisk](https://github.com/bazelbuild/bazelisk) (recommended) or [Bazel](https://bazel.build/install) directly.
+2. **ARM toolchain**: Download and install `gcc-arm-none-eabi`. See the [onboarding doc](https://github.com/stanford-ssi/samwise-flight-software/blob/main/docs/ONBOARDING.md#linux) for platform-specific instructions.
+3. **clang-format** (optional, for formatting): `brew install clang-format` on macOS, or `sudo apt install clang-format` on Linux.
 
 ## Building from source
 
-1. Update submodule files with `git submodule update --init --recursive`
-2. Create build directory `mkdir build` and navigate into it
-3. Cmake with a particular platform (e.g. PICO, PICUBED-DEBUG) `cmake -DPROFILE=PICUBED-DEBUG`
-4. Make and compile binary `make -j8`
+Build with a specific profile configuration:
+
+```bash
+# PiCubed debug build (most common for development)
+bazel build --config=picubed-debug //:samwise
+
+# PiCubed flight build (optimized for deployment)
+bazel build --config=picubed-flight //:samwise
+
+# PiCubed bringup build (board bring-up testing)
+bazel build --config=picubed-bringup //:samwise
+
+# Pico development build (RP2040)
+bazel build --config=pico //:samwise
+```
+
+The `.uf2` file is automatically generated alongside the ELF binary for all on-device profiles. Find it at:
+```
+bazel-bin/samwise.uf2
+```
+
+### Running tests
+
+```bash
+bazel test //...
+```
+
+Tests run on the host platform with mocked hardware drivers. See `bzl/defs.bzl` for the `samwise_test()` macro that handles mock substitution automatically.
+
+## Pre-commit hook
+
+A clang-format pre-commit hook is available to automatically format staged C/H files before each commit. To install it:
+
+```bash
+cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+Or run `configure.sh` which sets this up for you.
 
 # Code structure
 
-The layout of our flight software is loosely organized into 3 categories:
-- Hardware Application Layer (HAL) contained within the `/drivers` subdirectory
-- Common headers and shared data structure contained within the `/common` and `/slate` subdirectories respectively
-- Finite-State-Machine (FSM) main event loop which is defined by:
-    - `/scheduler`: the execution main loop that implements state transitions
+The layout of our flight software is organized into these categories:
+- Hardware Application Layer (HAL) in `/drivers`
+- Common headers and shared data in `/common` and `/slate`
+- Finite-State-Machine (FSM) main event loop:
+    - `/scheduler`: the execution main loop, state registry, and state transitions
     - `/states`: definition of states the satellite can be in
-    - `/tasks`: implementation of various isolated tasks that can be performed in any state
-    - Initial entrypoint state is defined statically as [`init_state`](https://github.com/stanford-ssi/samwise-flight-software/blob/3203a54866b889707dfc175f2ac8ba17fd0a4b93/src/scheduler/scheduler.c#L20)
+    - `/tasks`: implementation of isolated tasks that run within states
+    - Initial entrypoint state is `STATE_INIT` (see `scheduler.c`)
+
+### State machine architecture
+
+States are identified by `state_id_t` enums (defined in `scheduler/state_ids.h`) rather than by direct struct pointers. The **state registry** (`scheduler/state_registry.h`) provides O(1) lookup from state ID to `sched_state_t*`. States are registered during `sched_init()` in `scheduler.c`.
+
+Each state defines:
+- A list of tasks to dispatch periodically
+- A `get_next_state()` function that returns the `state_id_t` to transition to
+
+Build profiles control which states and tasks are active via preprocessor defines (`BRINGUP`, `FLIGHT`, `DEBUG`).
 
 ```
-SAMWISE-FLIGHT-SOFTWARE
-├── src
-│   ├── common 		        # common headers
-│   ├── drivers 		# hardware-specific implementations
-│   │   ├── burn_wire
-│   │   ├── flash
-│   │   ├── logger
-│   │   ├── onboard_led
-│   │   ├── rfm9x
-│   │   ├── watchdog
-│   │   └── CMakeLists.txt
-│   ├── error			# hardware specific error behavior
-│   ├── init			# system initialization
-│   ├── scheduler		# main event loop scheduler
-│   │   ├── CMakeLists.txt
-│   │   ├── scheduler.c
-│   │   ├── scheduler.h
-│   │   ├── state_machine.h
-│   │   └── states.h
-│   ├── slate			# global shared data structure
-│   │   ├── CMakeLists.txt
-│   │   ├── packet.h
-│   │   ├── slate.c
-│   │   └── slate.h
-│   ├── states			# states in FSM
-│   │   ├── bringup
-│   │   ├── init
-│   │   ├── running
-│   │   └── CMakeLists.txt
-│   └── tasks			# standalone executable tasks
-│       ├── beacon
-│       ├── blink
-│       ├── command
-│       ├── diagnostics
-│       ├── print
-│       ├── radio
-│       ├── watchdog
-│       └── CMakeLists.txt
-├── main.c			# main entry point into software
-└── CMakeLists.txt
+src
+├── common              # common headers and typedefs
+├── drivers             # hardware-specific implementations
+│   ├── adcs
+│   ├── adm1176
+│   ├── burn_wire
+│   ├── device_status
+│   ├── flash
+│   ├── logger
+│   ├── mppt
+│   ├── mram
+│   ├── neopixel
+│   ├── onboard_led
+│   ├── payload_uart
+│   ├── rfm9x
+│   └── watchdog
+├── error               # hardware-specific error behavior
+├── init                # system initialization
+├── packet              # packet encoding/decoding
+├── scheduler           # main event loop and state machine
+│   ├── scheduler.c/h
+│   ├── state_machine.h
+│   ├── state_ids.h
+│   └── state_registry.c/h
+├── slate               # global shared data structure
+├── states              # states in FSM
+│   ├── bringup
+│   ├── burn_wire
+│   ├── burn_wire_reset
+│   ├── init
+│   └── running
+├── tasks               # standalone executable tasks
+│   ├── adcs
+│   ├── beacon
+│   ├── blink
+│   ├── burn_wire
+│   ├── command
+│   ├── diagnostics
+│   ├── payload
+│   ├── print
+│   ├── radio
+│   ├── telemetry
+│   └── watchdog
+└── utils               # utility functions
 ```
+
+For guides on adding new states or tasks, see [states/README.md](states/README.md) and [tasks/README.md](tasks/README.md).
 
 ## Contributing
 

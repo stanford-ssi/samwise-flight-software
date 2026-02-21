@@ -7,7 +7,9 @@ struct watchdog watchdog_mk()
 }
 void watchdog_init(struct watchdog *wd)
 {
+    // TODO: Track init calls for test assertions
 }
 void watchdog_feed(struct watchdog *wd)
 {
+    // TODO: Track feed count/timing to verify watchdog task behavior
 }
