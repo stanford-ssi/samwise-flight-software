@@ -92,9 +92,9 @@ extern const struct lfs_file_config filesys_lfs_file_cfg;
  * This MUST be run before any other filesystem operations.
  *
  * @param slate Pointer to the slate structure.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return A negative error code on failure.
  */
 filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code);
@@ -104,9 +104,9 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code);
  * This is a destructive operation that erases all data on the filesystem.
  *
  * @param slate Pointer to the slate structure.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return A negative error code on failure.
  */
 filesys_error_t filesys_reformat_initialize(slate_t *slate,
@@ -120,9 +120,9 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
  * @param fname The name of the file to buffer.
  * @param file_size The size of the file to buffer.
  * @param file_crc The CRC of the file to buffer.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @param blocks_left_after_write Pointer to store the amount of blocks left
  * after the write. Note if this is negative, there is not enough space to write
  * the file. This is not written if the function returns -1 or -2.
@@ -152,9 +152,9 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
  * FILESYS_BUFFER_SIZE).
  * @param offset The offset in the buffer to start writing at. (Must not exceed
  * FILESYS_BUFFER_SIZE).
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  */
 filesys_error_t filesys_write_data_to_buffer(slate_t *slate,
                                              const uint8_t *data,
@@ -169,9 +169,9 @@ filesys_error_t filesys_write_data_to_buffer(slate_t *slate,
  * @param slate Pointer to the slate structure.
  * @param n_bytes The number of bytes to write for this buffer. Use
  * FILESYS_BUFFER_SIZE to write the entire buffer to MRAM.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return The number of bytes written, or a negative error code on failure.
  */
 filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
@@ -207,9 +207,9 @@ static unsigned int filesys_compute_file_crc(
  * @param slate Pointer to the slate structure.
  * @param error_code Pointer to store error code in case of failure, or
  * FILESYS_OK on success.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return The computed CRC value.
  */
 unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
@@ -220,9 +220,9 @@ unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
  * (on _CRC attribute).
  *
  * @param slate Pointer to the slate structure.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return FILESYS_CRC_CORRECT if the CRC is correct,
  *         FILESYS_CRC_INCORRECT if incorrect,
  *         FILESYS_CRC_NO_FILE if no file is being written.
@@ -236,9 +236,9 @@ filesys_error_t filesys_is_crc_correct(slate_t *slate,
  * write it to MRAM before completing.
  *
  * @param slate Pointer to the slate structure.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return // FILESYS_ERR_BUFFER_DIRTY if the buffer is dirty,
  *         // FILESYS_ERR_CLOSE_FILE if there was an error closing the file,
  *         // FILESYS_ERR_CRC_CHECK if there was an error during CRC check,
@@ -262,9 +262,9 @@ void filesys_clear_buffer(slate_t *slate);
  * completely cancelling the write operation. DESTRUCTIVE OPERATION.
  *
  * @param slate Pointer to the slate structure.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error. Note that LFS can be OK but filesys can
- * still fail (e.g. not enough space in buffer).
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error. Note that LFS can be OK but
+ * filesys can still fail (e.g. not enough space in buffer).
  * @return FILESYS_ERR_NO_FILE_WRITING if no file is being written,
  *         FILESYS_ERR_CLOSE_FILE if there was an error closing the file,
  *         FILESYS_ERR_DELETE_FILE if there was an error deleting the file,
@@ -379,8 +379,8 @@ filesys_error_t filesys_list_files(slate_t *slate,
  * @param fname The name of the file to open.
  * @param info Pointer to a caller-allocated filesys_file_info_t that will be
  *        populated with file metadata and CRC results.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_OPEN_FILE if the file could not be opened,
  *         FILESYS_ERR_GET_CRC_ATTR if the stored CRC attribute could not be
  *         retrieved,
@@ -405,8 +405,8 @@ filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
  * @param buffer Pointer to the buffer to store the read data.
  * @param size Number of bytes to read.
  * @param bytes_read Pointer to store the actual number of bytes read.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_READ_FILE if the read failed,
  *         FILESYS_OK on success.
  */
@@ -427,8 +427,8 @@ filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
  * @param whence The seek origin: LFS_SEEK_SET, LFS_SEEK_CUR, or LFS_SEEK_END.
  * @param new_position Pointer to store the new absolute file position after the
  * seek.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_SEEK_FILE if the seek failed,
  *         FILESYS_OK on success.
  */
@@ -445,8 +445,8 @@ filesys_read_file_seek(slate_t *slate, lfs_file_t *file, lfs_soff_t offset,
  * @param slate Pointer to the slate structure.
  * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
  * @param position Pointer to store the current file position.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_SEEK_FILE if the tell failed,
  *         FILESYS_OK on success.
  */
@@ -462,8 +462,8 @@ filesys_error_t filesys_read_file_tell(slate_t *slate, lfs_file_t *file,
  * @param slate Pointer to the slate structure.
  * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
  * @param size Pointer to store the file size in bytes.
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_FILE_SIZE if the size query failed,
  *         FILESYS_OK on success.
  */
@@ -478,8 +478,8 @@ filesys_error_t filesys_read_file_size(slate_t *slate, lfs_file_t *file,
  *
  * @param slate Pointer to the slate structure.
  * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
- * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
- * if there is no relevant LFS error.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
  * @return FILESYS_ERR_CLOSE_FILE if the file could not be closed,
  *         FILESYS_OK on success.
  */

@@ -180,7 +180,7 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
         return FILESYS_ERR_OPEN_FILE;
     }
 
-    // Add CRC as attribute to open file - type 0
+    // Add CRC as attribute to open file - type FILESYS_CRC_ATTR
     int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str,
                           FILESYS_CRC_ATTR, &file_crc, sizeof(file_crc));
     if (err < 0)
