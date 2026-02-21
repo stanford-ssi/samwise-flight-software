@@ -17,6 +17,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifndef INC_SSDV_H
 #define INC_SSDV_H

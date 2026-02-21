@@ -6,7 +6,8 @@
 
 import os
 
-SSDV_DIRECTORY = "/home/pi/code/ssdv/"
+SSDV_DIRECTORY = "/home/pi/code/ssdv"
+SSDV_EXECUTABLE = os.path.join(SSDV_DIRECTORY, "ssdv")
 
 def encode_file(input_file: str, output_file: str = '', packet_size: int = 253) -> str:
     """
@@ -23,8 +24,8 @@ def encode_file(input_file: str, output_file: str = '', packet_size: int = 253) 
     if not os.path.isfile(input_file): raise FileNotFoundError(f"{input_file} not found!")
 
     output = output_file if output_file else (input_file + ".ssdv")
-    os.system(f"{SSDV_DIRECTORY}/ssdv -e -l {packet_size} {input_file} {output}")
-
+    
+    os.system(f"{SSDV_EXECUTABLE} -e -l {packet_size} {input_file} {output}")
     return output
 
 
@@ -39,5 +40,5 @@ def decode_file(input_file: str, output_file: str, packet_size: int = 253):
     """
     if not os.path.isfile(input_file): raise FileNotFoundError(f"{input_file} not found!")
     if not os.path.isfile(output_file): raise FileNotFoundError(f"{output_file} not found!")
-
-    os.system(f"{SSDV_DIRECTORY}/ssdv -d -l {packet_size} {input_file} {output_file}")
+    
+    os.system(f"{SSDV_EXECUTABLE} -d -l {packet_size} {input_file} {output_file}")
