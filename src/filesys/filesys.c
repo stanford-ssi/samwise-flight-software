@@ -181,8 +181,8 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
     }
 
     // Add CRC as attribute to open file - type 0
-    int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str, 0,
-                          &file_crc, sizeof(file_crc));
+    int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str,
+                          FILESYS_CRC_ATTR, &file_crc, sizeof(file_crc));
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -574,55 +574,11 @@ filesys_error_t filesys_list_files(slate_t *slate,
         }
 
         filesys_file_info_t *info = &file_list[*num_files_found];
-        memset(info, 0, sizeof(*info));
-
-        // Copy filename (null-terminated)
-        strncpy(info->fname, entry_info.name, sizeof(info->fname) - 1);
-        info->fname[sizeof(info->fname) - 1] = '\0';
-
-        // File size from directory entry
-        info->file_size = (FILESYS_BUFFERED_FILE_LEN_T)entry_info.size;
-
-        // --- Retrieve expected CRC from file attribute (type 0) ---
-        lfs_ssize_t attr_res =
-            lfs_getattr(&slate->lfs, entry_info.name, 0, &info->expected_crc,
-                        sizeof(info->expected_crc));
-        if (attr_res < 0)
-        {
-            LOG_ERROR("[filesys] Failed to get CRC attribute for file %s: %d",
-                      entry_info.name, attr_res);
-            info->expected_crc = 0;
-        }
-        else
-        {
-            info->flags |= FILESYS_FILE_INFO_EXPECTED_CRC_VALID;
-        }
-
-        // --- Compute CRC from on-disk file data ---
-        filesys_error_t crc_err;
-        lfs_ssize_t crc_lfs_err;
-        unsigned int computed = filesys_compute_file_crc(
-            &slate->lfs, entry_info.name,
-            (FILESYS_BUFFERED_FILE_LEN_T)entry_info.size, &crc_err,
-            &crc_lfs_err);
-
-        if (crc_err == FILESYS_OK)
-        {
-            info->computed_crc = computed;
-            info->flags |= FILESYS_FILE_INFO_COMPUTED_CRC_VALID;
-        }
-        else
-        {
-            info->computed_crc = 0;
-        }
-
-        // Determine CRC match only when both values are valid
-        if ((info->flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID) &&
-            (info->flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID) &&
-            (info->computed_crc == info->expected_crc))
-        {
-            info->flags |= FILESYS_FILE_INFO_CRC_MATCH;
-        }
+        lfs_ssize_t info_lfs_err;
+        filesys_get_file_info(slate, entry_info.name, info, &info_lfs_err);
+        // Note: filesys_get_file_info populates flags to indicate which
+        // fields are valid, so we don't need to check its return value
+        // here — listing continues regardless.
 
         (*num_files_found)++;
     }
@@ -636,5 +592,234 @@ filesys_error_t filesys_list_files(slate_t *slate,
     }
 
     LOG_INFO("[filesys] Listed %u files successfully", *num_files_found);
+    return FILESYS_OK;
+}
+
+/* ===== Read Operations ===== */
+
+filesys_error_t filesys_get_file_info(slate_t *slate,
+                                      FILESYS_BUFFERED_FNAME_STR_T fname,
+                                      filesys_file_info_t *info,
+                                      lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+    memset(info, 0, sizeof(*info));
+
+    // Copy filename (null-terminated)
+    strncpy(info->fname, fname, sizeof(info->fname) - 1);
+    info->fname[sizeof(info->fname) - 1] = '\0';
+
+    // Get the file size by temporarily opening the file.
+    lfs_file_t tmp_file;
+    lfs_ssize_t open_err;
+    filesys_file_open(&slate->lfs, &tmp_file, fname, LFS_O_RDONLY, &open_err);
+    if (open_err < 0)
+    {
+        *lfs_error_code = open_err;
+        return FILESYS_ERR_OPEN_FILE;
+    }
+
+    lfs_soff_t file_size = lfs_file_size(&slate->lfs, &tmp_file);
+    if (file_size < 0)
+    {
+        *lfs_error_code = file_size;
+        LOG_ERROR("[filesys] Failed to get file size for %s: %d", fname,
+                  (int)file_size);
+        lfs_ssize_t close_err;
+        filesys_file_close(&slate->lfs, &tmp_file, &close_err);
+        return FILESYS_ERR_FILE_SIZE;
+    }
+
+    lfs_ssize_t close_err;
+    filesys_file_close(&slate->lfs, &tmp_file, &close_err);
+    if (close_err < 0)
+    {
+        *lfs_error_code = close_err;
+        LOG_ERROR("[filesys] Failed to close file %s after getting size: %d",
+                  fname, (int)close_err);
+        return FILESYS_ERR_CLOSE_FILE;
+    }
+
+    info->file_size = (FILESYS_BUFFERED_FILE_LEN_T)file_size;
+
+    // Retrieve the expected CRC from the file attribute.
+    lfs_ssize_t attr_res =
+        lfs_getattr(&slate->lfs, fname, FILESYS_CRC_ATTR, &info->expected_crc,
+                    sizeof(info->expected_crc));
+    if (attr_res < 0)
+    {
+        info->expected_crc = 0;
+    }
+    else
+    {
+        info->flags |= FILESYS_FILE_INFO_EXPECTED_CRC_VALID;
+    }
+
+    // Compute the on-disk CRC.
+    filesys_error_t crc_err;
+    lfs_ssize_t crc_lfs_err;
+    unsigned int computed = filesys_compute_file_crc(
+        &slate->lfs, fname, info->file_size, &crc_err, &crc_lfs_err);
+
+    if (crc_err == FILESYS_OK)
+    {
+        info->computed_crc = computed;
+        info->flags |= FILESYS_FILE_INFO_COMPUTED_CRC_VALID;
+    }
+    else
+    {
+        info->computed_crc = 0;
+    }
+
+    // Determine CRC match only when both values are valid.
+    if ((info->flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID) &&
+        (info->flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID) &&
+        (info->computed_crc == info->expected_crc))
+    {
+        info->flags |= FILESYS_FILE_INFO_CRC_MATCH;
+    }
+
+    return FILESYS_OK;
+}
+
+filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FNAME_STR_T fname,
+                                       filesys_file_info_t *info,
+                                       lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    // Populate file info (size, CRCs, flags).
+    filesys_error_t info_err =
+        filesys_get_file_info(slate, fname, info, lfs_error_code);
+    if (info_err != FILESYS_OK)
+    {
+        return info_err;
+    }
+
+    // Verify that both CRC values are valid.
+    if (!(info->flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID))
+    {
+        LOG_ERROR("[filesys] CRC attribute not available for file %s", fname);
+        return FILESYS_ERR_GET_CRC_ATTR;
+    }
+
+    if (!(info->flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID))
+    {
+        LOG_ERROR("[filesys] CRC computation failed for file %s", fname);
+        return FILESYS_ERR_CRC_CHECK;
+    }
+
+    if (!(info->flags & FILESYS_FILE_INFO_CRC_MATCH))
+    {
+        LOG_ERROR(
+            "[filesys] CRC mismatch for file %s. Computed: %u, Expected: %u",
+            fname, info->computed_crc, info->expected_crc);
+        return FILESYS_ERR_CRC_MISMATCH;
+    }
+
+    // CRC is valid — open the file for the caller.
+    lfs_ssize_t final_open_err;
+    filesys_file_open(&slate->lfs, file, fname, LFS_O_RDONLY, &final_open_err);
+    if (final_open_err < 0)
+    {
+        *lfs_error_code = final_open_err;
+        return FILESYS_ERR_OPEN_FILE;
+    }
+
+    LOG_INFO("[filesys] Opened file %s for reading (CRC verified)", fname);
+    return FILESYS_OK;
+}
+
+filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
+                                  void *buffer,
+                                  FILESYS_BUFFERED_FILE_LEN_T size,
+                                  FILESYS_BUFFERED_FILE_LEN_T *bytes_read,
+                                  lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    lfs_ssize_t res = lfs_file_read(&slate->lfs, file, buffer, size);
+    if (res < 0)
+    {
+        *lfs_error_code = res;
+        LOG_ERROR("[filesys] Failed to read %u bytes from file: %d", size,
+                  (int)res);
+        return FILESYS_ERR_READ_FILE;
+    }
+
+    *bytes_read = (FILESYS_BUFFERED_FILE_LEN_T)res;
+    return FILESYS_OK;
+}
+
+filesys_error_t
+filesys_read_file_seek(slate_t *slate, lfs_file_t *file, lfs_soff_t offset,
+                       int whence, FILESYS_BUFFERED_FILE_LEN_T *new_position,
+                       lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    lfs_soff_t pos = lfs_file_seek(&slate->lfs, file, offset, whence);
+    if (pos < 0)
+    {
+        *lfs_error_code = pos;
+        LOG_ERROR("[filesys] Failed to seek in file: %d", (int)pos);
+        return FILESYS_ERR_SEEK_FILE;
+    }
+
+    *new_position = (FILESYS_BUFFERED_FILE_LEN_T)pos;
+    return FILESYS_OK;
+}
+
+filesys_error_t filesys_read_file_tell(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FILE_LEN_T *position,
+                                       lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    lfs_soff_t pos = lfs_file_tell(&slate->lfs, file);
+    if (pos < 0)
+    {
+        *lfs_error_code = pos;
+        LOG_ERROR("[filesys] Failed to tell file position: %d", (int)pos);
+        return FILESYS_ERR_SEEK_FILE;
+    }
+
+    *position = (FILESYS_BUFFERED_FILE_LEN_T)pos;
+    return FILESYS_OK;
+}
+
+filesys_error_t filesys_read_file_size(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FILE_LEN_T *size,
+                                       lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    lfs_soff_t file_size = lfs_file_size(&slate->lfs, file);
+    if (file_size < 0)
+    {
+        *lfs_error_code = file_size;
+        LOG_ERROR("[filesys] Failed to get file size: %d", (int)file_size);
+        return FILESYS_ERR_FILE_SIZE;
+    }
+
+    *size = (FILESYS_BUFFERED_FILE_LEN_T)file_size;
+    return FILESYS_OK;
+}
+
+filesys_error_t filesys_close_file_read(slate_t *slate, lfs_file_t *file,
+                                        lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    int err = lfs_file_close(&slate->lfs, file);
+    if (err < 0)
+    {
+        *lfs_error_code = err;
+        LOG_ERROR("[filesys] Failed to close read file: %d", err);
+        return FILESYS_ERR_CLOSE_FILE;
+    }
+
+    LOG_INFO("[filesys] Closed read file successfully");
     return FILESYS_OK;
 }

@@ -4,9 +4,10 @@
  * @brief Header file for the filesystem module.
  *
  * This module provides functions to initialize and manage the filesystem,
- * including writing files to MRAM with buffering support.
+ * including writing files to MRAM with buffering support and reading files
+ * from MRAM with CRC verification.
  *
- * Note: Read, delete, and other filesystem operations are implemented in
+ * Note: Delete and other filesystem operations are implemented in
  * little-fs. Also note that only 2-byte file names are allowed, and so
  * directories are not supported. Files must be uniquely named (2^16 files max).
  */
@@ -52,6 +53,9 @@ enum filesys_error
     FILESYS_ERR_READ_DIR = -17,            // Failed to read directory entry
     FILESYS_ERR_CLOSE_DIR = -18,           // Failed to close directory
     FILESYS_ERR_GET_CRC_ATTR = -19,        // Failed to get CRC attribute
+    FILESYS_ERR_READ_FILE = -20,           // Failed to read from file
+    FILESYS_ERR_SEEK_FILE = -21,           // Failed to seek in file
+    FILESYS_ERR_FILE_SIZE = -22,           // Failed to get file size
 };
 
 typedef int32_t filesys_error_t;
@@ -294,6 +298,34 @@ typedef struct __attribute__((packed))
 } filesys_file_info_t;
 
 /**
+ * Retrieves information about a single file, including its size, stored CRC
+ * attribute, and computed on-disk CRC. The result is written into a
+ * caller-provided filesys_file_info_t whose flags indicate which fields are
+ * valid.
+ *
+ * This is the shared helper used by both filesys_list_files and
+ * filesys_open_file_read.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param fname Null-terminated filename to query.
+ * @param info Pointer to a caller-allocated filesys_file_info_t to populate.
+ * @param lfs_error_code Pointer to store the first LFS error code encountered.
+ *        LFS_ERR_OK if no LFS error occurred.
+ * @return FILESYS_OK on success (info is fully populated),
+ *         FILESYS_ERR_OPEN_FILE if the file could not be opened to get its
+ *         size,
+ *         FILESYS_ERR_FILE_SIZE if the file size could not be determined,
+ *         FILESYS_ERR_CLOSE_FILE if the temporary file handle could not be
+ *         closed.
+ *         Note: CRC attribute or computation failures are recorded in
+ *         info->flags rather than causing this function to return an error.
+ */
+filesys_error_t filesys_get_file_info(slate_t *slate,
+                                      FILESYS_BUFFERED_FNAME_STR_T fname,
+                                      filesys_file_info_t *info,
+                                      lfs_ssize_t *lfs_error_code);
+
+/**
  * Lists all files on the filesystem, computing each file's on-disk CRC32
  * and retrieving its stored (expected) CRC32 attribute. Results are written
  * into the caller-provided array.
@@ -322,3 +354,134 @@ filesys_error_t filesys_list_files(slate_t *slate,
                                    uint16_t max_files,
                                    uint16_t *num_files_found,
                                    lfs_ssize_t *lfs_error_code);
+
+/* ===== Read Operations ===== */
+/* These functions provide a standardized interface for reading files from MRAM.
+ * CRC integrity is verified when a file is opened for reading, so every read
+ * session is guaranteed to start from a file whose on-disk data matches its
+ * stored CRC attribute. The caller owns the lfs_file_t object and must pass it
+ * to every subsequent read operation. */
+
+/**
+ * Opens a file for reading and verifies its CRC32 integrity.
+ *
+ * The file's on-disk data is read to compute a CRC32 which is compared against
+ * the stored CRC attribute. If the CRC does not match, the file is not opened
+ * and an error is returned. The caller must provide an lfs_file_t object that
+ * will be used for all subsequent read operations on this file.
+ *
+ * File metadata (size, computed CRC, expected CRC, validity flags) is written
+ * to the caller-provided filesys_file_info_t, even on CRC mismatch, so the
+ * caller can inspect the values.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to a caller-allocated lfs_file_t to be initialized.
+ * @param fname The name of the file to open.
+ * @param info Pointer to a caller-allocated filesys_file_info_t that will be
+ *        populated with file metadata and CRC results.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_OPEN_FILE if the file could not be opened,
+ *         FILESYS_ERR_GET_CRC_ATTR if the stored CRC attribute could not be
+ *         retrieved,
+ *         FILESYS_ERR_CRC_CHECK if an error occurred during CRC computation,
+ *         FILESYS_ERR_CRC_MISMATCH if the computed CRC does not match the
+ *         stored CRC,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FNAME_STR_T fname,
+                                       filesys_file_info_t *info,
+                                       lfs_ssize_t *lfs_error_code);
+
+/**
+ * Reads data from an open file at its current file position.
+ *
+ * This is a thin wrapper around lfs_file_read. The file position is advanced
+ * by the number of bytes actually read.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
+ * @param buffer Pointer to the buffer to store the read data.
+ * @param size Number of bytes to read.
+ * @param bytes_read Pointer to store the actual number of bytes read.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_READ_FILE if the read failed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
+                                  void *buffer,
+                                  FILESYS_BUFFERED_FILE_LEN_T size,
+                                  FILESYS_BUFFERED_FILE_LEN_T *bytes_read,
+                                  lfs_ssize_t *lfs_error_code);
+
+/**
+ * Seeks to a position in an open read file.
+ *
+ * This is a thin wrapper around lfs_file_seek.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
+ * @param offset The offset to seek to.
+ * @param whence The seek origin: LFS_SEEK_SET, LFS_SEEK_CUR, or LFS_SEEK_END.
+ * @param new_position Pointer to store the new absolute file position after the
+ * seek.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_SEEK_FILE if the seek failed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t
+filesys_read_file_seek(slate_t *slate, lfs_file_t *file, lfs_soff_t offset,
+                       int whence, FILESYS_BUFFERED_FILE_LEN_T *new_position,
+                       lfs_ssize_t *lfs_error_code);
+
+/**
+ * Returns the current position in an open read file.
+ *
+ * This is a thin wrapper around lfs_file_tell.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
+ * @param position Pointer to store the current file position.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_SEEK_FILE if the tell failed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_read_file_tell(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FILE_LEN_T *position,
+                                       lfs_ssize_t *lfs_error_code);
+
+/**
+ * Returns the size of an open read file.
+ *
+ * This is a thin wrapper around lfs_file_size.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
+ * @param size Pointer to store the file size in bytes.
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_FILE_SIZE if the size query failed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_read_file_size(slate_t *slate, lfs_file_t *file,
+                                       FILESYS_BUFFERED_FILE_LEN_T *size,
+                                       lfs_ssize_t *lfs_error_code);
+
+/**
+ * Closes an open read file.
+ *
+ * Releases any resources associated with the open file.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param file Pointer to an open lfs_file_t (from filesys_open_file_read).
+ * @param lfs_error_code Pointer to store error code in case of failure. LFS_OK
+ * if there is no relevant LFS error.
+ * @return FILESYS_ERR_CLOSE_FILE if the file could not be closed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_close_file_read(slate_t *slate, lfs_file_t *file,
+                                        lfs_ssize_t *lfs_error_code);

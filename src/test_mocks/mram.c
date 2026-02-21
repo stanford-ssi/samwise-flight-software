@@ -52,7 +52,6 @@ void mram_read(uint32_t address, uint8_t *data, size_t length)
         return;
     }
     memcpy(data, &mock_mram[address], length);
-    printf("[Mock MRAM] Read %zu bytes from address 0x%06X\n", length, address);
 }
 
 void mram_clear(uint32_t address, size_t length)
@@ -63,8 +62,6 @@ void mram_clear(uint32_t address, size_t length)
         return;
     }
     memset(&mock_mram[address], 0, length);
-    printf("[Mock MRAM] Cleared %zu bytes at address 0x%06X\n", length,
-           address);
 }
 
 bool mram_write(uint32_t address, const uint8_t *data, size_t length)
@@ -80,7 +77,6 @@ bool mram_write(uint32_t address, const uint8_t *data, size_t length)
         return false;
     }
     memcpy(&mock_mram[address], data, length);
-    printf("[Mock MRAM] Wrote %zu bytes to address 0x%06X\n", length, address);
     return true;
 }
 
