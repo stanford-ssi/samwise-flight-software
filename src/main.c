@@ -34,10 +34,15 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+    // We should initialize the usb driver at the start.
+#ifdef PICO
+    stdio_usb_init();
+
     // We need to first initialize watchdog before any sleep is called.
     // Watchdog needs to be fed periodically to prevent rebooting.
     slate.watchdog = watchdog_mk();
     watchdog_init(&slate.watchdog);
+#endif
 
     // Initialize hardware status GPIO pins.
     // This is used to read the status of the solar panels, RBF, etc.

@@ -65,16 +65,15 @@ static bool init_drivers(slate_t *slate)
     gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
     gpio_put(SAMWISE_RF_SCK_PIN, 0);
 #elif !defined(PICO)
+
     rfm9x_init(&slate->radio);
-#endif
 
     // Initialize Neopixel if on PICUBED
-#ifndef PICO
     neopixel_init();
-#endif
 
     // Initialize burn wire
     burn_wire_init(slate);
+#endif
 
     return true;
 }
