@@ -33,4 +33,6 @@ pico_sdk.config(
 register_toolchains(
     "@pico-sdk//bazel/toolchain:mac-aarch64-rp2350",
     "@pico-sdk//bazel/toolchain:mac-x86_64-rp2350",
+    "@pico-sdk//bazel/toolchain:linux-aarch64-rp2350",
+    "@pico-sdk//bazel/toolchain:linux-x86_64-rp2350",
 )
