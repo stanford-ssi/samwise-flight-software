@@ -19,7 +19,9 @@ sched_state_t running_state = {
     .name = "running",
     .id = STATE_RUNNING,
     .num_tasks = 2,
-    .task_list = {&print_task, &blink_task}, // enable radio when we have the test board working
+    .task_list =
+        {&print_task,
+         &blink_task}, // enable radio when we have the test board working
     .get_next_state = &running_get_next_state};
 #else
 sched_state_t running_state = {
