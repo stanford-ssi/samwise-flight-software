@@ -1,0 +1,3 @@
+[submodule "lib/littlefs-cmake"]
+	path = lib/littlefs-cmake
+	url = https://github.com/lc0001coll/littlefs-cmake.git
