@@ -37,12 +37,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
-
-      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.18.0
         with:
