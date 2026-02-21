@@ -46,8 +46,6 @@ cp scripts/pre-commit-hook.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-Or run `configure.sh` which sets this up for you.
-
 # Code structure
 
 The layout of our flight software is organized into these categories:
@@ -57,7 +55,9 @@ The layout of our flight software is organized into these categories:
     - `/scheduler`: the execution main loop, state registry, and state transitions
     - `/states`: definition of states the satellite can be in
     - `/tasks`: implementation of isolated tasks that run within states
-    - Initial entrypoint state is `STATE_INIT` (see `scheduler.c`)
+    - The default state is `STATE_INIT` when we create an empty slate struct (see `state_ids.h`)
+
+The main code entrypoint is `/src/main.c` which initializes various hardware drivers and GPIO pins then launches the scheduler FSM loop.
 
 ### State machine architecture
 
