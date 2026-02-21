@@ -15,7 +15,7 @@ typedef enum
     FINAL_WRITE_UNSUCCESSFUL
 } payload_write_error_code;
 
-bool payload_uart_init();
+bool payload_uart_init(slate_t *slate);
 
 uint16_t payload_uart_read_packet(slate_t *slate, uint8_t *packet);
 payload_write_error_code payload_uart_write_packet(slate_t *slate,

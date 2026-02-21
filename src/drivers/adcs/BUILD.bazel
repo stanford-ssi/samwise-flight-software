@@ -1,0 +1,35 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real ADCS driver (for embedded targets)
+cc_library(
+    name = "adcs",
+    srcs = ["adcs_driver.c"],
+    hdrs = ["adcs_driver.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/packet:packet",
+        "//src/slate",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock ADCS driver (for host tests)
+# Stubs in driver_stubs.c
+cc_library(
+    name = "adcs_mock",
+    srcs = ["adcs_driver_mock.c"],
+    hdrs = ["adcs_driver.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/packet",
+        "//src/packet:adcs_packet",
+        "//src/slate",
+        "//src/test_mocks",
+    ],
+)

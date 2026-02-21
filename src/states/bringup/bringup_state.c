@@ -6,12 +6,13 @@
  * the BRINGUP symbol is defined.
  */
 
-sched_state_t *bringup_get_next_state(slate_t *slate)
+state_id_t bringup_get_next_state(slate_t *slate)
 {
-    return &bringup_state;
+    return STATE_BRINGUP;
 }
 
 sched_state_t bringup_state = {.name = "bringup",
+                               .id = STATE_BRINGUP,
                                .num_tasks = 2,
                                .task_list = {&diagnostics_task, &watchdog_task},
                                .get_next_state = &bringup_get_next_state};

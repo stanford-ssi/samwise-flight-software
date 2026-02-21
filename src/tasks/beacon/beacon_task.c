@@ -7,7 +7,9 @@
 
 #include "beacon_task.h"
 #include "adcs_packet.h"
+#include "logger.h"
 #include "neopixel.h"
+#include "state_registry.h"
 #include "str_utils.h"
 #include <stdlib.h>
 
@@ -70,10 +72,15 @@ uint8_t get_device_status(slate_t *slate)
 size_t serialize_slate(slate_t *slate, uint8_t *data)
 {
     LOG_INFO("Serializing slate for beacon... %p -> %p", slate, data);
-    LOG_INFO("State name: %s", slate->current_state->name);
+
+    // Get current state from registry
+    sched_state_t *current_state = state_registry_get(slate->current_state_id);
+    const char *state_name = current_state ? current_state->name : "UNKNOWN";
+
+    LOG_INFO("State name: %s", state_name);
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
-    size_t name_len = strnlen(slate->current_state->name, MAX_STR_LENGTH);
-    strcpy_trunc((char *)data, slate->current_state->name, MAX_STR_LENGTH);
+    size_t name_len = strnlen(state_name, MAX_STR_LENGTH);
+    strcpy_trunc((char *)data, state_name, MAX_STR_LENGTH);
 
     beacon_stats stats = {.reboot_counter = slate->reboot_counter,
                           .time = slate->time_in_current_state_ms,
@@ -141,7 +148,7 @@ void beacon_task_dispatch(slate_t *slate)
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 5000,
+                            .dispatch_period_ms = 500,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */

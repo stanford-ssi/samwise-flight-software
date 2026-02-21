@@ -93,15 +93,35 @@ void test_my_state() {
 
 ## Integration
 
-Add to your test's CMakeLists.txt:
+Add a test using the `samwise_test` macro in your `BUILD.bazel`:
 
-```cmake
-samwise_add_test(
-  NAME my_state_test
-  SOURCES test_my_state.c ${PROJECT_SOURCE_DIR}/src/scheduler/scheduler.c
-  LIBRARIES test_infrastructure
+```python
+load("//bzl:defs.bzl", "samwise_test")
+
+samwise_test(
+    name = "my_state_test",
+    srcs = ["test/test_my_state.c"],
+    deps = [
+        ":my_state",
+        "//src/test_infrastructure",
+    ],
 )
 ```
+
+## Running Tests
+
+```bash
+# Run all tests
+bazel test //...
+
+# Run a specific test
+bazel test //src/states/running:running_state_test
+
+# Run with verbose output
+bazel test //... --test_output=all
+```
+
+Tests automatically use the `--config=tests` profile which builds for the host platform with mocked hardware. The `samwise_test()` macro in `bzl/defs.bzl` handles remapping real driver dependencies to their mock equivalents.
 
 ## Stub States
 

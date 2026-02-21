@@ -1,0 +1,40 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real onboard LED driver (for embedded targets)
+cc_library(
+    name = "onboard_led",
+    srcs = ["onboard_led.c"],
+    hdrs = ["onboard_led.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Header-only target for type definitions (used by slate in test builds)
+cc_library(
+    name = "onboard_led_hdrs",
+    hdrs = ["onboard_led.h"],
+    includes = ["."],
+    deps = ["//src/common"] + select({
+        "//bzl:test_mode": [],
+        "//conditions:default": [
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
+        ],
+    }),
+)
+
+# Mock onboard LED driver (for host tests)
+cc_library(
+    name = "onboard_led_mock",
+    srcs = ["onboard_led_mock.c"],
+    hdrs = ["onboard_led.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+    ],
+)
