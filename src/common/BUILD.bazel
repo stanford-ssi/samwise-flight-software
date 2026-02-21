@@ -14,7 +14,9 @@ cc_library(
         "typedefs.h",
         "utils.h",
     ],
-    deps = select({
+    deps = [
+        "//src/packet:packet_hdrs",
+    ] + select({
         "//bzl:test_mode": [],
         "//conditions:default": [
             "@pico-sdk//src/common/pico_time",

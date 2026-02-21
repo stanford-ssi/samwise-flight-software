@@ -17,6 +17,7 @@
 #endif
 #include "pico/util/queue.h"
 
+#include "config.h"
 #include "state_ids.h"
 #include "typedefs.h"
 
