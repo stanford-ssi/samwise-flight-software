@@ -179,27 +179,10 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
                                              lfs_ssize_t *lfs_error_code);
 
 /**
- * @brief Compute the CRC-32 of an on-disk file by reading it in chunks.
- *
- * This function reads the specified file from the filesystem in chunks and
- * computes the CRC-32 value incrementally. It handles files of any size by
- * using a fixed-size buffer for reading.
- *
- * If wanting to run on the currently buffered file, use filesys_compute_crc
- * instead, which calls this function with the appropriate parameters.
- *
- * @param lfs            Pointer to the mounted littlefs instance.
- * @param fname          Null-terminated filename to read.
- * @param file_size      Number of bytes expected in the file.
- * @param error_code     Set to FILESYS_OK on success, or an appropriate
- *                       filesys error on failure.
- * @param lfs_error_code Set to the underlying LFS error, or LFS_ERR_OK.
- * @return The finalized CRC on success, or an intermediate value on error
- *         (check *error_code).
+ * Returns a pointer to the internal lfs_t singleton.
+ * Intended for test code that needs direct LFS access.
  */
-static unsigned int filesys_compute_file_crc(
-    lfs_t *lfs, const char *fname, FILESYS_BUFFERED_FILE_LEN_T file_size,
-    filesys_error_t *error_code, lfs_ssize_t *lfs_error_code);
+lfs_t *filesys_get_lfs(void);
 
 /**
  * Computes the CRC of the file currently being written.

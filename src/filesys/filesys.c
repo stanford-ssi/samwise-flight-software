@@ -7,6 +7,8 @@
 #include "filesys.h"
 #include <string.h>
 
+static lfs_t lfs;
+
 const struct lfs_config filesys_lfs_cfg = {
     // block device operations
     .read = lfs_mram_wrap_read,
@@ -36,11 +38,11 @@ const struct lfs_file_config filesys_lfs_file_cfg = {
     .buffer = cache_buffer,
 };
 
-void filesys_file_open(lfs_t *lfs, lfs_file_t *file, const char *fname,
-                       int flags, lfs_ssize_t *lfs_error_code)
+static void filesys_file_open(lfs_file_t *file, const char *fname, int flags,
+                              lfs_ssize_t *lfs_error_code)
 {
     *lfs_error_code = LFS_ERR_OK;
-    int err = lfs_file_opencfg(lfs, file, fname, flags, &filesys_lfs_file_cfg);
+    int err = lfs_file_opencfg(&lfs, file, fname, flags, &filesys_lfs_file_cfg);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -48,11 +50,10 @@ void filesys_file_open(lfs_t *lfs, lfs_file_t *file, const char *fname,
     }
 }
 
-void filesys_file_close(lfs_t *lfs, lfs_file_t *file,
-                        lfs_ssize_t *lfs_error_code)
+static void filesys_file_close(lfs_file_t *file, lfs_ssize_t *lfs_error_code)
 {
     *lfs_error_code = LFS_ERR_OK;
-    int err = lfs_file_close(lfs, file);
+    int err = lfs_file_close(&lfs, file);
 
     if (err < 0)
     {
@@ -68,7 +69,7 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
     // mount the filesystem
     mram_write_enable();
     mram_init();
-    int err = lfs_mount(&slate->lfs, &filesys_lfs_cfg);
+    int err = lfs_mount(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
     {
@@ -91,7 +92,7 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
 
     mram_write_enable();
     mram_init();
-    int err = lfs_format(&slate->lfs, &filesys_lfs_cfg);
+    int err = lfs_format(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
     {
@@ -135,7 +136,7 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
         filesys_clear_buffer(slate);
     }
 
-    lfs_ssize_t fs_size = lfs_fs_size(&slate->lfs);
+    lfs_ssize_t fs_size = lfs_fs_size(&lfs);
 
     if (fs_size < 0)
     {
@@ -168,8 +169,7 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
 
     lfs_file_t lfs_open_file;
     lfs_ssize_t open_lfs_err;
-    filesys_file_open(&slate->lfs, &lfs_open_file,
-                      slate->filesys_buffered_fname_str,
+    filesys_file_open(&lfs_open_file, slate->filesys_buffered_fname_str,
                       LFS_O_CREAT | LFS_O_WRONLY | LFS_O_TRUNC, &open_lfs_err);
 
     if (open_lfs_err < 0)
@@ -181,7 +181,7 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
     }
 
     // Add CRC as attribute to open file - type FILESYS_CRC_ATTR
-    int err = lfs_setattr(&slate->lfs, slate->filesys_buffered_fname_str,
+    int err = lfs_setattr(&lfs, slate->filesys_buffered_fname_str,
                           FILESYS_CRC_ATTR, &file_crc, sizeof(file_crc));
     if (err < 0)
     {
@@ -192,14 +192,14 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
         // Discard error from close since we are already reporting the setattr
         // error
         lfs_ssize_t close_lfs_err;
-        filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+        filesys_file_close(&lfs_open_file, &close_lfs_err);
 
         return FILESYS_ERR_SET_CRC_ATTR;
     }
 
     // Close file for now - reopen it every time we write
     lfs_ssize_t close_lfs_err;
-    filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+    filesys_file_close(&lfs_open_file, &close_lfs_err);
     if (close_lfs_err < 0)
     {
         *lfs_error_code = close_lfs_err;
@@ -274,8 +274,7 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     // Reopen the file for appending
     lfs_file_t lfs_open_file;
     lfs_ssize_t open_lfs_err;
-    filesys_file_open(&slate->lfs, &lfs_open_file,
-                      slate->filesys_buffered_fname_str,
+    filesys_file_open(&lfs_open_file, slate->filesys_buffered_fname_str,
                       LFS_O_WRONLY | LFS_O_APPEND, &open_lfs_err);
 
     if (open_lfs_err < 0)
@@ -287,8 +286,8 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     }
 
     // Write buffer to file
-    lfs_ssize_t bytes_written = lfs_file_write(&slate->lfs, &lfs_open_file,
-                                               slate->filesys_buffer, n_bytes);
+    lfs_ssize_t bytes_written =
+        lfs_file_write(&lfs, &lfs_open_file, slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
     {
         *lfs_error_code = bytes_written;
@@ -296,8 +295,8 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
                   slate->filesys_buffered_fname_str, bytes_written);
 
         // Get amount of space used
-        lfs_ssize_t used_size = lfs_file_size(&slate->lfs, &lfs_open_file);
-        lfs_ssize_t total_fs_used_size = lfs_fs_size(&slate->lfs);
+        lfs_ssize_t used_size = lfs_file_size(&lfs, &lfs_open_file);
+        lfs_ssize_t total_fs_used_size = lfs_fs_size(&lfs);
         LOG_ERROR("[filesys] Current file size: %d bytes, Total FS used size: "
                   "%d blocks",
                   used_size, total_fs_used_size);
@@ -311,7 +310,7 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     }
 
     lfs_ssize_t close_lfs_err;
-    filesys_file_close(&slate->lfs, &lfs_open_file, &close_lfs_err);
+    filesys_file_close(&lfs_open_file, &close_lfs_err);
     if (close_lfs_err < 0)
     {
         *lfs_error_code = close_lfs_err;
@@ -328,17 +327,16 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     return FILESYS_OK;
 }
 
-unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
-                                      FILESYS_BUFFERED_FILE_LEN_T file_size,
-                                      filesys_error_t *error_code,
-                                      lfs_ssize_t *lfs_error_code)
+static unsigned int filesys_compute_file_crc(
+    const char *fname, FILESYS_BUFFERED_FILE_LEN_T file_size,
+    filesys_error_t *error_code, lfs_ssize_t *lfs_error_code)
 {
     *lfs_error_code = LFS_ERR_OK;
     unsigned int crc = 0xFFFFFFFF;
 
     lfs_file_t lfs_open_file;
     lfs_ssize_t open_lfs_err;
-    filesys_file_open(lfs, &lfs_open_file, fname, LFS_O_RDONLY, &open_lfs_err);
+    filesys_file_open(&lfs_open_file, fname, LFS_O_RDONLY, &open_lfs_err);
 
     if (open_lfs_err < 0)
     {
@@ -360,7 +358,7 @@ unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
                                  : FILESYS_READ_BUFFER_SIZE;
 
         lfs_ssize_t bytes_read =
-            lfs_file_read(lfs, &lfs_open_file, buffer, to_read);
+            lfs_file_read(&lfs, &lfs_open_file, buffer, to_read);
 
         if (bytes_read < 0)
         {
@@ -373,7 +371,7 @@ unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
             // Discard error from close since we are already reporting the read
             // error
             lfs_ssize_t close_lfs_err;
-            filesys_file_close(lfs, &lfs_open_file, &close_lfs_err);
+            filesys_file_close(&lfs_open_file, &close_lfs_err);
 
             return crc; // We will return the crc so far, but error_code
                         // indicates failure
@@ -384,7 +382,7 @@ unsigned int filesys_compute_file_crc(lfs_t *lfs, const char *fname,
     }
 
     lfs_ssize_t close_lfs_err;
-    filesys_file_close(lfs, &lfs_open_file, &close_lfs_err);
+    filesys_file_close(&lfs_open_file, &close_lfs_err);
 
     if (close_lfs_err < 0)
     {
@@ -411,9 +409,9 @@ unsigned int filesys_compute_crc(slate_t *slate, filesys_error_t *error_code,
         return 0;
     }
 
-    return filesys_compute_file_crc(
-        &slate->lfs, slate->filesys_buffered_fname_str,
-        slate->filesys_buffered_file_len, error_code, lfs_error_code);
+    return filesys_compute_file_crc(slate->filesys_buffered_fname_str,
+                                    slate->filesys_buffered_file_len,
+                                    error_code, lfs_error_code);
 }
 
 filesys_error_t filesys_is_crc_correct(slate_t *slate,
@@ -509,7 +507,7 @@ filesys_error_t filesys_cancel_file_write(slate_t *slate,
     }
 
     // Delete the file
-    int err = lfs_remove(&slate->lfs, slate->filesys_buffered_fname_str);
+    int err = lfs_remove(&lfs, slate->filesys_buffered_fname_str);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -539,7 +537,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
     *num_files_found = 0;
 
     lfs_dir_t dir;
-    int err = lfs_dir_open(&slate->lfs, &dir, FILESYS_ROOT_DIR);
+    int err = lfs_dir_open(&lfs, &dir, FILESYS_ROOT_DIR);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -550,12 +548,12 @@ filesys_error_t filesys_list_files(slate_t *slate,
     struct lfs_info entry_info;
     for (size_t i = 0; i < FILESYS_MAX_LOOP_LIST_FILES; i++)
     {
-        int res = lfs_dir_read(&slate->lfs, &dir, &entry_info);
+        int res = lfs_dir_read(&lfs, &dir, &entry_info);
         if (res < 0)
         {
             *lfs_error_code = res;
             LOG_ERROR("[filesys] Failed to read directory entry: %d", res);
-            lfs_dir_close(&slate->lfs, &dir);
+            lfs_dir_close(&lfs, &dir);
             return FILESYS_ERR_READ_DIR;
         }
         if (res == 0)
@@ -583,7 +581,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
         (*num_files_found)++;
     }
 
-    err = lfs_dir_close(&slate->lfs, &dir);
+    err = lfs_dir_close(&lfs, &dir);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -612,26 +610,26 @@ filesys_error_t filesys_get_file_info(slate_t *slate,
     // Get the file size by temporarily opening the file.
     lfs_file_t tmp_file;
     lfs_ssize_t open_err;
-    filesys_file_open(&slate->lfs, &tmp_file, fname, LFS_O_RDONLY, &open_err);
+    filesys_file_open(&tmp_file, fname, LFS_O_RDONLY, &open_err);
     if (open_err < 0)
     {
         *lfs_error_code = open_err;
         return FILESYS_ERR_OPEN_FILE;
     }
 
-    lfs_soff_t file_size = lfs_file_size(&slate->lfs, &tmp_file);
+    lfs_soff_t file_size = lfs_file_size(&lfs, &tmp_file);
     if (file_size < 0)
     {
         *lfs_error_code = file_size;
         LOG_ERROR("[filesys] Failed to get file size for %s: %d", fname,
                   (int)file_size);
         lfs_ssize_t close_err;
-        filesys_file_close(&slate->lfs, &tmp_file, &close_err);
+        filesys_file_close(&tmp_file, &close_err);
         return FILESYS_ERR_FILE_SIZE;
     }
 
     lfs_ssize_t close_err;
-    filesys_file_close(&slate->lfs, &tmp_file, &close_err);
+    filesys_file_close(&tmp_file, &close_err);
     if (close_err < 0)
     {
         *lfs_error_code = close_err;
@@ -644,7 +642,7 @@ filesys_error_t filesys_get_file_info(slate_t *slate,
 
     // Retrieve the expected CRC from the file attribute.
     lfs_ssize_t attr_res =
-        lfs_getattr(&slate->lfs, fname, FILESYS_CRC_ATTR, &info->expected_crc,
+        lfs_getattr(&lfs, fname, FILESYS_CRC_ATTR, &info->expected_crc,
                     sizeof(info->expected_crc));
     if (attr_res < 0)
     {
@@ -658,8 +656,8 @@ filesys_error_t filesys_get_file_info(slate_t *slate,
     // Compute the on-disk CRC.
     filesys_error_t crc_err;
     lfs_ssize_t crc_lfs_err;
-    unsigned int computed = filesys_compute_file_crc(
-        &slate->lfs, fname, info->file_size, &crc_err, &crc_lfs_err);
+    unsigned int computed = filesys_compute_file_crc(fname, info->file_size,
+                                                     &crc_err, &crc_lfs_err);
 
     if (crc_err == FILESYS_OK)
     {
@@ -720,7 +718,7 @@ filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
 
     // CRC is valid — open the file for the caller.
     lfs_ssize_t final_open_err;
-    filesys_file_open(&slate->lfs, file, fname, LFS_O_RDONLY, &final_open_err);
+    filesys_file_open(file, fname, LFS_O_RDONLY, &final_open_err);
     if (final_open_err < 0)
     {
         *lfs_error_code = final_open_err;
@@ -739,7 +737,7 @@ filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    lfs_ssize_t res = lfs_file_read(&slate->lfs, file, buffer, size);
+    lfs_ssize_t res = lfs_file_read(&lfs, file, buffer, size);
     if (res < 0)
     {
         *lfs_error_code = res;
@@ -759,7 +757,7 @@ filesys_read_file_seek(slate_t *slate, lfs_file_t *file, lfs_soff_t offset,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    lfs_soff_t pos = lfs_file_seek(&slate->lfs, file, offset, whence);
+    lfs_soff_t pos = lfs_file_seek(&lfs, file, offset, whence);
     if (pos < 0)
     {
         *lfs_error_code = pos;
@@ -777,7 +775,7 @@ filesys_error_t filesys_read_file_tell(slate_t *slate, lfs_file_t *file,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    lfs_soff_t pos = lfs_file_tell(&slate->lfs, file);
+    lfs_soff_t pos = lfs_file_tell(&lfs, file);
     if (pos < 0)
     {
         *lfs_error_code = pos;
@@ -795,7 +793,7 @@ filesys_error_t filesys_read_file_size(slate_t *slate, lfs_file_t *file,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    lfs_soff_t file_size = lfs_file_size(&slate->lfs, file);
+    lfs_soff_t file_size = lfs_file_size(&lfs, file);
     if (file_size < 0)
     {
         *lfs_error_code = file_size;
@@ -812,7 +810,7 @@ filesys_error_t filesys_close_file_read(slate_t *slate, lfs_file_t *file,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    int err = lfs_file_close(&slate->lfs, file);
+    int err = lfs_file_close(&lfs, file);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -822,4 +820,9 @@ filesys_error_t filesys_close_file_read(slate_t *slate, lfs_file_t *file,
 
     LOG_INFO("[filesys] Closed read file successfully");
     return FILESYS_OK;
+}
+
+lfs_t *filesys_get_lfs(void)
+{
+    return &lfs;
 }

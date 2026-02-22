@@ -203,13 +203,13 @@ int filesys_test_write_readback_success()
     // We do not have read handling in filesys, use LFS!
     int8_t read_buffer[64];
     lfs_file_t read_file;
-    lfs_file_opencfg(&test_slate.lfs, &read_file, fname_str, LFS_O_RDONLY,
+    lfs_file_opencfg(filesys_get_lfs(), &read_file, fname_str, LFS_O_RDONLY,
                      &(struct lfs_file_config){.buffer = cache_buffer});
 
-    lfs_file_read(&test_slate.lfs, &read_file, read_buffer,
+    lfs_file_read(filesys_get_lfs(), &read_file, read_buffer,
                   sizeof(read_buffer));
 
-    lfs_file_close(&test_slate.lfs, &read_file);
+    lfs_file_close(filesys_get_lfs(), &read_file);
 
     for (size_t i = 0; i < sizeof(read_buffer); i++)
         if (read_buffer[i] != filesys_test_example_file_1_buf[i])
@@ -245,7 +245,7 @@ int filesys_test_initialize_reformat_success()
                 "filesys_buffer_is_dirty should be false after reformat");
 
     // Verify filesystem is mounted by checking fs size
-    lfs_ssize_t fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t fs_size = lfs_fs_size(filesys_get_lfs());
     TEST_ASSERT(fs_size >= 0, "Filesystem should be accessible after reformat");
 
     LOG_DEBUG("=== Test PASSED: Initialize and Reformat ===\n");
@@ -525,7 +525,7 @@ int filesys_test_cancel_file_write_success()
     // Verify file was deleted (try to open it)
     lfs_file_t file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &file, fname, LFS_O_RDONLY,
+        lfs_file_opencfg(filesys_get_lfs(), &file, fname, LFS_O_RDONLY,
                          &(struct lfs_file_config){.buffer = cache_buffer});
     TEST_ASSERT(err < 0, "File should not exist after cancel_file_write");
 
@@ -814,7 +814,7 @@ int filesys_test_blocks_left_calculation_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "BL";
 
     // Get initial filesystem size
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
     TEST_ASSERT(initial_fs_size >= 0, "Should get valid fs size");
 
     // Start a file write and check blocks left
@@ -1041,7 +1041,7 @@ int filesys_test_write_long_file_crc32_success()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
     FILESYS_BUFFERED_FILE_LEN_T file_size =
         200000; // Larger than buffer size, will require multiple writes
 
@@ -1126,7 +1126,7 @@ int filesys_test_second_file_out_of_space_should_fail()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
@@ -1185,17 +1185,17 @@ int filesys_test_second_file_out_of_space_should_fail()
     // Make sure we can read back the first file correctly
     uint8_t read_buffer[file1_size];
     lfs_file_t file;
-    int err = lfs_file_opencfg(&test_slate.lfs, &file, fname1, LFS_O_RDONLY,
+    int err = lfs_file_opencfg(filesys_get_lfs(), &file, fname1, LFS_O_RDONLY,
                                &filesys_lfs_file_cfg);
     LOG_DEBUG("Opened first file for reading, err=%d\n", err);
     TEST_ASSERT(err == 0, "Should open first file for reading");
     lfs_ssize_t read_bytes =
-        lfs_file_read(&test_slate.lfs, &file, read_buffer, file1_size);
+        lfs_file_read(filesys_get_lfs(), &file, read_buffer, file1_size);
     LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
     TEST_ASSERT(read_bytes == file1_size, "Should read back full first file");
     TEST_ASSERT(memcmp(large_buffer, read_buffer, file1_size) == 0,
                 "Read back data should match written data");
-    lfs_file_close(&test_slate.lfs, &file);
+    lfs_file_close(filesys_get_lfs(), &file);
 
     // Complete first file
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1247,7 +1247,7 @@ int filesys_test_raw_lfs_write_large_file_success()
     // Open file for writing using LFS directly
     lfs_file_t lfs_file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
                          LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
     if (err < 0)
     {
@@ -1258,25 +1258,25 @@ int filesys_test_raw_lfs_write_large_file_success()
     TEST_ASSERT(err == 0, "lfs_file_opencfg should succeed");
 
     // Write entire buffer
-    lfs_ssize_t written = lfs_file_write(&test_slate.lfs, &lfs_file,
+    lfs_ssize_t written = lfs_file_write(filesys_get_lfs(), &lfs_file,
                                          large_buffer, LARGE_FILE_SIZE);
     if (written < 0)
     {
         LOG_ERROR("Failed to write file: %d\n", (int)written);
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         free(large_buffer);
         return -1;
     }
     TEST_ASSERT(written == LARGE_FILE_SIZE, "Should write entire buffer");
 
     // Close file
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after write");
 
     LOG_DEBUG("Successfully wrote %d bytes\n", (int)written);
 
     // Read back and verify
-    err = lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname, LFS_O_RDONLY,
+    err = lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname, LFS_O_RDONLY,
                            &filesys_lfs_file_cfg);
     if (err < 0)
     {
@@ -1290,25 +1290,25 @@ int filesys_test_raw_lfs_write_large_file_success()
     if (!read_buffer)
     {
         LOG_ERROR("Failed to allocate read buffer\n");
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         free(large_buffer);
         return -1;
     }
     TEST_ASSERT(read_buffer != NULL, "Should allocate read buffer");
 
-    lfs_ssize_t read_bytes =
-        lfs_file_read(&test_slate.lfs, &lfs_file, read_buffer, LARGE_FILE_SIZE);
+    lfs_ssize_t read_bytes = lfs_file_read(filesys_get_lfs(), &lfs_file,
+                                           read_buffer, LARGE_FILE_SIZE);
     if (read_bytes < 0)
     {
         LOG_ERROR("Failed to read file: %d\n", (int)read_bytes);
         free(read_buffer);
         free(large_buffer);
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         return -1;
     }
     TEST_ASSERT(read_bytes == LARGE_FILE_SIZE, "Should read entire file");
 
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");
 
     // Verify data integrity
@@ -1653,17 +1653,17 @@ int filesys_test_list_files_crc_mismatch_success()
     // attribute intact.
     lfs_file_t lfs_file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
                          LFS_O_WRONLY | LFS_O_TRUNC, &filesys_lfs_file_cfg);
     TEST_ASSERT(err == 0, "Raw LFS file open for corruption should succeed");
 
     lfs_ssize_t written = lfs_file_write(
-        &test_slate.lfs, &lfs_file, filesys_test_example_file_6_buf,
+        filesys_get_lfs(), &lfs_file, filesys_test_example_file_6_buf,
         sizeof(filesys_test_example_file_6_buf));
     TEST_ASSERT(written == sizeof(filesys_test_example_file_6_buf),
                 "Raw LFS write should succeed");
 
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
 
     // Now list files and check the CRC match flag
@@ -1799,23 +1799,23 @@ int filesys_test_open_file_read_crc_mismatch_should_fail()
     // Re-write the file via raw LFS so we can set an incorrect CRC attribute
     lfs_file_t lfs_file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
                          LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
     TEST_ASSERT(err == 0, "Raw LFS file open should succeed");
 
     lfs_ssize_t written = lfs_file_write(
-        &test_slate.lfs, &lfs_file, filesys_test_example_file_1_buf,
+        filesys_get_lfs(), &lfs_file, filesys_test_example_file_1_buf,
         sizeof(filesys_test_example_file_1_buf));
     TEST_ASSERT(written == sizeof(filesys_test_example_file_1_buf),
                 "Raw LFS write should succeed");
 
     // Set an incorrect CRC attribute
     unsigned int wrong_crc = filesys_test_example_incorrect_crc;
-    err = lfs_setattr(&test_slate.lfs, fname, FILESYS_CRC_ATTR, &wrong_crc,
+    err = lfs_setattr(filesys_get_lfs(), fname, FILESYS_CRC_ATTR, &wrong_crc,
                       sizeof(wrong_crc));
     TEST_ASSERT(err == 0, "Setting wrong CRC attribute should succeed");
 
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
 
     // Try to open the file for reading - should fail with CRC mismatch
