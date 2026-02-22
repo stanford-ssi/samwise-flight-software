@@ -1,6 +1,15 @@
 name: C/C++ Build
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
+      - ".github/workflows/*.yaml"
   pull_request:
     paths:
       - "src/**"
