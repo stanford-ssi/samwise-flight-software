@@ -7,6 +7,7 @@
 
 #include "command_task.h"
 #include "command_parser.h"
+#include "logger.h"
 #include "macros.h"
 #include "neopixel.h"
 #include "pico/stdlib.h"

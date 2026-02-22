@@ -4,6 +4,7 @@
  */
 
 #include "payload_task.h"
+#include "logger.h"
 #include "neopixel.h"
 #include "safe_sleep.h"
 #include <stdio.h>
@@ -39,42 +40,19 @@ bool send_payload_exec(slate_t *slate, char msg[], uint16_t seq_num)
     payload_write_error_code exec_successful =
         payload_uart_write_packet(slate, msg, sizeof(msg), seq_num);
 
-    if (exec_successful == SUCCESSFUL_WRITE)
+    switch (exec_successful)
     {
-        return true;
-    }
-    else if (exec_successful == PACKET_TOO_BIG)
-    {
-        LOG_DEBUG("Packet exceeds 4096 bytes...");
-        return false;
-    }
-    else if (exec_successful == SYN_UNSUCCESSFUL)
-    {
-        LOG_DEBUG("PiCubed was unable to sync with the Payload...");
-        return false;
-    }
-    else if (exec_successful == UART_WRITE_TIMEDOUT)
-    {
-        LOG_DEBUG("The transmission took too long and the write timed "
-                  "out...");
-        return false;
-    }
-    else if (exec_successful == HEADER_UNACKNOWLEDGED)
-    {
-        LOG_DEBUG("Payload did not acknowledge the header...");
-        return false;
-    }
-    else if (exec_successful == FINAL_WRITE_UNSUCCESSFUL)
-    {
-        LOG_DEBUG("Final packet transmission timed out...");
-        return false;
-    }
-    else
-    {
-        LOG_DEBUG("Payload command execution failed, retrying...");
-        // If the command was not successful, we will not remove it
-        // from the queue and will try again next time.
-        return false;
+        case PACKET_TOO_BIG:
+        case SYN_UNSUCCESSFUL:
+        case UART_WRITE_TIMEDOUT:
+        case HEADER_UNACKNOWLEDGED:
+        case FINAL_WRITE_UNSUCCESSFUL:
+            LOG_DEBUG("Error code: %d", exec_successful);
+            return false;
+        case SUCCESSFUL_WRITE:
+            return true;
+        default:
+            LOG_DEBUG("Unknown error code: %d", exec_successful);
     }
 }
 
@@ -252,11 +230,13 @@ void power_on_off_payload_test(slate_t *slate)
         return;
     }
 
+#ifndef TEST
     LOG_INFO("Checking RPI_ENAB pin to see if it reads 0...");
     if (!gpio_get_out_level(SAMWISE_RPI_ENAB))
     {
         LOG_INFO("RPI_ENAB is pulled low...");
     }
+#endif
 
     LOG_INFO("Test ran successfully, exiting test...");
 }

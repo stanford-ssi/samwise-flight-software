@@ -1,0 +1,30 @@
+"""Platform definitions for SAMWISE Flight Software
+
+Defines build platform and constraint values for ARM Cortex-M33 (RP2350).
+Host/test builds use the default auto-detected host platform.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Constraint setting to distinguish between target environments
+constraint_setting(
+    name = "target_env",
+)
+
+# Constraint value for ARM Cortex-M33 embedded targets
+constraint_value(
+    name = "arm_cortex_m33",
+    constraint_setting = ":target_env",
+)
+
+# ARM Cortex-M33 platform for RP2350 microcontroller
+# Used for all embedded builds (pico, picubed-debug, picubed-flight, picubed-bringup)
+platform(
+    name = "arm_cortex_m33_platform",
+    constraint_values = [
+        ":arm_cortex_m33",
+        "@platforms//cpu:armv8-m",
+        "@platforms//os:none",
+        "@pico-sdk//bazel/constraint:rp2350",
+    ],
+)

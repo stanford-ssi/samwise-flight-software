@@ -1,0 +1,35 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real payload UART driver (for embedded targets)
+cc_library(
+    name = "payload_uart",
+    srcs = ["payload_uart.c"],
+    hdrs = ["payload_uart.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/slate",
+        "//src/utils",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+        "@pico-sdk//src/rp2_common/hardware_irq:hardware_irq",
+        "@pico-sdk//src/common/pico_util:pico_util",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock payload UART driver (for host tests)
+cc_library(
+    name = "payload_uart_mock",
+    srcs = ["payload_uart_mock.c"],
+    hdrs = ["payload_uart.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
+        "//src/slate",
+        "//src/test_mocks",
+    ],
+)

@@ -1,0 +1,161 @@
+"""Root BUILD file for SAMWISE Flight Software
+
+This file defines the main binary target for the SAMWISE satellite flight software,
+including linker script integration and UF2 generation for flashing to the RP2350.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# ============================================================================
+# Main Binary Target
+# ============================================================================
+
+cc_binary(
+    name = "samwise",
+    srcs = ["src/main.c"],
+    deps = [
+        # Core libraries
+        "//src/common",
+        "//src/scheduler",
+        "//src/init",
+        "//src/slate",
+        "//src/error",
+        "//src/packet",
+        "//src/utils",
+
+        # States
+        "//src/states/init:init_state",
+        "//src/states/running:running_state",
+        "//src/states/bringup:bringup_state",
+        "//src/states/burn_wire:burn_wire_state",
+        "//src/states/burn_wire_reset:burn_wire_reset_state",
+
+        # Core drivers needed by main.c
+        "//src/drivers/logger",
+        "//src/drivers/flash",
+        "//src/drivers/neopixel",
+        "//src/drivers/rfm9x",
+        "//src/drivers/watchdog",
+        "//src/drivers/device_status",
+
+        # Board header
+        "//boards:samwise_picubed",
+
+        # Pico-SDK libraries
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
+        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+        "@pico-sdk//src/rp2_common/pico_unique_id",
+
+        # Linker script for RP2350
+        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
+
+        # External libraries
+        "//lib/tinycrypt",
+    ],
+    copts = [
+        # Force-include the board header before any other headers
+        "-include", "samwise_picubed.h",
+        # Include board headers directory
+        "-I$(GENDIR)/boards",
+        "-Iboards",
+    ] + select({
+        "//bzl:pico_profile": [
+            "-DPICO",
+        ],
+        "//bzl:picubed_flight_profile": [
+            "-DFLIGHT",
+        ],
+        "//bzl:picubed_bringup_profile": [
+            "-DBRINGUP",
+        ],
+        "//conditions:default": [],
+    }),
+    defines = select({
+        "//bzl:pico_profile": ["PICO"],
+        "//bzl:picubed_flight_profile": ["FLIGHT"],
+        "//bzl:picubed_bringup_profile": ["BRINGUP"],
+        "//conditions:default": [],
+    }),
+    local_defines = [
+        # USB stdio configuration
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+        # Commit hash can be set with --define=COMMIT_HASH=<hash>
+        # If not set, defaults to "unknown"
+        'COMMIT_HASH=\\"unknown\\"',
+    ],
+    linkopts = [
+        # Standard embedded link options
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# ============================================================================
+# UF2 Generation
+# ============================================================================
+
+# Generate UF2 file for flashing to the RP2350 via USB boot mode
+# This converts the ELF binary to the UF2 format that can be dragged
+# and dropped onto the Pico when it appears as a USB mass storage device.
+genrule(
+    name = "samwise_uf2",
+    srcs = [":samwise"],
+    outs = ["samwise.uf2"],
+    cmd = """
+        # The pico-sdk provides picotool which can convert ELF to UF2
+        # For now, we use the aspect-based approach (see below)
+        # This is a placeholder that will be replaced by the aspect
+        echo "Use: bazel build --aspects @pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect --output_groups=+pico_uf2_files :samwise" > $@
+    """,
+    message = "Generating UF2 file for flashing to RP2350",
+    tags = ["manual"],  # Don't build by default
+)
+
+# Note: To actually generate the UF2 file, use the pico-sdk's built-in aspect:
+#
+#   bazel build --config=picubed-debug \
+#       --aspects @pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect \
+#       --output_groups=+pico_uf2_files \
+#       :samwise
+#
+# The UF2 file will be available in bazel-bin/ as samwise.uf2
+
+# ============================================================================
+# Build Metadata
+# ============================================================================
+
+# Generate build information file
+genrule(
+    name = "build_info",
+    outs = ["build_info.txt"],
+    cmd = """
+        echo "SAMWISE Flight Software" > $@
+        echo "Build Configuration:" >> $@
+        echo "  Profile: $(profile)" >> $@
+        echo "  Commit: $(COMMIT_HASH)" >> $@
+        echo "  Build Time: $$(date)" >> $@
+    """,
+    stamp = 1,
+    tags = ["manual"],
+)
+
+# ============================================================================
+# Convenience Targets
+# ============================================================================
+
+# Alias for the main binary
+alias(
+    name = "firmware",
+    actual = ":samwise",
+)
+
+# Build all profiles (use this to verify all configurations compile)
+# Note: This needs to be built with different --config flags
+filegroup(
+    name = "all",
+    srcs = [":samwise"],
+)

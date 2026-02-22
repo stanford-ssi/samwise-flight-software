@@ -2,16 +2,20 @@ name: C/C++ Build
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   pull_request:
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   workflow_dispatch:
 
@@ -22,42 +26,46 @@ jobs:
       matrix:
         include:
           - name: PICUBED-FLIGHT
-            cmake_args: "-DPROFILE=PICUBED-FLIGHT"
-            build_dir: "build-2350"
+            config: picubed-flight
             artifact: "samwise-products-picubed-flight"
           - name: PICUBED-BRINGUP
-            cmake_args: "-DPROFILE=PICUBED-BRINGUP"
-            build_dir: "build-2350"
+            config: picubed-bringup
             artifact: "samwise-products-picubed-bringup"
           - name: PICUBED-DEBUG
-            cmake_args: "-DPROFILE=PICUBED-DEBUG"
-            build_dir: "build-2350"
+            config: picubed-debug
             artifact: "samwise-products-picubed-debug"
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
 
-      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
-
-      - name: Configure profile
+      - name: Build with Bazel
         run: |
+          # Set commit hash for all builds
+          echo "build --define=COMMIT_HASH=${{ github.sha }}" > .bazelrc.local
+
           if [ "${{ matrix.name }}" = "PICUBED-FLIGHT" ]; then
-            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} -DPACKET_HMAC_PSK=${{ secrets.PACKET_HMAC_PSK }} ${{ matrix.cmake_args }}
-          else
-            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} ${{ matrix.cmake_args }}
+            # For flight builds, pass the HMAC PSK secret as a C define
+            echo "build --copt=-DPACKET_HMAC_PSK='\"${{ secrets.PACKET_HMAC_PSK }}\"'" >> .bazelrc.local
           fi
 
-      - name: Build profile
-        run: cmake --build ${{ github.workspace }}/${{ matrix.build_dir }} --parallel 4
+          # Build the main binary
+          bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
 
       - name: Archive Build Products
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: |
-            ${{ matrix.build_dir }}/src/samwise*.uf2
+            bazel-bin/samwise.uf2
+            bazel-bin/samwise
