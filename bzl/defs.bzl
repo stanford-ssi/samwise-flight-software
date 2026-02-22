@@ -206,48 +206,57 @@ def samwise_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
         **kwargs
     )
 
-def samwise_integration_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
+def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], defines = [], **kwargs):
     """Register a SAMWISE hardware integration test.
 
     Creates ONE target:
 
-    ``<name>_hw_lib`` — a cc_library compiled with ``main`` renamed to
-    ``<name>_main`` via a local preprocessor define.  This library is later
-    linked into the firmware BRINGUP binary by
-    ``hardware_integration_test_suite()``.
+    ``<name>_hw_lib`` — a cc_library that can be linked into the firmware
+    BRINGUP binary by ``hardware_integration_test_suite()``.
 
-    To also get a host-side unit test, call ``samwise_test()`` separately
-    in the same BUILD file:
+    The ``int_src`` file contains the integration entry point as a plain
+    ``main()`` function.  The macro compiles it with ``-Dmain=<name>_int_main``
+    so that multiple tests can coexist in the same binary.
+
+    Any additional ``srcs`` (helper / shared test files that may contain their
+    own standalone ``main()``) are compiled with ``-Dmain=_unused_main_`` so
+    their ``main()`` is harmlessly renamed — **no ``#ifdef`` guards needed**.
+
+    Example:
 
         load("//bzl:defs.bzl", "samwise_integration_test", "samwise_test")
 
         samwise_integration_test(
-            name = "mram",
-            srcs = ["mram_test.c"],
-            hdrs = ["mram_test.h"],
-            deps = [...],
+            name  = "mram_test",
+            int_src = "mram_integration_test.c",
+            srcs  = ["mram_test.c"],
+            hdrs  = ["mram_test.h"],
+            deps  = [...],
         )
 
         samwise_test(
-            name = "mram",
+            name = "mram_test",
             srcs = ["mram_test.c"],
             deps = [...],
         )
 
     To enrol this test in the hardware runner, add its name and target to the
     ``tests`` dict of the ``hardware_integration_test_suite()`` call in
-    ``src/tasks/hardware_test/test/BUILD.bazel``:
+    ``src/tasks/hardware_test/BUILD.bazel``:
 
         hardware_integration_test_suite(
             name = "hardware_test_lib",
             tests = {
-                "mram": "//src/filesys/test:mram_hw_lib",
+                "mram_test": "//src/filesys/test:mram_test_hw_lib",
             },
         )
 
     Args:
-        name:    Logical test name; also used as the ``<name>_main`` symbol.
-        srcs:    Test source files (.c files).
+        name:    Logical test name; also used as the ``<name>_int_main`` symbol.
+        int_src: The integration entry-point source file.  Its ``main()`` is
+                 renamed to ``<name>_int_main`` via the preprocessor.
+        srcs:    Helper / shared source files.  Any ``main()`` they contain is
+                 harmlessly neutralised (renamed to ``_unused_main_``).
         deps:    Dependencies forwarded to the hw_lib cc_library.
         copts:   Additional compiler options.
         defines: Additional preprocessor defines.
@@ -257,19 +266,38 @@ def samwise_integration_test(name, srcs, deps = [], copts = [], defines = [], **
     # cc_test does not support `hdrs`; pop it from kwargs before forwarding.
     hdrs = kwargs.pop("hdrs", [])
 
-    # ── 1. BRINGUP library ────────────────────────────────────────────────
-    # Compile the test source with main() renamed to <name>_main() so that
-    # multiple integration tests can be linked into the same binary.
+    # ── 1. Helper sources ─────────────────────────────────────────────────
+    # Compile helper files (which may contain a standalone main()) with main
+    # renamed to a throwaway symbol so it never conflicts.
+    helpers_lib = None
+    if srcs:
+        helpers_lib = name + "_hw_helpers"
+        native.cc_library(
+            name = helpers_lib,
+            srcs = srcs,
+            hdrs = hdrs,
+            deps = deps,
+            copts = copts,
+            defines = defines,
+            local_defines = ["main=_unused_" + name + "_main_"],
+            **kwargs
+        )
+
+    # ── 2. Integration entry point ────────────────────────────────────────
+    # Compile the entry-point source with main() renamed to <name>_int_main()
+    # so that multiple integration tests can be linked into the same binary.
+    hw_deps = list(deps)
+    if helpers_lib:
+        hw_deps.append(":" + helpers_lib)
+
     native.cc_library(
         name = name + "_hw_lib",
-        srcs = srcs,
+        srcs = [int_src],
         hdrs = hdrs,
-        deps = deps,
+        deps = hw_deps,
         copts = copts,
         defines = defines,
-        # -Dmain=<name>_main renames the translation-unit's main() without
-        # touching any headers or other translation units.
-        local_defines = ["main=" + name + "_main"],
+        local_defines = ["main=" + name + "_int_main"],
         **kwargs
     )
 

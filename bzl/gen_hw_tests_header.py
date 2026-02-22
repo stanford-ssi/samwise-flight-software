@@ -5,7 +5,7 @@ Usage:
     gen_hw_tests_header.py <test_name> [<test_name> ...]
 
 Each <test_name> must match the name used in samwise_integration_test().
-The generated header declares every <name>_main() entry point and defines
+The generated header declares every <name>_int_main() entry point and defines
 HW_TEST_TABLE so hardware_test_task.c needs no manual edits when tests are
 added or removed.
 """
@@ -39,7 +39,7 @@ def main():
     ]
 
     for name in test_names:
-        lines.append(f"void {name}_main(void);")
+        lines.append(f"void {name}_int_main(void);")
 
     lines += [
         "",
@@ -50,7 +50,7 @@ def main():
     ]
 
     for name in test_names:
-        lines.append(f'        {{"{name}", {name}_main}}, \\')
+        lines.append(f'        {{"{name}", {name}_int_main}}, \\')
 
     lines.append("    }")
 

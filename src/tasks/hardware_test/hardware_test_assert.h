@@ -32,7 +32,7 @@
 
 #pragma once
 
-#ifdef BRINGUP
+#if defined(BRINGUP) || defined(PICO)
 
 /* Replace the stock ASSERT with a non-fatal version.
  * On failure: log the error and continue execution. */
@@ -47,4 +47,4 @@
         }                                                                      \
     } while (0)
 
-#endif /* BRINGUP */
+#endif /* BRINGUP || PICO */
