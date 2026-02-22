@@ -18,7 +18,7 @@ cc_library(
         "//src/slate",
         "//src/utils",
         "//src/scheduler:state_machine",
-        "//lib/littlefs-cmake:littlefs",
+        "//lib/littlefs-SSI:littlefs",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
