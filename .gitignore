@@ -5,10 +5,6 @@
 **/env
 .vscode
 
-# CMake build output directories
-build/
-build-*/
-
 # Build scripts (should not be ignored)
 !build_debug.sh
 !build_tests.sh
@@ -16,9 +12,6 @@ build-*/
 # Bazel build artifacts
 bazel-*
 .bazelrc.local
-
-# CMake build artifacts
-**/CMakeFiles
 
 # Workspace files
 .idea
