@@ -11,19 +11,17 @@
 
 #pragma once
 
-#include "lfs.h"
 #ifndef TEST
 #include "pico/types.h"
 #endif
 #include "pico/util/queue.h"
 
-#include "config.h"
-#include "state_ids.h"
-#include "typedefs.h"
-
 #include "adcs_packet.h"
+#include "config.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
+#include "state_ids.h"
+#include "typedefs.h"
 #include "watchdog.h"
 
 // Largest possible command data structure
@@ -132,11 +130,6 @@ typedef struct samwise_slate
     uint32_t adcs_num_failed_checks;
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
-
-    /**
-     * Filesystem API variables
-     */
-    lfs_t lfs;
 
     // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
     // for efficiency on reads/writes rather than buffering like we want. Since
