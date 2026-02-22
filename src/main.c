@@ -34,15 +34,28 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+#ifdef PICO
+    // Initialize USB stdio early for PICO platform so logging works
+    stdio_usb_init();
+#endif
+
+    LOG_DEBUG("main: Starting main function...");
+
+#ifndef PICO
     // We need to first initialize watchdog before any sleep is called.
     // Watchdog needs to be fed periodically to prevent rebooting.
     slate.watchdog = watchdog_mk();
     watchdog_init(&slate.watchdog);
 
+    LOG_DEBUG("main: Watchdog initialized");
+#endif
+
     // Initialize hardware status GPIO pins.
     // This is used to read the status of the solar panels, RBF, etc.
     // Primarily at this point in time, we need to verify the RBF status.
     device_status_init();
+
+    LOG_DEBUG("main: Device initialization complete, entering main loop...");
 
 /*
  * Brief delay after reboot/powering up due to power spikes to prevent
@@ -61,7 +74,10 @@ int main()
      * The reboot counter is incremented each time this code runs.
      */
     persistent_data_t *data = init_persistent_data();
+    LOG_DEBUG("main: Persistent data initialized, reboot count = %d",
+              data->reboot_counter);
     increment_reboot_counter();
+    LOG_DEBUG("      rebot_counter++ -> %d", data->reboot_counter);
 
     /*
      * Initialize everything.

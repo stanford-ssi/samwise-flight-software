@@ -1,0 +1,31 @@
+"""
+Global state container (Slate) for SAMWISE flight software.
+
+The slate uses the blackboard pattern to provide a central data structure
+that is accessible to all tasks and functions in the system.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "slate",
+    srcs = ["slate.c"],
+    hdrs = ["slate.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/onboard_led:onboard_led_hdrs",
+        "//src/drivers/rfm9x:rfm9x_hdrs",
+        "//src/drivers/watchdog:watchdog_hdrs",
+        "//src/packet:adcs_packet",
+        "//src/scheduler:state_ids",
+        "//lib/littlefs-SSI:littlefs",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/test_mocks:pico_util_mock",
+        ],
+        "//conditions:default": [
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
