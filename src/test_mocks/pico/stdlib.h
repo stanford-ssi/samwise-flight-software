@@ -3,8 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Mock pico stdlib types and functions
-typedef uint64_t absolute_time_t;
+#include "typedefs.h"
 
 // Global simulated time for testing (in microseconds)
 extern uint64_t mock_time_us;
