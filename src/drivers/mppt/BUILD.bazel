@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real MPPT driver (for embedded targets)
+cc_library(
+    name = "mppt",
+    srcs = ["mppt.c"],
+    hdrs = ["mppt.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/utils",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock MPPT driver (for host tests)
+cc_library(
+    name = "mppt_mock",
+    srcs = ["mppt_mock.c"],
+    hdrs = ["mppt.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
+        "//src/utils",
+        "//src/test_mocks",
+    ],
+)

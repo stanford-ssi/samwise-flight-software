@@ -43,7 +43,6 @@ static bool init_drivers(slate_t *slate)
 
     logger_init();
 
-    slate->radio = rfm9x_mk();
 #ifdef BRINGUP
     gpio_init(SAMWISE_RF_RST_PIN);
     gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
@@ -64,17 +63,19 @@ static bool init_drivers(slate_t *slate)
     gpio_init(SAMWISE_RF_SCK_PIN);
     gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
     gpio_put(SAMWISE_RF_SCK_PIN, 0);
-#else
-    rfm9x_init(&slate->radio);
 #endif
 
-    // Initialize Neopixel if on PICUBED
+    // Initialize device drivers if on PICUBED
 #ifndef PICO
+    slate->radio = rfm9x_mk();
+
+    rfm9x_init(&slate->radio);
+
     neopixel_init();
-#endif
 
     // Initialize burn wire
     burn_wire_init(slate);
+#endif
 
     return true;
 }

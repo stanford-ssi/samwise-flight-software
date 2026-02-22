@@ -1,0 +1,21 @@
+# TinyCrypt cryptographic library
+# Provides lightweight cryptographic primitives for embedded systems
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "tinycrypt",
+    srcs = [
+        "lib/source/hmac.c",
+        "lib/source/sha256.c",
+        "lib/source/utils.c",
+    ],
+    hdrs = [
+        "lib/include/tinycrypt/constants.h",
+        "lib/include/tinycrypt/hmac.h",
+        "lib/include/tinycrypt/sha256.h",
+        "lib/include/tinycrypt/utils.h",
+    ],
+    strip_include_prefix = "lib/include",
+    includes = ["lib/include"],
+)

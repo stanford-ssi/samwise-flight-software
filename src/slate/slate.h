@@ -12,10 +12,13 @@
 #pragma once
 
 #include "lfs.h"
+#ifndef TEST
 #include "pico/types.h"
+#endif
 #include "pico/util/queue.h"
 
-#include "state_machine.h"
+#include "config.h"
+#include "state_ids.h"
 #include "typedefs.h"
 
 #include "adcs_packet.h"
@@ -39,11 +42,11 @@ typedef struct samwise_slate
      * State machine info.
      */
     uint32_t reboot_counter;
-    sched_state_t *current_state;
+    state_id_t current_state_id;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
     // Manually set next state to transition to
-    sched_state_t *manual_override_state;
+    state_id_t manual_override_state_id;
 
     /*
      * Power Telemetry

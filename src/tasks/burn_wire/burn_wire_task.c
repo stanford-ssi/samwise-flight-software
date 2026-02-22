@@ -6,6 +6,7 @@
 
 #include "burn_wire_task.h"
 #include "flash.h"
+#include "logger.h"
 #include "neopixel.h"
 #include "safe_sleep.h"
 

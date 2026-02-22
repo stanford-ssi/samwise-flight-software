@@ -1,6 +1,11 @@
 #pragma once
 
+#ifdef TEST
+#include <stdbool.h>
+#include <stdint.h>
+#else
 #include "pico/types.h"
+#endif
 #include "tinycrypt/sha256.h"
 #include <stddef.h>
 
