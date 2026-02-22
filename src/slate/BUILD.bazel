@@ -19,7 +19,6 @@ cc_library(
         "//src/drivers/watchdog:watchdog_hdrs",
         "//src/packet:adcs_packet",
         "//src/scheduler:state_ids",
-        "//lib/littlefs-SSI:littlefs",
     ] + select({
         "//bzl:test_mode": [
             "//src/test_mocks:pico_util_mock",
