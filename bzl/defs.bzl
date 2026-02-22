@@ -22,40 +22,28 @@ _MOCK_MAPPINGS = {
     # SAMWISE Drivers (co-located mocks)
     "//src/drivers/logger": "//src/drivers/logger:logger_mock",
     "//src/drivers/logger:logger": "//src/drivers/logger:logger_mock",
-
     "//src/drivers/flash": "//src/drivers/flash:flash_mock",
     "//src/drivers/flash:flash": "//src/drivers/flash:flash_mock",
-
     "//src/drivers/rfm9x": "//src/drivers/rfm9x:rfm9x_mock",
     "//src/drivers/rfm9x:rfm9x": "//src/drivers/rfm9x:rfm9x_mock",
-
     "//src/drivers/neopixel": "//src/drivers/neopixel:neopixel_mock",
     "//src/drivers/neopixel:neopixel": "//src/drivers/neopixel:neopixel_mock",
-
     "//src/drivers/watchdog": "//src/drivers/watchdog:watchdog_mock",
     "//src/drivers/watchdog:watchdog": "//src/drivers/watchdog:watchdog_mock",
-
     "//src/drivers/burn_wire": "//src/drivers/burn_wire:burn_wire_mock",
     "//src/drivers/burn_wire:burn_wire": "//src/drivers/burn_wire:burn_wire_mock",
-
     "//src/drivers/adm1176": "//src/drivers/adm1176:adm1176_mock",
     "//src/drivers/adm1176:adm1176": "//src/drivers/adm1176:adm1176_mock",
-
     "//src/drivers/mppt": "//src/drivers/mppt:mppt_mock",
     "//src/drivers/mppt:mppt": "//src/drivers/mppt:mppt_mock",
-
     "//src/drivers/mram": "//src/drivers/mram:mram_mock",
     "//src/drivers/mram:mram": "//src/drivers/mram:mram_mock",
-
     "//src/drivers/adcs": "//src/drivers/adcs:adcs_mock",
     "//src/drivers/adcs:adcs": "//src/drivers/adcs:adcs_mock",
-
     "//src/drivers/onboard_led": "//src/drivers/onboard_led:onboard_led_mock",
     "//src/drivers/onboard_led:onboard_led": "//src/drivers/onboard_led:onboard_led_mock",
-
     "//src/drivers/payload_uart": "//src/drivers/payload_uart:payload_uart_mock",
     "//src/drivers/payload_uart:payload_uart": "//src/drivers/payload_uart:payload_uart_mock",
-
     "//src/drivers/device_status": "//src/drivers/device_status:device_status_mock",
     "//src/drivers/device_status:device_status": "//src/drivers/device_status:device_status_mock",
 
@@ -66,46 +54,32 @@ _MOCK_MAPPINGS = {
     # Pico-SDK Hardware Abstractions (centralized mocks in test_mocks/)
     "@pico-sdk//src/common/pico_stdlib": "//src/test_mocks:pico_stdlib_mock",
     "@pico-sdk//src/common/pico_stdlib:pico_stdlib": "//src/test_mocks:pico_stdlib_mock",
-
     "@pico-sdk//src/rp2_common/pico_stdlib": "//src/test_mocks:pico_stdlib_mock",
     "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib": "//src/test_mocks:pico_stdlib_mock",
-
     "@pico-sdk//src/common/pico_time": "//src/test_mocks:pico_time_mock",
     "@pico-sdk//src/common/pico_time:pico_time": "//src/test_mocks:pico_time_mock",
-
     "@pico-sdk//src/rp2_common/hardware_spi": "//src/test_mocks:hardware_spi_mock",
     "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi": "//src/test_mocks:hardware_spi_mock",
-
     "@pico-sdk//src/rp2_common/hardware_i2c": "//src/test_mocks:hardware_i2c_mock",
     "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c": "//src/test_mocks:hardware_i2c_mock",
-
     "@pico-sdk//src/rp2_common/hardware_uart": "//src/test_mocks:hardware_uart_mock",
     "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart": "//src/test_mocks:hardware_uart_mock",
-
     "@pico-sdk//src/rp2_common/hardware_pwm": "//src/test_mocks:hardware_pwm_mock",
     "@pico-sdk//src/rp2_common/hardware_pwm:hardware_pwm": "//src/test_mocks:hardware_pwm_mock",
-
     "@pico-sdk//src/rp2_common/hardware_gpio": "//src/test_mocks:hardware_gpio_mock",
     "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio": "//src/test_mocks:hardware_gpio_mock",
-
     "@pico-sdk//src/rp2_common/hardware_flash": "//src/test_mocks:hardware_flash_mock",
     "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash": "//src/test_mocks:hardware_flash_mock",
-
     "@pico-sdk//src/rp2_common/hardware_sync": "//src/test_mocks:hardware_sync_mock",
     "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync": "//src/test_mocks:hardware_sync_mock",
-
     "@pico-sdk//src/rp2_common/hardware_pio": "//src/test_mocks:hardware_pio_mock",
     "@pico-sdk//src/rp2_common/hardware_pio:hardware_pio": "//src/test_mocks:hardware_pio_mock",
-
     "@pico-sdk//src/rp2_common/hardware_clocks": "//src/test_mocks:hardware_clocks_mock",
     "@pico-sdk//src/rp2_common/hardware_clocks:hardware_clocks": "//src/test_mocks:hardware_clocks_mock",
-
     "@pico-sdk//src/rp2_common/hardware_resets": "//src/test_mocks:hardware_resets_mock",
     "@pico-sdk//src/rp2_common/hardware_resets:hardware_resets": "//src/test_mocks:hardware_resets_mock",
-
     "@pico-sdk//src/rp2_common/hardware_irq": "//src/test_mocks:hardware_irq_mock",
     "@pico-sdk//src/rp2_common/hardware_irq:hardware_irq": "//src/test_mocks:hardware_irq_mock",
-
     "@pico-sdk//src/common/pico_util": "//src/test_mocks:pico_util_mock",
     "@pico-sdk//src/common/pico_util:pico_util": "//src/test_mocks:pico_util_mock",
 }
@@ -180,6 +154,7 @@ def samwise_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
         defines: Additional preprocessor defines
         **kwargs: Additional arguments passed to cc_test
     """
+
     # Remap dependencies to mocks
     test_deps = _remap_deps_to_mocks(deps)
 
@@ -214,9 +189,7 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
     ``<name>_hw_lib`` — a cc_library that can be linked into the firmware
     BRINGUP binary by ``hardware_integration_test_suite()``.
 
-    The ``int_src`` file contains the integration entry point as a plain
-    ``main()`` function.  The macro compiles it with ``-Dmain=<name>_int_main``
-    so that multiple tests can coexist in the same binary.
+    The ``int_src`` file contains the integration entry point with a ``<name>_int_main()`` function.  Any additional ``srcs`` are compiled as helpers that the entry point can call into. Both the entry point and helpers can contain their own standalone ``main()`` functions — the macro automatically renames them to avoid conflicts when linked together.
 
     Any additional ``srcs`` (helper / shared test files that may contain their
     own standalone ``main()``) are compiled with ``-Dmain=_unused_main_`` so
@@ -253,8 +226,7 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
 
     Args:
         name:    Logical test name; also used as the ``<name>_int_main`` symbol.
-        int_src: The integration entry-point source file.  Its ``main()`` is
-                 renamed to ``<name>_int_main`` via the preprocessor.
+        int_src: The integration entry-point source file.  It should define a ``<name>_int_main`` function.
         srcs:    Helper / shared source files.  Any ``main()`` they contain is
                  harmlessly neutralised (renamed to ``_unused_main_``).
         deps:    Dependencies forwarded to the hw_lib cc_library.
