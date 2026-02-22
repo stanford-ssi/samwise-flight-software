@@ -3,6 +3,8 @@
 Flight computer firmware for the SAMWISE 2U cubesat. Designed for the Raspberry
 Pi RP2040 and RP2350 microcontrollers.
 
+![PXL_20251105_063120461](https://github.com/user-attachments/assets/f1ea9d1d-33db-42ee-8892-54c7ed03953b)
+
 ## Getting Started
 
 See [the onboarding doc](docs/ONBOARDING.md) for development environment setup. To set some useful configurations for this repo, run `configure.sh`.
@@ -19,6 +21,9 @@ this project has a few additional goals:
 
 ## Building
 To build the code in this repo, run `cmake -B build -DPROFILE=PICUBED-DEBUG` then `cmake --build build --parallel`.
+
+You can use the pre-provided scripts, `source build_tests.sh` and `source build_debug.sh`, to run automatically.
+**NOTE**: These automatically delete the `build_tests` and `build` directories respectively before running, so run with caution!
 
 The following targets will be built:
 * `samwise_pico_debug`: pico exectuable

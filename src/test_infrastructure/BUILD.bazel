@@ -1,0 +1,21 @@
+# Test infrastructure library
+# Provides common utilities for unit testing the scheduler and state machine
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "test_infrastructure",
+    srcs = ["test_scheduler_helpers.c"],
+    hdrs = ["test_scheduler_helpers.h"],
+    includes = ["."],
+    testonly = True,
+    deps = [
+        "//src/drivers/logger:logger_mock",
+        "//src/scheduler:scheduler_hdrs",
+        "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
+        "//src/scheduler:state_registry",
+        "//src/slate",
+        "//src/test_mocks",
+    ],
+)

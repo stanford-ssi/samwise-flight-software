@@ -11,7 +11,9 @@
 
 #include "scheduler.h"
 #include "slate.h"
+#include "state_ids.h"
 #include "state_machine.h"
+#include "state_registry.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -137,17 +139,3 @@ void log_discovered_tasks(sched_state_t *state);
  * Log task execution summary
  */
 void log_task_summary(void);
-
-// =============================================================================
-// STUB STATE DEFINITIONS
-// =============================================================================
-
-/**
- * Define stub states that scheduler.c expects but aren't used in tests.
- * These can be referenced in test files or defined there.
- */
-extern sched_state_t init_state;
-extern sched_state_t running_state;
-extern sched_state_t burn_wire_state;
-extern sched_state_t burn_wire_reset_state;
-extern sched_state_t bringup_state;
