@@ -17,6 +17,7 @@
 */
 
 #include "SX128x_Linux.hpp"
+#include "lora_config.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -30,7 +31,6 @@
 #include <string>
 #include <vector>
 
-constexpr size_t PACKET_SIZE = 253;
 constexpr size_t HEADER_LEN =
     0; // currently not using the header, might become useful in the future
 
@@ -45,8 +45,10 @@ public:
     std::ifstream file;
     size_t numpackets;
     size_t currentpacket_id;
+    size_t packet_size;
 
-    PacketizedFile(std::string fpath)
+    PacketizedFile(std::string fpath, size_t pkt_size)
+        : packet_size(pkt_size)
     {
         filepath = fpath;
         file = std::ifstream(filepath, std::ios::binary);
@@ -55,7 +57,7 @@ public:
         file.seekg(0, std::ios::beg);
 
         currentpacket_id = 0;
-        numpackets = ceil(static_cast<float>(filesize) / PACKET_SIZE);
+        numpackets = ceil(static_cast<float>(filesize) / packet_size);
     }
 
     Packet calculate_header(const Packet &packet, uint16_t id = 0)
@@ -68,11 +70,11 @@ public:
 
     Packet getNextPacket()
     {
-        Packet packet(PACKET_SIZE, 0); // Initialize with PACKET_SIZE zeros
-        file.read(reinterpret_cast<char *>(packet.data()), PACKET_SIZE);
+        Packet packet(packet_size, 0); // Initialize with packet_size zeros
+        file.read(reinterpret_cast<char *>(packet.data()), packet_size);
         size_t N =
-            (currentpacket_id != numpackets - 1 ? PACKET_SIZE
-                                                : filesize % PACKET_SIZE);
+            (currentpacket_id != numpackets - 1 ? packet_size
+                                                : filesize % packet_size);
         packet.resize(N);
         Packet finalpacket = calculate_header(packet, currentpacket_id);
         finalpacket.insert(finalpacket.end(), packet.begin(), packet.end());
@@ -171,24 +173,11 @@ int main(int argc, char **argv)
     Radio.SetBufferBaseAddresses(0x00, 0x00);
     puts("SetBufferBaseAddresses done");
 
+    auto loraCfg = lora_config::load(lora_config::default_config_path());
+
     SX128x::ModulationParams_t ModulationParams;
     SX128x::PacketParams_t PacketParams;
-
-    // Modulation Parameters
-    ModulationParams.PacketType = SX128x::PACKET_TYPE_LORA;
-    ModulationParams.Params.LoRa.CodingRate = SX128x::LORA_CR_4_8;
-    ModulationParams.Params.LoRa.Bandwidth = SX128x::LORA_BW_1600;
-    ModulationParams.Params.LoRa.SpreadingFactor = SX128x::LORA_SF7;
-
-    PacketParams.PacketType = SX128x::PACKET_TYPE_LORA;
-
-    // Packet Parameters
-    auto &l = PacketParams.Params.LoRa;
-    l.PayloadLength = PACKET_SIZE;
-    l.HeaderType = SX128x::LORA_PACKET_FIXED_LENGTH;
-    l.PreambleLength = 12;
-    l.Crc = SX128x::LORA_CRC_ON;
-    l.InvertIQ = SX128x::LORA_IQ_NORMAL;
+    lora_config::apply(loraCfg, ModulationParams, PacketParams);
 
     Radio.SetPacketType(SX128x::PACKET_TYPE_LORA);
 
@@ -218,7 +207,8 @@ int main(int argc, char **argv)
     auto pkt_ToA = Radio.GetTimeOnAir();
 
     // Create packetized file
-    PacketizedFile packetizedFile(argv[2]);
+    size_t packet_size = static_cast<size_t>(loraCfg.packet_size);
+    PacketizedFile packetizedFile(argv[2], packet_size);
 
     // Sending beginning packet with filesize
     printf("Sending %d packets (%d bytes)...\n", packetizedFile.numpackets,

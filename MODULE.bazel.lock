@@ -42,6 +42,8 @@
     "https://bcr.bazel.build/modules/jsoncpp/1.9.5/MODULE.bazel": "31271aedc59e815656f5736f282bb7509a97c7ecb43e927ac1a37966e0578075",
     "https://bcr.bazel.build/modules/jsoncpp/1.9.5/source.json": "4108ee5085dd2885a341c7fab149429db457b3169b86eb081fa245eadf69169d",
     "https://bcr.bazel.build/modules/libpfm/4.11.0/MODULE.bazel": "45061ff025b301940f1e30d2c16bea596c25b176c8b6b3087e92615adbd52902",
+    "https://bcr.bazel.build/modules/nlohmann_json/3.11.3.bcr.1/MODULE.bazel": "83bbe365b1eb640ef903df2240f11e7df8f70563199bc17085816033bc36da89",
+    "https://bcr.bazel.build/modules/nlohmann_json/3.11.3.bcr.1/source.json": "7b0b57c1a789dd0b81b8e6f639f36f96a6f4534c2f2ed4430118af6769b00cdf",
     "https://bcr.bazel.build/modules/pico-sdk/2.1.0/MODULE.bazel": "93dabc91a5b4736f5a5e299ccdc224cd1fb6b29fa667619cb8e985311bb469d5",
     "https://bcr.bazel.build/modules/pico-sdk/2.2.0/MODULE.bazel": "1829d256913f9a21c763321d47812ea5ad74ef38c7dcf5bfaaf1844ed6d0ed68",
     "https://bcr.bazel.build/modules/pico-sdk/2.2.0/source.json": "448b7fff61b7655f89fb95216e28a977ec48deddcd7f70a4a955626b62958ab7",
@@ -154,6 +156,48 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//bzl:payload_radio_deps.bzl%payload_radio_deps": {
+      "general": {
+        "bzlTransitiveDigest": "lQGHJBcxK/5Nb3LnBxMYOv10yFmzfKZEG88CqVGFFEY=",
+        "usagesDigest": "AQQIFo1z8h4YYHN+ekrycjQAVX5whYbE68LYkbzGksE=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "sx128x_driver": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "url": "https://github.com/YukiWorkshop/sx128x_driver/archive/refs/tags/v0.0.4.tar.gz",
+              "strip_prefix": "sx128x_driver-0.0.4",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\ncc_library(\n    name = \"sx128x_driver\",\n    srcs = [\"SX128x.cpp\"],\n    hdrs = [\"SX128x.hpp\"],\n    includes = [\".\"],\n    strip_include_prefix = \".\",\n)\n"
+            }
+          },
+          "gpio_plus_plus": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "url": "https://github.com/YukiWorkshop/GPIOPlusPlus/archive/refs/tags/v0.0.2.tar.gz",
+              "strip_prefix": "GPIOPlusPlus-0.0.2",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\ncc_library(\n    name = \"gpio_plus_plus\",\n    srcs = [\"GPIO++.cpp\", \"Utils.cpp\"],\n    hdrs = [\"GPIO++.hpp\", \"Utils.hpp\"],\n    includes = [\".\"],\n    strip_include_prefix = \".\",\n    deps = [],\n)\n"
+            }
+          },
+          "sppi": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "url": "https://github.com/YukiWorkshop/SPPI/archive/refs/tags/v0.0.5.tar.gz",
+              "strip_prefix": "SPPI-0.0.5",
+              "build_file_content": "\npackage(default_visibility = [\"//visibility:public\"])\ncc_library(\n    name = \"sppi\",\n    srcs = [\"SPPI.cpp\"],\n    hdrs = [\"SPPI.hpp\"],\n    includes = [\".\"],\n    strip_include_prefix = \".\",\n)\n"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "",
+            "bazel_tools",
+            "bazel_tools"
+          ]
+        ]
+      }
+    },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
         "bzlTransitiveDigest": "rL/34P1aFDq2GqVC2zCFgQ8nTuOC6ziogocpvG50Qz8=",

@@ -17,6 +17,7 @@
 */
 
 #include "SX128x_Linux.hpp"
+#include "lora_config.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -24,8 +25,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
-#define PACKET_SIZE 253
+#include <vector>
 
 int main(int argc, char **argv)
 {
@@ -34,6 +34,9 @@ int main(int argc, char **argv)
         printf("Usage: Lora_rx <freq in MHz> <file to receive>\n");
         return 1;
     }
+
+    auto loraCfg = lora_config::load(lora_config::default_config_path());
+    const size_t PACKET_SIZE = static_cast<size_t>(loraCfg.packet_size);
 
     // Pins based on hardware configuration
     SX128x_Linux Radio("/dev/spidev0.0", 0,
@@ -57,19 +60,7 @@ int main(int argc, char **argv)
 
     SX128x::ModulationParams_t ModulationParams;
     SX128x::PacketParams_t PacketParams;
-
-    ModulationParams.PacketType = SX128x::PACKET_TYPE_LORA;
-    ModulationParams.Params.LoRa.CodingRate = SX128x::LORA_CR_4_8;
-    ModulationParams.Params.LoRa.Bandwidth = SX128x::LORA_BW_1600;
-    ModulationParams.Params.LoRa.SpreadingFactor = SX128x::LORA_SF7;
-
-    PacketParams.PacketType = SX128x::PACKET_TYPE_LORA;
-    auto &l = PacketParams.Params.LoRa;
-    l.PayloadLength = PACKET_SIZE;
-    l.HeaderType = SX128x::LORA_PACKET_FIXED_LENGTH;
-    l.PreambleLength = 12;
-    l.Crc = SX128x::LORA_CRC_ON;
-    l.InvertIQ = SX128x::LORA_IQ_NORMAL;
+    lora_config::apply(loraCfg, ModulationParams, PacketParams);
 
     Radio.SetPacketType(SX128x::PACKET_TYPE_LORA);
 
@@ -103,16 +94,18 @@ int main(int argc, char **argv)
         SX128x::PacketStatus_t ps;
         Radio.GetPacketStatus(&ps);
 
-        uint8_t recv_buf[PACKET_SIZE];
+        std::vector<uint8_t> recv_buf(PACKET_SIZE);
         uint8_t recv_size;
-        Radio.GetPayload(recv_buf, &recv_size, PACKET_SIZE);
+        Radio.GetPayload(recv_buf.data(), &recv_size, PACKET_SIZE);
 
         printf("%d bytes ", recv_size);
 
         // If first packet, set size
         if (!receivedFirstPacket)
         {
-            expectedBytes = atoi((const char *)recv_buf);
+            std::string sizeStr(reinterpret_cast<const char*>(recv_buf.data()),
+                               static_cast<size_t>(recv_size));
+            expectedBytes = std::stoul(sizeStr);
 
             partialPacketBytes = expectedBytes % PACKET_SIZE;
             expectedFullPackets =
@@ -127,7 +120,7 @@ int main(int argc, char **argv)
         }
 
         // Other packets -> write to file
-        char *rev_buf_char = (char *)&recv_buf[0];
+        char *rev_buf_char = reinterpret_cast<char*>(recv_buf.data());
         packetCount++;
 
         if (packetCount > expectedFullPackets)

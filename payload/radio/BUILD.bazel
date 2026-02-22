@@ -1,0 +1,57 @@
+"""LoRa 2400 MHz radio binaries for Raspberry Pi (Linux host tools).
+
+These targets require Linux (SPPI uses linux/types.h). Build on the Pi or a Linux host:
+  bazel build //payload/radio:Lora_rx //payload/radio:Lora_tx
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# SX128x Linux driver (wraps sx128x_driver with SPI/GPIO)
+cc_library(
+    name = "sx128x_linux_driver",
+    srcs = ["SX128x_Linux.cpp"],
+    hdrs = ["SX128x_Linux.hpp"],
+    includes = ["."],
+    strip_include_prefix = ".",
+    deps = [
+        "@sx128x_driver//:sx128x_driver",
+        "@gpio_plus_plus//:gpio_plus_plus",
+        "@sppi//:sppi",
+    ],
+    linkopts = ["-lpthread"],
+)
+
+# LoRa config loader (reads lora_config.json at runtime)
+cc_library(
+    name = "lora_config",
+    srcs = ["lora_config.cpp"],
+    hdrs = ["lora_config.hpp"],
+    includes = ["."],
+    strip_include_prefix = ".",
+    deps = [
+        "@sx128x_driver//:sx128x_driver",
+        "@nlohmann_json//:json",
+    ],
+)
+
+# Lora_tx - file transmitter over LoRa (Linux only)
+cc_binary(
+    name = "Lora_tx",
+    srcs = ["Lora_tx.cpp"],
+    deps = [
+        ":sx128x_linux_driver",
+        ":lora_config",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Lora_rx - file receiver over LoRa (Linux only)
+cc_binary(
+    name = "Lora_rx",
+    srcs = ["Lora_rx.cpp"],
+    deps = [
+        ":sx128x_linux_driver",
+        ":lora_config",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)

@@ -19,7 +19,10 @@ CODE_DIR = "/home/pi/code"
 IMAGES_DIR = "/home/pi/images"
 VIDEOS_DIR = "/home/pi/videos"
 
-TX_2400_EXECUTABLE = "/home/pi/code/radio/build/Lora_tx"
+# Bazel output: bazel-bin/payload/radio/Lora_tx (when built from repo root)
+TX_2400_EXECUTABLE = f"{CODE_DIR}/bazel-bin/payload/radio/Lora_tx"
+RADIO_DIR = CODE_DIR  # Repo root for bazel build
+LORA_CONFIG_PATH = f"{CODE_DIR}/lora_config.json"
 S_BAND_FREQ = 2400
 
 RADIO_2400_ENABLE = 27
@@ -231,6 +234,56 @@ def set_video_config(config: dict):
         file.write(json.dumps(config, indent=2))
 
 
+# LoRa radio parameters ------------------------------------------------------------------------
+def get_lora_config() -> dict:
+    '''
+    Returns the contents of `lora_config.json`.
+    Lora_rx and Lora_tx read this at runtime for coding rate, bandwidth,
+    spreading factor, packet size, etc.
+    '''
+    if not os.path.isfile(LORA_CONFIG_PATH):
+        return {
+            "coding_rate": "4_8",
+            "bandwidth": "1600",
+            "spreading_factor": 7,
+            "packet_size": 253,
+            "preamble_length": 12,
+            "crc": True,
+            "header_type": "fixed",
+        }
+    with open(LORA_CONFIG_PATH, "r") as file:
+        return json.load(file)
+
+
+def set_lora_config(config: dict):
+    '''
+    Updates the contents of `lora_config.json`.
+    Changes take effect on the next Lora_rx or Lora_tx run (no rebuild needed).
+    Valid keys: coding_rate, bandwidth, spreading_factor, packet_size,
+    preamble_length, crc, header_type.
+    '''
+    current = get_lora_config() if os.path.isfile(LORA_CONFIG_PATH) else {}
+    current.update(config)
+    with open(LORA_CONFIG_PATH, "w") as file:
+        file.write(json.dumps(current, indent=2))
+
+
+def rebuild_lora_radio() -> int:
+    '''
+    Rebuilds Lora_rx and Lora_tx binaries from source using Bazel.
+    Returns the exit code of the build (0 on success).
+    '''
+    return subprocess.run(
+        [
+            "bazel",
+            "build",
+            "//payload/radio:Lora_rx",
+            "//payload/radio:Lora_tx",
+        ],
+        cwd=RADIO_DIR,
+    ).returncode
+
+
 def take_photo(image_id: str, camera_name='A', config="default", w=800, h=600, quality=100, cells_x=1, cells_y=1) -> tuple[int, int, int, int]:
     '''
     Takes a photo using the specified configuration profile
@@ -357,6 +410,9 @@ NAMES_TO_COMMANDS = {
 
     "get_photo_config": get_photo_config,
     "set_photo_config": set_photo_config,
+    "get_lora_config": get_lora_config,
+    "set_lora_config": set_lora_config,
+    "rebuild_lora_radio": rebuild_lora_radio,
     "get_video_config": get_video_config,
     "set_video_config": set_video_config,
     "take_photo": take_photo,

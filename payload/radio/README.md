@@ -2,14 +2,12 @@
 Modified from `sx128x_linux_driver` project. Linux driver for Semtech SX128x series.
 
 ## Building
-To build the executables (`Lora_[rx|tx]`) run:
+To build the executables (`Lora_[rx|tx]`) run from the **repository root** (requires Linux):
 ```
-mkdir build
-cd build
+bazel build //payload/radio:Lora_rx //payload/radio:Lora_tx
+```
 
-sudo cmake ..
-sudo make -j4
-```
+Binaries are produced at `bazel-bin/payload/radio/Lora_rx` and `bazel-bin/payload/radio/Lora_tx`.
 
 This project is part of the **STM32 Sucks!** project.
 

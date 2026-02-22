@@ -15,6 +15,13 @@ bazel_dep(name = "platforms", version = "0.0.11")
 # Pico SDK with native Bazel support from Bazel Central Registry
 bazel_dep(name = "pico-sdk", version = "2.2.0")
 
+# nlohmann_json for payload/radio LoRa config (Linux binaries)
+bazel_dep(name = "nlohmann_json", version = "3.11.3.bcr.1")
+
+# Payload radio external deps (sx128x_driver, GPIOPlusPlus, SPPI)
+payload_radio_deps = use_extension("//bzl:payload_radio_deps.bzl", "payload_radio_deps")
+use_repo(payload_radio_deps, "sx128x_driver", "gpio_plus_plus", "sppi")
+
 # Configure pico-sdk for SAMWISE PiCubed board (RP2350)
 pico_sdk = use_extension("@pico-sdk//bazel:extensions.bzl", "pico_sdk_extension")
 pico_sdk.config(
