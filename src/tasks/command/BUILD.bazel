@@ -1,0 +1,53 @@
+package(default_visibility = ["//visibility:public"])
+
+# Command parser library (shared with payload_task)
+cc_library(
+    name = "command_parser",
+    srcs = ["command_parser.c"],
+    hdrs = ["command_parser.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/packet",
+        "//src/utils",
+        "//src/scheduler:state_ids",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/payload_uart:payload_uart_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/payload_uart",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/common/pico_util:pico_util",
+        ],
+    }),
+)
+
+cc_library(
+    name = "command_task",
+    srcs = ["command_task.c"],
+    hdrs = ["command_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
+        "//src/packet",
+        "//src/tasks/command:command_parser",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/common/pico_util:pico_util",
+        ],
+    }),
+)

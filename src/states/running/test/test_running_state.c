@@ -11,6 +11,7 @@
 #include "pico/stdlib.h"
 #include "running_state.h"
 #include "scheduler.h"
+#include "state_ids.h"
 #include "test_scheduler_helpers.h"
 #include <stdio.h>
 #include <string.h>
@@ -142,14 +143,12 @@ void test_state_transition()
     log_viz_event("test_start", NULL, "state_transition");
 
     memset(&test_slate, 0, sizeof(slate_t));
-    test_slate.current_state = &running_state;
+    test_slate.current_state_id = STATE_RUNNING;
 
     // Running state should always return itself
-    sched_state_t *next_state = running_state.get_next_state(&test_slate);
+    state_id_t next_state_id = running_state.get_next_state(&test_slate);
 
-    ASSERT(next_state != NULL);
-    ASSERT(next_state == &running_state);
-    ASSERT(strcmp(next_state->name, "running") == 0);
+    ASSERT(next_state_id == STATE_RUNNING);
 
     LOG_DEBUG("  Running state correctly returns itself");
 
@@ -169,8 +168,14 @@ void test_scheduler_execution()
     memset(&test_slate, 0, sizeof(slate_t));
     reset_task_stats();
 
-    test_slate.current_state = &running_state;
+    test_slate.current_state_id = STATE_RUNNING;
+    test_slate.manual_override_state_id = STATE_NONE;
     test_slate.entered_current_state_time = get_absolute_time();
+
+    // Register the running state in the state registry so scheduler can find it
+    state_registry_register(STATE_RUNNING, &running_state);
+    LOG_DEBUG("Found running state: %s",
+              state_registry_get(test_slate.current_state_id)->name);
 
     // Initialize all tasks
     test_state_init_tasks(&running_state, &test_slate);
