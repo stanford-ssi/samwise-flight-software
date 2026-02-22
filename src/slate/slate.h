@@ -11,19 +11,18 @@
 
 #pragma once
 
-#include "lfs.h"
 #ifndef TEST
 #include "pico/types.h"
 #endif
 #include "pico/util/queue.h"
 
-#include "config.h"
-#include "state_ids.h"
-#include "typedefs.h"
-
 #include "adcs_packet.h"
+#include "config.h"
+#include "lfs.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
+#include "state_ids.h"
+#include "typedefs.h"
 #include "watchdog.h"
 
 // Largest possible command data structure
