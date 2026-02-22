@@ -12,7 +12,7 @@
 typedef enum
 {
     STATE_NONE = -1, // Sentinel: no state (replaces NULL pointer)
-    STATE_INIT = 0,
+    STATE_INIT = 0,  // Must be 0 for slate initialization
     STATE_RUNNING,
     STATE_BURN_WIRE,
     STATE_BURN_WIRE_RESET,

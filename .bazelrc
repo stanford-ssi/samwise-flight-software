@@ -29,6 +29,8 @@ build:pico --platforms=//platforms:arm_cortex_m33_platform
 build:pico --define=PICO_BOARD=pico
 build:pico --copt=-DPICO=1
 build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:pico --output_groups=+pico_uf2_files
 
 # PiCubed Debug Profile (RP2350 with debug features)
 build:picubed-debug --define=profile=picubed-debug
@@ -39,6 +41,8 @@ build:picubed-debug --define=DEBUG=1
 build:picubed-debug --copt=-DDEBUG=1
 build:picubed-debug --compilation_mode=dbg
 build:picubed-debug --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-debug --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-debug --output_groups=+pico_uf2_files
 
 # PiCubed Flight Profile (RP2350 optimized for flight)
 build:picubed-flight --define=profile=picubed-flight
@@ -50,6 +54,8 @@ build:picubed-flight --copt=-DFLIGHT=1
 build:picubed-flight --compilation_mode=opt
 build:picubed-flight --copt=-Os  # Optimize for size
 build:picubed-flight --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-flight --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-flight --output_groups=+pico_uf2_files
 
 # PiCubed Bringup Profile (RP2350 for board bring-up testing)
 build:picubed-bringup --define=profile=picubed-bringup
@@ -59,6 +65,9 @@ build:picubed-bringup --define=PICO_PLATFORM=rp2350
 build:picubed-bringup --define=BRINGUP=1
 build:picubed-bringup --copt=-DBRINGUP=1
 build:picubed-bringup --compilation_mode=dbg
+build:picubed-bringup --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-bringup --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-bringup --output_groups=+pico_uf2_files
 
 # OTA MVP Blink Variant (for testing OTA partition switching)
 build:ota-blink --define=BLINK=1

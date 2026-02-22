@@ -25,9 +25,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.18.0
         with:

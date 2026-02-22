@@ -37,12 +37,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
-
-      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.18.0
         with:
@@ -65,12 +59,6 @@ jobs:
 
           # Build the main binary
           bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
-
-      - name: Generate UF2 file
-        run: |
-          bazel build :samwise --config=${{ matrix.config }} \
-            --aspects @pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect \
-            --output_groups=+pico_uf2_files
 
       - name: Archive Build Products
         uses: actions/upload-artifact@v4
