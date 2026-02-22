@@ -17,6 +17,7 @@ cc_library(
 )
 
 # Mock MRAM driver (for host tests)
+# RAM-backed implementation that simulates MRAM read/write behavior
 cc_library(
     name = "mram_mock",
     srcs = ["mram_mock.c"],
@@ -24,7 +25,6 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/error:error_mock",
         "//src/test_mocks",
     ],
 )

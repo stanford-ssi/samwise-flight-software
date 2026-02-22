@@ -149,8 +149,8 @@ When selecting an LED color for your task:
 - Consider brightness - very bright colors may be hard to distinguish
 
 ### Example Colors for New Tasks:
-- Lime Green: (128, 255, 0)
-- Pink: (255, 20, 147)
+- ~~Lime Green: (128, 255, 0)~~
+- ~~Pink: (255, 20, 147)~~
 - Turquoise: (64, 224, 208)
 - Gold: (255, 215, 0)
 - Indigo: (75, 0, 130)

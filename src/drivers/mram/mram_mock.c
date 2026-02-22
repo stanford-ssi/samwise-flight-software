@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MOCK_MRAM_SIZE (512 * 1024) // 512KiB MRAM size
+// Match the MRAM size from config.h (FILESYS_BLOCK_SIZE * FILESYS_BLOCK_COUNT)
+#define MOCK_MRAM_SIZE (1024 * 512)
 
 static uint8_t mock_mram[MOCK_MRAM_SIZE];
 static bool write_enabled = false;

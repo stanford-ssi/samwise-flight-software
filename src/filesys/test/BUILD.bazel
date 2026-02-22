@@ -2,26 +2,31 @@ load("//bzl:defs.bzl", "samwise_integration_test", "samwise_test")
 
 package(default_visibility = ["//visibility:public"])
 
-_DEPS = [
+_MRAM_DEPS = [
     "//src/common",
     "//src/drivers/logger",
     "//src/drivers/mram",
+    "//src/error",
     "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
 ]
 
 samwise_test(
+    name = "filesys_test",
+    srcs = ["filesys_test.c"],
+    deps = ["//src/filesys"],
+)
+
+samwise_test(
     name = "mram",
     srcs = ["mram_test.c"],
-    deps = _DEPS,
+    deps = _MRAM_DEPS,
 )
 
 samwise_integration_test(
     name = "mram",
     srcs = ["mram_test.c"],
     hdrs = ["mram_test.h"],
-    deps = _DEPS + [
-        # Provides hardware_test_assert.h (non-fatal ASSERT for BRINGUP).
-        # Must NOT depend on hardware_test_lib to avoid a circular dep.
+    deps = _MRAM_DEPS + [
         "//src/tasks/hardware_test:hardware_test_assert",
     ],
 )

@@ -4,6 +4,7 @@
  *
  *  Test for mram driver
  */
+#include "error.h"
 #include "logger.h"
 #include "mram.h"
 #include "pico/stdlib.h"
@@ -54,6 +55,13 @@ void test_mram_write_disable_enable(void)
     uint8_t verify_buf[22];
     mram_read(test_addr, verify_buf, 22);
     ASSERT(memcmp(verify_buf, "This should be written", 22) == 0);
+}
+
+// Finish Up
+void test_mram_ranges_overlap()
+{
+    LOG_DEBUG("Testing MRAM ranges overlap...\n");
+    // ASSERT();
 }
 
 // Review Check Collision implementation
@@ -160,7 +168,7 @@ void test_mram_read_status(void)
     LOG_DEBUG("test_mram_read_status passed.\n");
 }
 
-int main(void)
+int main()
 {
     LOG_DEBUG("Starting MRAM test\n");
     mram_init();
@@ -170,6 +178,8 @@ int main(void)
     // test_mram_check_collision();
     // test_mram_clear();
     test_mram_read_status();
-    LOG_DEBUG("All MRAM tests done.\n");
+    LOG_DEBUG("All MRAM tests passed!\n");
+    // LOG_DEBUG("Running allocation tests...\n");
+    // mram_allocation_init();
     return 0;
 }
