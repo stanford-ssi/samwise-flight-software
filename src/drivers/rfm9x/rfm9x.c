@@ -593,6 +593,53 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
     return c;
 }
 
+/*
+ * See pg. 107 of HopeRF Documentation
+ */
+
+void rfm9x_set_agc(rfm9x_t *r, uint8_t agc)
+{
+    uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
+
+    if (agc)
+    {
+        c = bit_set(c, 2);
+    }
+    else
+    {
+        c = bit_clr(c, 2);
+    }
+    rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, c);
+}
+
+uint8_t rfm9x_is_agc_on(rfm9x_t *r)
+{
+    return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 2);
+}
+
+/*
+ * See pg. 107 of HopeRF Documentation
+ */
+void rfm9x_set_ldro(rfm9x_t *r, uint8_t ldro)
+{
+    uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
+
+    if (ldro)
+    {
+        c = bit_set(c, 3);
+    }
+    else
+    {
+        c = bit_clr(c, 3);
+    }
+    rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, c);
+}
+
+uint8_t rfm9x_is_ldro_on(rfm9x_t *r)
+{
+    return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 3);
+}
+
 static rfm9x_t *radio_with_interrupts;
 
 static void rfm9x_interrupt_received(uint gpio, uint32_t events)
@@ -729,7 +776,7 @@ void rfm9x_init(rfm9x_t *r)
         r, 7); /* Configure to 7 to match Radiohead library */
     ASSERT(rfm9x_get_spreading_factor(r) == 7);
 
-    rfm9x_set_crc(r, 1); /* Disable CRC checking */
+    rfm9x_set_crc(r, 1); /* ENABLE CRC checking */
     ASSERT(rfm9x_is_crc_enabled(r) == 1);
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
@@ -741,6 +788,12 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_set_lna_boost(r, 0b11);
     ASSERT(rfm9x_get_lna_boost(r) == 0b11);
+
+    rfm9x_set_agc(r, 1);
+    ASSERT(rfm9x_is_agc_on(r) == 1);
+
+    rfm9x_set_ldro(r, 1);
+    ASSERT(rfm9x_is_ldro_on(r) == 1);
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
