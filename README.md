@@ -20,25 +20,22 @@ this project has a few additional goals:
 * Clean code
 
 ## Building
-To build the code in this repo, run `cmake -B build -DPROFILE=PICUBED-DEBUG` then `cmake --build build --parallel`.
+To build the code in this repo, run `bazel build :samwise --config=picubed_debug`.
 
-You can use the pre-provided scripts, `source build_tests.sh` and `source build_debug.sh`, to run automatically.
-**NOTE**: These automatically delete the `build_tests` and `build` directories respectively before running, so run with caution!
+You can use the pre-provided script, `source build_upload.sh` to run automatically.
+**Note**: This also tries to upload using picotool! Some machines require `sudo`, and you may not want to do this anyway.
 
 The following targets will be built:
-* `samwise_pico_debug`: pico exectuable
-* `samwise_picubed_debug`: picubed executable, for debugging
-* `samwise_picubed_flight`: picubed executable, for flight
-* `samwise_picubed_bringup`: picubed executable, for bringing up the board
-(these can be configured in `CMakeLists.txt`)
+* `pico`: pico exectuable
+* `picubed-debug`: picubed executable, for debugging
+* `picubed-flight`: picubed executable, for flight
+* `picubed-bringup`: picubed executable, for bringing up the board
+(these can be configured in `.bazelrc`)
 
 ### Build Archives
 The **C Build** github action automatically builds RP2040 and RP2350 archives on pushes to pull requests into main.
 
 ## Switching build targets
-To switch between builds for the RP2040 (Pico 1) and RP2350 (Pico 2 and Pycubed), set the `RP2350` flag to 1 when calling `cmake`. For example, to build for the RP2350, run:
-```
-cmake .. -DRP2350=1
-```
+// TODO: What to put here?
 
-**Note that when switching between the RP2040 and RP2350, it is usually necessary to clear the cmake cache (by running `rm -rf build/*`)**
+**Note that when switching between the RP2040 and RP2350, it is usually necessary to clear the bazel cache (by running `bazel clean`)**
