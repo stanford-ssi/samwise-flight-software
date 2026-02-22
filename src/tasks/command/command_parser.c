@@ -84,7 +84,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             payload_turn_off(slate);
             break;
         }
-<<<<<<< HEAD
         /* FTP Commands */
         case FTP_REFORMAT:
         {
@@ -248,11 +247,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
-        == == == =
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
-                     /* Toggle Commands */
-            // TODO: Add more device commands here as needed
-            case MANUAL_STATE_OVERRIDE:
+        /* Toggle Commands */
+        // TODO: Add more device commands here as needed
+        case MANUAL_STATE_OVERRIDE:
         {
             LOG_INFO("Manual state override command received: %s",
                      command_payload);

@@ -443,7 +443,7 @@ filesys_error_t filesys_is_crc_correct(slate_t *slate,
     {
         LOG_ERROR("[filesys] CRC check failed for file %s. Computed: %u, "
                   "Expected: %u",
-                  slate->filesys_buffered_fname_str, *crc_out,
+                  slate->filesys_buffered_fname_str, computed_crc,
                   slate->filesys_buffered_file_crc);
         return FILESYS_ERR_CRC_MISMATCH;
     }

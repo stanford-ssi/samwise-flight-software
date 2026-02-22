@@ -7,10 +7,10 @@
 #include "command_parser.h"
 #include "config.h"
 #include "macros.h"
+#include "memcpy_inc.h"
 #include "payload_uart.h"
 #include "scheduler.h"
 #include "slate.h"
-#include "utils/memcpy_inc.h"
 
 // LED Color for ftp task - Hot Pink
 #define FTP_TASK_COLOR 255, 105, 180

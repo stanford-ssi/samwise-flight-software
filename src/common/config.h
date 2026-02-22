@@ -23,41 +23,29 @@
 // The number of packets to require before moving on to the next n packets
 #define FTP_NUM_PACKETS_PER_CYCLE 5
 
-<<<<<<< HEAD
-    // Note: FTP_NUM_PACKETS_PER_CYCLE must be <= number of bits in
-    // FTP_PACKET_TRACKER_T
-    // A bit set means the corresponding packet in this cycle was received.
-    typedef uint8_t FTP_PACKET_TRACKER_T;
+// Note: FTP_NUM_PACKETS_PER_CYCLE must be <= number of bits in
+// FTP_PACKET_TRACKER_T
+// A bit set means the corresponding packet in this cycle was received.
+typedef uint8_t FTP_PACKET_TRACKER_T;
 
 _Static_assert(FTP_NUM_PACKETS_PER_CYCLE <=
                    (sizeof(FTP_PACKET_TRACKER_T) * __CHAR_BIT__),
                "FTP_NUM_PACKETS_PER_CYCLE must be less than or equal to the "
                "number of bits in FTP_PACKET_TRACKER_T");
 
-=======
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
 // Automatically calculated size of maximum data payload in bytes per packet
 #define FTP_DATA_PAYLOAD_SIZE                                                  \
     (PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE -                                \
      sizeof(FILESYS_BUFFERED_FNAME_T) - sizeof(FTP_PACKET_SEQUENCE_T))
 
-<<<<<<< HEAD
+// Type used to represent packet sequence IDs
+typedef uint16_t FTP_PACKET_SEQUENCE_T;
+
 // Maximum length of a file, as determined by the number of bytes for sequence
 // id and the maximum data payload size
 #define FTP_MAX_FILE_LEN                                                       \
     (1ULL << (sizeof(FTP_PACKET_SEQUENCE_T) * __CHAR_BIT__)) *                 \
         FTP_DATA_PAYLOAD_SIZE
-
-    _Static_assert(
-        FTP_MAX_FILE_LEN <=
-            (1ULL << (sizeof(FILESYS_BUFFERED_FILE_LEN_T) * __CHAR_BIT__)),
-        "FTP_MAX_FILE_LEN exceeds maximum representable file length in "
-        "FILESYS_BUFFERED_FILE_LEN_T");
-
-=======
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
-// Type used to represent packet sequence IDs
-typedef uint16_t FTP_PACKET_SEQUENCE_T;
 
 /**
  * Filesystem configuration
@@ -85,38 +73,23 @@ typedef uint16_t
     FILESYS_BUFFER_SIZE_T; // Must be able to hold FILESYS_BUFFER_SIZE
 
 _Static_assert(
-<<<<<<< HEAD
-    FILESYS_BUFFER_SIZE <=
-        (1ULL << (sizeof(FILESYS_BUFFER_SIZE_T) * __CHAR_BIT__)),
-    "FILESYS_BUFFER_SIZE exceeds maximum representable buffer size in "
-    "FILESYS_BUFFER_SIZE_T");
-=======
-    FILESYS_BUFFER_SIZE <= (1 << (sizeof(FILESYS_BUFFER_SIZE_T) * CHAR_BIT)),
+    FILESYS_BUFFER_SIZE <= (1ULL << (sizeof(FILESYS_BUFFER_SIZE_T) * CHAR_BIT)),
     "FILESYS_BUFFER_SIZE_T must be able to hold FILESYS_BUFFER_SIZE");
 
 _Static_assert(
     FILESYS_BUFFER_SIZE <=
         100000, // Maximum of 100KB buffer size just as an upper bound
     "FILESYS_BUFFER_SIZE must be a multiple of FILESYS_BLOCK_SIZE");
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
 
 // Size of buffer used for filesystem reads (specifically for computing CRC)
 #define FILESYS_READ_BUFFER_SIZE 256
 typedef uint16_t FILESYS_READ_BUFFER_SIZE_T; // Must be able to hold
                                              // FILESYS_READ_BUFFER_SIZE
 
-<<<<<<< HEAD
-_Static_assert(
-    FILESYS_READ_BUFFER_SIZE <=
-        (1ULL << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * __CHAR_BIT__)),
-    "FILESYS_READ_BUFFER_SIZE exceeds maximum representable buffer size "
-    "in FILESYS_READ_BUFFER_SIZE_T");
-=======
 _Static_assert(FILESYS_READ_BUFFER_SIZE <=
-                   (1 << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * CHAR_BIT)),
+                   (1ULL << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * CHAR_BIT)),
                "FILESYS_READ_BUFFER_SIZE_T must be able to hold "
                "FILESYS_READ_BUFFER_SIZE");
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
 
 // Note: Only one file can be buffered at a time, so there is no configuration
 // for FILESYS_MAX_BUFFERED_FILES.
@@ -126,6 +99,11 @@ typedef char FILESYS_BUFFERED_FNAME_STR_T[sizeof(FILESYS_BUFFERED_FNAME_T) + 1];
 
 // Number of bytes to use for storing the length of a file
 typedef uint32_t FILESYS_BUFFERED_FILE_LEN_T;
+
+_Static_assert(FTP_MAX_FILE_LEN <=
+                   (1ULL << (sizeof(FILESYS_BUFFERED_FILE_LEN_T) * CHAR_BIT)),
+               "FTP_MAX_FILE_LEN exceeds maximum representable file length in "
+               "FILESYS_BUFFERED_FILE_LEN_T");
 
 // Number of bytes to use for storing the CRC of a file
 typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;

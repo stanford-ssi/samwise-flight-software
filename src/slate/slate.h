@@ -150,7 +150,6 @@ typedef struct samwise_slate
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
 
-<<<<<<< HEAD
     /**
      * File transfer protocol task
      */
@@ -164,8 +163,6 @@ typedef struct samwise_slate
                                     // size FTP_NUM_PACKETS_PER_CYCLE, but for
                                     // simplicity we will use a queue.
     queue_t ftp_cancel_file_write_data;
-=======
->>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
     /*
     Payload Heartbeat time: the time at which the Picubed last sent a request to
     the payload.

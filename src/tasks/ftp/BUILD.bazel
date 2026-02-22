@@ -10,9 +10,11 @@ cc_library(
     deps = [
         "//src/common",
         "//src/slate",
-        "//src/scheduler:state_machine",
+        "//src/scheduler",
+        "//src/tasks/command:command_parser",
         "//src/packet",
         "//src/utils",
+        "//src/filesys",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/rfm9x:rfm9x_mock",
