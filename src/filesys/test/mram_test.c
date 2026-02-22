@@ -9,7 +9,9 @@
 #include "pico/stdlib.h"
 #include <string.h>
 
+#ifndef TEST
 #include "hardware_test_assert.h" /* must be last — overrides ASSERT in BRINGUP */
+#endif
 
 void read_write_helper(char *str, int length)
 {
@@ -158,11 +160,7 @@ void test_mram_read_status(void)
     LOG_DEBUG("test_mram_read_status passed.\n");
 }
 
-#if defined(BRINGUP) || defined(PICO)
-void mram_test_main(void)
-#else
 int main(void)
-#endif
 {
     LOG_DEBUG("Starting MRAM test\n");
     mram_init();
@@ -173,7 +171,5 @@ int main(void)
     // test_mram_clear();
     test_mram_read_status();
     LOG_DEBUG("All MRAM tests done.\n");
-#if !defined(BRINGUP) && !defined(PICO)
     return 0;
-#endif
 }

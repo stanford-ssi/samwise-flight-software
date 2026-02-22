@@ -1,7 +1,12 @@
 """Build rule definitions for SAMWISE Flight Software
 
-Provides the samwise_test() macro for automatic dependency remapping from
-real hardware drivers to their mock equivalents for unit testing.
+Provides:
+  samwise_test()                    — host unit test with automatic mock substitution.
+  samwise_integration_test()        — hardware integration test; creates both a
+                                      firmware-linkable hw_lib and a host unit test.
+  hardware_integration_test_suite() — collects integration tests and auto-generates
+                                      hardware_tests.h (replaces the hand-maintained
+                                      file of the same name).
 """
 
 # ============================================================================
@@ -199,4 +204,138 @@ def samwise_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
         local_defines = test_defines,
         testonly = True,
         **kwargs
+    )
+
+def samwise_integration_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
+    """Register a SAMWISE hardware integration test.
+
+    Creates ONE target:
+
+    ``<name>_hw_lib`` — a cc_library compiled with ``main`` renamed to
+    ``<name>_main`` via a local preprocessor define.  This library is later
+    linked into the firmware BRINGUP binary by
+    ``hardware_integration_test_suite()``.
+
+    To also get a host-side unit test, call ``samwise_test()`` separately
+    in the same BUILD file:
+
+        load("//bzl:defs.bzl", "samwise_integration_test", "samwise_test")
+
+        samwise_integration_test(
+            name = "mram",
+            srcs = ["mram_test.c"],
+            hdrs = ["mram_test.h"],
+            deps = [...],
+        )
+
+        samwise_test(
+            name = "mram",
+            srcs = ["mram_test.c"],
+            deps = [...],
+        )
+
+    To enrol this test in the hardware runner, add its name and target to the
+    ``tests`` dict of the ``hardware_integration_test_suite()`` call in
+    ``src/tasks/hardware_test/test/BUILD.bazel``:
+
+        hardware_integration_test_suite(
+            name = "hardware_test_lib",
+            tests = {
+                "mram": "//src/filesys/test:mram_hw_lib",
+            },
+        )
+
+    Args:
+        name:    Logical test name; also used as the ``<name>_main`` symbol.
+        srcs:    Test source files (.c files).
+        deps:    Dependencies forwarded to the hw_lib cc_library.
+        copts:   Additional compiler options.
+        defines: Additional preprocessor defines.
+        **kwargs: Extra arguments forwarded to cc_library.
+    """
+
+    # cc_test does not support `hdrs`; pop it from kwargs before forwarding.
+    hdrs = kwargs.pop("hdrs", [])
+
+    # ── 1. BRINGUP library ────────────────────────────────────────────────
+    # Compile the test source with main() renamed to <name>_main() so that
+    # multiple integration tests can be linked into the same binary.
+    native.cc_library(
+        name = name + "_hw_lib",
+        srcs = srcs,
+        hdrs = hdrs,
+        deps = deps,
+        copts = copts,
+        defines = defines,
+        # -Dmain=<name>_main renames the translation-unit's main() without
+        # touching any headers or other translation units.
+        local_defines = ["main=" + name + "_main"],
+        **kwargs
+    )
+
+def hardware_integration_test_suite(name, tests, extra_deps = []):
+    """Collect integration tests and emit a self-contained hardware_tests.h.
+
+    This macro replaces the hand-maintained ``hardware_tests.h`` file.  It:
+
+    1. Runs a genrule that calls ``//bzl:gen_hw_tests_header`` with the
+       registered test names to produce ``hardware_tests.h``.
+    2. Bundles the generated header together with all ``_hw_lib`` targets into
+       a single cc_library whose name is *name*.  The ``hardware_test_task``
+       target should depend on *name* exactly as it previously depended on the
+       static ``hardware_test_lib``.
+
+    ``hardware_test_task.c`` requires no changes — it continues to include
+    ``"test/hardware_tests.h"`` and expand ``HW_TEST_TABLE``.
+
+    Example usage (in ``src/tasks/hardware_test/test/BUILD.bazel``):
+
+        load("//bzl:defs.bzl", "hardware_integration_test_suite")
+
+        hardware_integration_test_suite(
+            name = "hardware_test_lib",
+            tests = {
+                "mram":   "//src/filesys:mram_hw_lib",
+                "filesys": "//src/filesys:filesys_hw_lib",
+            },
+            extra_deps = [
+                "//src/common",
+                "//src/drivers/logger",
+            ],
+        )
+
+    Args:
+        name:       Name of the resulting cc_library (consumed by the task).
+        tests:      Dict mapping logical test name → Bazel target of the
+                    corresponding ``<name>_hw_lib`` cc_library produced by
+                    ``samwise_integration_test()``.
+                    e.g. ``{"mram": "//src/filesys:mram_hw_lib"}``
+        extra_deps: Additional cc_library deps added to *name* (e.g. shared
+                    drivers that every test needs at link time).
+    """
+
+    test_names = tests.keys()
+    test_targets = tests.values()
+
+    # ── 1. Generate hardware_tests.h ─────────────────────────────────────
+    # Pass all test names as positional arguments to the generator script.
+    # The script writes the header to stdout which the genrule redirects to $@.
+    native.genrule(
+        name = name + "_gen_header",
+        srcs = [],
+        outs = ["hardware_tests.h"],
+        cmd = "$(location //bzl:gen_hw_tests_header) " +
+              " ".join(test_names) + " > $@",
+        tools = ["//bzl:gen_hw_tests_header"],
+    )
+
+    # ── 2. Bundle header + test libraries ────────────────────────────────
+    # includes = ["."] ensures consumers can reach hardware_tests.h via the
+    # same relative path ("test/hardware_tests.h") that hardware_test_task.c
+    # already uses.
+    native.cc_library(
+        name = name,
+        hdrs = [":" + name + "_gen_header"],
+        includes = ["."],
+        deps = list(test_targets) + extra_deps,
     )

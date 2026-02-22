@@ -1,7 +1,7 @@
 #if defined(BRINGUP) || defined(PICO)
 
 #include "hardware_test_task.h"
-#include "test/hardware_tests.h"
+#include "hardware_tests.h"
 
 static const hw_test_entry_t hw_tests[] = HW_TEST_TABLE;
 #define NUM_HW_TESTS (sizeof(hw_tests) / sizeof(hw_tests[0]))

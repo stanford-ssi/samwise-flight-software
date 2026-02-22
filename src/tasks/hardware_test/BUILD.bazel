@@ -1,4 +1,38 @@
+load("//bzl:defs.bzl", "hardware_integration_test_suite")
+
 package(default_visibility = ["//visibility:public"])
+
+# ── Shared assert header ──────────────────────────────────────────────────
+# Kept as a standalone target so *_hw_lib targets can depend on
+# hardware_test_assert.h WITHOUT creating a circular dep through
+# hardware_test_lib.
+cc_library(
+    name = "hardware_test_assert",
+    hdrs = ["hardware_test_assert.h"],
+    includes = ["."],
+)
+
+# ── Integration-test suite ────────────────────────────────────────────────
+# To register a new hardware integration test:
+#   1. Create the test in its own package and call samwise_integration_test().
+#   2. Add an entry to the `tests` dict below:
+#          "logical_name": "//package:name_hw_lib"
+#      The logical name becomes the <name>_main() symbol and the display name
+#      in hardware_test_task logs.
+#
+# hardware_tests.h is generated automatically — do NOT edit it by hand.
+hardware_integration_test_suite(
+    name = "hardware_test_lib",
+    extra_deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/drivers/mram",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+    tests = {
+        "mram": "//src/filesys/test:mram_hw_lib",
+    },
+)
 
 cc_library(
     name = "hardware_test_task",
@@ -9,7 +43,7 @@ cc_library(
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
-        "//src/tasks/hardware_test/test:hardware_test_lib",
+        ":hardware_test_lib",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/payload_uart:payload_uart_mock",
