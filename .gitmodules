@@ -1,3 +1,4 @@
-[submodule "lib/littlefs-cmake"]
-	path = lib/littlefs-cmake
-	url = https://github.com/lc0001coll/littlefs-cmake.git
+[submodule "lib/littlefs-SSI"]
+	path = lib/littlefs-SSI
+	url = https://github.com/lc0001coll/littlefs-SSI.git
+	branch = main
