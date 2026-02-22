@@ -1,0 +1,37 @@
+"""
+Error handling for SAMWISE flight software.
+
+This module provides both production error handling and mock implementations
+for testing. The production version may include hardware-specific behavior
+(e.g., LED blinking), while the mock version is suitable for unit tests.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Production error handling
+cc_library(
+    name = "error",
+    srcs = ["error.c"],
+    hdrs = ["error.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+    ] + select({
+        "//bzl:test_mode": [],
+        "//conditions:default": [
+            "//src/drivers/neopixel",
+            "//src/utils",
+        ],
+    }),
+)
+
+# Mock error handling for host tests
+cc_library(
+    name = "error_mock",
+    srcs = ["error_mock.c"],
+    hdrs = ["error.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+    ],
+)

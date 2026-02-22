@@ -12,10 +12,13 @@
 #pragma once
 
 #include "lfs.h"
+#ifndef TEST
 #include "pico/types.h"
+#endif
 #include "pico/util/queue.h"
 
-#include "state_machine.h"
+#include "config.h"
+#include "state_ids.h"
 #include "typedefs.h"
 
 #include "adcs_packet.h"
@@ -39,11 +42,11 @@ typedef struct samwise_slate
      * State machine info.
      */
     uint32_t reboot_counter;
-    sched_state_t *current_state;
+    state_id_t current_state_id;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
     // Manually set next state to transition to
-    sched_state_t *manual_override_state;
+    state_id_t manual_override_state_id;
 
     /*
      * Power Telemetry
@@ -134,7 +137,6 @@ typedef struct samwise_slate
      * Filesystem API variables
      */
     lfs_t lfs;
-    lfs_file_t filesys_lfs_open_file;
 
     // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
     // for efficiency on reads/writes rather than buffering like we want. Since
@@ -148,6 +150,7 @@ typedef struct samwise_slate
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
 
+<<<<<<< HEAD
     /**
      * File transfer protocol task
      */
@@ -161,6 +164,8 @@ typedef struct samwise_slate
                                     // size FTP_NUM_PACKETS_PER_CYCLE, but for
                                     // simplicity we will use a queue.
     queue_t ftp_cancel_file_write_data;
+=======
+>>>>>>> a0d94fba230583bddc5c1a37da99a781c71268b6
     /*
     Payload Heartbeat time: the time at which the Picubed last sent a request to
     the payload.
@@ -168,5 +173,10 @@ typedef struct samwise_slate
     absolute_time_t payload_most_recent_ping_time;
 
 } slate_t;
+
+// We will put a maximum size of ~16 KB on the slate for now, in lieu of any
+// real analysis of memory usage.
+_Static_assert(sizeof(slate_t) < 16000,
+               "slate_t size exceeds reasonable limits");
 
 extern slate_t slate;

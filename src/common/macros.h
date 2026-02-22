@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "error.h"
-
 /**
  * Convenience macros to get whether we are in flight in a runtime build.
  */

@@ -15,6 +15,7 @@
 #else
 #include "pico/printf.h"
 #include "pico/stdio.h"
+#include "pico/stdio_usb.h"
 #include "pico/stdlib.h"
 #include "pico/time.h"
 #include "pico/types.h" // includes stdbool.h, stdint.h, stddef.h

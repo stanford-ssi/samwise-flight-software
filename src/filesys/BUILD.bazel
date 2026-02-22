@@ -1,0 +1,56 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "filesys",
+    srcs = [
+        "filesys.c",
+        "lfs_mram_wrapper.c",
+    ],
+    hdrs = [
+        "filesys.h",
+        "lfs_mram_wrapper.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/utils",
+        "//src/scheduler:state_machine",
+        "//lib/littlefs-cmake:littlefs",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/mram:mram_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/mram",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
+
+samwise_test(
+    name = "filesys_test",
+    srcs = ["test/filesys_test.c"],
+    deps = [
+        ":filesys",
+    ],
+)
+
+samwise_test(
+    name = "mram_test",
+    srcs = [
+        "test/mram_test.c",
+        "test/mram_test.h",
+    ],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/drivers/mram:mram_mock",
+        "//src/error:error_mock",
+    ],
+)

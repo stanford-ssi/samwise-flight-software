@@ -1,0 +1,37 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "print_task",
+    srcs = ["print_task.c"],
+    hdrs = ["print_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
+
+samwise_test(
+    name = "print_test",
+    srcs = [
+        "test/print_test.c",
+        "test/print_test.h",
+    ],
+    deps = [
+        ":print_task",
+    ],
+)
