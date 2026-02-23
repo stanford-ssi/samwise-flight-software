@@ -86,9 +86,8 @@ static const uint8_t filesys_test_example_file_6_buf[] = {
 static const unsigned int filesys_test_example_file_6_crc =
     0x0f6187ba; // CRC for 64 bytes of 0xFF
 
-// Buffer: 64 bytes incrementing (same as example_file_1, for reference)
-// Note: filesys_test_example_file_1_buf is 0x00..0x3F
-// with CRC filesys_test_example_file_1_crc = 0x100ece8c
+static const unsigned int filesys_test_example_incorrect_crc =
+    0xabcdef01; // Just a random incorrect CRC for testing
 
 // Helper function to initialize a clean filesystem for testing
 inline static int filesys_test_setup_clean_filesystem(slate_t *slate)
@@ -206,13 +205,13 @@ int filesys_test_write_readback_success()
     // We do not have read handling in filesys, use LFS!
     int8_t read_buffer[64];
     lfs_file_t read_file;
-    lfs_file_opencfg(&test_slate.lfs, &read_file, fname_str, LFS_O_RDONLY,
+    lfs_file_opencfg(filesys_get_lfs(), &read_file, fname_str, LFS_O_RDONLY,
                      &(struct lfs_file_config){.buffer = cache_buffer});
 
-    lfs_file_read(&test_slate.lfs, &read_file, read_buffer,
+    lfs_file_read(filesys_get_lfs(), &read_file, read_buffer,
                   sizeof(read_buffer));
 
-    lfs_file_close(&test_slate.lfs, &read_file);
+    lfs_file_close(filesys_get_lfs(), &read_file);
 
     for (size_t i = 0; i < sizeof(read_buffer); i++)
         if (read_buffer[i] != filesys_test_example_file_1_buf[i])
@@ -248,7 +247,7 @@ int filesys_test_initialize_reformat_success()
                 "filesys_buffer_is_dirty should be false after reformat");
 
     // Verify filesystem is mounted by checking fs size
-    lfs_ssize_t fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t fs_size = lfs_fs_size(filesys_get_lfs());
     TEST_ASSERT(fs_size >= 0, "Filesystem should be accessible after reformat");
 
     LOG_DEBUG("=== Test PASSED: Initialize and Reformat ===\n");
@@ -308,25 +307,26 @@ int filesys_test_write_data_to_buffer_bounds_should_fail()
     FILESYS_BUFFERED_FNAME_STR_T fname = "BT"; // no example file
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 256, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 256, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
-    uint8_t small_buffer[16] = {0};
-
     // Test: Write at offset 0 with valid size
-    code = filesys_write_data_to_buffer(&test_slate, small_buffer, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK,
                 "Writing 16 bytes at offset 0 should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after successful write");
 
     // Test: Write exceeding buffer size should fail
-    code =
-        filesys_write_data_to_buffer(&test_slate, small_buffer, 16,
-                                     FILESYS_BUFFER_SIZE - 8, &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), FILESYS_BUFFER_SIZE - 8,
+        &lfs_error_code);
     TEST_ASSERT(code == FILESYS_ERR_EXCEED_BUFFER,
                 "Writing past buffer boundary should fail with "
                 "FILESYS_ERR_EXCEED_BUFFER");
@@ -349,12 +349,11 @@ int filesys_test_write_data_to_buffer_when_no_file_started_should_fail()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
-    uint8_t buffer[16] = {0};
-
     // Try to write to buffer without starting a file write
     lfs_ssize_t lfs_error_code;
-    filesys_error_t code = filesys_write_data_to_buffer(&test_slate, buffer, 16,
-                                                        0, &lfs_error_code);
+    filesys_error_t code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_ERR_NO_FILE_WRITING,
                 "Writing to buffer without file write should fail with "
                 "FILESYS_ERR_NO_FILE_WRITING");
@@ -410,7 +409,8 @@ int filesys_test_write_buffer_to_mram_clean_buffer_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "CB";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 64, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -446,15 +446,16 @@ int filesys_test_complete_file_write_dirty_buffer_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "DB";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 64, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
     // Write data to buffer (makes it dirty)
-    uint8_t buffer[16] = {1, 2, 3, 4};
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -490,7 +491,8 @@ int filesys_test_cancel_file_write_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "CA"; // example file 3
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 64, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -525,7 +527,7 @@ int filesys_test_cancel_file_write_success()
     // Verify file was deleted (try to open it)
     lfs_file_t file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &file, fname, LFS_O_RDONLY,
+        lfs_file_opencfg(filesys_get_lfs(), &file, fname, LFS_O_RDONLY,
                          &(struct lfs_file_config){.buffer = cache_buffer});
     TEST_ASSERT(err < 0, "File should not exist after cancel_file_write");
 
@@ -576,15 +578,16 @@ int filesys_test_clear_buffer_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "CL";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 64, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
     // Write data to make buffer dirty
-    uint8_t buffer[16] = {0};
-    code = filesys_write_data_to_buffer(&test_slate, buffer, 16, 0,
-                                        &lfs_error_code);
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
     TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
     TEST_ASSERT(
         lfs_error_code == LFS_ERR_OK,
@@ -666,8 +669,8 @@ int filesys_test_crc_incorrect_should_fail()
 
     // Use example file 1 data but with intentionally wrong CRC
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, sizeof(filesys_test_example_file_1_buf), 0xDEADBEEF,
-        &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_incorrect_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
 
     code = filesys_write_data_to_buffer(
@@ -742,8 +745,8 @@ int filesys_test_multiple_files_success()
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "M1";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf), 0x0,
-        &lfs_error_code, &blocks_left);
+        &test_slate, fname1, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_incorrect_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -771,9 +774,9 @@ int filesys_test_multiple_files_success()
     // Write second file
     FILESYS_BUFFERED_FNAME_STR_T fname2 = "M2";
 
-    code = filesys_start_file_write(&test_slate, fname2,
-                                    sizeof(filesys_test_example_file_2_buf),
-                                    0x0, &lfs_error_code, &blocks_left);
+    code = filesys_start_file_write(
+        &test_slate, fname2, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_incorrect_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "Second file start should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -813,12 +816,13 @@ int filesys_test_blocks_left_calculation_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "BL";
 
     // Get initial filesystem size
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
     TEST_ASSERT(initial_fs_size >= 0, "Should get valid fs size");
 
     // Start a file write and check blocks left
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 1024, 0x0, &lfs_error_code, &blocks_left_1);
+        &test_slate, fname, 1024, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left_1);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -852,7 +856,8 @@ int filesys_test_multi_chunk_write_success()
 
     // Start file write for a larger file (will need multiple buffer writes)
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 128, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 128, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -909,7 +914,8 @@ int filesys_test_write_at_offset_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "OF";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, 64, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, 64, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
@@ -1037,7 +1043,7 @@ int filesys_test_write_long_file_crc32_success()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
     FILESYS_BUFFERED_FILE_LEN_T file_size =
         200000; // Larger than buffer size, will require multiple writes
 
@@ -1097,7 +1103,8 @@ int filesys_test_file_too_large_should_fail()
         FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE + 10000;
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, file_size, 0x0, &lfs_error_code, &blocks_left);
+        &test_slate, fname, file_size, filesys_test_example_incorrect_crc,
+        &lfs_error_code, &blocks_left);
 
     TEST_ASSERT(code == FILESYS_ERR_NOT_ENOUGH_SPACE,
                 "Should fail with not enough space error");
@@ -1121,7 +1128,7 @@ int filesys_test_second_file_out_of_space_should_fail()
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
-    lfs_ssize_t initial_fs_size = lfs_fs_size(&test_slate.lfs);
+    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
@@ -1180,17 +1187,17 @@ int filesys_test_second_file_out_of_space_should_fail()
     // Make sure we can read back the first file correctly
     uint8_t read_buffer[file1_size];
     lfs_file_t file;
-    int err = lfs_file_opencfg(&test_slate.lfs, &file, fname1, LFS_O_RDONLY,
+    int err = lfs_file_opencfg(filesys_get_lfs(), &file, fname1, LFS_O_RDONLY,
                                &filesys_lfs_file_cfg);
     LOG_DEBUG("Opened first file for reading, err=%d\n", err);
     TEST_ASSERT(err == 0, "Should open first file for reading");
     lfs_ssize_t read_bytes =
-        lfs_file_read(&test_slate.lfs, &file, read_buffer, file1_size);
+        lfs_file_read(filesys_get_lfs(), &file, read_buffer, file1_size);
     LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
     TEST_ASSERT(read_bytes == file1_size, "Should read back full first file");
     TEST_ASSERT(memcmp(large_buffer, read_buffer, file1_size) == 0,
                 "Read back data should match written data");
-    lfs_file_close(&test_slate.lfs, &file);
+    lfs_file_close(filesys_get_lfs(), &file);
 
     // Complete first file
     code = filesys_complete_file_write(&test_slate, &lfs_error_code);
@@ -1202,7 +1209,8 @@ int filesys_test_second_file_out_of_space_should_fail()
     // Now try to write a second file that won't fit in remaining space
     // Try to write 100KB when we only have ~62KB left
     FILESYS_BUFFERED_FILE_LEN_T file2_size = 100000;
-    code = filesys_start_file_write(&test_slate, fname2, file2_size, 0x0,
+    code = filesys_start_file_write(&test_slate, fname2, file2_size,
+                                    filesys_test_example_incorrect_crc,
                                     &lfs_error_code, &blocks_left);
 
     TEST_ASSERT(code == FILESYS_ERR_NOT_ENOUGH_SPACE,
@@ -1241,7 +1249,7 @@ int filesys_test_raw_lfs_write_large_file_success()
     // Open file for writing using LFS directly
     lfs_file_t lfs_file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
                          LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
     if (err < 0)
     {
@@ -1252,25 +1260,25 @@ int filesys_test_raw_lfs_write_large_file_success()
     TEST_ASSERT(err == 0, "lfs_file_opencfg should succeed");
 
     // Write entire buffer
-    lfs_ssize_t written = lfs_file_write(&test_slate.lfs, &lfs_file,
+    lfs_ssize_t written = lfs_file_write(filesys_get_lfs(), &lfs_file,
                                          large_buffer, LARGE_FILE_SIZE);
     if (written < 0)
     {
         LOG_ERROR("Failed to write file: %d\n", (int)written);
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         free(large_buffer);
         return -1;
     }
     TEST_ASSERT(written == LARGE_FILE_SIZE, "Should write entire buffer");
 
     // Close file
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after write");
 
     LOG_DEBUG("Successfully wrote %d bytes\n", (int)written);
 
     // Read back and verify
-    err = lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname, LFS_O_RDONLY,
+    err = lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname, LFS_O_RDONLY,
                            &filesys_lfs_file_cfg);
     if (err < 0)
     {
@@ -1284,25 +1292,25 @@ int filesys_test_raw_lfs_write_large_file_success()
     if (!read_buffer)
     {
         LOG_ERROR("Failed to allocate read buffer\n");
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         free(large_buffer);
         return -1;
     }
     TEST_ASSERT(read_buffer != NULL, "Should allocate read buffer");
 
-    lfs_ssize_t read_bytes =
-        lfs_file_read(&test_slate.lfs, &lfs_file, read_buffer, LARGE_FILE_SIZE);
+    lfs_ssize_t read_bytes = lfs_file_read(filesys_get_lfs(), &lfs_file,
+                                           read_buffer, LARGE_FILE_SIZE);
     if (read_bytes < 0)
     {
         LOG_ERROR("Failed to read file: %d\n", (int)read_bytes);
         free(read_buffer);
         free(large_buffer);
-        lfs_file_close(&test_slate.lfs, &lfs_file);
+        lfs_file_close(filesys_get_lfs(), &lfs_file);
         return -1;
     }
     TEST_ASSERT(read_bytes == LARGE_FILE_SIZE, "Should read entire file");
 
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");
 
     // Verify data integrity
@@ -1575,8 +1583,8 @@ int filesys_test_list_files_after_cancel_success()
     FILESYS_BUFFERED_FNAME_STR_T fname = "CN";
 
     filesys_error_t code = filesys_start_file_write(
-        &test_slate, fname, sizeof(filesys_test_example_file_3_buf), 0x0,
-        &lfs_error_code, &blocks_left);
+        &test_slate, fname, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_incorrect_crc, &lfs_error_code, &blocks_left);
     TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
 
     code = filesys_write_data_to_buffer(
@@ -1647,17 +1655,17 @@ int filesys_test_list_files_crc_mismatch_success()
     // attribute intact.
     lfs_file_t lfs_file;
     int err =
-        lfs_file_opencfg(&test_slate.lfs, &lfs_file, fname,
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
                          LFS_O_WRONLY | LFS_O_TRUNC, &filesys_lfs_file_cfg);
     TEST_ASSERT(err == 0, "Raw LFS file open for corruption should succeed");
 
     lfs_ssize_t written = lfs_file_write(
-        &test_slate.lfs, &lfs_file, filesys_test_example_file_6_buf,
+        filesys_get_lfs(), &lfs_file, filesys_test_example_file_6_buf,
         sizeof(filesys_test_example_file_6_buf));
     TEST_ASSERT(written == sizeof(filesys_test_example_file_6_buf),
                 "Raw LFS write should succeed");
 
-    err = lfs_file_close(&test_slate.lfs, &lfs_file);
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
 
     // Now list files and check the CRC match flag
@@ -1686,6 +1694,830 @@ int filesys_test_list_files_crc_mismatch_success()
                 "Computed CRC should differ from original after corruption");
 
     LOG_DEBUG("=== Test PASSED: List Files - CRC Mismatch Detection ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 29: Open file for reading - success with CRC verification
+// ============================================================================
+int filesys_test_open_file_read_success()
+{
+    LOG_DEBUG("=== Test: Open File Read - Success ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "R1";
+
+    // Write a file with correct CRC
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open the file for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK,
+                "open_file_read should succeed for a valid file");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after open_file_read");
+
+    // Verify the info struct is populated correctly
+    TEST_ASSERT(info.file_size == sizeof(filesys_test_example_file_1_buf),
+                "info.file_size should match written file size");
+    TEST_ASSERT(info.flags & FILESYS_FILE_INFO_CRC_MATCH,
+                "CRC match flag should be set for correctly written file");
+    TEST_ASSERT(info.flags & FILESYS_FILE_INFO_COMPUTED_CRC_VALID,
+                "Computed CRC valid flag should be set");
+    TEST_ASSERT(info.flags & FILESYS_FILE_INFO_EXPECTED_CRC_VALID,
+                "Expected CRC valid flag should be set");
+    TEST_ASSERT(info.computed_crc == filesys_test_example_file_1_crc,
+                "Computed CRC should match the known CRC");
+    TEST_ASSERT(info.expected_crc == filesys_test_example_file_1_crc,
+                "Expected CRC should match the known CRC");
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Open File Read - Success ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 30: Open file for reading - CRC mismatch should fail
+// ============================================================================
+int filesys_test_open_file_read_crc_mismatch_should_fail()
+{
+    LOG_DEBUG("=== Test: Open File Read - CRC Mismatch ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "R2";
+
+    // Write a file with intentionally wrong CRC
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_incorrect_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    // CRC mismatch means complete_file_write will fail; cancel instead and
+    // rewrite with the wrong CRC stored as attribute using raw LFS so the
+    // file persists on disk.
+    code = filesys_cancel_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "cancel_file_write should succeed");
+
+    // Re-write the file via raw LFS so we can set an incorrect CRC attribute
+    lfs_file_t lfs_file;
+    int err =
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname,
+                         LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
+    TEST_ASSERT(err == 0, "Raw LFS file open should succeed");
+
+    lfs_ssize_t written = lfs_file_write(
+        filesys_get_lfs(), &lfs_file, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf));
+    TEST_ASSERT(written == sizeof(filesys_test_example_file_1_buf),
+                "Raw LFS write should succeed");
+
+    // Set an incorrect CRC attribute
+    unsigned int wrong_crc = filesys_test_example_incorrect_crc;
+    err = lfs_setattr(filesys_get_lfs(), fname, FILESYS_CRC_ATTR, &wrong_crc,
+                      sizeof(wrong_crc));
+    TEST_ASSERT(err == 0, "Setting wrong CRC attribute should succeed");
+
+    err = lfs_file_close(filesys_get_lfs(), &lfs_file);
+    TEST_ASSERT(err == 0, "Raw LFS file close should succeed");
+
+    // Try to open the file for reading - should fail with CRC mismatch
+    lfs_file_t read_file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &read_file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_ERR_CRC_MISMATCH,
+                "open_file_read should fail with FILESYS_ERR_CRC_MISMATCH");
+
+    // Info should still be populated even on CRC mismatch
+    TEST_ASSERT(info.file_size == sizeof(filesys_test_example_file_1_buf),
+                "info.file_size should still be populated on CRC mismatch");
+    TEST_ASSERT(!(info.flags & FILESYS_FILE_INFO_CRC_MATCH),
+                "CRC match flag should NOT be set on mismatch");
+
+    LOG_DEBUG("=== Test PASSED: Open File Read - CRC Mismatch ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 31: Open file for reading - nonexistent file should fail
+// ============================================================================
+int filesys_test_open_file_read_nonexistent_should_fail()
+{
+    LOG_DEBUG("=== Test: Open File Read - Nonexistent File ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_file_t file;
+    filesys_file_info_t info;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "ZZ";
+
+    // Try to open a file that doesn't exist
+    filesys_error_t code = filesys_open_file_read(&test_slate, &file, fname,
+                                                  &info, &lfs_error_code);
+    TEST_ASSERT(code != FILESYS_OK,
+                "open_file_read should fail for nonexistent file");
+
+    LOG_DEBUG("=== Test PASSED: Open File Read - Nonexistent File ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 32: Read data - full readback and verify contents
+// ============================================================================
+int filesys_test_read_data_full_readback_success()
+{
+    LOG_DEBUG("=== Test: Read Data - Full Readback ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RD";
+
+    // Write a file with known contents
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Read entire file
+    uint8_t read_buf[64] = {0};
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, read_buf,
+                             sizeof(filesys_test_example_file_1_buf),
+                             &bytes_read, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read_data should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after read_data");
+    TEST_ASSERT(bytes_read == sizeof(filesys_test_example_file_1_buf),
+                "Should read back the full file size");
+
+    // Verify contents match
+    for (size_t i = 0; i < sizeof(filesys_test_example_file_1_buf); i++)
+    {
+        TEST_ASSERT(read_buf[i] == filesys_test_example_file_1_buf[i],
+                    "Read data should match written data byte-by-byte");
+    }
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read Data - Full Readback ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 33: Read data - read in multiple smaller chunks
+// ============================================================================
+int filesys_test_read_data_chunked_success()
+{
+    LOG_DEBUG("=== Test: Read Data - Chunked Read ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RC";
+
+    // Write a 64-byte file
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Read in 16-byte chunks
+    uint8_t full_buf[64] = {0};
+    for (int chunk = 0; chunk < 4; chunk++)
+    {
+        FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+        code = filesys_read_data(&test_slate, &file, full_buf + (chunk * 16),
+                                 16, &bytes_read, &lfs_error_code);
+        TEST_ASSERT(code == FILESYS_OK, "Chunked read_data should succeed");
+        TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                    "lfs_error_code should be LFS_ERR_OK after chunked read");
+        TEST_ASSERT(bytes_read == 16,
+                    "Each chunk should read exactly 16 bytes");
+    }
+
+    // Verify full contents match
+    for (size_t i = 0; i < sizeof(filesys_test_example_file_1_buf); i++)
+    {
+        TEST_ASSERT(full_buf[i] == filesys_test_example_file_1_buf[i],
+                    "Chunked read data should match written data");
+    }
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read Data - Chunked Read ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 34: Read data - read past end of file returns fewer bytes
+// ============================================================================
+int filesys_test_read_data_past_eof_success()
+{
+    LOG_DEBUG("=== Test: Read Data - Past EOF ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RE";
+
+    // Write a 16-byte file
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Try to read more bytes than file contains (64 bytes from a 16-byte file)
+    uint8_t read_buf[64] = {0};
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, read_buf, 64, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK,
+                "read_data should succeed even when requesting more than EOF");
+    TEST_ASSERT(bytes_read == sizeof(filesys_test_example_file_2_buf),
+                "bytes_read should be limited to actual file size");
+
+    // Verify the bytes that were read
+    for (size_t i = 0; i < sizeof(filesys_test_example_file_2_buf); i++)
+    {
+        TEST_ASSERT(read_buf[i] == filesys_test_example_file_2_buf[i],
+                    "Read data should match written data");
+    }
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read Data - Past EOF ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 35: Seek in read file - various seek modes
+// ============================================================================
+int filesys_test_read_file_seek_success()
+{
+    LOG_DEBUG("=== Test: Read File Seek ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RS";
+
+    // Write a 64-byte file (0x00..0x3F)
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_1_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Test LFS_SEEK_SET: Seek to absolute position 32
+    FILESYS_BUFFERED_FILE_LEN_T new_pos = 0;
+    code = filesys_read_file_seek(&test_slate, &file, 32, LFS_SEEK_SET,
+                                  &new_pos, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek SET to 32 should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after seek");
+    TEST_ASSERT(new_pos == 32, "New position after SEEK_SET 32 should be 32");
+
+    // Read 1 byte at position 32 - should be 0x20
+    uint8_t byte_buf = 0;
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, &byte_buf, 1, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read after seek should succeed");
+    TEST_ASSERT(bytes_read == 1, "Should read 1 byte");
+    TEST_ASSERT(byte_buf == 0x20, "Byte at position 32 should be 0x20");
+
+    // Test LFS_SEEK_CUR: Seek forward by 10 from current (now at 33)
+    code = filesys_read_file_seek(&test_slate, &file, 10, LFS_SEEK_CUR,
+                                  &new_pos, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek CUR +10 should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after seek CUR");
+    TEST_ASSERT(new_pos == 43,
+                "New position after SEEK_CUR +10 from 33 should be 43");
+
+    // Read 1 byte at position 43 - should be 0x2B
+    code = filesys_read_data(&test_slate, &file, &byte_buf, 1, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read after seek CUR should succeed");
+    TEST_ASSERT(byte_buf == 0x2B, "Byte at position 43 should be 0x2B");
+
+    // Test LFS_SEEK_END: Seek to 4 bytes before end
+    code = filesys_read_file_seek(&test_slate, &file, -4, LFS_SEEK_END,
+                                  &new_pos, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek END -4 should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after seek END");
+    TEST_ASSERT(new_pos == 60, "New position after SEEK_END -4 should be 60");
+
+    // Read 1 byte at position 60 - should be 0x3C
+    code = filesys_read_data(&test_slate, &file, &byte_buf, 1, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read after seek END should succeed");
+    TEST_ASSERT(byte_buf == 0x3C, "Byte at position 60 should be 0x3C");
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read File Seek ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 36: Tell position in read file
+// ============================================================================
+int filesys_test_read_file_tell_success()
+{
+    LOG_DEBUG("=== Test: Read File Tell ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RT";
+
+    // Write a 32-byte file
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Tell position right after open - should be 0
+    FILESYS_BUFFERED_FILE_LEN_T position = 0xFFFF;
+    code =
+        filesys_read_file_tell(&test_slate, &file, &position, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "tell should succeed after open");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after tell");
+    TEST_ASSERT(position == 0, "Position should be 0 after open");
+
+    // Read 10 bytes to advance position
+    uint8_t buf[10];
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, buf, 10, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read_data should succeed");
+    TEST_ASSERT(bytes_read == 10, "Should read 10 bytes");
+
+    // Tell position after reading 10 bytes
+    code =
+        filesys_read_file_tell(&test_slate, &file, &position, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "tell should succeed after read");
+    TEST_ASSERT(position == 10, "Position should be 10 after reading 10 bytes");
+
+    // Seek to position 25 and check tell
+    FILESYS_BUFFERED_FILE_LEN_T new_pos = 0;
+    code = filesys_read_file_seek(&test_slate, &file, 25, LFS_SEEK_SET,
+                                  &new_pos, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek should succeed");
+
+    code =
+        filesys_read_file_tell(&test_slate, &file, &position, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "tell should succeed after seek");
+    TEST_ASSERT(position == 25, "Position should be 25 after seeking to 25");
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read File Tell ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 37: Read file size
+// ============================================================================
+int filesys_test_read_file_size_success()
+{
+    LOG_DEBUG("=== Test: Read File Size ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RZ";
+
+    // Write a 16-byte file
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_2_buf),
+        filesys_test_example_file_2_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_2_buf,
+        sizeof(filesys_test_example_file_2_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_2_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Query file size
+    FILESYS_BUFFERED_FILE_LEN_T size = 0;
+    code = filesys_read_file_size(&test_slate, &file, &size, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read_file_size should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after read_file_size");
+    TEST_ASSERT(size == sizeof(filesys_test_example_file_2_buf),
+                "File size should match written file size (16 bytes)");
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read File Size ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 38: Close file read
+// ============================================================================
+int filesys_test_close_file_read_success()
+{
+    LOG_DEBUG("=== Test: Close File Read ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "CX";
+
+    // Write a file
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_4_buf),
+        filesys_test_example_file_4_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_4_buf,
+        sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_4_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+
+    // Close the file
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+    TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
+                "lfs_error_code should be LFS_ERR_OK after close");
+
+    LOG_DEBUG("=== Test PASSED: Close File Read ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 39: Full read workflow - open, size, seek, tell, read, close
+// ============================================================================
+int filesys_test_read_full_workflow_success()
+{
+    LOG_DEBUG("=== Test: Read Full Workflow ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RW";
+
+    // Write a 32-byte file (0x00..0x1F)
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_3_buf),
+        filesys_test_example_file_3_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(
+        &test_slate, filesys_test_example_file_3_buf,
+        sizeof(filesys_test_example_file_3_buf), 0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        &test_slate, sizeof(filesys_test_example_file_3_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // === Open ===
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+    TEST_ASSERT(info.file_size == 32, "info.file_size should be 32");
+    TEST_ASSERT(info.flags & FILESYS_FILE_INFO_CRC_MATCH, "CRC should match");
+
+    // === Size ===
+    FILESYS_BUFFERED_FILE_LEN_T size = 0;
+    code = filesys_read_file_size(&test_slate, &file, &size, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read_file_size should succeed");
+    TEST_ASSERT(size == 32, "File size should be 32");
+
+    // === Tell (should be 0 at start) ===
+    FILESYS_BUFFERED_FILE_LEN_T position = 0xFFFF;
+    code =
+        filesys_read_file_tell(&test_slate, &file, &position, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "tell should succeed at start");
+    TEST_ASSERT(position == 0, "Position should be 0 at start");
+
+    // === Read first 8 bytes ===
+    uint8_t buf[32] = {0};
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, buf, 8, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read first 8 bytes should succeed");
+    TEST_ASSERT(bytes_read == 8, "Should read 8 bytes");
+    for (int i = 0; i < 8; i++)
+        TEST_ASSERT(buf[i] == i, "First 8 bytes should be 0x00..0x07");
+
+    // === Tell (should be 8) ===
+    code =
+        filesys_read_file_tell(&test_slate, &file, &position, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "tell after read should succeed");
+    TEST_ASSERT(position == 8, "Position should be 8 after reading 8 bytes");
+
+    // === Seek to position 16 ===
+    FILESYS_BUFFERED_FILE_LEN_T new_pos = 0;
+    code = filesys_read_file_seek(&test_slate, &file, 16, LFS_SEEK_SET,
+                                  &new_pos, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek to 16 should succeed");
+    TEST_ASSERT(new_pos == 16, "New pos should be 16");
+
+    // === Read 4 bytes from position 16 ===
+    code = filesys_read_data(&test_slate, &file, buf, 4, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read at position 16 should succeed");
+    TEST_ASSERT(bytes_read == 4, "Should read 4 bytes");
+    TEST_ASSERT(buf[0] == 0x10, "Byte at pos 16 should be 0x10");
+    TEST_ASSERT(buf[1] == 0x11, "Byte at pos 17 should be 0x11");
+    TEST_ASSERT(buf[2] == 0x12, "Byte at pos 18 should be 0x12");
+    TEST_ASSERT(buf[3] == 0x13, "Byte at pos 19 should be 0x13");
+
+    // === Seek to end and try to read (should get 0 bytes) ===
+    code = filesys_read_file_seek(&test_slate, &file, 0, LFS_SEEK_END, &new_pos,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "seek to end should succeed");
+    TEST_ASSERT(new_pos == 32, "Position at end should be 32");
+
+    code = filesys_read_data(&test_slate, &file, buf, 8, &bytes_read,
+                             &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read at EOF should succeed");
+    TEST_ASSERT(bytes_read == 0, "Should read 0 bytes at EOF");
+
+    // === Close ===
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read Full Workflow ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 40: Read file written via multi-chunk helper
+// ============================================================================
+int filesys_test_read_multi_chunk_file_success()
+{
+    LOG_DEBUG("=== Test: Read Multi-Chunk Written File ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
+        return -1;
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "RM";
+
+    // Write example_file_1 (64 bytes, 0x00..0x3F) using the multi-chunk
+    // helper, which splits the data across multiple buffer+MRAM cycles.
+    filesys_error_t code = filesys_start_file_write(
+        &test_slate, fname, sizeof(filesys_test_example_file_1_buf),
+        filesys_test_example_file_1_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_test_write_whole_buffer(
+        &test_slate, (uint8_t *)filesys_test_example_file_1_buf,
+        sizeof(filesys_test_example_file_1_buf));
+    TEST_ASSERT(code == FILESYS_OK, "write_whole_buffer should succeed");
+
+    code = filesys_complete_file_write(&test_slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    // Open for reading
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(&test_slate, &file, fname, &info,
+                                  &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "open_file_read should succeed");
+    TEST_ASSERT(info.file_size == sizeof(filesys_test_example_file_1_buf),
+                "File size should match example_file_1");
+    TEST_ASSERT(info.flags & FILESYS_FILE_INFO_CRC_MATCH, "CRC should match");
+
+    // Read the full file
+    uint8_t read_buf[64] = {0};
+    FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+    code = filesys_read_data(&test_slate, &file, read_buf,
+                             sizeof(filesys_test_example_file_1_buf),
+                             &bytes_read, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "read_data should succeed");
+    TEST_ASSERT(bytes_read == sizeof(filesys_test_example_file_1_buf),
+                "Should read all bytes");
+
+    // Verify contents
+    for (size_t i = 0; i < sizeof(filesys_test_example_file_1_buf); i++)
+    {
+        TEST_ASSERT(read_buf[i] == filesys_test_example_file_1_buf[i],
+                    "Read data should match example_file_1");
+    }
+
+    // Clean up
+    code = filesys_close_file_read(&test_slate, &file, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
+
+    LOG_DEBUG("=== Test PASSED: Read Multi-Chunk Written File ===\n");
     return 0;
 }
 
@@ -1755,6 +2587,21 @@ int main()
          "List Files - After Cancel"},
         {filesys_test_list_files_crc_mismatch_success,
          "List Files - CRC Mismatch Detection"},
+        {filesys_test_open_file_read_success, "Open File Read - Success"},
+        {filesys_test_open_file_read_crc_mismatch_should_fail,
+         "Open File Read - CRC Mismatch"},
+        {filesys_test_open_file_read_nonexistent_should_fail,
+         "Open File Read - Nonexistent"},
+        {filesys_test_read_data_full_readback_success,
+         "Read Data - Full Readback"},
+        {filesys_test_read_data_chunked_success, "Read Data - Chunked Read"},
+        {filesys_test_read_data_past_eof_success, "Read Data - Past EOF"},
+        {filesys_test_read_file_seek_success, "Read File Seek"},
+        {filesys_test_read_file_tell_success, "Read File Tell"},
+        {filesys_test_read_file_size_success, "Read File Size"},
+        {filesys_test_close_file_read_success, "Close File Read"},
+        {filesys_test_read_full_workflow_success, "Read Full Workflow"},
+        {filesys_test_read_multi_chunk_file_success, "Read Multi-Chunk File"},
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);

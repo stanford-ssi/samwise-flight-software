@@ -123,6 +123,13 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
 // directory.
 #define FILESYS_ROOT_DIR "/"
 
+// Attribute ID used to store CRC for each file. The actual value is arbitrary,
+// but must be consistent across the codebase. We use 0 since we currently only
+// need to store the CRC attribute, but if we want to store more attributes in
+// the future we can use other attribute IDs. Note that little-fs supports
+// attribute IDs in the range [0, 255].
+#define FILESYS_CRC_ATTR 0
+
 // TODO: What is our average file size?
 // This is currently set to 1KB blocks, which is approx. what we buffer
 // in RAM during FTP.
