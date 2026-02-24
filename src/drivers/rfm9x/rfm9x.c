@@ -640,34 +640,25 @@ uint8_t rfm9x_is_ldro_on(rfm9x_t *r)
     return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 3);
 }
 
-/*
- * Support multiple radios by mapping GPIO pins to radio instances.
- * RP2040 has 30 GPIO pins (0-29), RP2350 has more, but 30 should be enough.
- */
-#define MAX_GPIO_PINS 30
-static rfm9x_t *radio_by_gpio[MAX_GPIO_PINS] = {NULL};
+static rfm9x_t *radio_with_interrupts;
 
 static void rfm9x_interrupt_received(uint gpio, uint32_t events)
 {
-    if (gpio >= MAX_GPIO_PINS)
-        return;
-
-    rfm9x_t *r = radio_by_gpio[gpio];
-    if (r == NULL)
-        return;
-
-    if (rfm9x_tx_done(r))
+    if (gpio == radio_with_interrupts->d0_pin)
     {
-        if (r->tx_irq != NULL)
+        if (rfm9x_tx_done(radio_with_interrupts))
         {
-            r->tx_irq();
+            if (radio_with_interrupts->tx_irq != NULL)
+            {
+                radio_with_interrupts->tx_irq();
+            }
         }
-    }
-    else if (rfm9x_rx_done(r))
-    {
-        if (r->rx_irq != NULL)
+        else if (rfm9x_rx_done(radio_with_interrupts))
         {
-            r->rx_irq();
+            if (radio_with_interrupts->rx_irq != NULL)
+            {
+                radio_with_interrupts->rx_irq();
+            }
         }
     }
 }
@@ -685,9 +676,8 @@ void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
 
 void rfm9x_init(rfm9x_t *r)
 {
-    ASSERT(r->d0_pin < MAX_GPIO_PINS);
-    ASSERT(radio_by_gpio[r->d0_pin] == NULL);
-    radio_by_gpio[r->d0_pin] = r;
+    ASSERT(radio_with_interrupts == NULL);
+    radio_with_interrupts = r;
 
 #ifndef PICO
     // Setup RF regulator
