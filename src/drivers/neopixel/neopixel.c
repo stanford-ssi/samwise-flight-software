@@ -33,15 +33,17 @@ void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
     put_pixel(ugrb_u32(g, r, b), SAMWISE_NEOPIXEL_PIN);
 }
 #else
+// PICO fallback - use onboard LED
 void neopixel_init()
 {
-    LOG_INFO("[neopixel] Fake init neopixel driver - hardware only exists on "
-             "PICUBED.");
+    // Onboard LED is already initialized in init_drivers()
+    LOG_INFO("[neopixel] Using onboard LED fallback for PICO platform.");
 }
 
 void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
-    LOG_DEBUG("Setting neopixel on Pin <MISSING> rgb values: %u %u %u", r, g,
-              b);
+    // Turn LED on if any color channel is non-zero, off otherwise
+    bool led_state = (r > 0 || g > 0 || b > 0);
+    gpio_put(PICO_DEFAULT_LED_PIN, led_state);
 }
 #endif

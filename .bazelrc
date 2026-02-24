@@ -1,0 +1,127 @@
+# SAMWISE Flight Software - Bazel Configuration
+# Build configurations for different hardware profiles and build types
+
+# ============================================================================
+# Common Settings
+# ============================================================================
+
+# Set C/C++ language standards
+build --cxxopt=-std=c++17
+build --conlyopt=-std=gnu2x
+
+# Show detailed build information
+build --verbose_failures
+build --announce_rc
+
+# Enable color output
+common --color=yes
+
+# Cache build results
+build --disk_cache=~/.cache/bazel
+
+# ============================================================================
+# Build Profile Configurations
+# ============================================================================
+
+# Raspberry Pi Pico Development Profile (RP2040)
+build:pico --define=profile=pico
+build:pico --platforms=//platforms:arm_cortex_m33_platform
+build:pico --define=PICO_BOARD=pico
+build:pico --copt=-DPICO=1
+build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:pico --output_groups=+pico_uf2_files
+
+# PiCubed Debug Profile (RP2350 with debug features)
+build:picubed-debug --define=profile=picubed-debug
+build:picubed-debug --platforms=//platforms:arm_cortex_m33_platform
+build:picubed-debug --define=PICO_BOARD=samwise_picubed
+build:picubed-debug --define=PICO_PLATFORM=rp2350
+build:picubed-debug --define=DEBUG=1
+build:picubed-debug --copt=-DDEBUG=1
+build:picubed-debug --compilation_mode=dbg
+build:picubed-debug --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-debug --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-debug --output_groups=+pico_uf2_files
+
+# PiCubed Flight Profile (RP2350 optimized for flight)
+build:picubed-flight --define=profile=picubed-flight
+build:picubed-flight --platforms=//platforms:arm_cortex_m33_platform
+build:picubed-flight --define=PICO_BOARD=samwise_picubed
+build:picubed-flight --define=PICO_PLATFORM=rp2350
+build:picubed-flight --define=FLIGHT=1
+build:picubed-flight --copt=-DFLIGHT=1
+build:picubed-flight --compilation_mode=opt
+build:picubed-flight --copt=-Os  # Optimize for size
+build:picubed-flight --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-flight --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-flight --output_groups=+pico_uf2_files
+
+# PiCubed Bringup Profile (RP2350 for board bring-up testing)
+build:picubed-bringup --define=profile=picubed-bringup
+build:picubed-bringup --platforms=//platforms:arm_cortex_m33_platform
+build:picubed-bringup --define=PICO_BOARD=samwise_picubed
+build:picubed-bringup --define=PICO_PLATFORM=rp2350
+build:picubed-bringup --define=BRINGUP=1
+build:picubed-bringup --copt=-DBRINGUP=1
+build:picubed-bringup --compilation_mode=dbg
+build:picubed-bringup --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:picubed-bringup --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:picubed-bringup --output_groups=+pico_uf2_files
+
+# OTA MVP Blink Variant (for testing OTA partition switching)
+build:ota-blink --define=BLINK=1
+build:ota-blink --copt=-DBUILD_BLINK=1
+
+# Tests Profile (Host platform with mocked hardware)
+build:tests --define=profile=tests
+# Note: Don't specify --platforms for tests, let Bazel use default host toolchain
+build:tests --define=TEST=1
+build:tests --copt=-DTEST=1
+build:tests --compilation_mode=fastbuild
+# Prevent config split when mock targets are reachable from both cc_library
+# (via select) and cc_test targets — without this, Bazel trims test options
+# from non-test targets, creating two different configs for the same mock.
+build:tests --notrim_test_configuration
+
+# ============================================================================
+# Test Configuration
+# ============================================================================
+
+# Test output settings
+test --test_output=errors
+test --test_summary=detailed
+
+# Use tests profile by default for test commands
+test --config=tests
+
+# ============================================================================
+# Optimization Settings
+# ============================================================================
+
+# Debug build settings
+build:dbg --compilation_mode=dbg
+build:dbg --copt=-Og
+build:dbg --copt=-g
+
+# Release build settings
+build:opt --compilation_mode=opt
+build:opt --copt=-O3
+build:opt --copt=-DNDEBUG
+
+# Size-optimized build settings
+build:size --compilation_mode=opt
+build:size --copt=-Os
+build:size --copt=-DNDEBUG
+
+# ============================================================================
+# User-specific overrides (gitignored)
+# ============================================================================
+
+# Load user-specific configuration (e.g., for PACKET_HMAC_PSK)
+# To enable packet authentication for flight builds, either:
+#   1. Pass via command line:
+#      bazel build :samwise --config=picubed-flight --copt=-DPACKET_HMAC_PSK='"your-key"'
+#   2. Or create .bazelrc.local with:
+#      build:picubed-flight --copt=-DPACKET_HMAC_PSK='"your-32-char-key-here"'
+try-import %workspace%/.bazelrc.local

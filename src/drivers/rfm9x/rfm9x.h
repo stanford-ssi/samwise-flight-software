@@ -1,16 +1,22 @@
 #pragma once
 
+#ifndef TEST
+#include "bit-support.h"
 #include "hardware/resets.h"
 #include "hardware/spi.h"
-
-#include "pico/stdlib.h"
-#include "pico/time.h"
-
-#include "bit-support.h"
 #include "logger.h"
 #include "macros.h"
 #include "packet.h"
+#include "pico/stdlib.h"
+#include "pico/time.h"
 #include "pins.h"
+#else
+#include "hardware/spi.h"
+#include "packet.h"
+#include "typedefs.h"
+#include <stdbool.h>
+#include <stdint.h>
+#endif
 
 #define PAYLOAD_SIZE                                                           \
     PACKET_SIZE - 4 // 4 bytes for header (destination, node, identifier, flags)
@@ -68,8 +74,6 @@ void rfm9x_init(rfm9x_t *r);
 /*
  * Returns the chip version from the RFM9X
  */
-uint32_t rfm9x_version(rfm9x_t *r);
-
 uint32_t rfm9x_version(rfm9x_t *r);
 
 void rfm9x_listen(rfm9x_t *r);

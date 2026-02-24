@@ -3,11 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Mock queue type
-typedef struct
-{
-    uint8_t dummy;
-} queue_t;
+#include "typedefs.h"
 
 // Mock queue functions that are no-ops in tests
 static inline void queue_init(queue_t *q, unsigned int element_size,

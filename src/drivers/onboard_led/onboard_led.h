@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef TEST
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
+#else
+#include "typedefs.h"
+#include <stdbool.h>
+#endif
 
 struct onboard_led
 {

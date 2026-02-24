@@ -3,7 +3,12 @@
 **/.DS_Store
 **/env
 .vscode
-build*
+
+# CMake build output directories
+build/
+build-*/
+
+# Build scripts (should not be ignored)
 !build_debug.sh
 !build_tests.sh
 
@@ -19,3 +24,13 @@ node_modules/
 # Testing
 .pytest_cache/
 ground_station/tests/runtime_artifacts/
+
+# Bazel build artifacts
+bazel-*
+.bazelrc.local
+
+# CMake build artifacts
+**/CMakeFiles
+
+# Workspace files
+.idea

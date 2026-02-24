@@ -557,7 +557,7 @@ void rfm9x_set_tx_power(rfm9x_t *r, int8_t power)
         if (power < -1)
             power = -1;
 
-        rfm9x_set_pa_output_pin(r, 1);
+        rfm9x_set_pa_output_pin(r, 0);
         rfm9x_set_max_power(r, 0b111);
         rfm9x_set_output_power(r, (power + 1) & 0x0F);
     }
@@ -593,13 +593,59 @@ uint8_t rfm9x_get_lna_boost(rfm9x_t *r)
     return c;
 }
 
+/*
+ * See pg. 107 of HopeRF Documentation
+ */
+
+void rfm9x_set_agc(rfm9x_t *r, uint8_t agc)
+{
+    uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
+
+    if (agc)
+    {
+        c = bit_set(c, 2);
+    }
+    else
+    {
+        c = bit_clr(c, 2);
+    }
+    rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, c);
+}
+
+uint8_t rfm9x_is_agc_on(rfm9x_t *r)
+{
+    return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 2);
+}
+
+/*
+ * See pg. 107 of HopeRF Documentation
+ */
+void rfm9x_set_ldro(rfm9x_t *r, uint8_t ldro)
+{
+    uint8_t c = rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3);
+
+    if (ldro)
+    {
+        c = bit_set(c, 3);
+    }
+    else
+    {
+        c = bit_clr(c, 3);
+    }
+    rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, c);
+}
+
+uint8_t rfm9x_is_ldro_on(rfm9x_t *r)
+{
+    return bit_is_on(rfm9x_get8(r, _RH_RF95_REG_26_MODEM_CONFIG3), 3);
+}
+
 static rfm9x_t *radio_with_interrupts;
 
 static void rfm9x_interrupt_received(uint gpio, uint32_t events)
 {
     if (gpio == radio_with_interrupts->d0_pin)
     {
-
         if (rfm9x_tx_done(radio_with_interrupts))
         {
             if (radio_with_interrupts->tx_irq != NULL)
@@ -632,6 +678,11 @@ void rfm9x_init(rfm9x_t *r)
 {
     ASSERT(radio_with_interrupts == NULL);
     radio_with_interrupts = r;
+
+#ifdef IN_FLIGHT
+    // In flight mode, always use maximum power for reliable communication
+    r->max_power = 1;
+#endif
 
 #ifndef PICO
     // Setup RF regulator
@@ -729,7 +780,7 @@ void rfm9x_init(rfm9x_t *r)
         r, 7); /* Configure to 7 to match Radiohead library */
     ASSERT(rfm9x_get_spreading_factor(r) == 7);
 
-    rfm9x_set_crc(r, 1); /* Disable CRC checking */
+    rfm9x_set_crc(r, 1); /* ENABLE CRC checking */
     ASSERT(rfm9x_is_crc_enabled(r) == 1);
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
@@ -741,6 +792,12 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_set_lna_boost(r, 0b11);
     ASSERT(rfm9x_get_lna_boost(r) == 0b11);
+
+    rfm9x_set_agc(r, 1);
+    ASSERT(rfm9x_is_agc_on(r) == 1);
+
+    rfm9x_set_ldro(r, 1);
+    ASSERT(rfm9x_is_ldro_on(r) == 1);
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
@@ -815,7 +872,7 @@ void rfm9x_transmit(rfm9x_t *r)
     // we do not have an LNA
     rfm9x_set_mode(r, TX_MODE);
     uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    dioValue = bits_set(dioValue, 6, 7, 0b00);
+    dioValue = bits_set(dioValue, 6, 7, 0b01);
     rfm9x_put8(r, _RH_RF95_REG_40_DIO_MAPPING1, dioValue);
 }
 
@@ -835,22 +892,16 @@ uint8_t rfm9x_tx_done(rfm9x_t *r)
 
 uint8_t rfm9x_rx_done(rfm9x_t *r)
 {
-    uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    if (dioValue)
-    {
-        return dioValue;
-    }
-    else
-    {
-        return (rfm9x_get8(r, _RH_RF95_REG_12_IRQ_FLAGS) & 0x40) >> 6;
-    }
+    return (rfm9x_get8(r, _RH_RF95_REG_12_IRQ_FLAGS) & 0x40) >> 6;
 }
 
 int rfm9x_await_rx(rfm9x_t *r)
 {
     rfm9x_listen(r);
     while (!rfm9x_rx_done(r))
-        ; // spin until RX done
+    {
+        tight_loop_contents();
+    }
     return 1;
 }
 

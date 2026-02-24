@@ -1,0 +1,118 @@
+# Test mocks for Pico-SDK hardware abstractions
+# These mocks replace embedded hardware dependencies with test-friendly implementations
+
+package(default_visibility = ["//visibility:public"])
+
+# Pico unique_id mock
+cc_library(
+    name = "pico_unique_id_mock",
+    hdrs = ["pico/unique_id.h"],
+    includes = ["."],
+)
+
+# Pico util mock (queue functions)
+cc_library(
+    name = "pico_util_mock",
+    hdrs = ["pico/util/queue.h"],
+    includes = ["."],
+    deps = ["//src/common"],
+)
+
+# Pico stdlib mock (standard library functions for Pico)
+cc_library(
+    name = "pico_stdlib_mock",
+    hdrs = [
+        "pico/stdlib.h",
+        "pico/types.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        ":pico_unique_id_mock",
+        ":pico_util_mock",
+    ],
+)
+
+# Hardware SPI mock
+cc_library(
+    name = "hardware_spi_mock",
+    hdrs = ["hardware/spi.h"],
+    includes = ["."],
+)
+
+# Hardware I2C mock
+cc_library(
+    name = "hardware_i2c_mock",
+    hdrs = ["hardware/i2c.h"],
+    includes = ["."],
+)
+
+# Hardware PWM mock
+cc_library(
+    name = "hardware_pwm_mock",
+    hdrs = ["hardware/pwm.h"],
+    includes = ["."],
+)
+
+# Hardware GPIO mock
+cc_library(
+    name = "hardware_gpio_mock",
+    hdrs = ["hardware/gpio.h"],
+    includes = ["."],
+)
+
+# Hardware Flash mock
+cc_library(
+    name = "hardware_flash_mock",
+    hdrs = ["hardware/flash.h"],
+    includes = ["."],
+)
+
+# Hardware Resets mock
+cc_library(
+    name = "hardware_resets_mock",
+    hdrs = ["hardware/resets.h"],
+    includes = ["."],
+)
+
+# Hardware Sync mock
+cc_library(
+    name = "hardware_sync_mock",
+    hdrs = ["hardware/sync.h"],
+    includes = ["."],
+)
+
+# Hardware UART mock
+cc_library(
+    name = "hardware_uart_mock",
+    hdrs = ["hardware/uart.h"],
+    includes = ["."],
+)
+
+# Pico time mock (timing functions)
+cc_library(
+    name = "pico_time_mock",
+    srcs = ["pico/time.c"],
+    hdrs = ["pico/time.h"],
+    includes = ["."],
+    deps = [":pico_stdlib_mock"],
+)
+
+# Complete test mocks library (aggregates all Pico SDK hardware mocks)
+cc_library(
+    name = "test_mocks",
+    deps = [
+        ":hardware_flash_mock",
+        ":hardware_gpio_mock",
+        ":hardware_i2c_mock",
+        ":hardware_pwm_mock",
+        ":hardware_resets_mock",
+        ":hardware_spi_mock",
+        ":hardware_sync_mock",
+        ":hardware_uart_mock",
+        ":pico_stdlib_mock",
+        ":pico_time_mock",
+        ":pico_unique_id_mock",
+        ":pico_util_mock",
+    ],
+)

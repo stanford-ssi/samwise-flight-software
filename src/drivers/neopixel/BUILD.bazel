@@ -1,0 +1,34 @@
+package(default_visibility = ["//visibility:public"])
+
+# Real neopixel driver (for embedded targets)
+cc_library(
+    name = "neopixel",
+    srcs = ["neopixel.c"],
+    hdrs = [
+        "neopixel.h",
+        "ws2812.pio.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_pio:hardware_pio",
+        "@pico-sdk//src/rp2_common/hardware_clocks:hardware_clocks",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock neopixel driver (for host tests)
+cc_library(
+    name = "neopixel_mock",
+    srcs = ["neopixel_mock.c"],
+    hdrs = ["neopixel.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
+        "//src/test_mocks",
+    ],
+)

@@ -6,11 +6,18 @@
  */
 
 #include "packet.h"
+#ifndef TEST
 #include "logger.h"
+#endif
 
 #include <tinycrypt/hmac.h>
 #include <tinycrypt/sha256.h>
 #include <tinycrypt/utils.h>
+
+#if defined(FLIGHT) && !defined(PACKET_HMAC_PSK)
+#error                                                                         \
+    "PACKET_HMAC_PSK must be defined for flight builds. See .bazelrc for instructions."
+#endif
 
 #define PACKET_HMAC_PSK_LEN 32
 

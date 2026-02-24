@@ -1,0 +1,27 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "burn_wire_task",
+    srcs = ["burn_wire_task.c"],
+    hdrs = ["burn_wire_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/utils",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/burn_wire:burn_wire_mock",
+            "//src/drivers/flash:flash_mock",
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/burn_wire",
+            "//src/drivers/flash",
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)

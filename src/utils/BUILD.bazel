@@ -1,0 +1,31 @@
+"""
+Utility functions for SAMWISE flight software.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "utils",
+    hdrs = [
+        "crc32.h",
+        "safe_sleep.h",
+        "str_utils.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/watchdog:watchdog_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_time_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/watchdog",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
