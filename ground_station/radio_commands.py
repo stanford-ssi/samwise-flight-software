@@ -28,9 +28,21 @@ class LoraRadio:
                 rh_identifier = getattr(self.radio, 'identifier', None)
                 rh_flags = getattr(self.radio, 'flags', None)
                 
-                logger.info("PACKET RECEIVED | TO: %s | FROM: %s | ID: %s | FLAGS: %s", 
-                            rh_destination, rh_node, rh_identifier, rh_flags)
-                
+                # Get signal strength for filtering
+                rssi = getattr(self.radio, 'last_rssi', None)
+                snr = getattr(self.radio, 'last_snr', None)
+
+                logger.info("PACKET RECEIVED | TO: %s | FROM: %s | ID: %s | FLAGS: %s | RSSI: %s dBm",
+                            rh_destination, rh_node, rh_identifier, rh_flags, rssi)
+
+                # FILTER 1: RSSI threshold check (reject weak/noisy signals)
+                if config.config.get('enable_rssi_filter', False) and rssi is not None:
+                    rssi_threshold = config.config.get('rssi_threshold', -120)
+                    if rssi < rssi_threshold:
+                        logger.warning("PACKET DROPPED | RSSI too low: %d dBm < %d dBm threshold",
+                                     rssi, rssi_threshold)
+                        return False
+
                 # Check if this is from satellite (beacon source)
                 if rh_node == 0:  # FROM satellite
                     if len(packet) >= 1:
@@ -39,16 +51,35 @@ class LoraRadio:
                             beacon_payload = packet[1:1+data_len]
                             beacon_data = protocol.decode_beacon_data(beacon_payload)
                             beacon_data.raw_hex = packet.hex() if hasattr(packet, 'hex') else ''.join('{:02x}'.format(b) for b in packet)
-                            
+
+                            # FILTER 2: Callsign verification (reject packets not from our satellite)
+                            if config.config.get('enable_callsign_filter', False):
+                                expected_callsign = config.config.get('expected_callsign', 'KC3WNY')
+
+                                # Check if beacon has callsign field
+                                if beacon_data.callsign:
+                                    # Verify callsign matches (case-insensitive, strip whitespace)
+                                    actual_callsign = beacon_data.callsign.strip().upper()
+                                    if expected_callsign.upper() not in actual_callsign:
+                                        logger.warning("PACKET DROPPED | Callsign mismatch: '%s' (expected '%s')",
+                                                     beacon_data.callsign, expected_callsign)
+                                        return False
+                                    else:
+                                        logger.debug("Callsign verified: %s", beacon_data.callsign)
+                                else:
+                                    # No callsign in packet - log warning but allow (might be old format)
+                                    logger.warning("PACKET WARNING | No callsign present (expected '%s')",
+                                                 expected_callsign)
+
+                            # Packet passed all filters - process it
+
                             # 1. Sync local mission state (Critical operational step)
                             if beacon_data.stats:
                                 state_manager.update_from_beacon(beacon_data.stats.reboot_counter)
-                            
+
                             # 2. Comprehensive Logging & Reporting
                             # This handles both CSV storage and the detailed console report
                             try:
-                                rssi = getattr(self.radio, 'last_rssi', None)
-                                snr = getattr(self.radio, 'last_snr', None)
                                 telemetry_logger.log_beacon(beacon_data, rssi=rssi, snr=snr, detailed=True)
                             except Exception as log_err:
                                 logger.error("Failed to process beacon telemetry: %s", log_err)

@@ -12,6 +12,28 @@ Usage:
 
 import sys
 import os
+import builtins
+import traceback
+import importlib
+
+# Add parent directory to path to import ground_station modules
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+# Try to import select (not available on all platforms)
+try:
+    import select
+    HAS_SELECT_MODULE = True
+except ImportError:
+    HAS_SELECT_MODULE = False
+
+
+def get_models_module():
+    """
+    Import and return the models module.
+    This function exists to centralize module imports for testing.
+    """
+    import models
+    return models
 
 def test_with_pydantic():
     """Test models with Pydantic enabled (Raspberry Pi mode)"""
@@ -20,30 +42,27 @@ def test_with_pydantic():
     print("=" * 60)
 
     try:
-        from models import (
-            ADCSQuaternion, ADCSData, BeaconStats, BeaconData,
-            Packet, USE_PYDANTIC, IS_CIRCUITPYTHON
-        )
+        models = get_models_module()
 
-        assert USE_PYDANTIC == True, "Expected Pydantic to be enabled"
-        assert IS_CIRCUITPYTHON == False, "Expected CPython, not CircuitPython"
+        assert models.USE_PYDANTIC == True, "Expected Pydantic to be enabled"
+        assert models.IS_CIRCUITPYTHON == False, "Expected CPython, not CircuitPython"
         print("✓ Platform detection: USE_PYDANTIC=True, IS_CIRCUITPYTHON=False")
 
         # Test instance creation
-        q = ADCSQuaternion(q0=1.0, q1=0.0, q2=0.0, q3=0.0)
+        q = models.ADCSQuaternion(q0=1.0, q1=0.0, q2=0.0, q3=0.0)
         assert abs(q.magnitude - 1.0) < 0.01, f"Quaternion magnitude incorrect: {q.magnitude}"
         print(f"✓ ADCSQuaternion: magnitude={q.magnitude:.2f}")
 
-        beacon = BeaconData(state_name='test_state')
+        beacon = models.BeaconData(state_name='test_state')
         assert beacon.state_name == 'test_state'
         print(f"✓ BeaconData: state={beacon.state_name}")
 
-        stats = BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
+        stats = models.BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
         assert stats.reboot_counter == 5
         assert 'adcs_valid' in stats.device_status_flags
         print(f"✓ BeaconStats: reboots={stats.reboot_counter}, flags={stats.device_status_flags}")
 
-        pkt = Packet(dst=255, src=0, data=b'test')
+        pkt = models.Packet(dst=255, src=0, data=b'test')
         assert pkt.dst == 255
         assert len(pkt.data) == 4
         print(f"✓ Packet: dst={pkt.dst}, data_len={len(pkt.data)}")
@@ -53,7 +72,6 @@ def test_with_pydantic():
 
     except Exception as e:
         print(f"\n✗ FAILED: {e}\n")
-        import traceback
         traceback.print_exc()
         return False
 
@@ -65,7 +83,6 @@ def test_without_pydantic():
     print("=" * 60)
 
     # Mock pydantic not being available
-    import builtins
     original_import = builtins.__import__
 
     def mock_import(name, *args, **kwargs):
@@ -74,36 +91,34 @@ def test_without_pydantic():
         return original_import(name, *args, **kwargs)
 
     try:
-        # Remove models from cache if already imported
+        # Remove models from cache first
         if 'models' in sys.modules:
             del sys.modules['models']
 
         # Apply mock
         builtins.__import__ = mock_import
 
-        from models import (
-            ADCSQuaternion, ADCSData, BeaconStats, BeaconData,
-            Packet, USE_PYDANTIC, IS_CIRCUITPYTHON
-        )
+        # Import models module with mocked pydantic import
+        models_reloaded = get_models_module()
 
-        assert USE_PYDANTIC == False, "Expected Pydantic to be disabled"
+        assert models_reloaded.USE_PYDANTIC == False, "Expected Pydantic to be disabled"
         print("✓ Platform detection: USE_PYDANTIC=False")
 
         # Test instance creation
-        q = ADCSQuaternion(q0=1.0, q1=0.0, q2=0.0, q3=0.0)
+        q = models_reloaded.ADCSQuaternion(q0=1.0, q1=0.0, q2=0.0, q3=0.0)
         assert abs(q.magnitude - 1.0) < 0.01
         print(f"✓ ADCSQuaternion: magnitude={q.magnitude:.2f}")
 
-        beacon = BeaconData(state_name='test_state')
+        beacon = models_reloaded.BeaconData(state_name='test_state')
         assert beacon.state_name == 'test_state'
         print(f"✓ BeaconData: state={beacon.state_name}")
 
-        stats = BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
+        stats = models_reloaded.BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
         assert stats.reboot_counter == 5
         assert 'adcs_valid' in stats.device_status_flags
         print(f"✓ BeaconStats: reboots={stats.reboot_counter}, flags={stats.device_status_flags}")
 
-        pkt = Packet(dst=255, src=0, data=b'test')
+        pkt = models_reloaded.Packet(dst=255, src=0, data=b'test')
         assert pkt.dst == 255
         assert len(pkt.data) == 4
 
@@ -117,7 +132,6 @@ def test_without_pydantic():
 
     except Exception as e:
         print(f"\n✗ FAILED: {e}\n")
-        import traceback
         traceback.print_exc()
         return False
 
@@ -139,18 +153,12 @@ def test_ui_platform_detection():
         # Test platform detection
         IS_CIRCUITPYTHON = sys.implementation.name == 'circuitpython'
 
-        try:
-            import select
-            HAS_SELECT = True
-        except ImportError:
-            HAS_SELECT = False
-
         print(f"✓ IS_CIRCUITPYTHON: {IS_CIRCUITPYTHON}")
-        print(f"✓ HAS_SELECT: {HAS_SELECT}")
+        print(f"✓ HAS_SELECT: {HAS_SELECT_MODULE}")
 
         # On CPython, select should be available
         if not IS_CIRCUITPYTHON:
-            assert HAS_SELECT == True, "select should be available on CPython"
+            assert HAS_SELECT_MODULE == True, "select should be available on CPython"
             print("✓ select module available (CPython)")
 
         print("\n✅ UI platform detection tests PASSED!\n")
@@ -158,7 +166,6 @@ def test_ui_platform_detection():
 
     except Exception as e:
         print(f"\n✗ FAILED: {e}\n")
-        import traceback
         traceback.print_exc()
         return False
 

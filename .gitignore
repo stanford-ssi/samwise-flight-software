@@ -34,3 +34,7 @@ bazel-*
 
 # Workspace files
 .idea
+
+# Ground Station runtime artefacts
+gs_state.json
+

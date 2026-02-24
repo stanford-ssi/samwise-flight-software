@@ -35,6 +35,13 @@ PAYLOAD_TURN_OFF = 3           # src/tasks/command/command_parser.h:CMD_PAYLOAD_
 MANUAL_STATE_OVERRIDE = 4      # src/tasks/command/command_parser.h:CMD_MANUAL_STATE_OVERRIDE
 PAYLOAD_SHUTDOWN = 5           # src/tasks/command/command_parser.h:CMD_PAYLOAD_SHUTDOWN
 
+# Packet filtering configuration
+# These filters help reject noisy packets not from the satellite
+RSSI_THRESHOLD = -120          # Minimum signal strength in dBm (packets below this are dropped)
+EXPECTED_CALLSIGN = "KC3WNY"   # Expected amateur radio callsign suffix (FCC license for Samwise)
+ENABLE_RSSI_FILTER = True      # Enable/disable RSSI-based filtering
+ENABLE_CALLSIGN_FILTER = True  # Enable/disable callsign verification
+
 # Global configuration variables
 config = {
     'auth_enabled': True,
@@ -44,5 +51,11 @@ config = {
     'bandwidth': DEFAULT_BANDWIDTH,
     'spreading_factor': DEFAULT_SPREADING_FACTOR,
     'coding_rate': DEFAULT_CODING_RATE,
-    'crc': DEFAULT_CRC
+    'crc': DEFAULT_CRC,
+
+    # Packet filtering
+    'rssi_threshold': RSSI_THRESHOLD,
+    'expected_callsign': EXPECTED_CALLSIGN,
+    'enable_rssi_filter': ENABLE_RSSI_FILTER,
+    'enable_callsign_filter': ENABLE_CALLSIGN_FILTER,
 }

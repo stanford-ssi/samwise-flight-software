@@ -58,9 +58,25 @@ The **`code.py`** file is the system's entrypoint. It initializes the hardware, 
 
 ### 2. Running on Raspberry Pi (Recommended)
 Perfect for fixed ground stations.
-1.  **Install Dependencies**: `pip3 install -r requirements.txt`
-2.  **Verify Blinka**: Ensure the Adafruit Blinka library is configured for your Pi's hardware pins.
-3.  **Run**: `python3 code.py`
+
+**Installation:**
+```bash
+# Install in editable mode (recommended for development)
+pip3 install -e .
+
+# Or install normally
+pip3 install .
+
+# For development with testing tools
+pip3 install -e .[dev]
+```
+
+**Run:**
+```bash
+python3 code.py
+```
+
+**Verify Blinka**: Ensure the Adafruit Blinka library is configured for your Pi's hardware pins.
 
 ### 3. Running on CircuitPython Microcontrollers (Pico 2 / Feather M4)
 Perfect for portable/field ground stations.
@@ -226,6 +242,52 @@ Every packet received is automatically archived in **`logs/telemetry_log.csv`**.
 Mission-specific settings (Frequency: 438.1 MHz, HMAC Keys, etc.) should be adjusted in **`config.py`**.
 
 **Note**: The ground station automatically synchronizes its `boot_count` whenever it hears a beacon, ensuring that your next command is always correctly authenticated without manual setup.
+
+### 🛡️ Packet Filtering (Noise Rejection)
+
+The ground station includes built-in filters to reject noisy packets not from the Samwise satellite:
+
+#### **1. RSSI Threshold Filter**
+Drops packets with signal strength below -120 dBm (very weak/noisy signals).
+
+```python
+# In config.py
+RSSI_THRESHOLD = -120          # Minimum signal strength in dBm
+ENABLE_RSSI_FILTER = True      # Enable/disable RSSI filtering
+```
+
+**When a packet is dropped:**
+```
+PACKET DROPPED | RSSI too low: -125 dBm < -120 dBm threshold
+```
+
+#### **2. Callsign Verification**
+Verifies that beacons contain the expected amateur radio callsign suffix (**KC3WNY**) assigned to Samwise.
+
+```python
+# In config.py
+EXPECTED_CALLSIGN = "KC3WNY"   # FCC-assigned callsign for Samwise
+ENABLE_CALLSIGN_FILTER = True  # Enable/disable callsign verification
+```
+
+**When a packet is dropped:**
+```
+PACKET DROPPED | Callsign mismatch: 'AB1CDE' (expected 'KC3WNY')
+```
+
+**Use Cases:**
+- **Dense RF environments**: Filter out packets from other LoRA devices
+- **Satellite passes**: Reject ground reflections and multipath interference
+- **Testing/debugging**: Disable filters to see all received packets
+
+**To disable filtering** (e.g., for debugging):
+```python
+config = {
+    # ... other settings ...
+    'enable_rssi_filter': False,      # Accept all signal strengths
+    'enable_callsign_filter': False,  # Accept all callsigns
+}
+```
 
 ---
 
