@@ -3,8 +3,9 @@ import logging
 import adafruit_rfm9x
 import board
 import busio
-import config
 import digitalio
+
+import config
 
 logger = logging.getLogger("GS.RadioInit")
 

@@ -124,6 +124,9 @@ exclude = [
 select = ["E", "F", "W", "I", "N"]
 ignore = ["E501"]  # Line too long
 
+[tool.ruff.lint.isort]
+known-first-party = ["config", "protocol", "models", "radio_commands", "radio_initialization", "state", "logger", "ui", "code"]
+
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports in __init__ are OK
 "models.py" = ["N815", "N803"]  # Allow mixedCase for satellite data field names
