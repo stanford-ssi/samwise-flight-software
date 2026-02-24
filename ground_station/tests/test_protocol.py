@@ -59,9 +59,9 @@ def test_create_cmd_payload():
     assert payload[1:] == b"test"
 
     # Test bytes payload
-    payload = protocol.create_cmd_payload(0x02, b"\xDE\xAD")
+    payload = protocol.create_cmd_payload(0x02, b"\xDE\xAD")  # fmt: skip
     assert payload[0] == 0x02
-    assert payload[1:] == b"\xDE\xAD"
+    assert payload[1:] == b"\xDE\xAD"  # fmt: skip
 
 
 @pytest.mark.unit
