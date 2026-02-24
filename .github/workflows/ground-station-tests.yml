@@ -74,12 +74,12 @@ jobs:
     - name: Run compatibility tests
       run: |
         cd ground_station
-        python -m pytest tests/test_compatibility.py -v -m compatibility
+        python -m pytest tests/test_compatibility.py -v
 
     - name: Run filtering tests
       run: |
         cd ground_station
-        python -m pytest tests/test_filtering.py -v -m filtering
+        python -m pytest tests/test_filtering.py -v
 
   lint:
     name: Lint Ground Station Code
