@@ -1,6 +1,5 @@
 import sys
 import time
-import select
 from .radio_commands import get_radio
 from . import protocol
 from . import config
@@ -8,7 +7,45 @@ from . import radio_initialization as hardware
 from .state import state_manager
 import logging
 
+# Platform detection for CircuitPython compatibility
+IS_CIRCUITPYTHON = sys.implementation.name == 'circuitpython'
+
+# Import select only on platforms that support it (not CircuitPython)
+if not IS_CIRCUITPYTHON:
+    try:
+        import select
+        HAS_SELECT = True
+    except ImportError:
+        HAS_SELECT = False
+else:
+    HAS_SELECT = False
+
 logger = logging.getLogger("GS.UI")
+
+
+def check_stdin_ready():
+    """Check if stdin has data available without blocking.
+
+    Returns True if input is available, False otherwise.
+    Works on both CircuitPython and CPython.
+    """
+    if HAS_SELECT:
+        # Unix/Linux/Mac with select support
+        rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        return bool(rlist)
+    else:
+        # CircuitPython fallback - try to read with timeout
+        # Note: This is less efficient but works on CircuitPython
+        # On CircuitPython, sys.stdin.read() is available but doesn't support select
+        try:
+            # Check if there's a character available (non-blocking on CircuitPython)
+            import supervisor
+            return supervisor.runtime.serial_bytes_available > 0
+        except (ImportError, AttributeError):
+            # Fallback: always return False (input checking disabled)
+            # Interactive mode will be degraded on this platform
+            return False
+
 
 def get_user_input(prompt, default=None):
     """Get user input with optional default value"""
@@ -151,9 +188,8 @@ def interactive_command_loop():
             radio.try_get_packet(timeout=0.01)
             
             # 2. Check for user input without blocking
-            # Linux/Pi compatible non-blocking stdin check
-            rlist, _, _ = select.select([sys.stdin], [], [], 0)
-            if rlist:
+            # Platform-agnostic non-blocking stdin check
+            if check_stdin_ready():
                 line = sys.stdin.readline()
                 cmd = line.strip().lower()
                 
