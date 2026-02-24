@@ -76,8 +76,6 @@ void rfm9x_init(rfm9x_t *r);
  */
 uint32_t rfm9x_version(rfm9x_t *r);
 
-uint32_t rfm9x_version(rfm9x_t *r);
-
 void rfm9x_listen(rfm9x_t *r);
 void rfm9x_transmit(rfm9x_t *r);
 
