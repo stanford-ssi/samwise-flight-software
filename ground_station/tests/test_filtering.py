@@ -5,11 +5,11 @@ Test script for packet filtering functionality
 This demonstrates the RSSI threshold and callsign verification filters.
 """
 
-import sys
 import os
+import sys
 
 # Add parent directory to path to import ground_station modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # Import configuration values
 import config
@@ -22,7 +22,7 @@ def test_rssi_filter():
     print("=" * 60)
 
     # Get threshold from config
-    rssi_threshold = config.config.get('rssi_threshold', -120)
+    rssi_threshold = config.config.get("rssi_threshold", -120)
     print(f"Using RSSI threshold from config: {rssi_threshold} dBm\n")
 
     # Simulated RSSI values
@@ -65,7 +65,7 @@ def test_callsign_filter():
     print("=" * 60)
 
     # Get expected callsign from config
-    expected_callsign = config.config.get('expected_callsign', 'KC3WNY')
+    expected_callsign = config.config.get("expected_callsign", "KC3WNY")
     print(f"Using expected callsign from config: {expected_callsign}\n")
 
     # Simulated callsign values
@@ -111,15 +111,20 @@ def test_combined_filters():
     print("=" * 60)
 
     # Get values from config
-    rssi_threshold = config.config.get('rssi_threshold', -120)
-    expected_callsign = config.config.get('expected_callsign', 'KC3WNY')
+    rssi_threshold = config.config.get("rssi_threshold", -120)
+    expected_callsign = config.config.get("expected_callsign", "KC3WNY")
     print(f"Using RSSI threshold: {rssi_threshold} dBm")
     print(f"Using expected callsign: {expected_callsign}\n")
 
     # Simulated packets: (rssi, callsign, should_accept, description)
     test_cases = [
         (-115, expected_callsign, True, "Good signal + correct callsign - ACCEPT"),
-        (rssi_threshold - 5, expected_callsign, False, "Weak signal + correct callsign - REJECT (RSSI)"),
+        (
+            rssi_threshold - 5,
+            expected_callsign,
+            False,
+            "Weak signal + correct callsign - REJECT (RSSI)",
+        ),
         (-115, "AB1CDE", False, "Good signal + wrong callsign - REJECT (Callsign)"),
         (rssi_threshold - 5, "AB1CDE", False, "Weak signal + wrong callsign - REJECT (Both)"),
         (rssi_threshold, expected_callsign, True, "At threshold + correct callsign - ACCEPT"),

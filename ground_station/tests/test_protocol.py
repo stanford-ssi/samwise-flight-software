@@ -5,26 +5,28 @@ Byte formats must remain in sync with the Kaitai Struct specification:
 """
 
 import os
-import sys
 import struct
+import sys
+
 import pytest
 
 # Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 # Import ground_station modules as a package (hardware mocking handled in conftest.py)
 from ground_station import protocol
 from ground_station import state as state_module
 
+
 @pytest.fixture
 def test_state():
     """Create a temporary state manager for testing"""
     # Create runtime_artifacts directory if it doesn't exist
-    runtime_dir = os.path.join(os.path.dirname(__file__), 'runtime_artifacts')
+    runtime_dir = os.path.join(os.path.dirname(__file__), "runtime_artifacts")
     os.makedirs(runtime_dir, exist_ok=True)
 
     # Use a temporary state file for tests to avoid polluting production data
-    test_state_file = os.path.join(runtime_dir, 'test_gs_state.json')
+    test_state_file = os.path.join(runtime_dir, "test_gs_state.json")
     test_state_manager = state_module.StateManager(state_file=test_state_file)
 
     # Inject our test state into the global state_manager for protocol to use
@@ -43,7 +45,7 @@ def test_state():
     # Clean up test state file
     try:
         os.remove(test_state_file)
-    except:
+    except (OSError, FileNotFoundError):
         pass
 
 
@@ -64,7 +66,9 @@ def test_create_cmd_payload():
 
 @pytest.mark.unit
 @pytest.mark.protocol
-@pytest.mark.skip(reason="State fixture injection needs fixing - state_manager reference timing issue")
+@pytest.mark.skip(
+    reason="State fixture injection needs fixing - state_manager reference timing issue"
+)
 def test_packet_creation_structure(test_state):
     """Test packet creation structure matches protocol specification"""
     builder = protocol.LegacyPacketBuilder()
@@ -88,11 +92,11 @@ def test_packet_creation_structure(test_state):
     assert packet[4] == len(data)  # len
 
     # Verify Data
-    assert packet[5:5+len(data)] == data
+    assert packet[5 : 5 + len(data)] == data
 
     # Verify Footer (Boot Count & Msg ID)
     footer_start = 5 + len(data)
-    boot_count, msg_id = struct.unpack("<II", packet[footer_start:footer_start+8])
+    boot_count, msg_id = struct.unpack("<II", packet[footer_start : footer_start + 8])
 
     assert boot_count == 100
     assert msg_id == 51  # 50 + 1 (incremented)
@@ -126,17 +130,26 @@ def test_beacon_decode():
     # uint16_t panel_B_current_ma;
     # uint8_t device_status;
 
-    stats_format = '<LQ6L8HB'
-    stats_data = struct.pack(stats_format,
-        42,           # reboots
-        10000,        # time
-        100, 10, 0, 0,  # RX stats
-        200, 20,      # TX stats
-        4000, 100,    # Battery
-        5000, 500,    # Solar
-        3300, 50,     # Panel A
-        3300, 50,     # Panel B
-        0x01          # Status
+    stats_format = "<LQ6L8HB"
+    stats_data = struct.pack(
+        stats_format,
+        42,  # reboots
+        10000,  # time
+        100,
+        10,
+        0,
+        0,  # RX stats
+        200,
+        20,  # TX stats
+        4000,
+        100,  # Battery
+        5000,
+        500,  # Solar
+        3300,
+        50,  # Panel A
+        3300,
+        50,  # Panel B
+        0x01,  # Status
     )
 
     # Beacon format: [data_len][state_name + stats]
@@ -150,5 +163,5 @@ def test_beacon_decode():
     assert result.stats.battery_voltage == 4000
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

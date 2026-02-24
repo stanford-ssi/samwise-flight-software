@@ -6,4 +6,3 @@ bazel build --config=$1 \
     :samwise
 
 picotool load bazel-bin/samwise.uf2 -f
-

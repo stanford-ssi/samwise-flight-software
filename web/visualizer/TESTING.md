@@ -7,7 +7,7 @@ The running state test has been refactored to use **real scheduler logic** with 
 ## Key Changes
 
 ### 1. Test Uses Real Scheduler (`src/scheduler/scheduler.c`)
-- **No reimplementation**: The test now compiles and uses the actual `scheduler.c` 
+- **No reimplementation**: The test now compiles and uses the actual `scheduler.c`
 - Tests the real task dispatch logic with proper time-based checks
 - Verifies tasks execute at their correct periods (100ms, 1000ms, 5000ms)
 
@@ -72,17 +72,17 @@ The test simulates:
 
 ## Benefits of Real Scheduler Testing
 
-✅ Tests actual production code path  
-✅ Catches scheduler bugs that manual dispatch wouldn't  
-✅ Verifies time-based task execution logic  
-✅ Ensures tasks dispatch at correct periods  
-✅ Provides realistic visualization data  
-✅ No code duplication between test and production  
+✅ Tests actual production code path
+✅ Catches scheduler bugs that manual dispatch wouldn't
+✅ Verifies time-based task execution logic
+✅ Ensures tasks dispatch at correct periods
+✅ Provides realistic visualization data
+✅ No code duplication between test and production
 
 ## Architecture
 
 ```
-test_running_state.c  
+test_running_state.c
     ↓ uses
 scheduler.c (REAL)
     ↓ calls

@@ -33,7 +33,7 @@ ground_station/              # Python package (imported as 'gs')
 #### Object-Oriented Radio Interface
 The **`LoraRadio`** class in `radio_commands.py` provides a clean OOP wrapper around the low-level RFM9x hardware, encapsulating both hardware access and high-level mission commands.
 
-#### Packet Inheritance Hierarchy 
+#### Packet Inheritance Hierarchy
 The **`Packet`** base class in `models.py` handles radio-level protocol (authentication, parsing), while specialized classes like **`BeaconPacket`** and **`AdcsTelemetryPacket`** understand their specific data formats.
 
 #### Optimized State Management
@@ -231,7 +231,7 @@ The primary mode for satellite control.
 
 ## 📊 Mission Telemetry
 
-Every packet received is automatically archived in **`logs/telemetry_log.csv`**. 
+Every packet received is automatically archived in **`logs/telemetry_log.csv`**.
 *   **Raw Traceability**: The logs include the raw hex payload for forensic recovery.
 *   **Link Quality**: RSSI and SNR (Signal-to-Noise Ratio) are tracked for every packet to analyze antenna performance during a pass.
 

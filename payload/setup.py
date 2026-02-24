@@ -18,7 +18,7 @@ def initialize():
     gpio.setwarnings(False)
 
     # The multiplexer stubbornly takes control of pins 4, 17, and 18 on boot of the payload.
-    # This causes conflicts with setting up the pins for output and leads to a "GPIO not allocated" error. 
+    # This causes conflicts with setting up the pins for output and leads to a "GPIO not allocated" error.
     # As long as this issue remains, the multiplexer pins should not be setup with gpio.setup
 
     # Radio enable

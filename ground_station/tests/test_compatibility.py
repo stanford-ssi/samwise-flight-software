@@ -10,21 +10,17 @@ Usage:
     python3 test_compatibility.py
 """
 
-import sys
-import os
 import builtins
+import importlib.util
+import os
+import sys
 import traceback
-import importlib
 
 # Add parent directory to path to import ground_station modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Try to import select (not available on all platforms)
-try:
-    import select
-    HAS_SELECT_MODULE = True
-except ImportError:
-    HAS_SELECT_MODULE = False
+# Check if select module is available (not on all platforms)
+HAS_SELECT_MODULE = importlib.util.find_spec("select") is not None
 
 
 def get_models_module():
@@ -33,7 +29,9 @@ def get_models_module():
     This function exists to centralize module imports for testing.
     """
     import models
+
     return models
+
 
 def test_with_pydantic():
     """Test models with Pydantic enabled (Raspberry Pi mode)"""
@@ -44,8 +42,8 @@ def test_with_pydantic():
     try:
         models = get_models_module()
 
-        assert models.USE_PYDANTIC == True, "Expected Pydantic to be enabled"
-        assert models.IS_CIRCUITPYTHON == False, "Expected CPython, not CircuitPython"
+        assert models.USE_PYDANTIC is True, "Expected Pydantic to be enabled"
+        assert models.IS_CIRCUITPYTHON is False, "Expected CPython, not CircuitPython"
         print("✓ Platform detection: USE_PYDANTIC=True, IS_CIRCUITPYTHON=False")
 
         # Test instance creation
@@ -53,16 +51,16 @@ def test_with_pydantic():
         assert abs(q.magnitude - 1.0) < 0.01, f"Quaternion magnitude incorrect: {q.magnitude}"
         print(f"✓ ADCSQuaternion: magnitude={q.magnitude:.2f}")
 
-        beacon = models.BeaconData(state_name='test_state')
-        assert beacon.state_name == 'test_state'
+        beacon = models.BeaconData(state_name="test_state")
+        assert beacon.state_name == "test_state"
         print(f"✓ BeaconData: state={beacon.state_name}")
 
         stats = models.BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
         assert stats.reboot_counter == 5
-        assert 'adcs_valid' in stats.device_status_flags
+        assert "adcs_valid" in stats.device_status_flags
         print(f"✓ BeaconStats: reboots={stats.reboot_counter}, flags={stats.device_status_flags}")
 
-        pkt = models.Packet(dst=255, src=0, data=b'test')
+        pkt = models.Packet(dst=255, src=0, data=b"test")
         assert pkt.dst == 255
         assert len(pkt.data) == 4
         print(f"✓ Packet: dst={pkt.dst}, data_len={len(pkt.data)}")
@@ -86,14 +84,14 @@ def test_without_pydantic():
     original_import = builtins.__import__
 
     def mock_import(name, *args, **kwargs):
-        if name == 'pydantic' or name.startswith('pydantic.'):
-            raise ImportError('Simulating CircuitPython - no pydantic')
+        if name == "pydantic" or name.startswith("pydantic."):
+            raise ImportError("Simulating CircuitPython - no pydantic")
         return original_import(name, *args, **kwargs)
 
     try:
         # Remove models from cache first
-        if 'models' in sys.modules:
-            del sys.modules['models']
+        if "models" in sys.modules:
+            del sys.modules["models"]
 
         # Apply mock
         builtins.__import__ = mock_import
@@ -101,7 +99,7 @@ def test_without_pydantic():
         # Import models module with mocked pydantic import
         models_reloaded = get_models_module()
 
-        assert models_reloaded.USE_PYDANTIC == False, "Expected Pydantic to be disabled"
+        assert models_reloaded.USE_PYDANTIC is False, "Expected Pydantic to be disabled"
         print("✓ Platform detection: USE_PYDANTIC=False")
 
         # Test instance creation
@@ -109,22 +107,24 @@ def test_without_pydantic():
         assert abs(q.magnitude - 1.0) < 0.01
         print(f"✓ ADCSQuaternion: magnitude={q.magnitude:.2f}")
 
-        beacon = models_reloaded.BeaconData(state_name='test_state')
-        assert beacon.state_name == 'test_state'
+        beacon = models_reloaded.BeaconData(state_name="test_state")
+        assert beacon.state_name == "test_state"
         print(f"✓ BeaconData: state={beacon.state_name}")
 
-        stats = models_reloaded.BeaconStats(reboot_counter=5, battery_voltage=3700, device_status=0x88)
+        stats = models_reloaded.BeaconStats(
+            reboot_counter=5, battery_voltage=3700, device_status=0x88
+        )
         assert stats.reboot_counter == 5
-        assert 'adcs_valid' in stats.device_status_flags
+        assert "adcs_valid" in stats.device_status_flags
         print(f"✓ BeaconStats: reboots={stats.reboot_counter}, flags={stats.device_status_flags}")
 
-        pkt = models_reloaded.Packet(dst=255, src=0, data=b'test')
+        pkt = models_reloaded.Packet(dst=255, src=0, data=b"test")
         assert pkt.dst == 255
         assert len(pkt.data) == 4
 
         # Test dict() method (Pydantic compatibility)
         pkt_dict = pkt.dict()
-        assert 'dst' in pkt_dict
+        assert "dst" in pkt_dict
         print(f"✓ Packet: dst={pkt.dst}, dict() method works")
 
         print("\n✅ All tests PASSED without Pydantic (CircuitPython mode)!\n")
@@ -139,8 +139,8 @@ def test_without_pydantic():
         # Restore original import
         builtins.__import__ = original_import
         # Clean up
-        if 'models' in sys.modules:
-            del sys.modules['models']
+        if "models" in sys.modules:
+            del sys.modules["models"]
 
 
 def test_ui_platform_detection():
@@ -151,14 +151,14 @@ def test_ui_platform_detection():
 
     try:
         # Test platform detection
-        IS_CIRCUITPYTHON = sys.implementation.name == 'circuitpython'
+        is_circuitpython = sys.implementation.name == "circuitpython"
 
-        print(f"✓ IS_CIRCUITPYTHON: {IS_CIRCUITPYTHON}")
+        print(f"✓ IS_CIRCUITPYTHON: {is_circuitpython}")
         print(f"✓ HAS_SELECT: {HAS_SELECT_MODULE}")
 
         # On CPython, select should be available
-        if not IS_CIRCUITPYTHON:
-            assert HAS_SELECT_MODULE == True, "select should be available on CPython"
+        if not is_circuitpython:
+            assert HAS_SELECT_MODULE is True, "select should be available on CPython"
             print("✓ select module available (CPython)")
 
         print("\n✅ UI platform detection tests PASSED!\n")

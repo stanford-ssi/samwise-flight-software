@@ -8,7 +8,6 @@ version = "1.0.0"
 description = "LoRA ground station for Samwise CubeSat communication"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
 authors = [
     {name = "Stanford SSI", email = "ssi@lists.stanford.edu"}
 ]
@@ -19,9 +18,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Aerospace",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
@@ -39,8 +37,9 @@ test = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "black",
-    "ruff",
+    "black>=24.0.0",
+    "ruff>=0.2.0",
+    "pre-commit>=3.0.0",
 ]
 
 [project.urls]
@@ -50,6 +49,9 @@ Issues = "https://github.com/stanford-ssi/samwise-flight-software/issues"
 
 [project.scripts]
 samwise-gs = "code:main"
+
+[tool.setuptools]
+py-modules = ["code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "state", "ui"]
 
 [tool.pytest.ini_options]
 # Test discovery
@@ -110,8 +112,6 @@ exclude = '''
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "W", "I", "N"]
-ignore = ["E501"]  # Line too long
 exclude = [
     ".git",
     ".venv",
@@ -120,5 +120,11 @@ exclude = [
     "lib",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N"]
+ignore = ["E501"]  # Line too long
+
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports in __init__ are OK
+"models.py" = ["N815", "N803"]  # Allow mixedCase for satellite data field names
+"tests/test_compatibility.py" = ["N806", "E712"]  # Allow UPPER_CASE and boolean comparisons in tests

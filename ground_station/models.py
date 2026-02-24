@@ -7,14 +7,15 @@ On CircuitPython (Pico/Feather), simple classes are used instead.
 """
 
 import sys
-from typing import Optional, List
+from typing import List, Optional
 
 # Detect CircuitPython vs CPython
-IS_CIRCUITPYTHON = sys.implementation.name == 'circuitpython'
+IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
 
 if not IS_CIRCUITPYTHON:
     try:
-        from pydantic import BaseModel, Field, validator
+        from pydantic import BaseModel, Field
+
         USE_PYDANTIC = True
     except ImportError:
         USE_PYDANTIC = False
@@ -26,15 +27,18 @@ else:
 if USE_PYDANTIC:
     _BaseModel = BaseModel
 else:
+
     class _BaseModel:
         """Simple base model for CircuitPython compatibility"""
+
         def __init__(self, **kwargs):
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
         def dict(self):
             """Convert to dictionary (Pydantic-compatible method)"""
-            return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+            return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
 
 class ADCSQuaternion(_BaseModel):
     """ADCS quaternion representation"""
@@ -45,6 +49,7 @@ class ADCSQuaternion(_BaseModel):
         q2: float = 0.0
         q3: float = 0.0
     else:
+
         def __init__(self, q0=0.0, q1=0.0, q2=0.0, q3=0.0, **kwargs):
             self.q0 = q0
             self.q1 = q1
@@ -53,7 +58,8 @@ class ADCSQuaternion(_BaseModel):
 
     @property
     def magnitude(self) -> float:
-        return (self.q0**2 + self.q1**2 + self.q2**2 + self.q3**2)**0.5
+        return (self.q0**2 + self.q1**2 + self.q2**2 + self.q3**2) ** 0.5
+
 
 class ADCSData(_BaseModel):
     """ADCS telemetry data"""
@@ -64,11 +70,13 @@ class ADCSData(_BaseModel):
         state: int = 0
         boot_count: int = 0
     else:
+
         def __init__(self, angular_velocity=0.0, quaternion=None, state=0, boot_count=0, **kwargs):
             self.angular_velocity = angular_velocity
             self.quaternion = quaternion if quaternion else ADCSQuaternion()
             self.state = state
             self.boot_count = boot_count
+
 
 class BeaconStats(_BaseModel):
     """Beacon statistics and telemetry"""
@@ -92,14 +100,28 @@ class BeaconStats(_BaseModel):
         panel_B_current: int = Field(default=0, description="mA")
         device_status: int = 0
     else:
-        def __init__(self, reboot_counter=0, time_in_state_ms=0,
-                     rx_bytes=0, rx_packets=0, rx_backpressure_drops=0, rx_bad_packet_drops=0,
-                     tx_bytes=0, tx_packets=0,
-                     battery_voltage=0, battery_current=0,
-                     solar_voltage=0, solar_current=0,
-                     panel_A_voltage=0, panel_A_current=0,
-                     panel_B_voltage=0, panel_B_current=0,
-                     device_status=0, **kwargs):
+
+        def __init__(
+            self,
+            reboot_counter=0,
+            time_in_state_ms=0,
+            rx_bytes=0,
+            rx_packets=0,
+            rx_backpressure_drops=0,
+            rx_bad_packet_drops=0,
+            tx_bytes=0,
+            tx_packets=0,
+            battery_voltage=0,
+            battery_current=0,
+            solar_voltage=0,
+            solar_current=0,
+            panel_A_voltage=0,
+            panel_A_current=0,
+            panel_B_voltage=0,
+            panel_B_current=0,
+            device_status=0,
+            **kwargs,
+        ):
             self.reboot_counter = reboot_counter
             self.time_in_state_ms = time_in_state_ms
             self.rx_bytes = rx_bytes
@@ -110,8 +132,8 @@ class BeaconStats(_BaseModel):
             self.tx_packets = tx_packets
             self.battery_voltage = battery_voltage  # mV
             self.battery_current = battery_current  # mA
-            self.solar_voltage = solar_voltage      # mV
-            self.solar_current = solar_current      # mA
+            self.solar_voltage = solar_voltage  # mV
+            self.solar_current = solar_current  # mA
             self.panel_A_voltage = panel_A_voltage  # mV
             self.panel_A_current = panel_A_current  # mA
             self.panel_B_voltage = panel_B_voltage  # mV
@@ -122,15 +144,24 @@ class BeaconStats(_BaseModel):
     def device_status_flags(self) -> List[str]:
         status = self.device_status
         flags = []
-        if status & 0x01: flags.append("RBF_detected")
-        if status & 0x02: flags.append("solar_charge")
-        if status & 0x04: flags.append("solar_fault")
-        if status & 0x08: flags.append("panel_A_deployed")
-        if status & 0x10: flags.append("panel_B_deployed")
-        if status & 0x20: flags.append("payload_on")
-        if status & 0x40: flags.append("adcs_on")
-        if status & 0x80: flags.append("adcs_valid")
+        if status & 0x01:
+            flags.append("RBF_detected")
+        if status & 0x02:
+            flags.append("solar_charge")
+        if status & 0x04:
+            flags.append("solar_fault")
+        if status & 0x08:
+            flags.append("panel_A_deployed")
+        if status & 0x10:
+            flags.append("panel_B_deployed")
+        if status & 0x20:
+            flags.append("payload_on")
+        if status & 0x40:
+            flags.append("adcs_on")
+        if status & 0x80:
+            flags.append("adcs_valid")
         return flags
+
 
 class BeaconData(_BaseModel):
     """Beacon packet data"""
@@ -142,12 +173,16 @@ class BeaconData(_BaseModel):
         callsign: Optional[str] = None
         raw_hex: Optional[str] = None
     else:
-        def __init__(self, state_name="unknown", stats=None, adcs=None, callsign=None, raw_hex=None, **kwargs):
+
+        def __init__(
+            self, state_name="unknown", stats=None, adcs=None, callsign=None, raw_hex=None, **kwargs
+        ):
             self.state_name = state_name
             self.stats = stats
             self.adcs = adcs
             self.callsign = callsign
             self.raw_hex = raw_hex
+
 
 class Packet(_BaseModel):
     """Base class for all satellite communication packets.
@@ -166,8 +201,19 @@ class Packet(_BaseModel):
         msg_id: Optional[int] = None
         hmac_digest: Optional[bytes] = None
     else:
-        def __init__(self, dst=0, src=0, flags=0, seq=0, data=b"",
-                     boot_count=None, msg_id=None, hmac_digest=None, **kwargs):
+
+        def __init__(
+            self,
+            dst=0,
+            src=0,
+            flags=0,
+            seq=0,
+            data=b"",
+            boot_count=None,
+            msg_id=None,
+            hmac_digest=None,
+            **kwargs,
+        ):
             self.dst = dst
             self.src = src
             self.flags = flags
@@ -180,11 +226,13 @@ class Packet(_BaseModel):
     @property
     def header_bytes(self) -> bytes:
         import struct
+
         return struct.pack("BBBBB", self.dst, self.src, self.flags, self.seq, len(self.data))
 
     @property
     def footer_bytes(self) -> bytes:
         import struct
+
         if self.boot_count is not None and self.msg_id is not None:
             return struct.pack("<II", self.boot_count, self.msg_id)
         return b""
@@ -194,6 +242,7 @@ class Packet(_BaseModel):
         """Create packet instance from raw radio data"""
         # This would be implemented by subclasses
         raise NotImplementedError("Subclasses must implement from_raw_data")
+
 
 class BeaconPacket(Packet):
     """Packet type that understands the data field as a beacon payload.
@@ -205,6 +254,7 @@ class BeaconPacket(Packet):
     if USE_PYDANTIC:
         beacon_data: Optional[BeaconData] = None
     else:
+
         def __init__(self, beacon_data=None, **kwargs):
             super().__init__(**kwargs)
             self.beacon_data = beacon_data
@@ -217,6 +267,7 @@ class BeaconPacket(Packet):
         # Implementation would use existing protocol.decode_beacon_data logic
         pass
 
+
 class AdcsTelemetryPacket(Packet):
     """Packet type that understands the data field as ADCS telemetry.
 
@@ -227,6 +278,7 @@ class AdcsTelemetryPacket(Packet):
     if USE_PYDANTIC:
         adcs_data: Optional[ADCSData] = None
     else:
+
         def __init__(self, adcs_data=None, **kwargs):
             super().__init__(**kwargs)
             self.adcs_data = adcs_data
@@ -237,6 +289,7 @@ class AdcsTelemetryPacket(Packet):
         # Parse the raw packet structure first
         # Then decode the data field as ADCS telemetry
         pass
+
 
 class CommandPacket(Packet):
     """Packet type for sending commands to the satellite.
@@ -249,6 +302,7 @@ class CommandPacket(Packet):
         command_id: int = 0
         command_payload: str = ""
     else:
+
         def __init__(self, command_id=0, command_payload="", **kwargs):
             super().__init__(**kwargs)
             self.command_id = command_id

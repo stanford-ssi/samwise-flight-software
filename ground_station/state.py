@@ -1,25 +1,26 @@
 import json
+import logging
 import os
 import time
-import logging
 
 STATE_FILE = "gs_state.json"
 logger = logging.getLogger("GS.State")
 
+
 class StateManager:
     """Optimized state manager that minimizes file I/O for high-throughput scenarios.
-    
+
     As noted in review comments, file transfer protocol requires tens of thousands
     of packets in short duration, so we cannot afford to open/close files frequently.
-    
+
     This implementation:
     - Batches state updates in memory
     - Only writes to disk every SAVE_INTERVAL_SEC or on critical state changes
     - Uses force saves for important events (boot count sync, shutdown)
     """
-    
+
     SAVE_INTERVAL_SEC = 600  # Save every 10 minutes (reduced from 60s for high-throughput)
-    
+
     def __init__(self, state_file=STATE_FILE):
         self.state_file = state_file
         self.boot_count = 0
@@ -48,12 +49,12 @@ class StateManager:
 
     def save(self, force=False):
         """Save state to persistence file with optimized rate limiting.
-        
+
         Args:
             force (bool): Force immediate save regardless of timing
         """
         now = time.time()
-        
+
         # Skip save if:
         # 1. Not forced AND not enough time passed AND no changes made
         # 2. For high-throughput scenarios, we only save periodically or on force
@@ -61,25 +62,21 @@ class StateManager:
             return
 
         try:
-            data = {
-                "boot_count": self.boot_count,
-                "msg_id": self.msg_id,
-                "last_updated": now
-            }
+            data = {"boot_count": self.boot_count, "msg_id": self.msg_id, "last_updated": now}
             # Use atomic write to avoid corruption
             temp_file = self.state_file + ".tmp"
             with open(temp_file, "w") as f:
                 json.dump(data, f, indent=2)
-            
+
             # Atomic replace
-            if os.name == 'nt':  # Windows
+            if os.name == "nt":  # Windows
                 if os.path.exists(self.state_file):
                     os.replace(temp_file, self.state_file)
                 else:
                     os.rename(temp_file, self.state_file)
             else:  # Unix-like
                 os.rename(temp_file, self.state_file)
-                
+
             self.last_save_time = now
             self.dirty = False
             logger.debug("State saved to disk: Boot=%d, MsgID=%d", self.boot_count, self.msg_id)
@@ -96,7 +93,7 @@ class StateManager:
 
     def get_next_msg_id(self):
         """Increment and return next message ID with optimized persistence.
-        
+
         For high-throughput scenarios, we batch message ID updates and only
         persist to disk periodically rather than on every increment.
         """
@@ -112,6 +109,7 @@ class StateManager:
             self.save(force=True)
         else:
             logger.debug("No unsaved changes on shutdown")
+
 
 # Global singleton
 state_manager = StateManager()
