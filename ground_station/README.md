@@ -8,27 +8,42 @@ The ground station is designed with a modular, object-oriented architecture to e
 
 ```text
 ground_station/
-├── code.py             # Main entry point (the firmware/script you run)
-├── requirements.txt    # Python dependencies (Pydantic, etc.)
+├── code.py                    # Main entry point (the firmware/script you run)
+├── requirements.txt           # Python dependencies (Pydantic, etc.)
 ├── gs/                 # Core logic module
-│   ├── __init__.py     # Module initialization and state management singleton
-│   ├── config.py       # Radio settings (Frequency, BW, SF) and HMAC PSK
-│   ├── hardware.py     # Platform-agnostic hardware initialization (Pi / Pico / Feather)
-│   ├── protocol.py     # Packet architecture: OOP Decoders for Beacons & ADCS
-│   ├── comms.py        # High-level communication hooks (send/receive)
-│   ├── ui.py           # Non-blocking Interactive UI and Debug Listen modes
-│   ├── state.py        # Persistent state (boot_count/msg_id) with lazy-saving
-│   ├── logger.py       # Mission data archiver (CSV logging & Console output)
-│   └── models.py       # Pydantic data schemas for structured telemetry
+│   ├── __init__.py            # Module initialization exposing main APIs
+│   ├── config.py              # Radio/protocol settings with flight software code pointers
+│   ├── radio_initialization.py # Platform-agnostic hardware setup (Pi/Pico/Feather)
+│   ├── radio_commands.py      # OOP LoraRadio class with high-level mission commands
+│   ├── protocol.py            # Packet architecture: Base Packet class with inheritance
+│   ├── ui.py                  # Non-blocking Interactive UI and Debug Listen modes
+│   ├── state.py               # Optimized persistent state manager (low file I/O)
+│   ├── models.py              # Pydantic models: Packet, BeaconPacket, AdcsTelemetryPacket
+│   └── logger.py              # Mission telemetry logger (CSV + structured console)
 ├── logs/               # Persistent telemetry CSV archives (Auto-generated)
 ├── lib/                # CircuitPython libraries (for microcontroller deployment)
 └── tests/              # Unit tests for protocol and decoding logic
 ```
 
+### Key Architectural Improvements:
+
+#### Object-Oriented Radio Interface
+The **`LoraRadio`** class in `radio_commands.py` provides a clean OOP wrapper around the low-level RFM9x hardware, encapsulating both hardware access and high-level mission commands.
+
+#### Packet Inheritance Hierarchy 
+The **`Packet`** base class in `models.py` handles radio-level protocol (authentication, parsing), while specialized classes like **`BeaconPacket`** and **`AdcsTelemetryPacket`** understand their specific data formats.
+
+#### Optimized State Management
+The **`StateManager`** in `state.py` minimizes file I/O for high-throughput scenarios (file transfer protocol requires tens of thousands of packets), using batched writes and atomic file operations.
+
+#### Flight Software Integration
+All configuration in **`config.py`** includes code pointers to corresponding flight software implementations, ensuring ground station and satellite stay synchronized.
+
 ### Why we split the software this way:
-*   **Separation of Concerns**: Decouples the radio hardware (`hardware.py`) from the orbital protocol (`protocol.py`) and the operator interface (`ui.py`).
-*   **Mission Reliability**: Heavy operations like file-logging (`logger.py`) and state persistence (`state.py`) are isolated to prevent blocking the mission-critical radio polling loop.
-*   **Type Safety**: Centralized schemas (`models.py`) ensure that malformed satellite data is caught and handled before it reaches the operator or the database.
+*   **Separation of Concerns**: Decouples radio hardware (`radio_initialization.py`) from orbital protocol (`protocol.py`) and operator interface (`ui.py`).
+*   **Mission Reliability**: Heavy operations like telemetry logging and state persistence are optimized to prevent blocking the mission-critical radio polling loop.
+*   **Type Safety**: Pydantic models ensure malformed satellite data is caught and handled before reaching operators or databases.
+*   **Maintainability**: Code pointers to flight software ensure ground station configurations stay synchronized with satellite implementations.
 
 ---
 

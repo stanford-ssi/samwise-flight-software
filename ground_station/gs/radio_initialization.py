@@ -3,7 +3,10 @@ import busio
 import digitalio
 import adafruit_rfm9x
 import time
+import logging
 from . import config
+
+logger = logging.getLogger("GS.RadioInit")
 
 # Global hardware objects
 rfm9x = None
@@ -55,7 +58,7 @@ def get_board_pins(board_type):
         }
     else:
         # Default to Pico pins
-        print("Unknown board, defaulting to Pico 2 pin configuration")
+        logger.warning("Unknown board, defaulting to Pico 2 pin configuration")
         return {
             'MOSI': board.GP15,
             'MISO': board.GP12,
@@ -71,16 +74,12 @@ def initialize():
     
     # Detect board and configure pins
     board_type = detect_board()
-    print("Detected board: {}".format(board_type))
+    logger.info("Detected board: %s", board_type)
     
     pins = get_board_pins(board_type)
     
-    print("Pin configuration:")
-    print("  MOSI: {}".format(pins['MOSI']))
-    print("  MISO: {}".format(pins['MISO']))
-    print("  SCK: {}".format(pins['SCK']))
-    print("  CS: {}".format(pins['CS']))
-    print("  RESET: {}".format(pins['RESET']))
+    logger.info("Pin configuration: MOSI=%s, MISO=%s, SCK=%s, CS=%s, RESET=%s", 
+                pins['MOSI'], pins['MISO'], pins['SCK'], pins['CS'], pins['RESET'])
     
     # Setup LED
     if pins.get('LED') is not None:
@@ -92,17 +91,15 @@ def initialize():
     cs = digitalio.DigitalInOut(pins['CS'])
     reset = digitalio.DigitalInOut(pins['RESET'])
     
-    print("\n=== Initializing Radio ===")
-    print(f"Frequency: {config.config['frequency']} MHz")
-    print(f"Bandwidth: {config.config['bandwidth']} Hz")
-    print(f"Spreading Factor: {config.config['spreading_factor']}")
-    print(f"Coding Rate: {config.config['coding_rate']}")
-    print(f"CRC: {config.config['crc']}")
+    logger.info("Initializing Radio with Freq=%.1f MHz, BW=%d Hz, SF=%d, CR=%d, CRC=%s",
+                config.config['frequency'], config.config['bandwidth'], 
+                config.config['spreading_factor'], config.config['coding_rate'], 
+                config.config['crc'])
     
     rfm9x = adafruit_rfm9x.RFM9x(spi, cs, reset, config.config['frequency'], crc=config.config['crc'])
     rfm9x.signal_bandwidth = config.config['bandwidth']
     rfm9x.spreading_factor = config.config['spreading_factor']
     rfm9x.coding_rate = config.config['coding_rate']
     
-    print("Radio initialized successfully!")
+    logger.info("Radio initialized successfully!")
     return rfm9x

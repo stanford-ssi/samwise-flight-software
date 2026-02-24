@@ -9,7 +9,7 @@ except:
     import hmac
 from . import config
 from .state import state_manager
-from .models import BeaconData, BeaconStats, ADCSData, ADCSQuaternion, RadioPacket
+from .models import BeaconData, BeaconStats, ADCSData, ADCSQuaternion, Packet as ModelPacket
 from typing import Optional
 
 def create_cmd_payload(cmd_id, cmd_payload=""):
@@ -37,7 +37,7 @@ class Packet:
             raise ValueError(f"Data too large: {len(data)} bytes")
 
         # Create model representing the unsaved packet
-        pkt = RadioPacket(
+        pkt = ModelPacket(
             dst=dst, src=src, flags=flags, seq=seq, data=data,
             boot_count=state_manager.boot_count,
             msg_id=state_manager.get_next_msg_id()
@@ -51,8 +51,8 @@ class Packet:
         return payload + h.digest()
 
     @staticmethod
-    def unpack(packet_bytes: bytes) -> RadioPacket:
-        """Unpack raw bytes into a RadioPacket model and verify auth."""
+    def unpack(packet_bytes: bytes) -> ModelPacket:
+        """Unpack raw bytes into a Packet model and verify auth."""
         if len(packet_bytes) < config.PACKET_HEADER_SIZE:
             raise ValueError("Packet too short")
 
@@ -80,12 +80,12 @@ class Packet:
             # 4. Unpack Footer
             boot_count, msg_id = struct.unpack('<II', packet_bytes[footer_start:footer_start+8])
             
-            return RadioPacket(
+            return ModelPacket(
                 dst=dst, src=src, flags=flags, seq=seq, data=data,
                 boot_count=boot_count, msg_id=msg_id, hmac_digest=received_hmac
             )
         
-        return RadioPacket(dst=dst, src=src, flags=flags, seq=seq, data=data)
+        return ModelPacket(dst=dst, src=src, flags=flags, seq=seq, data=data)
 
 class BeaconPacket(Packet):
     """Specialized packet for satellite beacons."""

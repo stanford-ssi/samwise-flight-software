@@ -6,6 +6,9 @@ from . import protocol
 from . import config
 from . import radio_initialization as hardware
 from .state import state_manager
+import logging
+
+logger = logging.getLogger("GS.UI")
 
 def get_user_input(prompt, default=None):
     """Get user input with optional default value"""

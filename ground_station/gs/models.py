@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
+from abc import ABC
 
 class ADCSQuaternion(BaseModel):
     q0: float
@@ -57,8 +58,12 @@ class BeaconData(BaseModel):
     callsign: Optional[str] = None
     raw_hex: Optional[str] = None
 
-class RadioPacket(BaseModel):
-    """Represents the standard packet envelope for all satellite communication."""
+class Packet(BaseModel, ABC):
+    """Base class for all satellite communication packets.
+    
+    Handles the radio-level protocol stuff like authentication and parsing
+    out the data field. Specific packet types inherit from this class.
+    """
     dst: int
     src: int
     flags: int
@@ -79,3 +84,55 @@ class RadioPacket(BaseModel):
         if self.boot_count is not None and self.msg_id is not None:
             return struct.pack("<II", self.boot_count, self.msg_id)
         return b""
+
+    @classmethod
+    def from_raw_data(cls, raw_data: bytes):
+        """Create packet instance from raw radio data"""
+        # This would be implemented by subclasses
+        raise NotImplementedError("Subclasses must implement from_raw_data")
+
+class BeaconPacket(Packet):
+    """Packet type that understands the data field as a beacon payload.
+    
+    This packet type knows how to parse beacon-specific data including
+    telemetry stats, ADCS data, and mission state information.
+    """
+    beacon_data: Optional[BeaconData] = None
+    
+    @classmethod
+    def from_raw_data(cls, raw_data: bytes, **kwargs):
+        """Create BeaconPacket from raw radio data"""
+        # Parse the raw packet structure first
+        # Then decode the data field as beacon payload
+        # Implementation would use existing protocol.decode_beacon_data logic
+        pass
+
+class AdcsTelemetryPacket(Packet):
+    """Packet type that understands the data field as ADCS telemetry.
+    
+    This packet type knows how to parse ADCS-specific telemetry data
+    including attitude, angular velocity, and control system status.
+    """
+    adcs_data: Optional[ADCSData] = None
+    
+    @classmethod
+    def from_raw_data(cls, raw_data: bytes, **kwargs):
+        """Create AdcsTelemetryPacket from raw radio data"""
+        # Parse the raw packet structure first
+        # Then decode the data field as ADCS telemetry
+        pass
+
+class CommandPacket(Packet):
+    """Packet type for sending commands to the satellite.
+    
+    This packet type handles command encoding, authentication,
+    and proper message ID sequencing.
+    """
+    command_id: int
+    command_payload: str = ""
+    
+    @classmethod
+    def create_command(cls, cmd_id: int, cmd_payload: str = "", **kwargs):
+        """Create a properly formatted command packet"""
+        # Implementation would use existing protocol.create_cmd_payload logic
+        pass
