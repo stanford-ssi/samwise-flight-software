@@ -679,6 +679,11 @@ void rfm9x_init(rfm9x_t *r)
     ASSERT(radio_with_interrupts == NULL);
     radio_with_interrupts = r;
 
+#ifdef IN_FLIGHT
+    // In flight mode, always use maximum power for reliable communication
+    r->max_power = 1;
+#endif
+
 #ifndef PICO
     // Setup RF regulator
     gpio_init(r->rf_reg_pin);
