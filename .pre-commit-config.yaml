@@ -1,0 +1,55 @@
+# Pre-commit hooks configuration
+# See https://pre-commit.com for more information
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-toml
+      - id: mixed-line-ending
+
+  # Black - Python code formatter
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        name: black (ground_station)
+        files: ^ground_station/.*\.py$
+        args: [--config=ground_station/pyproject.toml]
+
+  # Ruff - Python linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
+    hooks:
+      - id: ruff
+        name: ruff (ground_station)
+        files: ^ground_station/.*\.py$
+        args: [--config=ground_station/pyproject.toml, --fix]
+
+  # clang-format - C/C++ code formatter
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v18.1.8
+    hooks:
+      - id: clang-format
+        name: clang-format (C/C++)
+        types_or: [c, c++]
+        files: ^(src|ota_mvp|payload)/.*\.(c|cpp|h|hpp)$
+
+  # pytest - run tests before commit (optional, can be slow)
+  # Uncomment to enable test running on every commit
+  # - repo: local
+  #   hooks:
+  #     - id: pytest
+  #       name: pytest (ground_station)
+  #       entry: bash -c 'cd ground_station && python -m pytest tests/ -v'
+  #       language: system
+  #       files: ^ground_station/.*\.py$
+  #       pass_filenames: false

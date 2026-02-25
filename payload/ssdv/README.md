@@ -1,6 +1,6 @@
 # SSDV
 
-This folder contains the source for ssdv, a tool for packetizing images into 
+This folder contains the source for ssdv, a tool for packetizing images into
 
 ## To build the executable
 
@@ -74,4 +74,3 @@ TODO
 
 * Allow the decoder to handle multiple images in the input stream.
 * Experiment with adaptive or multiple huffman tables.
-

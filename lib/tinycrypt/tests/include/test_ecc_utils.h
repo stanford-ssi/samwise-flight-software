@@ -82,7 +82,7 @@ void print_ecc_scalar(const char *label, const unsigned int * p_vli,
 		      unsigned int num_word32);
 
 int check_ecc_result(const int num, const char *name,
-		      const unsigned int *expected, 
+		      const unsigned int *expected,
 		      const unsigned int *computed,
 		      const unsigned int num_word32, const bool verbose);
 
@@ -97,4 +97,3 @@ int check_code(const int num, const char *name, const int expected,
 
 
 #endif /* __TEST_ECC_UTILS_H__ */
-

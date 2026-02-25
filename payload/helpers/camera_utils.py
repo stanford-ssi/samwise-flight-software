@@ -19,7 +19,7 @@ def capture_raw_image(image_id: str, config_profile: str, camera_name: str, came
 
     # Due to changes in setup.py because of pin conflicts with the multiplexer, select_camera is currently dysfunctional.
     # Instead, camera_num should be passed in the command to specify which camera to use.
-    # select_camera(camera_name)  
+    # select_camera(camera_name)
 
     # Read config data (rpicam-still flags) from file
     with open(f"{CODE_DIR}/photo_config.json", "r") as config_file:
