@@ -12,7 +12,7 @@ packet sizes than radio
 
 This is the raspberry pi specific version
 
-* Author(s): 
+* Author(s):
  - Flynn Dreilinger
  - Niklas Vainio
 
@@ -29,7 +29,7 @@ import logging
 
 from helpers.serial_packet_handler import SerialPacketHandler
 
-# TODO 
+# TODO
 #Â FIX INITIAL MISSING BUG IN MAIN FILE TRANSFER
 
 # Constants for configuring file transfer
@@ -66,7 +66,7 @@ class SerialFileTransfer:
 
         log.info(f"Expecting to receive {num_packets} packets")
 
-        # Initialize next GROUP_SIZE as missing 
+        # Initialize next GROUP_SIZE as missing
         missing_packets = [i for i in range(0, min(GROUP_SIZE, num_packets))]
         log.info(f"Receiving group {missing_packets[0]}-{missing_packets[-1]}...")
 
@@ -93,7 +93,7 @@ class SerialFileTransfer:
 
                 if seq_num in missing_packets: missing_packets.remove(seq_num)
                 log.info(f"Received packet {seq_num}!")
-                log.info(f"{missing_packets} are missing!")    
+                log.info(f"{missing_packets} are missing!")
 
                 # Special command to abort the transfer
                 if chunk == ABORT_FILE_TRANSFER:
@@ -115,7 +115,7 @@ class SerialFileTransfer:
 
                         group_start += GROUP_SIZE
                         missing_packets = [i for i in range(group_start, min(group_start + GROUP_SIZE, num_packets))]
-                        
+
                         log.info(f"Group was successfully received!")
                         log.info(f"New group is packets {missing_packets[0]}-{missing_packets[-1]}")
 
@@ -123,7 +123,7 @@ class SerialFileTransfer:
                     # Otherwise, this is a normal packet so write to the file
                     f.seek(seq_num * PACKET_SIZE)
                     f.write(chunk)
-                
+
                     f.flush()
                     os.sync()
                     log.info(f"Wrote packet to file!")
@@ -135,11 +135,11 @@ class SerialFileTransfer:
             # Return false if we escape the loop
             return False
 
- 
+
 
     def send_file(self, filename):
         """
-        Send a file. This should only be used as a callback when a request 
+        Send a file. This should only be used as a callback when a request
         is received
 
         Args:
@@ -154,18 +154,18 @@ class SerialFileTransfer:
         with open(filename, 'rb') as f:
             stats = os.stat(filename)
             filesize = stats[6]
-            
+
             # Send number of packets to receiver
             num_full_packets = math.floor(filesize / PACKET_SIZE)
             num_packets = math.ceil(filesize / PACKET_SIZE)
-            
+
             self.packet_handler.write_packet(num_packets.to_bytes(4, "big"))
 
             log.info(f"About to send {num_packets} packets...")
 
             # Give receiver time to catch up
             time.sleep(0.5)
-        
+
             for seq_num in range(num_full_packets):
 
                 # Read this packet
@@ -185,8 +185,8 @@ class SerialFileTransfer:
                     # Handle missing packets - abort if receiver unresponsive, or too many retries
                     result = self._send_missing_packets(f)
                     if not result: return False
-                        
-                    
+
+
             # Send partial packet at the end
             if num_packets != num_full_packets:
                 seq_num = num_full_packets
@@ -205,10 +205,10 @@ class SerialFileTransfer:
 
             # Handle receiving missing packets
             result = self._send_missing_packets(f)
-            
+
             if result:
                 log.info(f"File transfer completed successfully!")
-            
+
 
 
     def _send_missing_packets(self, f):
@@ -229,7 +229,7 @@ class SerialFileTransfer:
             if missing_packets == []:
                 log.info(f"Receiver has received this group successfully!")
                 return True
-            
+
             # Otherwise, resend missing packets
             for seq_num in missing_packets:
                 f.seek(seq_num * PACKET_SIZE)
@@ -253,7 +253,7 @@ class SerialFileTransfer:
         for _ in range(MAX_ACK_RETRIES):
             log.info(f"Requesting missing packets...")
             self.packet_handler.write_packet(SEND_ACK)
-            
+
             response = self.packet_handler.read_packet()
 
             # If response is not none, break
@@ -263,5 +263,5 @@ class SerialFileTransfer:
                 return missing_packets
 
             log.info(f"Receiver did not respond, trying again...")
-        
+
         return None

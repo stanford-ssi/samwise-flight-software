@@ -11,4 +11,3 @@
   - [ ] Make SPI bus configurable
 - [ ] Calls to port addr need to be replaced by GPIO functions
   - [ ] Make GPIO number configurable
-

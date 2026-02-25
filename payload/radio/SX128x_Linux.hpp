@@ -17,63 +17,66 @@
 */
 #pragma once
 
-#include <SX128x.hpp>
 #include <GPIO++.hpp>
 #include <SPPI.hpp>
+#include <SX128x.hpp>
 
+#include <optional>
 #include <string>
 #include <thread>
-#include <optional>
 
 #include <cinttypes>
 
 using namespace YukiWorkshop;
 
-class SX128x_Linux : public SX128x {
+class SX128x_Linux : public SX128x
+{
 public:
-	struct PinConfig {
-		int16_t busy = -1, nrst = -1, nss = -1, dio1 = -1, dio2 = -1, dio3 = -1;
-		int16_t tx_en = -1, rx_en = -1, tcxo = -1;
-	};
+    struct PinConfig
+    {
+        int16_t busy = -1, nrst = -1, nss = -1, dio1 = -1, dio2 = -1, dio3 = -1;
+        int16_t tx_en = -1, rx_en = -1, tcxo = -1;
+    };
 
-	SX128x_Linux(const std::string& spi_dev_path, uint16_t gpio_dev_num, PinConfig pin_config);
+    SX128x_Linux(const std::string &spi_dev_path, uint16_t gpio_dev_num,
+                 PinConfig pin_config);
 
-	// For sync with multiple instances
-	void SetExternalLock(std::mutex& m);
+    // For sync with multiple instances
+    void SetExternalLock(std::mutex &m);
 
-	void StartIrqHandler(int __prio = 50);
+    void StartIrqHandler(int __prio = 50);
 
-	void StopIrqHandler();
+    void StopIrqHandler();
 
-	void SetSpiSpeed(uint32_t hz);
+    void SetSpiSpeed(uint32_t hz);
 
 private:
-	PinConfig pin_cfg;
+    PinConfig pin_cfg;
 
-	std::mutex* ExtLock = nullptr;
+    std::mutex *ExtLock = nullptr;
 
-	std::thread IrqThread;
+    std::thread IrqThread;
 
-	SPPI RadioSpi;
-	GPIO::Device RadioGpio;
+    SPPI RadioSpi;
+    GPIO::Device RadioGpio;
 
-	GPIO::LineSingle RadioNss;
-	GPIO::LineSingle RadioReset;
-	GPIO::LineSingle Busy;
-	std::optional<GPIO::LineSingle> TxEn, RxEn;
+    GPIO::LineSingle RadioNss;
+    GPIO::LineSingle RadioReset;
+    GPIO::LineSingle Busy;
+    std::optional<GPIO::LineSingle> TxEn, RxEn;
 
-	uint8_t HalGpioRead(GpioPinFunction_t func) override;
+    uint8_t HalGpioRead(GpioPinFunction_t func) override;
 
-	void HalGpioWrite(GpioPinFunction_t func, uint8_t value) override;
+    void HalGpioWrite(GpioPinFunction_t func, uint8_t value) override;
 
-	void HalSpiTransfer(uint8_t *buffer_in, const uint8_t *buffer_out, uint16_t size) override;
+    void HalSpiTransfer(uint8_t *buffer_in, const uint8_t *buffer_out,
+                        uint16_t size) override;
 
-	void HalPreTx() override;
+    void HalPreTx() override;
 
-	void HalPreRx() override;
+    void HalPreRx() override;
 
-	void HalPostTx() override;
+    void HalPostTx() override;
 
-	void HalPostRx() override;
-
+    void HalPostRx() override;
 };

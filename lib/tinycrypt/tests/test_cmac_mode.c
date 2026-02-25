@@ -291,7 +291,7 @@ int main(void)
 	}
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_320_bit_msg(&state);
-	if (result == TC_FAIL) { 
+	if (result == TC_FAIL) {
 		/* terminate test */
 		TC_ERROR("CMAC test #4 (320 bit msg) failed.\n");
 		goto exitTest;

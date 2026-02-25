@@ -74,7 +74,7 @@ def eval_python(expression: str) -> Any:
 
 def exec_python(code: str):
     '''
-    Payload evaluates the python code contained in `code` 
+    Payload evaluates the python code contained in `code`
     (This does support complex expressions like loops, function definitions etc)
     '''
     return exec(code)
@@ -237,16 +237,16 @@ def take_photo(image_id: str, cam_num=0, camera_name='A', config="default", w=80
 
     The raw photo will be taken and saved to {image_id}_raw.jpg
 
-    The photo will then be downsized, compressed (quality ranges from 1 to 100 
+    The photo will then be downsized, compressed (quality ranges from 1 to 100
     and determines amount of compression), and saved to {image_id}.jpg
 
-    If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {filename}_{i}.jpg 
+    If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {filename}_{i}.jpg
     (i ranges from 0 to cells_x * cells_y - 1)
 
     Returns:
-        size (in bytes) of the raw photo, 
-        size (in bytes) of the downsized photo, 
-        size (in bytes) of the average cell (rounded to nearest integer) 
+        size (in bytes) of the raw photo,
+        size (in bytes) of the downsized photo,
+        size (in bytes) of the average cell (rounded to nearest integer)
         size (in bytes) of the largest cell
     '''
 
@@ -259,16 +259,16 @@ def take_photo(image_id: str, cam_num=0, camera_name='A', config="default", w=80
 
 def compress_photo(image_id: str, w=800, h=600, quality=100, cells_x=1, cells_y=1) -> tuple[int, int, int, int]:
     '''
-    The photo in {image_id}_raw.jpg will then be downsized, compressed (quality ranges from 1 to 100 
+    The photo in {image_id}_raw.jpg will then be downsized, compressed (quality ranges from 1 to 100
     and determines amount of compression), and saved to {image_id}.jpg
 
-     If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {image_id}_{i}.jpg 
+     If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {image_id}_{i}.jpg
     (i ranges from 0 to cells_x * cells_y - 1)
 
     Returns:
-        size (in bytes) of the raw photo, 
+        size (in bytes) of the raw photo,
         size (in bytes) of the downsized photo,
-        size (in bytes) of the average cell (rounded to nearest integer) 
+        size (in bytes) of the average cell (rounded to nearest integer)
         size (in bytes) of the largest cell
     '''
     raw_size = os.path.getsize(f"{IMAGES_DIR}/{image_id}_raw.jpg")
@@ -282,7 +282,7 @@ def take_vid(vid_id: str, camera_num=0, camera_name='A', libcamera_config='defau
     Takes a video and stores it in {vid_id}_raw.h265
     Compresses it into {vid_id}.mp4 using provided ffmpeg settings
     Length determined by libcamera config (default is 5 seconds, 'longvid' can be 30 seconds)
-    
+
     Returns:
         size (in bytes) of the raw video
         size (in bytes) of the compressed video

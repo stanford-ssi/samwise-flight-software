@@ -67,7 +67,7 @@
 #define EXPECTED_BUF_LEN34 34
 #define EXPECTED_BUF_LEN35 35
 
-int do_test(const uint8_t *key, uint8_t *nonce, 
+int do_test(const uint8_t *key, uint8_t *nonce,
 	    size_t nlen, const uint8_t *hdr,
 	    size_t hlen, const uint8_t *data,
 	    size_t dlen, const uint8_t *expected,
