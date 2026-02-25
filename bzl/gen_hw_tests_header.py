@@ -5,9 +5,10 @@ Usage:
     gen_hw_tests_header.py <test_name> [<test_name> ...]
 
 Each <test_name> must match the name used in samwise_integration_test().
-The generated header declares every <name>_int_main() entry point and defines
-HW_TEST_TABLE so hardware_test_task.c needs no manual edits when tests are
-added or removed.
+The generated header includes hw_test_types.h (for the hw_test_fn typedef and
+hw_test_entry_t struct), then declares every <name>_int_main() entry point and
+defines HW_TEST_TABLE so hardware_test_task.c needs no manual edits when tests
+are added or removed.
 """
 
 import sys
@@ -22,17 +23,7 @@ def main():
     lines = [
         "#pragma once",
         "",
-        "#include <stddef.h>",
-        "",
-        "/* ── Test function signature ──────────────────────────────────────── */",
-        "",
-        "typedef void (*hw_test_fn)(void);",
-        "",
-        "typedef struct",
-        "{",
-        "    const char *name;",
-        "    hw_test_fn  run;",
-        "} hw_test_entry_t;",
+        "#include \"hw_test_types.h\"",
         "",
         "/* ── Entry-point declarations (auto-generated) ────────────────────── */",
         "",

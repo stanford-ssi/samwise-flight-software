@@ -50,3 +50,11 @@ py_binary(
     srcs = ["gen_hw_tests_header.py"],
     python_version = "PY3",
 )
+
+# Static type definitions shared by every hardware_tests.h consumer.
+# strip_include_prefix lets code include this as "hw_test_types.h".
+cc_library(
+    name = "hw_test_types",
+    hdrs = ["hw_test_types.h"],
+    strip_include_prefix = "/bzl",
+)

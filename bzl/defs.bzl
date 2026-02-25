@@ -359,9 +359,11 @@ def hardware_integration_test_suite(name, tests):
     # includes = ["."] ensures consumers can reach hardware_tests.h via the
     # same relative path ("test/hardware_tests.h") that hardware_test_task.c
     # already uses.
+    # //bzl:hw_test_types provides the static hw_test_fn/hw_test_entry_t
+    # definitions that the generated header includes.
     native.cc_library(
         name = name,
         hdrs = [":" + name + "_gen_header"],
         includes = ["."],
-        deps = list(test_targets),
+        deps = list(test_targets) + ["//bzl:hw_test_types"],
     )
