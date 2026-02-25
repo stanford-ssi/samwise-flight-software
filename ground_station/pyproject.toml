@@ -26,6 +26,7 @@ dependencies = [
     "adafruit-circuitpython-rfm9x",
     "adafruit-circuitpython-hashlib",
     "circuitpython-hmac",
+    "adafruit-blinka",
     "pydantic>=2.0.0",
 ]
 
@@ -48,10 +49,10 @@ Repository = "https://github.com/stanford-ssi/samwise-flight-software"
 Issues = "https://github.com/stanford-ssi/samwise-flight-software/issues"
 
 [project.scripts]
-samwise-gs = "code:main"
+samwise-gs = "cli:entry"
 
 [tool.setuptools]
-py-modules = ["code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "state", "ui"]
+py-modules = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "state", "ui"]
 
 [tool.pytest.ini_options]
 # Test discovery
@@ -125,7 +126,7 @@ select = ["E", "F", "W", "I", "N"]
 ignore = ["E501"]  # Line too long
 
 [tool.ruff.lint.isort]
-known-first-party = ["config", "protocol", "models", "radio_commands", "radio_initialization", "state", "logger", "ui", "code"]
+known-first-party = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "state", "ui"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports in __init__ are OK
