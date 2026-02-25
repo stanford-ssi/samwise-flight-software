@@ -22,12 +22,10 @@ samwise_test(
 
 samwise_integration_test(
     name = "mram_test",
-    int_src = "mram_integration_test.c",
     srcs = ["mram_test.c"],
     hdrs = ["mram_test.h"],
-    deps = _MRAM_DEPS + [
-        "//src/tasks/hardware_test:hardware_test_assert",
-    ],
+    int_src = "mram_integration_test.c",
+    deps = _MRAM_DEPS,
 )
 
 samwise_test(
@@ -41,10 +39,8 @@ samwise_test(
 
 samwise_integration_test(
     name = "filesys_test",
-    int_src = "filesys_integration_test.c",
     srcs = ["filesys_test.c"],
     hdrs = ["filesys_test.h"],
-    deps = _MRAM_DEPS + [
-        "//src/tasks/hardware_test:hardware_test_assert",
-    ],
+    int_src = "filesys_integration_test.c",
+    deps = _MRAM_DEPS,
 )

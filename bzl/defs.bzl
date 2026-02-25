@@ -266,6 +266,10 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
     # cc_test does not support `hdrs`; pop it from kwargs before forwarding.
     hdrs = kwargs.pop("hdrs", [])
 
+    # Add standard test infrastructure
+    if "//src/test_infrastructure:hardware_test_infrastructure" not in deps:
+        deps.append("//src/test_infrastructure:hardware_test_infrastructure")
+
     # ── 1. Helper sources ─────────────────────────────────────────────────
     # Compile helper files (which may contain a standalone main()) with main
     # renamed to a throwaway symbol so it never conflicts.
@@ -301,7 +305,7 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
         **kwargs
     )
 
-def hardware_integration_test_suite(name, tests, extra_deps = []):
+def hardware_integration_test_suite(name, tests):
     """Collect integration tests and emit a self-contained hardware_tests.h.
 
     This macro replaces the hand-maintained ``hardware_tests.h`` file.  It:
@@ -326,10 +330,6 @@ def hardware_integration_test_suite(name, tests, extra_deps = []):
                 "mram":   "//src/filesys:mram_hw_lib",
                 "filesys": "//src/filesys:filesys_hw_lib",
             },
-            extra_deps = [
-                "//src/common",
-                "//src/drivers/logger",
-            ],
         )
 
     Args:
@@ -338,8 +338,6 @@ def hardware_integration_test_suite(name, tests, extra_deps = []):
                     corresponding ``<name>_hw_lib`` cc_library produced by
                     ``samwise_integration_test()``.
                     e.g. ``{"mram": "//src/filesys:mram_hw_lib"}``
-        extra_deps: Additional cc_library deps added to *name* (e.g. shared
-                    drivers that every test needs at link time).
     """
 
     test_names = tests.keys()
@@ -365,5 +363,5 @@ def hardware_integration_test_suite(name, tests, extra_deps = []):
         name = name,
         hdrs = [":" + name + "_gen_header"],
         includes = ["."],
-        deps = list(test_targets) + extra_deps,
+        deps = list(test_targets),
     )

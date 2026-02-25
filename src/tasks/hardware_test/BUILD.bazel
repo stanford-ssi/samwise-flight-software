@@ -2,16 +2,6 @@ load("//bzl:defs.bzl", "hardware_integration_test_suite")
 
 package(default_visibility = ["//visibility:public"])
 
-# ── Shared assert header ──────────────────────────────────────────────────
-# Kept as a standalone target so *_hw_lib targets can depend on
-# hardware_test_assert.h WITHOUT creating a circular dep through
-# hardware_test_lib.
-cc_library(
-    name = "hardware_test_assert",
-    hdrs = ["hardware_test_assert.h"],
-    includes = ["."],
-)
-
 # ── Integration-test suite ────────────────────────────────────────────────
 # To register a new hardware integration test:
 #   1. Create the test in its own package and call samwise_integration_test().
@@ -23,12 +13,6 @@ cc_library(
 # hardware_tests.h is generated automatically — do NOT edit it by hand.
 hardware_integration_test_suite(
     name = "hardware_test_lib",
-    extra_deps = [
-        "//src/common",
-        "//src/drivers/logger",
-        "//src/drivers/mram",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-    ],
     tests = {
         "mram_test": "//src/filesys/test:mram_test_hw_lib",
         "filesys_test": "//src/filesys/test:filesys_test_hw_lib",
@@ -41,24 +25,6 @@ cc_library(
     hdrs = ["hardware_test_task.h"],
     includes = ["."],
     deps = [
-        "//src/common",
-        "//src/slate",
-        "//src/scheduler:state_machine",
         ":hardware_test_lib",
-    ] + select({
-        "//bzl:test_mode": [
-            "//src/drivers/payload_uart:payload_uart_mock",
-            "//src/drivers/neopixel:neopixel_mock",
-            "//src/test_mocks:pico_stdlib_mock",
-            "//src/test_mocks:hardware_uart_mock",
-            "//src/drivers/mram:mram_mock",
-        ],
-        "//conditions:default": [
-            "//src/drivers/payload_uart",
-            "//src/drivers/neopixel",
-            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-            "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
-            "//src/drivers/mram",
-        ],
-    }),
+    ],
 )
