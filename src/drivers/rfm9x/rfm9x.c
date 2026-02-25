@@ -679,12 +679,9 @@ void rfm9x_init(rfm9x_t *r)
     ASSERT(radio_with_interrupts == NULL);
     radio_with_interrupts = r;
 
-#ifdef IN_FLIGHT
-    // In flight mode, always use maximum power for reliable communication
-    r->max_power = 1;
-#endif
-
 #ifndef PICO
+    // With the picubed, always use maximum power for reliable communication
+    r->max_power = 1;
     // Setup RF regulator
     gpio_init(r->rf_reg_pin);
     gpio_set_dir(r->rf_reg_pin, GPIO_OUT);
@@ -785,7 +782,15 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
     rfm9x_set_tx_power(r, 15);                          /* Known good value */
-    ASSERT(rfm9x_get_tx_power(r) == 15);
+    if (!r->max_power)
+    {
+        ASSERT(rfm9x_get_tx_power(r) == 15);
+    }
+    else
+    {
+        LOG_DEBUG("RFM9X: Max power enabled, statically set to %d",
+                  rfm9x_get_tx_power(r));
+    }
 
     rfm9x_set_pa_ramp(r, 0);
     ASSERT(rfm9x_get_pa_ramp(r) == 0);
@@ -796,8 +801,12 @@ void rfm9x_init(rfm9x_t *r)
     rfm9x_set_agc(r, 1);
     ASSERT(rfm9x_is_agc_on(r) == 1);
 
-    rfm9x_set_ldro(r, 1);
-    ASSERT(rfm9x_is_ldro_on(r) == 1);
+    // LDRO does not work with our current settings
+    //   Coding Rate 5/5
+    //   Spreading Factor 7
+    //   Bandwidth 125kHz)
+    // rfm9x_set_ldro(r, 1);
+    // ASSERT(rfm9x_is_ldro_on(r) == 1);
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
