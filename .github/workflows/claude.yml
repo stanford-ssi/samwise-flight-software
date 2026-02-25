@@ -46,19 +46,19 @@ jobs:
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
-          
+
           # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
           # model: "claude-opus-4-20250514"
-          
+
           # Optional: Customize the trigger phrase (default: @claude)
           # trigger_phrase: "/claude"
-          
+
           # Optional: Trigger when specific user is assigned to an issue
           # assignee_trigger: "claude-bot"
-          
+
           # Optional: Allow Claude to run specific commands
           allowed_tools: "Bash(cmake),Bash(make),Bash(clang-format)"
-          
+
           # Optional: Add custom instructions for Claude to customize its behavior for your project
           custom_instructions: |
             Do not lint or edit code under /lib directory.
@@ -74,8 +74,7 @@ jobs:
             blackboard pattern.
             Ensure that if the beacon format or command format is modified,
             corresponding changes are made in the /ground_station/code.py.
-          
+
           # Optional: Custom environment variables for Claude
           # claude_env: |
           #   NODE_ENV: test
-

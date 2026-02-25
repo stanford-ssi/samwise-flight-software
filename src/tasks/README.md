@@ -63,10 +63,10 @@ void your_task_init(slate_t *slate)
 void your_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(YOUR_TASK_COLOR);
-    
+
     // Add your task logic here
     LOG_INFO("Your task is running...");
-    
+
     neopixel_set_color_rgb(0, 0, 0);
 }
 

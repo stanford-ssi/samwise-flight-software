@@ -266,7 +266,6 @@ called at most every `dispatch_period_ms` milliseconds. Additionally, its
 `task_init` function is called as part of satellite boot.
 
 You will also see references to a "slate." The slate is a huge block of
-statically allocated memory. 
+statically allocated memory.
 
 Moving forward, you are going to write your own tasks and test it!
-

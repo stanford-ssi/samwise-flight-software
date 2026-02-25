@@ -43,7 +43,7 @@ def estimate_lfs_file_size(
     """
     if block_size <= 0 or prog_size <= 0:
         raise ValueError("Block size and program size must be positive integers.")
-    
+
     metadata_usage = 2 * block_size
 
     total_attribute_storage_size = 0
@@ -117,7 +117,7 @@ def main():
             prog_size=args.prog_size,
             attributes=args.attributes
         )
-        
+
         print("\n--- LittleFS Storage Estimation ---")
         print(f"Configuration:")
         print(f"  Block Size:   {args.block_size} bytes")
