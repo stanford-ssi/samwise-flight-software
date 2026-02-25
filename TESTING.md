@@ -25,12 +25,13 @@ bazel test //src/tasks/print:print_test
 
 ### Building Integration Tests (hardware)
 
-Integration tests are compiled into the **bringup** firmware image. They are
-executed on-device by the `hardware_test_task` scheduler task.
+Integration tests are compiled into the **bringup** or **pico** firmware image. 
+They are executed on-device by the `hardware_test_task` scheduler task.
 
 ```bash
 # Build the bringup firmware (includes all registered integration tests)
 bazel build :samwise --config=picubed-bringup
+bazel build :samwise --config=pico # This works too
 ```
 
 ---
@@ -86,16 +87,16 @@ The `samwise_test()` macro handles everything automatically:
 ## Integration Tests with `samwise_integration_test()`
 
 Integration tests exercise real hardware. They are compiled into a
-`_hw_lib` library that gets linked into the bringup firmware, where
+`_hw_lib` library that gets linked into the bringup and pico firmware, where
 `hardware_test_task` calls each test in sequence.
 
 ### How It Works
 
 1. **`samwise_integration_test()`** creates a `cc_library` named
    `<name>_hw_lib`. It produces two kinds of compiled objects:
-   - The **integration entry point** (`int_src`) is compiled with
-     `-Dmain=<name>_int_main`, giving it a unique symbol (e.g.
-     `mram_test_int_main`) that `hardware_test_task` calls at runtime.
+   - The **integration entry point** (`int_src`) should contain `<name>_int_main` 
+     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that 
+     `hardware_test_task` calls at runtime.
    - Any **shared helper sources** (`srcs`) are compiled with
      `-Dmain=_unused_<name>_main_`, which discards their `main()` so it is
      never linked or called — letting you reuse the same test file in both
@@ -134,15 +135,14 @@ void test_my_driver_read_write(void)
 #### 2. Write the integration entry point
 
 Create a separate `*_integration_test.c` file that calls into the shared tests.
-Write it with a plain `main()` — the build system compiles it with
-`-Dmain=<name>_int_main` so that `hardware_test_task` can call it as
-`<name>_int_main()` at runtime:
+Write it with a `<name>_int_main` so that `hardware_test_task` can call it at
+runtime:
 
 ```c
 // src/drivers/my_driver/test/my_driver_integration_test.c
 #include "my_driver_test.h"
 
-void main(void)
+void my_driver_test_int_main(void)
 {
     LOG_DEBUG("Starting my_driver integration tests\n");
     my_driver_init();
@@ -183,7 +183,8 @@ samwise_integration_test(
 
 > **Note:** `samwise_test` and `samwise_integration_test` can share the same
 > `name` because they produce differently-suffixed targets (`my_driver_test`
-> vs `my_driver_test_hw_lib`).
+> vs `my_driver_test_hw_lib`) and are compiled at different times (i.e.)
+> `bazel test` vs `bazel build`.
 
 > **Note:** Helper sources passed via `srcs` may contain their own standalone
 > `main()`. The macro compiles them with `-Dmain=_unused_<name>_main_` so
@@ -212,7 +213,7 @@ hardware_integration_test_suite(
 )
 ```
 
-That's it! The next bringup build will automatically include your test.
+That's it! The next bringup or pico build will automatically include your test.
 
 ### Using `hardware_test_assert`
 
@@ -294,7 +295,7 @@ replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
 - **Shared helper sources** (`srcs`) — compiled with
   `-Dmain=_unused_<name>_main_`, which discards any `main()` they contain
   so it is never linked or called. This lets you reuse the same test `.c` file
-  in both `samwise_test()` (where its `main()` *is* the entry point) and
+  in both `samwise_test()` (where its `main()` _is_ the entry point) and
   `samwise_integration_test()` (where it is not).
 - **Integration entry point** (`int_src`) — compiled with
   `-Dmain=<name>_int_main`, giving its `main()` a unique symbol like
@@ -358,7 +359,8 @@ and explicit-target form (`//src/drivers/rfm9x:rfm9x`) are mapped.
 2. Verify the `_hw_lib` target is listed in the `tests` dict of
    `hardware_integration_test_suite()` in
    `src/tasks/hardware_test/BUILD.bazel`.
-3. Build with a bringup config: `bazel build :samwise --config=picubed-bringup`.
+3. Build with a bringup or pico config: `bazel build :samwise --config=picubed-bringup`,
+   `bazel build :samwise --config=pico`.
 
 ## Example: Complete Test Setup
 

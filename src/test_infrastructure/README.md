@@ -91,7 +91,7 @@ void test_my_state() {
 }
 ```
 
-## Integration
+## Unit Tests
 
 Add a test using the `samwise_test` macro in your `BUILD.bazel`:
 
