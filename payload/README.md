@@ -18,9 +18,13 @@ The Samwise Payload is designed for a 2U Cubesat. Its primary objectives are:
 
 ### 1. Operating System
 
-**PREREQUISITE:** Installed **Raspberry Pi OS Lite (64-bit)** using [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Ensure your installation meets the specifications on the arducam website:
-* "We currently only guarantee that the Camera Adaptation is supported on Raspberry Pi Bullseye and Bookworm OS".
-* "Please make sure your kernel version is up to date (at least 5.15.63 or later)" with `uname -r`
+**PREREQUISITE:** Installed **Raspberry Pi OS Lite (64-bit)** using [Raspberry Pi Imager](https://www.raspberrypi.com/software/). 
+
+> [!WARNING]
+> Ensure your installation meets the specifications on the arducam website:
+> 
+> *We currently only guarantee that the Camera Adaptation is supported on Raspberry Pi Bullseye and **Bookworm OS**.*
+> *Please make sure your kernel version is up to date (at least 5.15.63 or later)" with `uname -r`*
 
 **Configuration:** Enable SSH and configure Wi-Fi credentials in the pre-installation settings.
 
@@ -35,7 +39,9 @@ sudo nmcli dev wifi connect AA:BB:CC:DD:EE:FF password "{PASSWORD}" ifname wlan0
 
 ### 2. Repository Configuration
 
-Once logged into the Pi, run `mkdir /home/pi/code`. Copy the contents of the payload folder into the /home/pi/code by initializing the workspace:
+Note: From this point forward, these instructions assume you’re running commands as the 'pi' user (adjust as needed).
+
+Once logged into the RPi, run `mkdir /home/pi/code`. Copy the contents of the payload folder into the /home/pi/code by initializing the workspace:
 
 ```bash
 # Install Git and GitHub CLI
