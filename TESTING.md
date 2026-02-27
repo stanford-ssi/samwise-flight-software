@@ -231,12 +231,12 @@ deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
 
 ---
 
-## Available Mocks
+### 3. Update Your Task's CMakeLists.txt
 
 The following embedded dependencies are automatically mocked when using
 `samwise_test()`:
 
-### Driver & Module Mocks
+## Available Mocks
 
 | Real Header                       | Mock Location        | Functionality                                        |
 | --------------------------------- | -------------------- | ---------------------------------------------------- |

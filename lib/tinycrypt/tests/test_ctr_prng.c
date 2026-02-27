@@ -50,16 +50,16 @@ static uint8_t nibbleFromChar(char c)
 	return 255U;
 }
 
-/* 
- * Convert a string of characters representing a hex buffer into a series of 
- * bytes of that real value 
+/*
+ * Convert a string of characters representing a hex buffer into a series of
+ * bytes of that real value
  */
 uint8_t *hexStringToBytes(char *inhex)
 {
 	uint8_t *retval;
 	uint8_t *p;
 	int len, i;
-	
+
 	len = strlen(inhex) / 2;
 	retval = (uint8_t *)malloc(len+1);
 	for(i=0, p = (uint8_t *) inhex; i<len; i++) {

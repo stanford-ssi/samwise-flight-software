@@ -91,4 +91,3 @@ Partition 1
   target chip:   RP2350
   image type:    ARM Secure
 ```
-

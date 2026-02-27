@@ -52,4 +52,3 @@ picotool load <name>.uf2 -f
 ls /dev/serial/by-id
 cat /dev/serial/by-id/<specific_device>
 ```
-

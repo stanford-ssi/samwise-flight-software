@@ -4,11 +4,7 @@
  *
  *  Test for mram driver
  */
-#include "error.h"
-#include "logger.h"
-#include "mram.h"
-#include "pico/stdlib.h"
-#include <string.h>
+#include "mram_test.h"
 
 void read_write_helper(char *str, int length)
 {

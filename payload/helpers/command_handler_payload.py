@@ -22,7 +22,7 @@ class SerialCommandHandlerPayload():
         response = self.packet_handler.read_packet()
 
         if response is None: return None
-        
+
         # Decode packet
         try:
             packet = response[0]
@@ -30,11 +30,11 @@ class SerialCommandHandlerPayload():
         except:
             log.error(f"Error decoding packet {packet}")
             return None
-        
-        
+
+
         return command, args, kwargs
 
-        
+
     def _dispatch_command(self, command_name: str, args: list, kwargs: dict):
         # Run a command and send back the result
         # The result is a JSON-encoded list with 2 items:
