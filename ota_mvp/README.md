@@ -8,13 +8,7 @@
 ## Build & Execute
 
 ```
-cmake -B build-ota # builds the static.uf2 version
-cmake -B build-ota -DVERSION=BLINK # builds the blink.uf2 version
-```
-
-To compile the toy program:
-```
-cmake --build build-ota --target ota
+bazel build //ota_mvp:ota --config=pico
 ```
 
 From the repo root to only build this demo app (skips samwise build).
