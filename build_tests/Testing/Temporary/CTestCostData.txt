@@ -1,0 +1,9 @@
+scheduler_test 1 0.00598075
+running_state_test 1 0.00569494
+beacon_task_test 1 0.00125077
+print_task_test 1 0.00114081
+radio_task_test 1 0.00110504
+str_utils_test 1 0.00113582
+mram_test 1 0.00120974
+filesys_test 1 0.00120033
+---

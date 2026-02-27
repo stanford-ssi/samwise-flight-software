@@ -17,6 +17,7 @@
 */
 
 #include "SX128x_Linux.hpp"
+#include <iostream>
 
 SX128x_Linux::SX128x_Linux(const std::string &spi_dev_path,
                            uint16_t gpio_dev_num,
@@ -41,6 +42,12 @@ SX128x_Linux::SX128x_Linux(const std::string &spi_dev_path,
     {
         RxEn = RadioGpio.line(pin_cfg.rx_en, GPIO::LineMode::Output, 0,
                               "SX128x RXEN");
+    }
+
+    if (pin_config.tcxo >= 0)
+    {
+        TCXO = RadioGpio.line(pin_cfg.tcxo, GPIO::LineMode::Output, 1,
+                              "SX128x TCXO_EN");
     }
 
     int i = 1;
@@ -131,6 +138,44 @@ void SX128x_Linux::HalSpiTransfer(uint8_t *buffer_in, const uint8_t *buffer_out,
         RadioSpi.transfer(buffer_out, buffer_in, size);
         RadioNss.write(1);
     }
+
+    // --- START DEBUG PRINTING ---
+    /*
+        printf("SPI Transaction (Len %d):\n", size);
+
+        printf("  TX: ");
+        if (buffer_out) {
+            for (int i = 0; i < size; i++) {
+                printf("%02X ", buffer_out[i]);
+            }
+        }
+        printf("\n");
+
+        printf("  RX: ");
+        if (buffer_in) {
+            for (int i = 0; i < size; i++) {
+                printf("%02X ", buffer_in[i]);
+            }
+        }
+        printf("\n------------------\n");
+    */
+    if (buffer_out && size > 0)
+    {
+        uint8_t opcode = buffer_out[0];
+
+        // Check if the opcode is WriteRegister (0x18) or WriteBuffer (0x1A)
+        if (opcode == 0x18 || opcode == 0x1A)
+        {
+
+            // Check if TCXO was initialized
+            if (TCXO)
+            {
+                // Read and print the current state of the TCXO pin
+                printf("WRITE OP (0x%02X) - TCXO Pin Value: %d\n", opcode,
+                       TCXO->read());
+            }
+        }
+    } // --- END DEBUG PRINTING ---
 }
 
 void SX128x_Linux::HalPreTx()

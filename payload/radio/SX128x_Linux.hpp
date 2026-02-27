@@ -60,7 +60,7 @@ private:
 	GPIO::LineSingle RadioNss;
 	GPIO::LineSingle RadioReset;
 	GPIO::LineSingle Busy;
-	std::optional<GPIO::LineSingle> TxEn, RxEn;
+	std::optional<GPIO::LineSingle> TxEn, RxEn, TCXO;
 
 	uint8_t HalGpioRead(GpioPinFunction_t func) override;
 

@@ -1,0 +1,1542 @@
+Start testing: Jan 24 14:43 PST
+----------------------------------------------------------
+1/8 Testing: scheduler_test
+1/8 Test: scheduler_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/scheduler/test/scheduler_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/scheduler/test
+"scheduler_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] === Scheduler Tests (Custom Tasks) ===
+[DEBUG] Visualization log opened: scheduler_test_viz.json
+[DEBUG] === Test 1: All tasks with different periods ===
+[DEBUG] fast_task initialized
+[DEBUG] medium_task initialized
+[DEBUG] slow_task initialized
+[DEBUG] very_slow_task initialized
+[DEBUG] Simulating 10000 ms with dispatch interval 5 ms
+[DEBUG] Task dispatch counts:
+[DEBUG]   fast_task: 181 dispatches
+[DEBUG]   medium_task: 48 dispatches
+[DEBUG]   slow_task: 9 dispatches
+[DEBUG]   very_slow_task: 1 dispatches
+[DEBUG] ✓ Test 1 passed
+[DEBUG] === Test 2: Only fast tasks ===
+[DEBUG] fast_task initialized
+[DEBUG] medium_task initialized
+[DEBUG] Simulating 5000 ms with dispatch interval 5 ms
+[DEBUG]   fast_task: 90 dispatches
+[DEBUG]   medium_task: 24 dispatches
+[DEBUG] ✓ Test 2 passed
+[DEBUG] === Test 3: Only slow tasks ===
+[DEBUG] slow_task initialized
+[DEBUG] very_slow_task initialized
+[DEBUG] Simulating 15000 ms with dispatch interval 10 ms
+[DEBUG]   slow_task: 14 dispatches
+[DEBUG]   very_slow_task: 2 dispatches
+[DEBUG] ✓ Test 3 passed
+[DEBUG] === Test 4: Task period accuracy ===
+[DEBUG] fast_task initialized
+[DEBUG] medium_task initialized
+[DEBUG] slow_task initialized
+[DEBUG] very_slow_task initialized
+[DEBUG] Simulating 10000 ms with dispatch interval 1 ms
+[DEBUG]   fast_task: expected ~200, actual 196 [PASS]
+[DEBUG]   medium_task: expected ~50, actual 49 [PASS]
+[DEBUG]   slow_task: expected ~10, actual 9 [PASS]
+[DEBUG]   very_slow_task: expected ~2, actual 1 [PASS]
+[DEBUG] ✓ Test 4 passed
+[DEBUG] === All Scheduler Tests Passed ===
+[DEBUG] Total simulated time: 10000 ms
+[DEBUG] Visualization log closed
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"scheduler_test" end time: Jan 24 14:43 PST
+"scheduler_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/8 Testing: running_state_test
+2/8 Test: running_state_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/states/running/test/running_state_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/states/running/test
+"running_state_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] === Running State Tests (Real Tasks) ===
+[DEBUG] Visualization log opened: running_state_viz.json
+[DEBUG] === Test 1: Running state structure ===
+[DEBUG]   State name: running
+[DEBUG]   Number of tasks: 8
+[DEBUG]   Task 0: print (period: 1000 ms)
+[DEBUG]   Task 1: watchdog (period: 100 ms)
+[DEBUG]   Task 2: blink (period: 1000 ms)
+[DEBUG]   Task 3: adcs (period: 5000 ms)
+[DEBUG]   Task 4: telemetry (period: 1000 ms)
+[DEBUG]   Task 5: beacon (period: 5000 ms)
+[DEBUG]   Task 6: radio (period: 100 ms)
+[DEBUG]   Task 7: command (period: 100 ms)
+[DEBUG] ✓ Test 1 passed
+[DEBUG] === Test 2: Task configuration ===
+[DEBUG]   Found watchdog task at position 1
+[DEBUG]   Found beacon task at position 5
+[DEBUG]   Found radio task at position 6
+[DEBUG]   Found command task at position 7
+[DEBUG] ✓ Test 2 passed
+[DEBUG] === Test 3: Dispatch periods ===
+[DEBUG]   print: 1000 ms
+[DEBUG]   watchdog: 100 ms
+[DEBUG]   blink: 1000 ms
+[DEBUG]   adcs: 5000 ms
+[DEBUG]   telemetry: 1000 ms
+[DEBUG]   beacon: 5000 ms
+[DEBUG]   radio: 100 ms
+[DEBUG]   command: 100 ms
+[DEBUG] ✓ Test 3 passed
+[DEBUG] === Test 4: State transition ===
+[DEBUG]   Running state correctly returns itself
+[DEBUG] ✓ Test 4 passed
+[DEBUG] === Test 5: Scheduler execution with running_state ===
+[INFO] Test task is initializing...
+[INFO] Scanning the I2C bus...
+
+[INFO] Scanning MPPT_I2C address 0x08
+
+[INFO] MPPT Device found at 0x08
+
+[INFO] Scanning POWER_I2C address 0x08
+
+[INFO] Power Monitor Device found at 0x08
+
+[INFO] Scanning MPPT_I2C address 0x09
+
+[INFO] MPPT Device found at 0x09
+
+[INFO] Scanning POWER_I2C address 0x09
+
+[INFO] Power Monitor Device found at 0x09
+
+[INFO] Scanning MPPT_I2C address 0x0A
+
+[INFO] MPPT Device found at 0x0A
+
+[INFO] Scanning POWER_I2C address 0x0A
+
+[INFO] Power Monitor Device found at 0x0A
+
+[INFO] Scanning MPPT_I2C address 0x0B
+
+[INFO] MPPT Device found at 0x0B
+
+[INFO] Scanning POWER_I2C address 0x0B
+
+[INFO] Power Monitor Device found at 0x0B
+
+[INFO] Scanning MPPT_I2C address 0x0C
+
+[INFO] MPPT Device found at 0x0C
+
+[INFO] Scanning POWER_I2C address 0x0C
+
+[INFO] Power Monitor Device found at 0x0C
+
+[INFO] Scanning MPPT_I2C address 0x0D
+
+[INFO] MPPT Device found at 0x0D
+
+[INFO] Scanning POWER_I2C address 0x0D
+
+[INFO] Power Monitor Device found at 0x0D
+
+[INFO] Scanning MPPT_I2C address 0x0E
+
+[INFO] MPPT Device found at 0x0E
+
+[INFO] Scanning POWER_I2C address 0x0E
+
+[INFO] Power Monitor Device found at 0x0E
+
+[INFO] Scanning MPPT_I2C address 0x0F
+
+[INFO] MPPT Device found at 0x0F
+
+[INFO] Scanning POWER_I2C address 0x0F
+
+[INFO] Power Monitor Device found at 0x0F
+
+[INFO] Scanning MPPT_I2C address 0x10
+
+[INFO] MPPT Device found at 0x10
+
+[INFO] Scanning POWER_I2C address 0x10
+
+[INFO] Power Monitor Device found at 0x10
+
+[INFO] Scanning MPPT_I2C address 0x11
+
+[INFO] MPPT Device found at 0x11
+
+[INFO] Scanning POWER_I2C address 0x11
+
+[INFO] Power Monitor Device found at 0x11
+
+[INFO] Scanning MPPT_I2C address 0x12
+
+[INFO] MPPT Device found at 0x12
+
+[INFO] Scanning POWER_I2C address 0x12
+
+[INFO] Power Monitor Device found at 0x12
+
+[INFO] Scanning MPPT_I2C address 0x13
+
+[INFO] MPPT Device found at 0x13
+
+[INFO] Scanning POWER_I2C address 0x13
+
+[INFO] Power Monitor Device found at 0x13
+
+[INFO] Scanning MPPT_I2C address 0x14
+
+[INFO] MPPT Device found at 0x14
+
+[INFO] Scanning POWER_I2C address 0x14
+
+[INFO] Power Monitor Device found at 0x14
+
+[INFO] Scanning MPPT_I2C address 0x15
+
+[INFO] MPPT Device found at 0x15
+
+[INFO] Scanning POWER_I2C address 0x15
+
+[INFO] Power Monitor Device found at 0x15
+
+[INFO] Scanning MPPT_I2C address 0x16
+
+[INFO] MPPT Device found at 0x16
+
+[INFO] Scanning POWER_I2C address 0x16
+
+[INFO] Power Monitor Device found at 0x16
+
+[INFO] Scanning MPPT_I2C address 0x17
+
+[INFO] MPPT Device found at 0x17
+
+[INFO] Scanning POWER_I2C address 0x17
+
+[INFO] Power Monitor Device found at 0x17
+
+[INFO] Scanning MPPT_I2C address 0x18
+
+[INFO] MPPT Device found at 0x18
+
+[INFO] Scanning POWER_I2C address 0x18
+
+[INFO] Power Monitor Device found at 0x18
+
+[INFO] Scanning MPPT_I2C address 0x19
+
+[INFO] MPPT Device found at 0x19
+
+[INFO] Scanning POWER_I2C address 0x19
+
+[INFO] Power Monitor Device found at 0x19
+
+[INFO] Scanning MPPT_I2C address 0x1A
+
+[INFO] MPPT Device found at 0x1A
+
+[INFO] Scanning POWER_I2C address 0x1A
+
+[INFO] Power Monitor Device found at 0x1A
+
+[INFO] Scanning MPPT_I2C address 0x1B
+
+[INFO] MPPT Device found at 0x1B
+
+[INFO] Scanning POWER_I2C address 0x1B
+
+[INFO] Power Monitor Device found at 0x1B
+
+[INFO] Scanning MPPT_I2C address 0x1C
+
+[INFO] MPPT Device found at 0x1C
+
+[INFO] Scanning POWER_I2C address 0x1C
+
+[INFO] Power Monitor Device found at 0x1C
+
+[INFO] Scanning MPPT_I2C address 0x1D
+
+[INFO] MPPT Device found at 0x1D
+
+[INFO] Scanning POWER_I2C address 0x1D
+
+[INFO] Power Monitor Device found at 0x1D
+
+[INFO] Scanning MPPT_I2C address 0x1E
+
+[INFO] MPPT Device found at 0x1E
+
+[INFO] Scanning POWER_I2C address 0x1E
+
+[INFO] Power Monitor Device found at 0x1E
+
+[INFO] Scanning MPPT_I2C address 0x1F
+
+[INFO] MPPT Device found at 0x1F
+
+[INFO] Scanning POWER_I2C address 0x1F
+
+[INFO] Power Monitor Device found at 0x1F
+
+[INFO] Scanning MPPT_I2C address 0x20
+
+[INFO] MPPT Device found at 0x20
+
+[INFO] Scanning POWER_I2C address 0x20
+
+[INFO] Power Monitor Device found at 0x20
+
+[INFO] Scanning MPPT_I2C address 0x21
+
+[INFO] MPPT Device found at 0x21
+
+[INFO] Scanning POWER_I2C address 0x21
+
+[INFO] Power Monitor Device found at 0x21
+
+[INFO] Scanning MPPT_I2C address 0x22
+
+[INFO] MPPT Device found at 0x22
+
+[INFO] Scanning POWER_I2C address 0x22
+
+[INFO] Power Monitor Device found at 0x22
+
+[INFO] Scanning MPPT_I2C address 0x23
+
+[INFO] MPPT Device found at 0x23
+
+[INFO] Scanning POWER_I2C address 0x23
+
+[INFO] Power Monitor Device found at 0x23
+
+[INFO] Scanning MPPT_I2C address 0x24
+
+[INFO] MPPT Device found at 0x24
+
+[INFO] Scanning POWER_I2C address 0x24
+
+[INFO] Power Monitor Device found at 0x24
+
+[INFO] Scanning MPPT_I2C address 0x25
+
+[INFO] MPPT Device found at 0x25
+
+[INFO] Scanning POWER_I2C address 0x25
+
+[INFO] Power Monitor Device found at 0x25
+
+[INFO] Scanning MPPT_I2C address 0x26
+
+[INFO] MPPT Device found at 0x26
+
+[INFO] Scanning POWER_I2C address 0x26
+
+[INFO] Power Monitor Device found at 0x26
+
+[INFO] Scanning MPPT_I2C address 0x27
+
+[INFO] MPPT Device found at 0x27
+
+[INFO] Scanning POWER_I2C address 0x27
+
+[INFO] Power Monitor Device found at 0x27
+
+[INFO] Scanning MPPT_I2C address 0x28
+
+[INFO] MPPT Device found at 0x28
+
+[INFO] Scanning POWER_I2C address 0x28
+
+[INFO] Power Monitor Device found at 0x28
+
+[INFO] Scanning MPPT_I2C address 0x29
+
+[INFO] MPPT Device found at 0x29
+
+[INFO] Scanning POWER_I2C address 0x29
+
+[INFO] Power Monitor Device found at 0x29
+
+[INFO] Scanning MPPT_I2C address 0x2A
+
+[INFO] MPPT Device found at 0x2A
+
+[INFO] Scanning POWER_I2C address 0x2A
+
+[INFO] Power Monitor Device found at 0x2A
+
+[INFO] Scanning MPPT_I2C address 0x2B
+
+[INFO] MPPT Device found at 0x2B
+
+[INFO] Scanning POWER_I2C address 0x2B
+
+[INFO] Power Monitor Device found at 0x2B
+
+[INFO] Scanning MPPT_I2C address 0x2C
+
+[INFO] MPPT Device found at 0x2C
+
+[INFO] Scanning POWER_I2C address 0x2C
+
+[INFO] Power Monitor Device found at 0x2C
+
+[INFO] Scanning MPPT_I2C address 0x2D
+
+[INFO] MPPT Device found at 0x2D
+
+[INFO] Scanning POWER_I2C address 0x2D
+
+[INFO] Power Monitor Device found at 0x2D
+
+[INFO] Scanning MPPT_I2C address 0x2E
+
+[INFO] MPPT Device found at 0x2E
+
+[INFO] Scanning POWER_I2C address 0x2E
+
+[INFO] Power Monitor Device found at 0x2E
+
+[INFO] Scanning MPPT_I2C address 0x2F
+
+[INFO] MPPT Device found at 0x2F
+
+[INFO] Scanning POWER_I2C address 0x2F
+
+[INFO] Power Monitor Device found at 0x2F
+
+[INFO] Scanning MPPT_I2C address 0x30
+
+[INFO] MPPT Device found at 0x30
+
+[INFO] Scanning POWER_I2C address 0x30
+
+[INFO] Power Monitor Device found at 0x30
+
+[INFO] Scanning MPPT_I2C address 0x31
+
+[INFO] MPPT Device found at 0x31
+
+[INFO] Scanning POWER_I2C address 0x31
+
+[INFO] Power Monitor Device found at 0x31
+
+[INFO] Scanning MPPT_I2C address 0x32
+
+[INFO] MPPT Device found at 0x32
+
+[INFO] Scanning POWER_I2C address 0x32
+
+[INFO] Power Monitor Device found at 0x32
+
+[INFO] Scanning MPPT_I2C address 0x33
+
+[INFO] MPPT Device found at 0x33
+
+[INFO] Scanning POWER_I2C address 0x33
+
+[INFO] Power Monitor Device found at 0x33
+
+[INFO] Scanning MPPT_I2C address 0x34
+
+[INFO] MPPT Device found at 0x34
+
+[INFO] Scanning POWER_I2C address 0x34
+
+[INFO] Power Monitor Device found at 0x34
+
+[INFO] Scanning MPPT_I2C address 0x35
+
+[INFO] MPPT Device found at 0x35
+
+[INFO] Scanning POWER_I2C address 0x35
+
+[INFO] Power Monitor Device found at 0x35
+
+[INFO] Scanning MPPT_I2C address 0x36
+
+[INFO] MPPT Device found at 0x36
+
+[INFO] Scanning POWER_I2C address 0x36
+
+[INFO] Power Monitor Device found at 0x36
+
+[INFO] Scanning MPPT_I2C address 0x37
+
+[INFO] MPPT Device found at 0x37
+
+[INFO] Scanning POWER_I2C address 0x37
+
+[INFO] Power Monitor Device found at 0x37
+
+[INFO] Scanning MPPT_I2C address 0x38
+
+[INFO] MPPT Device found at 0x38
+
+[INFO] Scanning POWER_I2C address 0x38
+
+[INFO] Power Monitor Device found at 0x38
+
+[INFO] Scanning MPPT_I2C address 0x39
+
+[INFO] MPPT Device found at 0x39
+
+[INFO] Scanning POWER_I2C address 0x39
+
+[INFO] Power Monitor Device found at 0x39
+
+[INFO] Scanning MPPT_I2C address 0x3A
+
+[INFO] MPPT Device found at 0x3A
+
+[INFO] Scanning POWER_I2C address 0x3A
+
+[INFO] Power Monitor Device found at 0x3A
+
+[INFO] Scanning MPPT_I2C address 0x3B
+
+[INFO] MPPT Device found at 0x3B
+
+[INFO] Scanning POWER_I2C address 0x3B
+
+[INFO] Power Monitor Device found at 0x3B
+
+[INFO] Scanning MPPT_I2C address 0x3C
+
+[INFO] MPPT Device found at 0x3C
+
+[INFO] Scanning POWER_I2C address 0x3C
+
+[INFO] Power Monitor Device found at 0x3C
+
+[INFO] Scanning MPPT_I2C address 0x3D
+
+[INFO] MPPT Device found at 0x3D
+
+[INFO] Scanning POWER_I2C address 0x3D
+
+[INFO] Power Monitor Device found at 0x3D
+
+[INFO] Scanning MPPT_I2C address 0x3E
+
+[INFO] MPPT Device found at 0x3E
+
+[INFO] Scanning POWER_I2C address 0x3E
+
+[INFO] Power Monitor Device found at 0x3E
+
+[INFO] Scanning MPPT_I2C address 0x3F
+
+[INFO] MPPT Device found at 0x3F
+
+[INFO] Scanning POWER_I2C address 0x3F
+
+[INFO] Power Monitor Device found at 0x3F
+
+[INFO] Scanning MPPT_I2C address 0x40
+
+[INFO] MPPT Device found at 0x40
+
+[INFO] Scanning POWER_I2C address 0x40
+
+[INFO] Power Monitor Device found at 0x40
+
+[INFO] Scanning MPPT_I2C address 0x41
+
+[INFO] MPPT Device found at 0x41
+
+[INFO] Scanning POWER_I2C address 0x41
+
+[INFO] Power Monitor Device found at 0x41
+
+[INFO] Scanning MPPT_I2C address 0x42
+
+[INFO] MPPT Device found at 0x42
+
+[INFO] Scanning POWER_I2C address 0x42
+
+[INFO] Power Monitor Device found at 0x42
+
+[INFO] Scanning MPPT_I2C address 0x43
+
+[INFO] MPPT Device found at 0x43
+
+[INFO] Scanning POWER_I2C address 0x43
+
+[INFO] Power Monitor Device found at 0x43
+
+[INFO] Scanning MPPT_I2C address 0x44
+
+[INFO] MPPT Device found at 0x44
+
+[INFO] Scanning POWER_I2C address 0x44
+
+[INFO] Power Monitor Device found at 0x44
+
+[INFO] Scanning MPPT_I2C address 0x45
+
+[INFO] MPPT Device found at 0x45
+
+[INFO] Scanning POWER_I2C address 0x45
+
+[INFO] Power Monitor Device found at 0x45
+
+[INFO] Scanning MPPT_I2C address 0x46
+
+[INFO] MPPT Device found at 0x46
+
+[INFO] Scanning POWER_I2C address 0x46
+
+[INFO] Power Monitor Device found at 0x46
+
+[INFO] Scanning MPPT_I2C address 0x47
+
+[INFO] MPPT Device found at 0x47
+
+[INFO] Scanning POWER_I2C address 0x47
+
+[INFO] Power Monitor Device found at 0x47
+
+[INFO] Scanning MPPT_I2C address 0x48
+
+[INFO] MPPT Device found at 0x48
+
+[INFO] Scanning POWER_I2C address 0x48
+
+[INFO] Power Monitor Device found at 0x48
+
+[INFO] Scanning MPPT_I2C address 0x49
+
+[INFO] MPPT Device found at 0x49
+
+[INFO] Scanning POWER_I2C address 0x49
+
+[INFO] Power Monitor Device found at 0x49
+
+[INFO] Scanning MPPT_I2C address 0x4A
+
+[INFO] MPPT Device found at 0x4A
+
+[INFO] Scanning POWER_I2C address 0x4A
+
+[INFO] Power Monitor Device found at 0x4A
+
+[INFO] Scanning MPPT_I2C address 0x4B
+
+[INFO] MPPT Device found at 0x4B
+
+[INFO] Scanning POWER_I2C address 0x4B
+
+[INFO] Power Monitor Device found at 0x4B
+
+[INFO] Scanning MPPT_I2C address 0x4C
+
+[INFO] MPPT Device found at 0x4C
+
+[INFO] Scanning POWER_I2C address 0x4C
+
+[INFO] Power Monitor Device found at 0x4C
+
+[INFO] Scanning MPPT_I2C address 0x4D
+
+[INFO] MPPT Device found at 0x4D
+
+[INFO] Scanning POWER_I2C address 0x4D
+
+[INFO] Power Monitor Device found at 0x4D
+
+[INFO] Scanning MPPT_I2C address 0x4E
+
+[INFO] MPPT Device found at 0x4E
+
+[INFO] Scanning POWER_I2C address 0x4E
+
+[INFO] Power Monitor Device found at 0x4E
+
+[INFO] Scanning MPPT_I2C address 0x4F
+
+[INFO] MPPT Device found at 0x4F
+
+[INFO] Scanning POWER_I2C address 0x4F
+
+[INFO] Power Monitor Device found at 0x4F
+
+[INFO] Scanning MPPT_I2C address 0x50
+
+[INFO] MPPT Device found at 0x50
+
+[INFO] Scanning POWER_I2C address 0x50
+
+[INFO] Power Monitor Device found at 0x50
+
+[INFO] Scanning MPPT_I2C address 0x51
+
+[INFO] MPPT Device found at 0x51
+
+[INFO] Scanning POWER_I2C address 0x51
+
+[INFO] Power Monitor Device found at 0x51
+
+[INFO] Scanning MPPT_I2C address 0x52
+
+[INFO] MPPT Device found at 0x52
+
+[INFO] Scanning POWER_I2C address 0x52
+
+[INFO] Power Monitor Device found at 0x52
+
+[INFO] Scanning MPPT_I2C address 0x53
+
+[INFO] MPPT Device found at 0x53
+
+[INFO] Scanning POWER_I2C address 0x53
+
+[INFO] Power Monitor Device found at 0x53
+
+[INFO] Scanning MPPT_I2C address 0x54
+
+[INFO] MPPT Device found at 0x54
+
+[INFO] Scanning POWER_I2C address 0x54
+
+[INFO] Power Monitor Device found at 0x54
+
+[INFO] Scanning MPPT_I2C address 0x55
+
+[INFO] MPPT Device found at 0x55
+
+[INFO] Scanning POWER_I2C address 0x55
+
+[INFO] Power Monitor Device found at 0x55
+
+[INFO] Scanning MPPT_I2C address 0x56
+
+[INFO] MPPT Device found at 0x56
+
+[INFO] Scanning POWER_I2C address 0x56
+
+[INFO] Power Monitor Device found at 0x56
+
+[INFO] Scanning MPPT_I2C address 0x57
+
+[INFO] MPPT Device found at 0x57
+
+[INFO] Scanning POWER_I2C address 0x57
+
+[INFO] Power Monitor Device found at 0x57
+
+[INFO] Scanning MPPT_I2C address 0x58
+
+[INFO] MPPT Device found at 0x58
+
+[INFO] Scanning POWER_I2C address 0x58
+
+[INFO] Power Monitor Device found at 0x58
+
+[INFO] Scanning MPPT_I2C address 0x59
+
+[INFO] MPPT Device found at 0x59
+
+[INFO] Scanning POWER_I2C address 0x59
+
+[INFO] Power Monitor Device found at 0x59
+
+[INFO] Scanning MPPT_I2C address 0x5A
+
+[INFO] MPPT Device found at 0x5A
+
+[INFO] Scanning POWER_I2C address 0x5A
+
+[INFO] Power Monitor Device found at 0x5A
+
+[INFO] Scanning MPPT_I2C address 0x5B
+
+[INFO] MPPT Device found at 0x5B
+
+[INFO] Scanning POWER_I2C address 0x5B
+
+[INFO] Power Monitor Device found at 0x5B
+
+[INFO] Scanning MPPT_I2C address 0x5C
+
+[INFO] MPPT Device found at 0x5C
+
+[INFO] Scanning POWER_I2C address 0x5C
+
+[INFO] Power Monitor Device found at 0x5C
+
+[INFO] Scanning MPPT_I2C address 0x5D
+
+[INFO] MPPT Device found at 0x5D
+
+[INFO] Scanning POWER_I2C address 0x5D
+
+[INFO] Power Monitor Device found at 0x5D
+
+[INFO] Scanning MPPT_I2C address 0x5E
+
+[INFO] MPPT Device found at 0x5E
+
+[INFO] Scanning POWER_I2C address 0x5E
+
+[INFO] Power Monitor Device found at 0x5E
+
+[INFO] Scanning MPPT_I2C address 0x5F
+
+[INFO] MPPT Device found at 0x5F
+
+[INFO] Scanning POWER_I2C address 0x5F
+
+[INFO] Power Monitor Device found at 0x5F
+
+[INFO] Scanning MPPT_I2C address 0x60
+
+[INFO] MPPT Device found at 0x60
+
+[INFO] Scanning POWER_I2C address 0x60
+
+[INFO] Power Monitor Device found at 0x60
+
+[INFO] Scanning MPPT_I2C address 0x61
+
+[INFO] MPPT Device found at 0x61
+
+[INFO] Scanning POWER_I2C address 0x61
+
+[INFO] Power Monitor Device found at 0x61
+
+[INFO] Scanning MPPT_I2C address 0x62
+
+[INFO] MPPT Device found at 0x62
+
+[INFO] Scanning POWER_I2C address 0x62
+
+[INFO] Power Monitor Device found at 0x62
+
+[INFO] Scanning MPPT_I2C address 0x63
+
+[INFO] MPPT Device found at 0x63
+
+[INFO] Scanning POWER_I2C address 0x63
+
+[INFO] Power Monitor Device found at 0x63
+
+[INFO] Scanning MPPT_I2C address 0x64
+
+[INFO] MPPT Device found at 0x64
+
+[INFO] Scanning POWER_I2C address 0x64
+
+[INFO] Power Monitor Device found at 0x64
+
+[INFO] Scanning MPPT_I2C address 0x65
+
+[INFO] MPPT Device found at 0x65
+
+[INFO] Scanning POWER_I2C address 0x65
+
+[INFO] Power Monitor Device found at 0x65
+
+[INFO] Scanning MPPT_I2C address 0x66
+
+[INFO] MPPT Device found at 0x66
+
+[INFO] Scanning POWER_I2C address 0x66
+
+[INFO] Power Monitor Device found at 0x66
+
+[INFO] Scanning MPPT_I2C address 0x67
+
+[INFO] MPPT Device found at 0x67
+
+[INFO] Scanning POWER_I2C address 0x67
+
+[INFO] Power Monitor Device found at 0x67
+
+[INFO] Scanning MPPT_I2C address 0x68
+
+[INFO] MPPT Device found at 0x68
+
+[INFO] Scanning POWER_I2C address 0x68
+
+[INFO] Power Monitor Device found at 0x68
+
+[INFO] Scanning MPPT_I2C address 0x69
+
+[INFO] MPPT Device found at 0x69
+
+[INFO] Scanning POWER_I2C address 0x69
+
+[INFO] Power Monitor Device found at 0x69
+
+[INFO] Scanning MPPT_I2C address 0x6A
+
+[INFO] MPPT Device found at 0x6A
+
+[INFO] Scanning POWER_I2C address 0x6A
+
+[INFO] Power Monitor Device found at 0x6A
+
+[INFO] Scanning MPPT_I2C address 0x6B
+
+[INFO] MPPT Device found at 0x6B
+
+[INFO] Scanning POWER_I2C address 0x6B
+
+[INFO] Power Monitor Device found at 0x6B
+
+[INFO] Scanning MPPT_I2C address 0x6C
+
+[INFO] MPPT Device found at 0x6C
+
+[INFO] Scanning POWER_I2C address 0x6C
+
+[INFO] Power Monitor Device found at 0x6C
+
+[INFO] Scanning MPPT_I2C address 0x6D
+
+[INFO] MPPT Device found at 0x6D
+
+[INFO] Scanning POWER_I2C address 0x6D
+
+[INFO] Power Monitor Device found at 0x6D
+
+[INFO] Scanning MPPT_I2C address 0x6E
+
+[INFO] MPPT Device found at 0x6E
+
+[INFO] Scanning POWER_I2C address 0x6E
+
+[INFO] Power Monitor Device found at 0x6E
+
+[INFO] Scanning MPPT_I2C address 0x6F
+
+[INFO] MPPT Device found at 0x6F
+
+[INFO] Scanning POWER_I2C address 0x6F
+
+[INFO] Power Monitor Device found at 0x6F
+
+[INFO] Scanning MPPT_I2C address 0x70
+
+[INFO] MPPT Device found at 0x70
+
+[INFO] Scanning POWER_I2C address 0x70
+
+[INFO] Power Monitor Device found at 0x70
+
+[INFO] Scanning MPPT_I2C address 0x71
+
+[INFO] MPPT Device found at 0x71
+
+[INFO] Scanning POWER_I2C address 0x71
+
+[INFO] Power Monitor Device found at 0x71
+
+[INFO] Scanning MPPT_I2C address 0x72
+
+[INFO] MPPT Device found at 0x72
+
+[INFO] Scanning POWER_I2C address 0x72
+
+[INFO] Power Monitor Device found at 0x72
+
+[INFO] Scanning MPPT_I2C address 0x73
+
+[INFO] MPPT Device found at 0x73
+
+[INFO] Scanning POWER_I2C address 0x73
+
+[INFO] Power Monitor Device found at 0x73
+
+[INFO] Scanning MPPT_I2C address 0x74
+
+[INFO] MPPT Device found at 0x74
+
+[INFO] Scanning POWER_I2C address 0x74
+
+[INFO] Power Monitor Device found at 0x74
+
+[INFO] Scanning MPPT_I2C address 0x75
+
+[INFO] MPPT Device found at 0x75
+
+[INFO] Scanning POWER_I2C address 0x75
+
+[INFO] Power Monitor Device found at 0x75
+
+[INFO] Scanning MPPT_I2C address 0x76
+
+[INFO] MPPT Device found at 0x76
+
+[INFO] Scanning POWER_I2C address 0x76
+
+[INFO] Power Monitor Device found at 0x76
+
+[INFO] Scanning MPPT_I2C address 0x77
+
+[INFO] MPPT Device found at 0x77
+
+[INFO] Scanning POWER_I2C address 0x77
+
+[INFO] Power Monitor Device found at 0x77
+
+[DEBUG] Beacon task is initializing...
+[INFO] Brought up RFM9X v18
+[INFO]   Node: 1001813848
+[DEBUG]   Simulating 30 seconds of operation...
+[DEBUG] Simulating 30000 ms with dispatch interval 10 ms
+[INFO] Test task is dispatching... 0
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 1
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 2
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 3
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Serializing slate for beacon... 0x55a73bb67560 -> 0x7ffd0f7be275
+[INFO] State name: running
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+[INFO] Test task is dispatching... 4
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 5
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 6
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 7
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 8
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Serializing slate for beacon... 0x55a73bb67560 -> 0x7ffd0f7be275
+[INFO] State name: running
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+[INFO] Test task is dispatching... 9
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 10
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 11
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 12
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 13
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Serializing slate for beacon... 0x55a73bb67560 -> 0x7ffd0f7be275
+[INFO] State name: running
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+[INFO] Test task is dispatching... 14
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 15
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 16
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 17
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 18
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Serializing slate for beacon... 0x55a73bb67560 -> 0x7ffd0f7be275
+[INFO] State name: running
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+[INFO] Test task is dispatching... 19
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 20
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 21
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 22
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 23
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Serializing slate for beacon... 0x55a73bb67560 -> 0x7ffd0f7be275
+[INFO] State name: running
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+[INFO] Test task is dispatching... 24
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 25
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 26
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 27
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[INFO] Test task is dispatching... 28
+[INFO] Power Monitor - Voltage: 3.300V, Current: 0.100A
+[INFO] ADCS status: OFF
+[INFO] ADCS telemetry valid: INVALID
+[INFO] ADCS num failed checks: 0
+[DEBUG]   Simulation completed successfully
+[DEBUG]   print initialized and dispatched
+[DEBUG]   watchdog initialized and dispatched
+[DEBUG]   blink initialized and dispatched
+[DEBUG]   adcs initialized and dispatched
+[DEBUG]   telemetry initialized and dispatched
+[DEBUG]   beacon initialized and dispatched
+[DEBUG]   radio initialized and dispatched
+[DEBUG]   command initialized and dispatched
+[DEBUG] ✓ Test 5 passed
+[DEBUG] === All Running State Tests Passed ===
+[DEBUG] Total simulated time: 30000 ms
+[DEBUG] Visualization log closed
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"running_state_test" end time: Jan 24 14:43 PST
+"running_state_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/8 Testing: beacon_task_test
+3/8 Test: beacon_task_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/beacon/test/beacon_task_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/beacon/test
+"beacon_task_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+Starting beacon serialization test
+[INFO] Serializing slate for beacon... 0x55b1a669b180 -> 0x55b1a669b900
+[INFO] State name: mock_state
+Serialized length: 96
+Serialized data (hex): 6d 6f 63 6b 5f 73 74 61 74 65 00 00 00 00 00 39 30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 3f cd cc cc 3d cd cc 4c 3e 9a 99 99 3e cd cc cc 3e 41 2a 00 00 00 4b 43 33 57 4e 59 00 
+Starting beacon dispatch test
+[DEBUG] Beacon task is initializing...
+[INFO] Serializing slate for beacon... 0x55b1a669b180 -> 0x7ffd07dae745
+[INFO] State name: mock_state
+[INFO] [beacon_task] Boot count: 0
+[INFO] Beacon pkt added to queue
+Beacon dispatch completed without error
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"beacon_task_test" end time: Jan 24 14:43 PST
+"beacon_task_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/8 Testing: print_task_test
+4/8 Test: print_task_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/print/test/print_task_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/print/test
+"print_task_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] Task pointer: print
+[INFO] Test task is initializing...
+[INFO] Test task is dispatching... 0
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"print_task_test" end time: Jan 24 14:43 PST
+"print_task_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/8 Testing: radio_task_test
+5/8 Test: radio_task_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/radio/test/radio_task_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/tasks/radio/test
+"radio_task_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+Starting radio test
+Starting basic encode_packet test
+Data Length: 210
+Encoded size: 48
+Encoded data (hex): 01 02 00 01 03 aa bb cc 2a 00 00 00 07 00 00 00 de ad be ef 00 11 22 33 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 42
+
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"radio_task_test" end time: Jan 24 14:43 PST
+"radio_task_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/8 Testing: str_utils_test
+6/8 Test: str_utils_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/utils/test/str_utils_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/utils/test
+"str_utils_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] === String Utilities Tests ===
+[DEBUG] === Testing snprintf_len ===
+[DEBUG] ✓ snprintf_len tests passed
+[DEBUG] === Testing strcpy_trunc ===
+[DEBUG] ✓ strcpy_trunc tests passed
+[DEBUG] ✓ All string utilities tests passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"str_utils_test" end time: Jan 24 14:43 PST
+"str_utils_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/8 Testing: mram_test
+7/8 Test: mram_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/filesys/test/mram_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/filesys/test
+"mram_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] Starting MRAM test
+
+[Mock MRAM] Initialized
+[DEBUG] Testing MRAM write...
+
+[Mock MRAM] Wrote 13 bytes to address 0x000000
+[DEBUG] Testing MRAM read...
+
+[Mock MRAM] Read 13 bytes from address 0x000000
+[DEBUG] Read from MRAM: Hello, MRAM!
+
+[DEBUG] Testing MRAM write disable...
+
+[Mock MRAM] Write disabled
+[Mock MRAM] Write failed: write not enabled
+[Mock MRAM] Read 26 bytes from address 0x000100
+[DEBUG] Testing MRAM write enable...
+
+[Mock MRAM] Write enabled
+[Mock MRAM] Wrote 22 bytes to address 0x000100
+[Mock MRAM] Read 22 bytes from address 0x000100
+[DEBUG] Testing MRAM preserve data across sleep/wake...
+
+[Mock MRAM] Wrote 13 bytes to address 0x000200
+[Mock MRAM] Read 13 bytes from address 0x000200
+[Mock MRAM] Entering sleep mode
+[Mock MRAM] Waking up
+[Mock MRAM] Read 13 bytes from address 0x000200
+[DEBUG] test_mram_preserve_data_on_sleep passed.
+
+[DEBUG] Testing MRAM read status...
+
+[Mock MRAM] Write disabled
+[DEBUG] MRAM status (after WRDI): 0x00
+
+[Mock MRAM] Write enabled
+[DEBUG] MRAM status (after WREN): 0x02
+
+[DEBUG] test_mram_read_status passed.
+
+[DEBUG] All MRAM tests passed!
+
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"mram_test" end time: Jan 24 14:43 PST
+"mram_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/8 Testing: filesys_test
+8/8 Test: filesys_test
+Command: "/home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/filesys/test/filesys_test"
+Directory: /home/quack/Desktop/SSI/samwise-flight-software/build_tests/src/filesys/test
+"filesys_test" start time: Jan 24 14:43 PST
+Output:
+----------------------------------------------------------
+[DEBUG] ========================================
+
+[DEBUG] Starting Filesys Test Suite
+
+[DEBUG] ========================================
+
+[DEBUG] 
+--- Running Test 1/1: Write and Readback ---
+
+[DEBUG] === Test: Write and Readback ===
+
+[Mock MRAM] Write enabled
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Wrote 16 bytes to address 0x000000
+[Mock MRAM] Wrote 16 bytes to address 0x000010
+[Mock MRAM] Read 16 bytes from address 0x000040
+[Mock MRAM] Wrote 16 bytes to address 0x000020
+[Mock MRAM] Wrote 16 bytes to address 0x000030
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000010
+[Mock MRAM] Read 16 bytes from address 0x000020
+[Mock MRAM] Read 16 bytes from address 0x000030
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000010
+[Mock MRAM] Read 16 bytes from address 0x000020
+[Mock MRAM] Read 16 bytes from address 0x000030
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Wrote 16 bytes to address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000010
+[Mock MRAM] Read 16 bytes from address 0x000020
+[Mock MRAM] Read 16 bytes from address 0x000030
+[Mock MRAM] Read 16 bytes from address 0x000010
+[Mock MRAM] Wrote 16 bytes to address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000020
+[Mock MRAM] Read 16 bytes from address 0x000030
+[Mock MRAM] Read 16 bytes from address 0x000020
+[Mock MRAM] Read 16 bytes from address 0x000010
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Wrote 16 bytes to address 0x000420
+[Mock MRAM] Wrote 16 bytes to address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[INFO] [filesys] Filesystem formatted successfully
+[Mock MRAM] Write enabled
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000400
+[INFO] [filesys] Marked filesystem buffer as clean.
+[INFO] [filesys] Filesystem mounted successfully
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Wrote 16 bytes to address 0x000440
+[Mock MRAM] Wrote 16 bytes to address 0x000450
+[Mock MRAM] Wrote 16 bytes to address 0x000460
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000460
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000460
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000490
+[Mock MRAM] Wrote 16 bytes to address 0x000470
+[Mock MRAM] Wrote 16 bytes to address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000480
+[INFO] [filesys] Started file write for file: A3
+[DEBUG] Returned code from start_file_write: 0
+
+[INFO] [filesys] Wrote 64 bytes to buffer at offset 0
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000460
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000490
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Wrote 16 bytes to address 0x058C00
+[Mock MRAM] Read 16 bytes from address 0x058C00
+[Mock MRAM] Wrote 16 bytes to address 0x058C10
+[Mock MRAM] Read 16 bytes from address 0x058C10
+[Mock MRAM] Wrote 16 bytes to address 0x058C20
+[Mock MRAM] Read 16 bytes from address 0x058C20
+[Mock MRAM] Wrote 16 bytes to address 0x058C30
+[Mock MRAM] Read 16 bytes from address 0x058C30
+[INFO] [filesys] Marked filesystem buffer as clean.
+[INFO] [filesys] Wrote 64 bytes from buffer to file A3 in MRAM
+[Mock MRAM] Read 16 bytes from address 0x0004B0
+[Mock MRAM] Wrote 16 bytes to address 0x000490
+[Mock MRAM] Wrote 16 bytes to address 0x0004A0
+[Mock MRAM] Read 16 bytes from address 0x000490
+[Mock MRAM] Read 16 bytes from address 0x0004A0
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000000
+[Mock MRAM] Read 16 bytes from address 0x000400
+[Mock MRAM] Read 16 bytes from address 0x000410
+[Mock MRAM] Read 16 bytes from address 0x000420
+[Mock MRAM] Read 16 bytes from address 0x000430
+[Mock MRAM] Read 16 bytes from address 0x000440
+[Mock MRAM] Read 16 bytes from address 0x000450
+[Mock MRAM] Read 16 bytes from address 0x000460
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000470
+[Mock MRAM] Read 16 bytes from address 0x000480
+[Mock MRAM] Read 16 bytes from address 0x000490
+[Mock MRAM] Read 16 bytes from address 0x0004A0
+[Mock MRAM] Read 16 bytes from address 0x0004B0
+[Mock MRAM] Read 16 bytes from address 0x0004D0
+[Mock MRAM] Wrote 16 bytes to address 0x0004B0
+[Mock MRAM] Wrote 16 bytes to address 0x0004C0
+[Mock MRAM] Read 16 bytes from address 0x0004B0
+[Mock MRAM] Read 16 bytes from address 0x0004C0
+[INFO] [filesys] Marked filesystem buffer as clean.
+[INFO] [filesys] Cancelled file write and deleted file: A3
+[DEBUG] --- Test 1 PASSED ---
+
+[DEBUG] 
+========================================
+
+[DEBUG] Test Suite Complete
+
+[DEBUG] Passed: 1 / 1
+
+[DEBUG] Failed: 0 / 1
+
+[DEBUG] ========================================
+
+[DEBUG] All Filesys tests passed!
+
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"filesys_test" end time: Jan 24 14:43 PST
+"filesys_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jan 24 14:43 PST

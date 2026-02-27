@@ -106,8 +106,9 @@ int main(int argc, char **argv)
         uint8_t recv_buf[PACKET_SIZE];
         uint8_t recv_size;
         Radio.GetPayload(recv_buf, &recv_size, PACKET_SIZE);
-
         printf("%d bytes ", recv_size);
+
+        // if done is 1 then return early
 
         // If first packet, set size
         if (!receivedFirstPacket)
@@ -121,6 +122,8 @@ int main(int argc, char **argv)
             printf("Expecting %d bytes =>", expectedBytes);
             printf("(%d full packets, %d partial bytes)\n", expectedFullPackets,
                    partialPacketBytes);
+
+            // if expected bytes is 0 then done is 1
 
             receivedFirstPacket = true;
             return;
