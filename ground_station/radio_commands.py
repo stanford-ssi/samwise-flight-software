@@ -54,73 +54,83 @@ class LoraRadio:
                         )
                         return False
 
-                # Check if this is from satellite (beacon source)
-                if rh_node == 0:  # FROM satellite
-                    if len(packet) >= 1:
-                        data_len = packet[0]
-                        if len(packet) >= 1 + data_len:
-                            beacon_payload = packet[1 : 1 + data_len]
-                            beacon_data = protocol.decode_beacon_data(beacon_payload)
-                            beacon_data.raw_hex = (
-                                packet.hex()
-                                if hasattr(packet, "hex")
-                                else "".join("{:02x}".format(b) for b in packet)
-                            )
+                # All received packets are from the satellite.
+                # Note: radio.node after receive() is the TO field (not FROM) of the
+                # RadioHead header — broadcast beacons (TO=0xFF) give rh_node=0xFF,
+                # NOT 0.  We therefore try beacon decode unconditionally and fall back
+                # to raw logging if it looks malformed.
+                if len(packet) < 1:
+                    logger.warning("Empty packet received")
+                else:
+                    data_len = packet[0]
+                    if len(packet) < 1 + data_len:
+                        logger.error(
+                            "BEACON DECODE ERROR | Truncated packet: "
+                            "data_len=%d but only %d bytes of content available | raw: %s",
+                            data_len,
+                            len(packet) - 1,
+                            packet.hex(),
+                        )
+                    else:
+                        beacon_data = protocol.decode_beacon_data(packet)
+                        beacon_data.raw_hex = (
+                            packet.hex()
+                            if hasattr(packet, "hex")
+                            else "".join("{:02x}".format(b) for b in packet)
+                        )
 
-                            # FILTER 2: Callsign verification (reject packets not from our satellite)
+                        # Validate that the decode produced a usable result
+                        if beacon_data.state_name in ("short_packet",):
+                            logger.error(
+                                "BEACON DECODE ERROR | Packet too short to contain a state name"
+                                " | raw: %s",
+                                packet.hex(),
+                            )
+                        elif beacon_data.stats is None:
+                            logger.error(
+                                "BEACON DECODE ERROR | state='%s' but stats missing"
+                                " (payload may be truncated, expected ≥%d content bytes)"
+                                " | raw: %s",
+                                beacon_data.state_name,
+                                len(beacon_data.state_name) + 1 + 53,
+                                packet.hex(),
+                            )
+                        else:
+                            # FILTER 2: Callsign verification
                             if config.config.get("enable_callsign_filter", False):
                                 expected_callsign = config.config.get("expected_callsign", "KC3WNY")
-
-                                # Check if beacon has callsign field
                                 if beacon_data.callsign:
-                                    # Verify callsign matches (case-insensitive, strip whitespace)
                                     actual_callsign = beacon_data.callsign.strip().upper()
                                     if expected_callsign.upper() not in actual_callsign:
                                         logger.warning(
-                                            "PACKET DROPPED | Callsign mismatch: '%s' (expected '%s')",
+                                            "PACKET DROPPED | Callsign mismatch: '%s'"
+                                            " (expected '%s')",
                                             beacon_data.callsign,
                                             expected_callsign,
                                         )
                                         return False
                                     else:
-                                        logger.debug("Callsign verified: %s", beacon_data.callsign)
+                                        logger.debug(
+                                            "Callsign verified: %s", beacon_data.callsign
+                                        )
                                 else:
-                                    # No callsign in packet - log warning but allow (might be old format)
                                     logger.warning(
                                         "PACKET WARNING | No callsign present (expected '%s')",
                                         expected_callsign,
                                     )
 
-                            # Packet passed all filters - process it
+                            # Packet passed all filters — process it
 
-                            # 1. Sync local mission state (Critical operational step)
-                            if beacon_data.stats:
-                                state_manager.update_from_beacon(beacon_data.stats.reboot_counter)
+                            # 1. Sync local mission state
+                            state_manager.update_from_beacon(beacon_data.stats.reboot_counter)
 
-                            # 2. Comprehensive Logging & Reporting
-                            # This handles both CSV storage and the detailed console report
+                            # 2. Log telemetry
                             try:
                                 telemetry_logger.log_beacon(
                                     beacon_data, rssi=rssi, snr=snr, detailed=True
                                 )
                             except Exception as log_err:
                                 logger.error("Failed to process beacon telemetry: %s", log_err)
-                        else:
-                            logger.warning(
-                                "Truncated beacon payload: expected %d bytes, got %d",
-                                data_len,
-                                len(packet) - 1,
-                            )
-                    else:
-                        logger.warning("Empty packet from satellite")
-                else:
-                    # Non-beacon traffic (command responses, etc.)
-                    logger.info("RESPONSE | FROM: %d", rh_node)
-                    try:
-                        unpacked = protocol.Packet.unpack(packet)
-                        print(f"  Data: {unpacked.data}")
-                    except (struct.error, ValueError, AttributeError):
-                        logger.debug("Raw Payload: %s", packet.hex())
 
                 print(">>> END PACKET <<<\n")
                 return True
