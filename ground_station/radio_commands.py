@@ -157,7 +157,12 @@ class LoraRadio:
         )
 
         # Send using low-level library
-        self.radio.send(packet_payload, destination=dst, node=0x00, identifier=0x00, flags=0x00)
+        self.radio.send(
+            packet_payload[4:], 
+            destination=packet_payload[0], 
+            node=packet_payload[1],
+            identifier=packet_payload[2],
+            flags=packet_payload[3])
 
         logger.info("COMMAND SENT | ID: %d | Payload: %s", cmd_id, cmd_payload)
 
