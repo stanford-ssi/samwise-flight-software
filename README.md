@@ -5,10 +5,6 @@ Pi RP2040 and RP2350 microcontrollers.
 
 ![PXL_20251105_063120461](https://github.com/user-attachments/assets/f1ea9d1d-33db-42ee-8892-54c7ed03953b)
 
-## Getting Started
-
-See [the onboarding doc](docs/ONBOARDING.md) for development environment setup. To set some useful configurations for this repo, run `configure.sh`.
-
 ## Design Objectives
 
 Beyond functional parity with the prior CircuitPython-based Sapling firmware,
@@ -19,13 +15,28 @@ this project has a few additional goals:
 * Simple flight/debug configuration
 * Clean code
 
+## Getting Started
+
+### Pre-requisites
+
+1. Install bazel by following instructions for your platform here:
+
+2. Pull necessary submodules using:
+
+```
+git submodule update --init --recursive
+```
+
+> Historically, see [the onboarding doc](docs/ONBOARDING.md) for development environment setup (pre-bazel).
+
+
 ## Building
-To build the code in this repo, run `bazel build :samwise --config=picubed_debug`.
+To build the code in this repo, run `bazel build :samwise --config=picubed-debug`.
 
 You can use the pre-provided script, `source build_upload.sh` to run automatically.
 **Note**: This also tries to upload using picotool! Some machines require `sudo`, and you may not want to do this anyway.
 
-The following targets will be built:
+The following configuration options are available:
 * `pico`: pico exectuable
 * `picubed-debug`: picubed executable, for debugging
 * `picubed-flight`: picubed executable, for flight
@@ -33,9 +44,4 @@ The following targets will be built:
 (these can be configured in `.bazelrc`)
 
 ### Build Archives
-The **C Build** github action automatically builds RP2040 and RP2350 archives on pushes to pull requests into main.
-
-## Switching build targets
-// TODO: What to put here?
-
-**Note that when switching between the RP2040 and RP2350, it is usually necessary to clear the bazel cache (by running `bazel clean`)**
+The **C Build** github action automatically builds RP2350 archives on pushes to pull requests into main.
