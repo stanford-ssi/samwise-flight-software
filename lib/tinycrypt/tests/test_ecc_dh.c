@@ -247,7 +247,7 @@ int cavp_ecdh(bool verbose)
 
 int cavp_keygen(bool verbose)
 {
-  unsigned int result = TC_PASS; 
+  unsigned int result = TC_PASS;
 	/*
 	 * [P-256, B.4.2 Key Pair Generation by Testing Candidates]
 	 */
@@ -304,7 +304,7 @@ int cavp_keygen(bool verbose)
 }
 
 /* Test ecc_make_keys, and also as keygen part of other tests */
-int pkv_vectors(char **qx_vec, char **qy_vec, char **res_vec, int tests, 
+int pkv_vectors(char **qx_vec, char **qy_vec, char **res_vec, int tests,
 		 bool verbose)
 {
 
@@ -411,7 +411,7 @@ int cavp_pkv(bool verbose)
 	return pkv_vectors(x, y, Result, 12, verbose);
 }
 
-int montecarlo_ecdh(int num_tests, bool verbose) 
+int montecarlo_ecdh(int num_tests, bool verbose)
 {
 	int i;
 	uint8_t private1[NUM_ECC_BYTES] = {0};

@@ -12,6 +12,7 @@
 #include "state_registry.h"
 #include "str_utils.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_DATA_SIZE 252
 #define MAX_STR_LENGTH 64

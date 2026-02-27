@@ -16,12 +16,12 @@
 #endif
 #include "pico/util/queue.h"
 
-#include "state_ids.h"
-#include "typedefs.h"
-
 #include "adcs_packet.h"
+#include "config.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
+#include "state_ids.h"
+#include "typedefs.h"
 #include "watchdog.h"
 
 // Largest possible command data structure
@@ -131,6 +131,18 @@ typedef struct samwise_slate
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
 
+    // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
+    // for efficiency on reads/writes rather than buffering like we want. Since
+    // FILESYS_BUFFER_SIZE is not that pretty, we will create an extra buffer
+    // that allows little-fs to write much cleaner numbers to MRAM for
+    // efficiency gains.
+    bool filesys_is_writing_file;
+    bool filesys_buffer_is_dirty;
+    uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
+    FILESYS_BUFFERED_FNAME_STR_T filesys_buffered_fname_str;
+    FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
+    FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
+
     /*
     Payload Heartbeat time: the time at which the Picubed last sent a request to
     the payload.
@@ -138,5 +150,10 @@ typedef struct samwise_slate
     absolute_time_t payload_most_recent_ping_time;
 
 } slate_t;
+
+// We will put a maximum size of ~16 KB on the slate for now, in lieu of any
+// real analysis of memory usage.
+_Static_assert(sizeof(slate_t) < 16000,
+               "slate_t size exceeds reasonable limits");
 
 extern slate_t slate;

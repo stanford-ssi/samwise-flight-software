@@ -7,16 +7,16 @@
 queue_t task1_data;
 ```
 
-## 2. Add a new command identifier 
+## 2. Add a new command identifier
 #####  *command_switch_task.c file*
 This will be the unique identifier of this command, when we see this command_id, this task will be added to the task queue.
 
 ```c
-// example for command 1 
+// example for command 1
 #define COMMAND1_ID 1
 ```
 
-## 3. Create a data structure for your command data 
+## 3. Create a data structure for your command data
 #####  *command_switch_task.c file*
 
 If your command is going to take a data structure that is already defined, you can use the same data struct definition for multiple different commands and skip this step
@@ -24,8 +24,8 @@ If your command is going to take a data structure that is already defined, you c
 ```c
 // example of a data structure definition
 struct TASK1_DATA_STRUCT_FORMAT
-{	
-	int data_int_1;	
+{
+	int data_int_1;
 	uint8_t data_byteArr_1[300];
 };
 ```
@@ -39,7 +39,7 @@ find the line defining `max_datastructure_size`
 ```
 If you are adding a data structure that will be bigger than that constant, update it with the correct size in bytes. You may choose to run `sizeof(your_data_struct)` on your machine to check how big your data structure is.
 
-## 5. Create a new struct for your command   
+## 5. Create a new struct for your command
 #####  *command_switch_task.c file*
 ```c
 // example of a data structure instantiation
@@ -72,7 +72,7 @@ queue_init(&slate->task1_data, sizeof(current_data_holder_task1), TASK1_QUEUE_LE
 Find the Switch case statement in `command_switch_dispatch` and add a new statement
 
 Make sure you create the correct data structure for your command:
-```c 
+```c
 struct TASK1_DATA_STRUCT_FORMAT task;  // create a data structure of your type!
 ```
 In this line make sure  to pass the queue pointer that points to your unique command queue `&slate->task1_data` and your command identifier `COMMAND1_ID`

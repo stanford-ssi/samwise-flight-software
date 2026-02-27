@@ -9,11 +9,11 @@
 
 struct command1_struct{
 	int data_int_1;
-	
+
 	uint8_t data_byteArr_1[300];
 };
 
-  
+
 // create struct and populate data for some command1
 struct command1_struct first;
 first.data_int_1 = 100;
@@ -22,8 +22,8 @@ first.data_byteArr_1[1] = 1;
 first.data_byteArr_1[2] = 2;
 first.data_byteArr_1[3] = 3;
 
-// create a byte array with all our data 
-uint8_t struct_buffer[sizeof(first)];  
+// create a byte array with all our data
+uint8_t struct_buffer[sizeof(first)];
 memcpy(struct_buffer, &first, sizeof(first));
 
 uint8_t command_id = 1; // set the command id that we are alling
@@ -41,70 +41,70 @@ add_commands_to_send_queue(&slate, buffer, command_id, struct_buffer, packet_siz
 ###### function definition:
 ```c
 void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t function_number, uint8_t* struct_buffer, uint16_t payload_size, uint16_t struct_buffer_size, bool add_stop_after){
-	
+
 	uint16_t struct_bytes_saved = 0;
 	buffer_location[first_open_byte_index] = function_number;
-	
+
 	first_open_byte_index += 1;
 	// While we have not saved all of the bytes
-	
+
 	while(struct_bytes_saved < struct_buffer_size){
-	
-		// predict where the last byte will be located	
+
+		// predict where the last byte will be located
 		uint16_t predicted_end_location = first_open_byte_index + (struct_buffer_size - struct_bytes_saved);
-	
+
 		// If it will end after the payload, we need another packet
-		
+
 		if(predicted_end_location >= payload_size){
-			
+
 			uint8_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
 			uint8_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
 			uint16_t length = payload_size - first_open_byte_index;
-			
+
 			memcpy(buffer_start, struct_buffer_start, length);
-			
+
 			// now we need to add whatever is in the buffer to be sent to the radio
-			add_packet_to_send_queue(buffer_location);		
+			add_packet_to_send_queue(buffer_location);
 			struct_bytes_saved += length;
 			first_open_byte_index = 0;
 		}
-		
+
 		else{
 			uint8_t* buffer_start = buffer_location + first_open_byte_index * sizeof(uint8_t);
 			uint8_t* struct_buffer_start = struct_buffer + struct_bytes_saved * sizeof(uint8_t);
 			uint16_t length = struct_buffer_size - struct_bytes_saved;
-			
+
 			memcpy(buffer_start, struct_buffer_start, length);
 			first_open_byte_index += length;
-			
+
 			if(add_stop_after){
-			
+
 				if(first_open_byte_index < payload_size){
-				
+
 					buffer_location[first_open_byte_index] = 255;
 					first_open_byte_index = 0;
-					
+
 				}
 				else if(first_open_byte_index == payload_size){
-					
+
 					first_open_byte_index = 0;
-				
+
 				}
-			
+
 			else{
-			
+
 				LOG_INFO("THIS SHOULD NOT BE HAPPENING WHEN LOADING COMMANDS TO SEND OVER");
-			
+
 			}
-			
+
 			add_packet_to_send_queue(buffer_location);
-			
+
 		}
-		
+
 		struct_bytes_saved += length;
-		
+
 		}
-		
+
 	}
 
 }
@@ -117,18 +117,18 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
 ```c
 
 void send_queue_to_satellite(slate_t *s){
-	
+
 	uint8_t payload[PACKET_SIZE];
-	
+
 	LOG_INFO("sending entire queue to radio");
-	
+
 	while(queue_try_remove(&mission_control_command_queue, payload)){
 		// Then put it into the radio queue
-		
-		// This should be replaced with the radio code to 
+
+		// This should be replaced with the radio code to
 		queue_try_add(&(s->rx_queue), payload);
 		LOG_INFO("Sent a command to the radio");
-	
+
 	}
 
 	LOG_INFO("finished sending queue to radio");
@@ -242,7 +242,7 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
 
             memcpy(buffer_start, struct_buffer_start, length);
             first_open_byte_index += length;
-            
+
             if(add_stop_after){
                 if(first_open_byte_index < payload_size){
                     buffer_location[first_open_byte_index] = 255;
@@ -268,11 +268,11 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
  * This should never return (unless something really bad happens!)
  */
 int main()
-{   
+{
     // Some ugly code with linter errors
     int x = 10 + 5;
     stdio_init_all();
-    
+
     /*
      * In debug builds, delay to allow the user to connect to open the serial
      * port.
@@ -329,7 +329,7 @@ int main()
     add_commands_to_send_queue(&slate, buffer, 2, struct_buffer, 251, sizeof(struct2), true);
 
     send_queue_to_satellite(&slate);
-    
+
     // meow
     //queue_try_add(&slate.radio_packets_out, packet1);
     //queue_try_add(&slate.radio_packets_out, packet2);
@@ -338,7 +338,7 @@ int main()
 
     command_switch_dispatch(&slate);
     command_switch_dispatch(&slate);
-    
+
     //command_switch_dispatch(&slate);
 
     // get the struct
@@ -358,7 +358,7 @@ int main()
     LOG_INFO("True or false, the byte arrays are the same: %i", same);
 
     LOG_INFO("bool: %i, number: %i", second_out.yes_or_no, second_out.testing);
-    
+
 
     /* End of TESTS */
 

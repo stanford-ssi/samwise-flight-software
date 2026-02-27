@@ -63,10 +63,10 @@ void your_task_init(slate_t *slate)
 void your_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(YOUR_TASK_COLOR);
-    
+
     // Add your task logic here
     LOG_INFO("Your task is running...");
-    
+
     neopixel_set_color_rgb(0, 0, 0);
 }
 
@@ -149,8 +149,8 @@ When selecting an LED color for your task:
 - Consider brightness - very bright colors may be hard to distinguish
 
 ### Example Colors for New Tasks:
-- Lime Green: (128, 255, 0)
-- Pink: (255, 20, 147)
+- ~~Lime Green: (128, 255, 0)~~
+- ~~Pink: (255, 20, 147)~~
 - Turquoise: (64, 224, 208)
 - Gold: (255, 215, 0)
 - Indigo: (75, 0, 130)

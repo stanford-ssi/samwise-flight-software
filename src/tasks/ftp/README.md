@@ -17,7 +17,7 @@ On the other hand, this was not designed for other common goals, which are not i
     * Similarly, no file attributes are (currently) implemented, and the filesystem itself (see `src/filesys`) is as simple as possible
 * There is no authentication or real security (apart from inbuilt packet monitoring), only CRC is used to verify a file has been uploaded
 * Not interoperable with standard FTP servers/clients; this is a custom, minimal protocol tailored for the satellite link.
-* No download/read support beyond the write path described here; files are only written or removed, not fetched. 
+* No download/read support beyond the write path described here; files are only written or removed, not fetched.
 * Compression has not been implemented (maybe in the future?)
 
 A few notes on this document:
@@ -143,7 +143,7 @@ _Too low:_
 
 ## Testing
 We want to be able to test on each level possible. So:
-1. We test our MRAM drivers with unit tests. This should be done on the hardware, so something like [#237](https://github.com/stanford-ssi/samwise-flight-software/issues/237) needs to be implemented. 
+1. We test our MRAM drivers with unit tests. This should be done on the hardware, so something like [#237](https://github.com/stanford-ssi/samwise-flight-software/issues/237) needs to be implemented.
     * NO mock of MRAM.
 2. We test our Filesys implementation with unit tests, to see if the API to the MRAM works properly, including writing functionality (e.g. data -> buffer -> mram cycle)
     * MRAM is mocked out here.
@@ -171,7 +171,7 @@ If this is received, or for any other reason, you can reformat the entire MRAM. 
 To do so, simply send a FTP_REFORMAT command with no body. If successful, FILESYS_REFORMAT_SUCCESS will be sent - otherwise, FILESYS_REFORMAT_ERROR will be sent.
 
 ### 1. Start a file write
-To start writing a file, first make sure that no file is currently being written. If one is, FTP will return a FTP_ERROR_ALREADY_WRITING_FILE. 
+To start writing a file, first make sure that no file is currently being written. If one is, FTP will return a FTP_ERROR_ALREADY_WRITING_FILE.
 
 Otherwise, send a FTP_START_FILE_WRITE command with the following body:
 ```c
@@ -347,7 +347,7 @@ packet
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR
 ```mermaid
 ---
-title: SAMWISE -> Ground Station 
+title: SAMWISE -> Ground Station
 ---
 packet
 +16: "fname"
@@ -397,5 +397,3 @@ packet
 +32: "(signed) lfs_error (optional lfs error that caused filesys_error)"
 +32: "(signed) Blocks left on disk"
 ```
-
-

@@ -97,4 +97,3 @@ class SerializeCommand:
 
     def serialize_process_send_image(image_id: str, w=800, h=600, quality=100, cells_x=1, cells_y=1, ssdv=True, radio_type:str='2400'):
         return "\"\", [], {}"
-

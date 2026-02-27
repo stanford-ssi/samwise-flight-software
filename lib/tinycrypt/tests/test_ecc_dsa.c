@@ -130,7 +130,7 @@ int sign_vectors(TCSha256State_t hash, char **d_vec, char **k_vec,
 		uECC_vli_bytesToNative(digest + (NUM_ECC_WORDS-hash_dwords),
 				        digest_bytes, TC_SHA256_DIGEST_SIZE);
 
-		if (uECC_sign_with_k(private_bytes, digest_bytes, 
+		if (uECC_sign_with_k(private_bytes, digest_bytes,
 		    sizeof(digest_bytes), k, sig_bytes, uECC_secp256r1()) == 0) {
 			TC_ERROR("ECDSA_sign failed!\n");
 			result = TC_FAIL;
@@ -398,7 +398,7 @@ int vrfy_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec, char **qy_
 				       TC_SHA256_DIGEST_SIZE);
 
 		uECC_vli_nativeToBytes(pub_bytes, NUM_ECC_BYTES, pub);
-		uECC_vli_nativeToBytes(pub_bytes + NUM_ECC_BYTES, NUM_ECC_BYTES, 
+		uECC_vli_nativeToBytes(pub_bytes + NUM_ECC_BYTES, NUM_ECC_BYTES,
 				       pub + NUM_ECC_WORDS);
 
 		/* adapt return codes to match CAVP error: */
@@ -413,10 +413,10 @@ int vrfy_vectors(TCSha256State_t hash, char **msg_vec, char **qx_vec, char **qy_
 			rc = uECC_verify(pub_bytes, digest_bytes, sizeof(digest_bytes), sig_bytes,
 									 uECC_secp256r1());
 			/* CAVP expects 0 for success, others for fail */
-			rc = !rc; 
+			rc = !rc;
 			if (exp_rc != 0 && rc != 0) {
 				/* mimic CAVP code on errors. */
-				rc = exp_rc; 
+				rc = exp_rc;
 			}
 		}
 

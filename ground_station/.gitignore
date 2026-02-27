@@ -1,0 +1,6 @@
+# Mission State (Persisted locally on GS)
+gs_state.json
+
+# Local environment
+.venv/
+node_modules/

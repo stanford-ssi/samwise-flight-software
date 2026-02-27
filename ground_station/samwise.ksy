@@ -36,7 +36,7 @@ seq:
 
   - id: battery_voltage
     type: u2
-  
+
   - id: battery_current
     type: u2
 

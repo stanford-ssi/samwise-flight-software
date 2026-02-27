@@ -70,22 +70,22 @@ void test_my_state() {
     reset_task_stats();
     slate_t slate = {0};
     slate.current_state = &my_test_state;
-    
+
     // Open visualization log
     viz_log_open("my_test.json");
-    
+
     // Initialize tasks
     test_state_init_tasks(&my_test_state, &slate);
-    
+
     // Log discovered tasks
     log_discovered_tasks(&my_test_state);
-    
+
     // Run simulation (10 seconds, check every 5ms, log every 1000ms)
     run_scheduler_simulation(&slate, 10000, 5, 1000);
-    
+
     // Verify results
     ASSERT(verify_dispatch_count("my_task", 100, 5));
-    
+
     // Close log
     viz_log_close();
 }

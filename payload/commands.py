@@ -74,7 +74,7 @@ def eval_python(expression: str) -> Any:
 
 def exec_python(code: str):
     '''
-    Payload evaluates the python code contained in `code` 
+    Payload evaluates the python code contained in `code`
     (This does support complex expressions like loops, function definitions etc)
     '''
     return exec(code)
@@ -231,26 +231,26 @@ def set_video_config(config: dict):
         file.write(json.dumps(config, indent=2))
 
 
-def take_photo(image_id: str, camera_name='A', config="default", w=800, h=600, quality=100, cells_x=1, cells_y=1) -> tuple[int, int, int, int]:
+def take_photo(image_id: str, cam_num=0, camera_name='A', config="default", w=800, h=600, quality=100, cells_x=1, cells_y=1) -> tuple[int, int, int, int]:
     '''
     Takes a photo using the specified configuration profile
 
     The raw photo will be taken and saved to {image_id}_raw.jpg
 
-    The photo will then be downsized, compressed (quality ranges from 1 to 100 
+    The photo will then be downsized, compressed (quality ranges from 1 to 100
     and determines amount of compression), and saved to {image_id}.jpg
 
-    If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {filename}_{i}.jpg 
+    If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {filename}_{i}.jpg
     (i ranges from 0 to cells_x * cells_y - 1)
 
     Returns:
-        size (in bytes) of the raw photo, 
-        size (in bytes) of the downsized photo, 
-        size (in bytes) of the average cell (rounded to nearest integer) 
+        size (in bytes) of the raw photo,
+        size (in bytes) of the downsized photo,
+        size (in bytes) of the average cell (rounded to nearest integer)
         size (in bytes) of the largest cell
     '''
 
-    raw_size = camera_utils.capture_raw_image(image_id, config, camera_name)
+    raw_size = camera_utils.capture_raw_image(image_id, config, camera_name, cam_num)
     compressed_size = camera_utils.downsize_and_compress_image(image_id, w, h, quality)
     avg_cell_size, max_cell_size = camera_utils.split_compressed_image(image_id, cells_x, cells_y, quality)
 
@@ -259,16 +259,16 @@ def take_photo(image_id: str, camera_name='A', config="default", w=800, h=600, q
 
 def compress_photo(image_id: str, w=800, h=600, quality=100, cells_x=1, cells_y=1) -> tuple[int, int, int, int]:
     '''
-    The photo in {image_id}_raw.jpg will then be downsized, compressed (quality ranges from 1 to 100 
+    The photo in {image_id}_raw.jpg will then be downsized, compressed (quality ranges from 1 to 100
     and determines amount of compression), and saved to {image_id}.jpg
 
-     If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {image_id}_{i}.jpg 
+     If cells_x or cells_y is specified, the photo will be split into cells, which will be saved as {image_id}_{i}.jpg
     (i ranges from 0 to cells_x * cells_y - 1)
 
     Returns:
-        size (in bytes) of the raw photo, 
+        size (in bytes) of the raw photo,
         size (in bytes) of the downsized photo,
-        size (in bytes) of the average cell (rounded to nearest integer) 
+        size (in bytes) of the average cell (rounded to nearest integer)
         size (in bytes) of the largest cell
     '''
     raw_size = os.path.getsize(f"{IMAGES_DIR}/{image_id}_raw.jpg")
@@ -277,18 +277,18 @@ def compress_photo(image_id: str, w=800, h=600, quality=100, cells_x=1, cells_y=
 
     return raw_size, compressed_size, avg_cell_size, max_cell_size
 
-def take_vid(vid_id: str, camera_name='A', libcamera_config='default', ffmpeg_in_config='default', ffmpeg_out_config='default') -> tuple[int, int]:
+def take_vid(vid_id: str, camera_num=0, camera_name='A', libcamera_config='default', ffmpeg_in_config='default', ffmpeg_out_config='default') -> tuple[int, int]:
     '''
     Takes a video and stores it in {vid_id}_raw.h265
     Compresses it into {vid_id}.mp4 using provided ffmpeg settings
     Length determined by libcamera config (default is 5 seconds, 'longvid' can be 30 seconds)
-    
+
     Returns:
         size (in bytes) of the raw video
         size (in bytes) of the compressed video
     '''
 
-    raw_size = camera_utils.capture_raw_vid(vid_id, libcamera_config, camera_name)
+    raw_size = camera_utils.capture_raw_vid(vid_id, libcamera_config, camera_name, camera_num)
     compressed_size = camera_utils.compress_vid(vid_id, ffmpeg_in_config, ffmpeg_out_config)
     return raw_size, compressed_size
 
