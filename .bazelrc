@@ -27,6 +27,7 @@ build --disk_cache=~/.cache/bazel
 build:pico --define=profile=pico
 build:pico --platforms=//platforms:arm_cortex_m33_platform
 build:pico --define=PICO_BOARD=pico
+build:pico --copt=-DPICO_CRT0_IMAGE_TYPE_TBYB=0
 build:pico --copt=-DPICO=1
 build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
@@ -70,8 +71,16 @@ build:picubed-bringup --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
 build:picubed-bringup --output_groups=+pico_uf2_files
 
 # OTA MVP Blink Variant (for testing OTA partition switching)
+build:ota-blink --define=PICO_BOARD=samwise_picubed
+build:ota-blink --define=PICO_PLATFORM=rp2350
 build:ota-blink --define=BLINK=1
 build:ota-blink --copt=-DBUILD_BLINK=1
+build:ota-blink --copt=-DPICO_CRT0_IMAGE_TYPE_TBYB=1
+build:ota-blink --copt=-Os  # Optimize for size
+build:ota-blink --platforms=//platforms:arm_cortex_m33_platform
+build:ota-blink --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:ota-blink --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:ota-blink --output_groups=+pico_uf2_files
 
 # Tests Profile (Host platform with mocked hardware)
 build:tests --define=profile=tests

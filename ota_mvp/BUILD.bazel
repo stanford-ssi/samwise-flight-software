@@ -7,12 +7,21 @@ that just blinks the LED.
 
 package(default_visibility = ["//visibility:public"])
 
+cc_library(
+    name = "partition_b",
+    hdrs = ["partition_b.h"],
+    includes = ["."],
+)
+
 cc_binary(
     name = "ota",
     srcs = ["main.c"],
     deps = [
         # Board header (for non-PICO builds)
         "//boards:samwise_picubed",
+
+        # New Parititon raw data bytes
+        ":partition_b",
 
         # Pico-SDK libraries
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",

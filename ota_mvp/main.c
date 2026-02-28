@@ -9,6 +9,7 @@
 #include "hardware/flash.h"
 #include "hardware/platform_defs.h"
 #include "hardware/structs/qmi.h"
+#include "partition_b.h"
 #include "pico/bootrom.h"
 #include "pico/printf.h"
 #include "pico/stdlib.h"
@@ -92,6 +93,7 @@ void reboot_to_partition_1(void)
  */
 int main()
 {
+    stdio_usb_init();
     stdio_init_all();
 
 // Initialize LED pin
@@ -107,17 +109,22 @@ int main()
     while (1)
     {
         gpio_put(LED_PIN, 1);
-        printf("OTA MVP Main Running...\n");
-        printf("XIP_BASE: %p\n", XIP_BASE);
-        printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n",
-               XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
-        printf("__flash_binary_start: %p\n", __flash_binary_start);
 #ifdef BUILD_BLINK
         printf(">>> BLINKING <<<\n");
+        printf("State of TBYB: %d\n", PICO_CRT0_IMAGE_TYPE_TBYB);
         sleep_ms(700);
         gpio_put(LED_PIN, 0);
         sleep_ms(300);
 #else
+        printf("OTA MVP Main Running...\n");
+        printf("State of TBYB: %d\n", PICO_CRT0_IMAGE_TYPE_TBYB);
+        printf("Flashing New Partition with size: %u bytes\n",
+               bazel_bin_ota_mvp_ota_uf2_len);
+        printf("XIP_BASE: %p\n", XIP_BASE);
+        printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n",
+               XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
+        printf("__flash_binary_start: %p\n", __flash_binary_start);
+
         sleep_ms(1000);
 
         printf("\n=== Raspberry Pi Pico Partition Table ===\n\n");
@@ -258,6 +265,9 @@ int main()
         {
             printf("  [%d] 0x%08x\n", i, partition_start[i]);
         }
+
+        // Sleep for 3 seconds before rebooting
+        sleep_ms(5000);
 
         // <--- this finally work!!! --->
         int ret =
