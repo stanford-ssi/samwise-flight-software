@@ -36,9 +36,8 @@ jobs:
     
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
-      id-token: write
       actions: read
 
     steps:
@@ -69,13 +68,6 @@ jobs:
           # Remove trigger_phrase for automatic runs
           # trigger_phrase: "@c_docs"  # Only needed for comment-triggered runs
           # Enable automatic mode (no comment trigger needed)
-
-          additional_permissions: |
-            actions: read
-          
-          # Optional: specify model (uncomment to pin)
-          # model: "claude-sonnet-4-5-20250929"
-          # model: "claude-opus-4-20250514"
           prompt: |
             Tasks:
             
