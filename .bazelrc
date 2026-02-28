@@ -26,7 +26,7 @@ build --disk_cache=~/.cache/bazel
 # Raspberry Pi Pico Development Profile (RP2040)
 build:pico --define=profile=pico
 build:pico --platforms=//platforms:arm_cortex_m33_platform
-build:pico --define=PICO_BOARD=pico
+build:pico --define=PICO_BOARD=samwise_pico
 build:pico --copt=-DPICO=1
 build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
