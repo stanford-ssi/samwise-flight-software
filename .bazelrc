@@ -17,7 +17,7 @@ build --announce_rc
 common --color=yes
 
 # Cache build results
-build --disk_cache=~/.cache/bazel
+build --disk_cache=~/.cache/bazel-disk-cache
 
 # ============================================================================
 # Build Profile Configurations
