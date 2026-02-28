@@ -1,0 +1,54 @@
+"""OTA MVP - Over-The-Air update proof of concept for RP2350.
+
+A standalone binary that demonstrates partition table reading and
+A/B partition booting on the RP2350. Has a BUILD_BLINK variant
+that just blinks the LED.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "partition_b",
+    hdrs = ["partition_b.h"],
+    includes = ["."],
+)
+
+cc_binary(
+    name = "ota",
+    srcs = ["main.c"],
+    deps = [
+        # Board header (for non-PICO builds)
+        "//boards:samwise_picubed",
+
+        # New Parititon raw data bytes
+        ":partition_b",
+
+        # Pico-SDK libraries
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
+        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+        "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
+        "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
+
+        # Linker script for RP2350
+        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
+    ],
+    copts = [
+        "-include", "samwise_picubed.h",
+        "-I$(GENDIR)/boards",
+        "-Iboards",
+    ],
+    local_defines = [
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+    ] + select({
+        "//bzl:ota_blink": ["BUILD_BLINK"],
+        "//conditions:default": [],
+    }),
+    linkopts = [
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
