@@ -11,11 +11,14 @@
 #include "hardware/platform_defs.h"
 #include "hardware/structs/qmi.h"
 #include "hardware/sync.h" // Added for save_and_disable_interrupts()
+#include "hardware/watchdog.h"
 #include "partition_b.h"
 #include "pico/bootrom.h"
 #include "pico/printf.h"
 #include "pico/stdlib.h"
 #include <string.h> // Added for memset/memcpy
+
+#define MAX_WATCHDOG_TIMEOUT_MS 16777
 
 #ifndef PICO
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
@@ -95,9 +98,14 @@ int main()
         sleep_ms(700);
         gpio_put(LED_PIN, 0);
         sleep_ms(300);
+        // Ensure the software watchdog timer is set to maximum duration
+        watchdog_enable(MAX_WATCHDOG_TIMEOUT_MS, false);
+        // Extend the software watchdog timer
+        watchdog_update();
 #else
+        sleep_ms(100);
+        printf("\n=== Raspberry Pi Pico Partition Table ===\n\n");
         printf("OTA MVP Main Running...\n");
-        printf("State of TBYB: %d\n", PICO_CRT0_IMAGE_TYPE_TBYB);
         printf("Flashing New Partition with size: %u bytes\n",
                bazel_bin_ota_mvp_ota_uf2_len);
         printf("XIP_BASE: %p\n", XIP_BASE);
@@ -105,9 +113,7 @@ int main()
                XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
         printf("__flash_binary_start: %p\n", __flash_binary_start);
 
-        sleep_ms(1000);
-
-        printf("\n=== Raspberry Pi Pico Partition Table ===\n\n");
+        sleep_ms(100);
 
         uint32_t buffer[128];
         uint32_t flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
