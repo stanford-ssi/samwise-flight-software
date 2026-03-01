@@ -63,7 +63,7 @@ jobs:
           bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
 
       - name: Check Binary Size
-        if: ${{ matrix.name == "PICUBED-FLIGHT" }}
+        if: ${{ matrix.name == 'PICUBED-FLIGHT' }}
         run: |
           # Check if the .uf2 file exists
           if [ ! -f "bazel-bin/samwise.uf2" ]; then
