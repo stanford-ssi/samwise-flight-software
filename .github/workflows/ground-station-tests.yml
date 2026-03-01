@@ -8,12 +8,26 @@ on:
       - 'ground_station/**'
       - '.github/workflows/ground-station-tests.yml'
   pull_request:
-    paths:
-      - 'ground_station/**'
-      - '.github/workflows/ground-station-tests.yml'
+  workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ github.event_name != 'pull_request' || steps.filter.outputs.ground_station == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            ground_station:
+              - 'ground_station/**'
+              - '.github/workflows/ground-station-tests.yml'
+
   test:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
     name: Test Ground Station (${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -53,6 +67,8 @@ jobs:
         fail_ci_if_error: false
 
   test-compatibility:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
     name: Platform Compatibility Tests
     runs-on: ubuntu-latest
 
@@ -82,6 +98,8 @@ jobs:
         python -m pytest tests/test_filtering.py -v
 
   lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
     name: Lint Ground Station Code
     runs-on: ubuntu-latest
 
