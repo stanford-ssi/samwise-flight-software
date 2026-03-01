@@ -75,6 +75,101 @@ void reboot_to_partition_1(void)
     }
 }
 
+int debug_partition_info(void)
+{
+    uint32_t buffer[128];
+    uint32_t flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
+    int result = rom_get_partition_table_info(
+        buffer, sizeof(buffer) / sizeof(uint32_t), flags);
+
+    if (result < 0)
+    {
+        printf("Error: Failed to read partition table (error code: %d)\n",
+               result);
+        return result;
+    }
+
+    if (buffer[0] & PT_INFO_PT_INFO)
+    {
+        uint32_t has_partition_table = buffer[1] & 0x100;
+        uint32_t num_partitions = buffer[1] & 0xF;
+
+        printf("Partition Table Information:\n");
+        printf("----------------------------\n");
+        printf("Has partition table: %s\n", has_partition_table ? "Yes" : "No");
+        printf("Number of partitions: %u\n", num_partitions);
+
+        // Skip first 4 words of buffer which will return:
+        //   word 0: flags set in query
+        //   word 1: PT_INFO
+        //   word 2: unpartitioned_space_permissions_and_location
+        //   word 3: unpartitioned_space_permissions_and_flags
+        int idx = 4;
+        for (uint32_t i = 0; i < num_partitions; ++i)
+        {
+            // Word 0: permissions_and_location
+            uint32_t perms_and_loc = buffer[idx++];
+            // Word 1: permissions_and_flags
+            uint32_t perms_and_flags = buffer[idx++];
+
+            // Extract fields from permissions_and_location
+            // Bits [12:0]: location (4KB blocks from start of flash)
+            // Bits [26:13]: size (in 4KB blocks)
+            uint32_t location_first_sector_block = perms_and_loc & 0x1FFFu;
+            uint32_t location_last_sector_block =
+                (perms_and_loc & 0x3FFE000u) >> 13;
+
+            printf("Partition %u:\n", i);
+            printf("  Location: 0x%08x (%u KB from flash start)\n",
+                   location_first_sector_block * 4096,
+                   location_first_sector_block * 4);
+            printf("  Size: %u KB\n", (location_last_sector_block -
+                                       location_first_sector_block + 1) *
+                                          4);
+        }
+    }
+
+    printf("=== End of Partition Table ===\n");
+
+    printf("Raw partition table data dump:\n");
+    for (int i = 0; i < 10; i++)
+    {
+        printf("  [%d] 0x%08x\n", i, buffer[i]);
+    }
+
+    uint32_t sys_info_buffer[16];
+    int sys_info_result = rom_get_sys_info(
+        sys_info_buffer, sizeof(sys_info_buffer), SYS_INFO_BOOT_INFO);
+    uint32_t boot_info_word = sys_info_buffer[1];
+    uint32_t recent_boot_diagnostic = sys_info_buffer[2];
+    printf("Boot info word from sys_info: 0x%08x\n", boot_info_word);
+    printf("Get recent boot diagnostic from sys_info: %08x\n",
+           recent_boot_diagnostic);
+    int cur_partition = boot_info_word & 0xF00;
+
+    int b_partition_index = rom_get_b_partition(cur_partition);
+    printf("B partition index of A/B partitioning scheme: %d\n",
+           b_partition_index);
+
+    if (b_partition_index >= 0)
+    {
+        uint32_t b_partition_location_word = buffer[4 + b_partition_index * 2];
+        uint32_t b_partition_location =
+            (b_partition_location_word & 0x1FFFu) * 4096;
+        printf("Extracted B partition location from partition table: 0x%08x\n",
+               b_partition_location);
+    }
+
+    // XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE + b_partition offset
+    uint32_t *partition_start = (uint32_t *)0x1C042000;
+    printf("First words of partition 1:\n");
+    for (int i = 0; i < 8; i++)
+    {
+        printf("  [%d] 0x%08x\n", i, partition_start[i]);
+    }
+    return 0;
+}
+
 int main()
 {
     stdio_usb_init();
@@ -95,6 +190,7 @@ int main()
         printf(">>> BLINKING <<<\n");
         printf("State of TBYB: %d\n", PICO_CRT0_IMAGE_TYPE_TBYB);
         sleep_ms(700);
+        debug_partition_info();
         gpio_put(LED_PIN, 0);
         sleep_ms(300);
         // Ensure the software watchdog timer is set to maximum duration
@@ -102,7 +198,8 @@ int main()
         // Extend the software watchdog timer
         watchdog_update();
 #else
-        printf("\n=== Raspberry Pi Pico Partition Table ===\n\n");
+        sleep_ms(1000);
+
         printf("OTA MVP Main Running...\n");
         printf("Flashing New Partition with size: %u bytes\n",
                bazel_bin_ota_mvp_ota_bin_len);
@@ -111,42 +208,7 @@ int main()
                XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
         printf("__flash_binary_start: %p\n", __flash_binary_start);
 
-        sleep_ms(1000);
-
-        uint32_t buffer[128];
-        uint32_t flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
-        int result = rom_get_partition_table_info(
-            buffer, sizeof(buffer) / sizeof(uint32_t), flags);
-
-        if (result < 0)
-        {
-            printf("Error: Failed to read partition table (error code: %d)\n",
-                   result);
-            return 1;
-        }
-
-        if (buffer[0] & PT_INFO_PT_INFO)
-        {
-            uint32_t has_partition_table = buffer[1] & 0x100;
-            uint32_t num_partitions = buffer[1] & 0xF;
-
-            // (Your existing partition printing loop remains here. Truncated
-            // for brevity)
-            printf("Partition Table Information:\n");
-            printf("----------------------------\n");
-            printf("Has partition table: %s\n",
-                   has_partition_table ? "Yes" : "No");
-            printf("Number of partitions: %u\n", num_partitions);
-        }
-
-        printf("=== End of Partition Table ===\n");
-
-        uint32_t *partition_start = (uint32_t *)0x1C042000;
-        printf("First words of partition 1:\n");
-        for (int i = 0; i < 8; i++)
-        {
-            printf("  [%d] 0x%08x\n", i, partition_start[i]);
-        }
+        debug_partition_info();
 
         // ==========================================
         // NEW: FLASH PARTITION B WITH OTA PAYLOAD
