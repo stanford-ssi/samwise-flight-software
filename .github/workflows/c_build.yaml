@@ -75,6 +75,34 @@ jobs:
           # Build the main binary
           bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
 
+      - name: Check Binary Size
+        if: ${{ matrix.name == 'PICUBED-FLIGHT' }}
+        run: |
+          # Check if the .uf2 file exists
+          if [ ! -f "bazel-bin/samwise.uf2" ]; then
+            echo "❌ Error: samwise.uf2 file not found at bazel-bin/samwise.uf2"
+            exit 1
+          fi
+          
+          # Get file size in bytes
+          FILESIZE=$(stat -c%s bazel-bin/samwise.uf2)
+          MAX_SIZE=153600  # 150 KiB in bytes
+          
+          echo "📊 Binary size check for ${{ matrix.name }}:"
+          echo "   File: bazel-bin/samwise.uf2"
+          echo "   Size: ${FILESIZE} bytes ($(echo "scale=2; ${FILESIZE}/1024" | bc -l) KiB)"
+          echo "   Limit: ${MAX_SIZE} bytes (150.00 KiB)"
+          
+          # Check if file size exceeds limit
+          if [ ${FILESIZE} -gt ${MAX_SIZE} ]; then
+            echo "❌ FAILURE: Binary size ${FILESIZE} bytes exceeds limit of ${MAX_SIZE} bytes!"
+            echo "   Exceeds by: $((${FILESIZE} - ${MAX_SIZE})) bytes"
+            exit 1
+          else
+            echo "✅ SUCCESS: Binary size is within limits"
+            echo "   Remaining: $((${MAX_SIZE} - ${FILESIZE})) bytes available"
+          fi
+
       - name: Archive Build Products
         uses: actions/upload-artifact@v4
         with:
