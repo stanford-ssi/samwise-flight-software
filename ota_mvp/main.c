@@ -103,17 +103,16 @@ int main()
         // Extend the software watchdog timer
         watchdog_update();
 #else
-        sleep_ms(100);
         printf("\n=== Raspberry Pi Pico Partition Table ===\n\n");
         printf("OTA MVP Main Running...\n");
         printf("Flashing New Partition with size: %u bytes\n",
-               bazel_bin_ota_mvp_ota_uf2_len);
+               bazel_bin_ota_mvp_ota_bin_len);
         printf("XIP_BASE: %p\n", XIP_BASE);
         printf("XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE: %p\n",
                XIP_NOCACHE_NOALLOC_NOTRANSLATE_BASE);
         printf("__flash_binary_start: %p\n", __flash_binary_start);
 
-        sleep_ms(100);
+        sleep_ms(1000);
 
         uint32_t buffer[128];
         uint32_t flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
@@ -156,8 +155,8 @@ int main()
         printf("\n=== Starting Flash Update of Partition B ===\n");
 
         uint32_t target_offset = 0x42000;
-        const uint8_t *payload = bazel_bin_ota_mvp_ota_uf2;
-        uint32_t payload_len = bazel_bin_ota_mvp_ota_uf2_len;
+        const uint8_t *payload = bazel_bin_ota_mvp_ota_bin;
+        uint32_t payload_len = bazel_bin_ota_mvp_ota_bin_len;
 
         // Quick sanity check for UF2 magic numbers
         if (payload_len >= 8 && payload[0] == 0x55 && payload[1] == 0x46 &&
