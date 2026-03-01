@@ -11,16 +11,29 @@ on:
       - ".bazelrc"
       - ".github/workflows/*.yaml"
   pull_request:
-    paths:
-      - "src/**"
-      - "bzl/**"
-      - "BUILD.bazel"
-      - ".bazelrc"
-      - ".github/workflows/*.yaml"
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ github.event_name != 'pull_request' || steps.filter.outputs.build == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            build:
+              - 'src/**'
+              - 'bzl/**'
+              - 'BUILD.bazel'
+              - '.bazelrc'
+              - '.github/workflows/*.yaml'
+
   Build:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_build == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
