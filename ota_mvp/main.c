@@ -1,5 +1,5 @@
 /**
- * @author  Yiheng Yao andn Marc Aaron Reyes
+ * @author  Yiheng Yao and Marc Aaron Reyes
  * @date    2026-02-28
  *
  * Minimal implementation of syscalls necessary to boot a different partition

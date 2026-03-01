@@ -7,13 +7,11 @@ cc_binary(
     name = "ota_elf",
     srcs = [
         "main.c",
-        "partition_b.h",  # <-- Put the exact file name here in srcs!
+        "partition_b.h",
     ],
     deps = [
         # Board header (for non-PICO builds)
         "//boards:samwise_picubed",
-
-        # <-- I REMOVED ":partition_b" FROM HERE
 
         # Pico-SDK libraries
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
