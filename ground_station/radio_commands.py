@@ -15,9 +15,13 @@ class LoraRadio:
         self.radio = rfm9x_instance
 
     def try_get_packet(self, timeout=0.1):
-        """Check for incoming packets with short timeout"""
+        """Check for incoming packets with short timeout.
+
+        Returns BeaconData if a packet was successfully received and processed,
+        or None if no packet arrived, the packet was filtered out, or an error occurred.
+        """
         if self.radio is None:
-            return False
+            return None
 
         packet = self.radio.receive(timeout=timeout)
         if packet is not None:
@@ -50,7 +54,7 @@ class LoraRadio:
                             rssi,
                             rssi_threshold,
                         )
-                        return False
+                        return None
 
                 # All received packets are from the satellite.
                 # Note: radio.node after receive() is the TO field (not FROM) of the
@@ -106,7 +110,7 @@ class LoraRadio:
                                             beacon_data.callsign,
                                             expected_callsign,
                                         )
-                                        return False
+                                        return None
                                     else:
                                         logger.debug("Callsign verified: %s", beacon_data.callsign)
                                 else:
@@ -128,12 +132,15 @@ class LoraRadio:
                             except Exception as log_err:
                                 logger.error("Failed to process beacon telemetry: %s", log_err)
 
+                            print(">>> END PACKET <<<\n")
+                            return beacon_data
+
                 print(">>> END PACKET <<<\n")
-                return True
+                return None
             except Exception as e:
                 logger.error("ERROR processing packet: %s", e)
-                return False
-        return False
+                return None
+        return None
 
     def send_command(self, cmd_id, cmd_payload="", dst=0xFF):
         """Send a signed command packet to the flight software"""

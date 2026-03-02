@@ -1,19 +1,22 @@
 import struct
+import sys
 from typing import Optional
-
-try:
-    from adafruit_hashlib import sha256
-except ImportError:
-    from hashlib import sha256
-try:
-    import circuitpython_hmac as hmac
-except ImportError:
-    import hmac
 
 import config
 from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
 from models import Packet as ModelPacket
 from state import state_manager
+
+# On CPython (Raspberry Pi) always use stdlib hmac/hashlib — circuitpython_hmac has a
+# name-mangling bug (_HMAC__translate) that causes NameError on Python 3.
+# On CircuitPython, stdlib hmac is unavailable so we fall back to the CircuitPython libs.
+_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+if _IS_CIRCUITPYTHON:
+    import circuitpython_hmac as hmac
+    from adafruit_hashlib import sha256
+else:
+    import hmac
+    from hashlib import sha256
 
 
 def create_cmd_payload(cmd_id, cmd_payload=""):
