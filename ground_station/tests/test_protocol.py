@@ -192,8 +192,10 @@ def test_command_packet_no_op_structure(test_state):
     print("\n=== NO_OP Command Packet (GS -> satellite) ===")
     print(f"Total size : {len(packet)} bytes")
     print(f"Header  [{0}:{header_size}]     : {packet[:header_size].hex()}")
-    print(f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
-          f"seq={packet[3]}, data_len={packet[4]}")
+    print(
+        f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
+        f"seq={packet[3]}, data_len={packet[4]}"
+    )
     print(f"Data    [{header_size}:{footer_start}]     : {packet[header_size:footer_start].hex()}")
     print(f"  cmd_id={packet[header_size]} (NO_OP={gs_config.NO_OP})")
     print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
@@ -202,11 +204,11 @@ def test_command_packet_no_op_structure(test_state):
 
     expected_len = header_size + len(data) + 8 + gs_config.PACKET_HMAC_SIZE
     assert len(packet) == expected_len
-    assert packet[0] == 0xFF   # dst
-    assert packet[1] == 0xFF   # src
+    assert packet[0] == 0xFF  # dst
+    assert packet[1] == 0xFF  # src
     assert packet[header_size] == gs_config.NO_OP
-    assert boot_count == 100   # from test_state fixture
-    assert msg_id == 51        # 50 + 1 (incremented by get_next_msg_id)
+    assert boot_count == 100  # from test_state fixture
+    assert msg_id == 51  # 50 + 1 (incremented by get_next_msg_id)
     assert len(packet[footer_end:]) == gs_config.PACKET_HMAC_SIZE
 
 
@@ -227,17 +229,23 @@ def test_command_packet_manual_state_override_structure(test_state):
     # Verify HMAC by re-computing over header+data+footer
     import hmac as _hmac
     from hashlib import sha256 as _sha256
+
     payload = packet[:footer_end]
-    expected_hmac = _hmac.new(gs_config.DEFAULT_PACKET_HMAC_PSK, msg=payload,
-                              digestmod=_sha256).digest()
+    expected_hmac = _hmac.new(
+        gs_config.DEFAULT_PACKET_HMAC_PSK, msg=payload, digestmod=_sha256
+    ).digest()
 
     print(f"\n=== MANUAL_STATE_OVERRIDE('{state_name}') Command Packet (GS -> satellite) ===")
     print(f"Total size : {len(packet)} bytes")
     print(f"Header  [{0}:{header_size}]     : {packet[:header_size].hex()}")
-    print(f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
-          f"seq={packet[3]}, data_len={packet[4]}")
+    print(
+        f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
+        f"seq={packet[3]}, data_len={packet[4]}"
+    )
     print(f"Data    [{header_size}:{footer_start}]     : {packet[header_size:footer_start].hex()}")
-    print(f"  cmd_id={packet[header_size]} (MANUAL_STATE_OVERRIDE={gs_config.MANUAL_STATE_OVERRIDE})")
+    print(
+        f"  cmd_id={packet[header_size]} (MANUAL_STATE_OVERRIDE={gs_config.MANUAL_STATE_OVERRIDE})"
+    )
     print(f"  cmd_payload='{packet[header_size+1:footer_start].decode()}'")
     print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
     print(f"  boot_count={boot_count}, msg_id={msg_id}")
@@ -245,7 +253,7 @@ def test_command_packet_manual_state_override_structure(test_state):
     print(f"  (HMAC covers bytes 0..{footer_end}, i.e. header+data+footer)")
 
     assert packet[header_size] == gs_config.MANUAL_STATE_OVERRIDE
-    assert packet[header_size + 1:footer_start] == state_name.encode()
+    assert packet[header_size + 1 : footer_start] == state_name.encode()
     assert packet[footer_end:] == expected_hmac
 
 
@@ -266,12 +274,14 @@ def test_command_packet_payload_exec_structure(test_state):
     print(f"Full packet hex: {packet.hex()}")
     print(f"Header  : {packet[:header_size].hex()}")
     print(f"Data    : {packet[header_size:footer_start].hex()}")
-    print(f"  cmd_id={packet[header_size]}, payload='{packet[header_size+1:footer_start].decode()}'")
+    print(
+        f"  cmd_id={packet[header_size]}, payload='{packet[header_size+1:footer_start].decode()}'"
+    )
     print(f"Footer  : {packet[footer_start:footer_end].hex()}")
     print(f"HMAC    : {packet[footer_end:].hex()}")
 
     assert packet[header_size] == gs_config.PAYLOAD_EXEC
-    assert packet[header_size + 1:footer_start] == exec_str.encode()
+    assert packet[header_size + 1 : footer_start] == exec_str.encode()
 
 
 # ---------------------------------------------------------------------------
@@ -292,33 +302,33 @@ def test_command_packet_payload_exec_structure(test_state):
 _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "6d6f636b5f737461746500"  # state_name = "mock_state\0"
     # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
-    "00000000"                # reboot_counter    = 0
-    "3930000000000000"        # time_in_state_ms  = 12345
-    "00000000"                # rx_bytes          = 0
-    "00000000"                # rx_packets        = 0
-    "00000000"                # rx_backpressure_drops = 0
-    "00000000"                # rx_bad_packet_drops   = 0
-    "00000000"                # tx_bytes          = 0
-    "00000000"                # tx_packets        = 0
-    "0000"                    # battery_voltage   = 0 mV
-    "0000"                    # battery_current   = 0 mA
-    "0000"                    # solar_voltage     = 0 mV
-    "0000"                    # solar_current     = 0 mA
-    "0000"                    # panel_A_voltage   = 0 mV
-    "0000"                    # panel_A_current   = 0 mA
-    "0000"                    # panel_B_voltage   = 0 mV
-    "0000"                    # panel_B_current   = 0 mA
-    "00"                      # device_status     = 0x00
+    "00000000"  # reboot_counter    = 0
+    "3930000000000000"  # time_in_state_ms  = 12345
+    "00000000"  # rx_bytes          = 0
+    "00000000"  # rx_packets        = 0
+    "00000000"  # rx_backpressure_drops = 0
+    "00000000"  # rx_bad_packet_drops   = 0
+    "00000000"  # tx_bytes          = 0
+    "00000000"  # tx_packets        = 0
+    "0000"  # battery_voltage   = 0 mV
+    "0000"  # battery_current   = 0 mA
+    "0000"  # solar_voltage     = 0 mV
+    "0000"  # solar_current     = 0 mA
+    "0000"  # panel_A_voltage   = 0 mV
+    "0000"  # panel_A_current   = 0 mA
+    "0000"  # panel_B_voltage   = 0 mV
+    "0000"  # panel_B_current   = 0 mA
+    "00"  # device_status     = 0x00
     # ---- ADCS telemetry (25 bytes, struct <fffffBL) ----
-    "0000803f"                # angular_velocity  = 1.0 rad/s
-    "cdcccc3d"                # q0               ≈ 0.1
-    "cdcc4c3e"                # q1               ≈ 0.2
-    "9a99993e"                # q2               ≈ 0.3
-    "cdcccc3e"                # q3               ≈ 0.4
-    "41"                      # ADCS state        = 65
-    "2a000000"                # ADCS boot_count   = 42
+    "0000803f"  # angular_velocity  = 1.0 rad/s
+    "cdcccc3d"  # q0               ≈ 0.1
+    "cdcc4c3e"  # q1               ≈ 0.2
+    "9a99993e"  # q2               ≈ 0.3
+    "cdcccc3e"  # q3               ≈ 0.4
+    "41"  # ADCS state        = 65
+    "2a000000"  # ADCS boot_count   = 42
     # ---- callsign (6 bytes + null) ----
-    "4b4333574e5900"          # callsign          = "KC3WNY\0"
+    "4b4333574e5900"  # callsign          = "KC3WNY\0"
 )
 
 # Full raw bytes as returned by radio.receive() — starts with the data_len byte.
@@ -361,7 +371,7 @@ def test_decode_example_incoming_packet():
     """
     raw = _EXAMPLE_RAW_BEACON
     data_len = raw[0]
-    content = raw[1:1 + data_len]
+    content = raw[1 : 1 + data_len]
 
     print("\n=== Example Incoming Beacon Packet (satellite -> GS) ===")
     print(f"Raw bytes from radio.receive() ({len(raw)} bytes): {raw.hex()}")
@@ -379,15 +389,21 @@ def test_decode_example_incoming_packet():
         print(f"  time_in_state_ms    : {beacon.stats.time_in_state_ms}")
         print(f"  rx_bytes / packets  : {beacon.stats.rx_bytes} / {beacon.stats.rx_packets}")
         print(f"  tx_bytes / packets  : {beacon.stats.tx_bytes} / {beacon.stats.tx_packets}")
-        print(f"  battery             : {beacon.stats.battery_voltage} mV, "
-              f"{beacon.stats.battery_current} mA")
-        print(f"  device_status       : 0x{beacon.stats.device_status:02X} "
-              f"{beacon.stats.device_status_flags}")
+        print(
+            f"  battery             : {beacon.stats.battery_voltage} mV, "
+            f"{beacon.stats.battery_current} mA"
+        )
+        print(
+            f"  device_status       : 0x{beacon.stats.device_status:02X} "
+            f"{beacon.stats.device_status_flags}"
+        )
     if beacon.adcs:
         print(f"  angular_velocity    : {beacon.adcs.angular_velocity:.4f} rad/s")
         q = beacon.adcs.quaternion
-        print(f"  quaternion          : q0={q.q0:.4f}, q1={q.q1:.4f}, "
-              f"q2={q.q2:.4f}, q3={q.q3:.4f}  |q|={q.magnitude:.4f}")
+        print(
+            f"  quaternion          : q0={q.q0:.4f}, q1={q.q1:.4f}, "
+            f"q2={q.q2:.4f}, q3={q.q3:.4f}  |q|={q.magnitude:.4f}"
+        )
         print(f"  ADCS state          : {beacon.adcs.state}")
         print(f"  ADCS boot_count     : {beacon.adcs.boot_count}")
     print(f"  callsign            : '{beacon.callsign}'")

@@ -1,5 +1,3 @@
-import struct
-
 import config
 import protocol
 import radio_initialization as hardware
@@ -110,9 +108,7 @@ class LoraRadio:
                                         )
                                         return False
                                     else:
-                                        logger.debug(
-                                            "Callsign verified: %s", beacon_data.callsign
-                                        )
+                                        logger.debug("Callsign verified: %s", beacon_data.callsign)
                                 else:
                                     logger.warning(
                                         "PACKET WARNING | No callsign present (expected '%s')",
@@ -158,11 +154,12 @@ class LoraRadio:
 
         # Send using low-level library
         self.radio.send(
-            packet_payload[4:], 
-            destination=packet_payload[0], 
+            packet_payload[4:],
+            destination=packet_payload[0],
             node=packet_payload[1],
             identifier=packet_payload[2],
-            flags=packet_payload[3])
+            flags=packet_payload[3],
+        )
 
         logger.info("COMMAND SENT | ID: %d | Payload: %s", cmd_id, cmd_payload)
 

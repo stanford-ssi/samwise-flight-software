@@ -117,8 +117,8 @@ class TelemetryLogger:
         # Access model attributes directly — avoids the dict().get() chain which breaks
         # when _BaseModel.dict() doesn't recursively convert nested model objects.
         state = beacon_data.state_name
-        stats = beacon_data.stats    # BeaconStats object or None
-        adcs = beacon_data.adcs      # ADCSData object or None
+        stats = beacon_data.stats  # BeaconStats object or None
+        adcs = beacon_data.adcs  # ADCSData object or None
         callsign = beacon_data.callsign or "N/A"
 
         # 1. Logic for Console Logging
@@ -135,9 +135,7 @@ class TelemetryLogger:
                         f" | A {stats.panel_A_voltage} mV"
                         f" | B {stats.panel_B_voltage} mV"
                     )
-                    print(
-                        f"Comms: RX {stats.rx_packets} pkts | TX {stats.tx_packets} pkts"
-                    )
+                    print(f"Comms: RX {stats.rx_packets} pkts | TX {stats.tx_packets} pkts")
                     print(
                         f"Status Flags: 0x{stats.device_status:02x}"
                         f" ({', '.join(stats.device_status_flags) or 'none'})"
