@@ -8,7 +8,7 @@
 
 #include "flash.h"
 
-#define FLASH_TARGET_OFFSET (0x00079000)
+#define FLASH_TARGET_OFFSET (0x00082000)
 #define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
 
 // Read the persistent data from flash

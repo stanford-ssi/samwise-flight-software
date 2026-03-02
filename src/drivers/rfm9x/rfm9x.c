@@ -710,7 +710,6 @@ void rfm9x_init(rfm9x_t *r)
     gpio_set_function(r->spi_clk_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_tx_pin, GPIO_FUNC_SPI);
     gpio_set_function(r->spi_rx_pin, GPIO_FUNC_SPI);
-    gpio_set_function(17, GPIO_FUNC_SPI); // ???
 
     // Setup interrupt line
     gpio_init(r->d0_pin);
@@ -781,10 +780,10 @@ void rfm9x_init(rfm9x_t *r)
     ASSERT(rfm9x_is_crc_enabled(r) == 1);
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
-    rfm9x_set_tx_power(r, 15);                          /* Known good value */
+    rfm9x_set_tx_power(r, 5);                           /* Known good value */
     if (!r->max_power)
     {
-        ASSERT(rfm9x_get_tx_power(r) == 15);
+        ASSERT(rfm9x_get_tx_power(r) == 5);
     }
     else
     {

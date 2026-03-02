@@ -103,8 +103,10 @@
 #define SAMWISE_RF_MOSI_PIN (19)
 #define SAMWISE_RF_MISO_PIN (16)
 #define SAMWISE_RF_RST_PIN (21)
-#define SAMWISE_RF_CS_PIN (20)
+#define SAMWISE_RF_CS_PIN (17)
 #define SAMWISE_RF_D0_PIN (28)
+
+#define SAMWISE_NEOPIXEL_PIN (26)
 
 // Random unused pin, since on the PICO we don't have a watchdog attached.
 #define SAMWISE_WATCHDOG_FEED_PIN (6)

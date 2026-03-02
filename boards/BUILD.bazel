@@ -25,6 +25,7 @@ alias(
     name = "board_header",
     actual = select({
         "//bzl:pico_profile": ":samwise_pico",
+        "//bzl:pico_hat_profile": ":samwise_pico",
         "//conditions:default": ":samwise_picubed",
     }),
 )

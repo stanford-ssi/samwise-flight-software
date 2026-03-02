@@ -8,6 +8,7 @@
 #pragma once
 
 #include "hardware/flash.h"
+#include "hardware/regs/addressmap.h"
 #include "hardware/sync.h"
 #include "pico/stdlib.h"
 #include <stdint.h>

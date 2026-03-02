@@ -18,6 +18,12 @@ config_setting(
     define_values = {"profile": "pico"},
 )
 
+# Raspberry Pi Pico + Radio Hat profile
+config_setting(
+    name = "pico_hat_profile",
+    define_values = {"profile": "pico-hat"},
+)
+
 # PiCubed debug profile
 config_setting(
     name = "picubed_debug_profile",
