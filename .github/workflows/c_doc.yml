@@ -5,7 +5,7 @@ on:
     types: [created]
 
 concurrency:
-  group: claude-docs-${{ github.event.pull_request.number }}
+  group: claude-docs-${{ github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     # Only run for specific users
     if: |
       (
-        ithub.event.issue.pull_request
+        github.event.issue.pull_request
       ) && (
         contains(github.event.comment.body, '@claude_doc')
       ) && (
@@ -26,8 +26,8 @@ jobs:
 
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
 
@@ -42,17 +42,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-
-          # Remove trigger_phrase for automatic runs
-          # trigger_phrase: "@c_docs"  # Only needed for comment-triggered runs
-
-          additional_permissions: |
-            actions: read
-
-          # Optional: specify model (uncomment to pin)
-          # model: "claude-sonnet-4-5-20250929"
-          # model: "claude-opus-4-20250514"
-
+          trigger_phrase: "@claude_doc"
           custom_instructions: |
             Tasks:
 
