@@ -100,5 +100,5 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
 // TODO: What is our average file size?
 // This is currently set to 1KB blocks, which is approx. what we buffer
 // in RAM during FTP.
-#define FILESYS_BLOCK_SIZE 1024
-#define FILESYS_BLOCK_COUNT 512 // 512KB MRAM total
+#define FILESYS_BLOCK_SIZE 256
+#define FILESYS_BLOCK_COUNT 2048 // 512KB MRAM total

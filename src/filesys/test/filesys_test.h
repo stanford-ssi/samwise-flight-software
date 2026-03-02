@@ -48,6 +48,7 @@ int filesys_test_read_file_size_success(slate_t *slate);
 int filesys_test_close_file_read_success(slate_t *slate);
 int filesys_test_read_full_workflow_success(slate_t *slate);
 int filesys_test_read_multi_chunk_file_success(slate_t *slate);
+int filesys_test_probe_max_file_capacity(void);
 
 extern const test_harness_case_t filesys_tests[];
 extern const size_t filesys_tests_len;
