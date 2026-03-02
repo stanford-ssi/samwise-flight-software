@@ -18,10 +18,10 @@ sched_state_t running_state = {.name = "running",
 #elif defined(PICOHAT)
 sched_state_t running_state = {.name = "running",
                                .id = STATE_RUNNING,
-                               .num_tasks = 5,
+                               .num_tasks = 6,
                                .task_list = {&print_task, &blink_task,
                                              &beacon_task, &radio_task,
-                                             &command_task},
+                                             &command_task, &watchdog_task},
                                .get_next_state = &running_get_next_state};
 #elif defined(PICO)
 sched_state_t running_state = {
