@@ -377,6 +377,23 @@ static unsigned int filesys_compute_file_crc(
                         // indicates failure
         }
 
+        if (bytes_read == 0)
+        {
+            LOG_ERROR(
+                "[filesys] Unexpected end of file %s during CRC computation. "
+                "Bytes remaining: %d",
+                fname, bytes_remaining);
+            *error_code = FILESYS_ERR_CRC_CHECK;
+
+            // Discard error from close since we are already reporting the read
+            // error
+            lfs_ssize_t close_lfs_err;
+            filesys_file_close(&lfs_open_file, &close_lfs_err);
+
+            return crc; // We will return the crc so far, but error_code
+                        // indicates failure
+        }
+
         crc = crc32_continue(buffer, bytes_read, crc);
         bytes_remaining -= bytes_read;
     }

@@ -31,3 +31,4 @@ int filesys_test_list_files_multiple_files_success(void);
 int filesys_test_list_files_max_files_limit_success(void);
 int filesys_test_list_files_after_cancel_success(void);
 int filesys_test_list_files_crc_mismatch_success(void);
+int filesys_test_probe_max_file_capacity(void);

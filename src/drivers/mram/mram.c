@@ -37,15 +37,6 @@
 #define STATUS_SRWD_BIT 0x80 // Status Register Write Disable (bit 7)
 
 /**
- * Maximum number of tracked allocations
- */
-#define MAX_MRAM_ALLOCATIONS 32
-
-// Memory allocation tracking
-static mram_allocation_t allocations[MAX_MRAM_ALLOCATIONS];
-static bool allocation_system_initialized = false;
-
-/**
  * Initialize MRAM and wake from sleep mode
  */
 void mram_init(void)
@@ -138,21 +129,6 @@ void mram_clear(uint32_t address, size_t length)
         return;
     }
 
-    // Free any allocations that overlap with the clear region
-    if (allocation_system_initialized)
-    {
-        for (int i = 0; i < MAX_MRAM_ALLOCATIONS; i++)
-        {
-            if (allocations[i].in_use &&
-                mram_ranges_overlap(address, length, allocations[i].address,
-                                    allocations[i].length))
-            {
-                // Use helper function for cleaner code
-                mram_free_allocation(allocations[i].address);
-            }
-        }
-    }
-
     mram_write_enable();
 
     static uint8_t clear_buf[256 + 4];
@@ -183,30 +159,6 @@ bool mram_write(uint32_t address, const uint8_t *data, size_t length)
     {
         LOG_DEBUG("[mram] Write failed: length %zu exceeds maximum", length);
         return false;
-    }
-
-    // Auto-initialize allocation tracking if needed
-    if (!allocation_system_initialized)
-    {
-        mram_allocation_init();
-    }
-
-    // Check for collision with existing tracked writes
-    if (mram_check_collision(address, length))
-    {
-        LOG_DEBUG(
-            "[mram] Write blocked: collision detected at 0x%06X (len=%zu)",
-            address, length);
-        return false;
-    }
-
-    // Automatically track this write
-    if (!mram_register_allocation(address, length))
-    {
-        LOG_DEBUG("[mram] Warning: Could not track write at 0x%06X (len=%zu)",
-                  address, length);
-        // Continue with write anyway - tracking failure shouldn't block valid
-        // writes
     }
 
     mram_write_enable();
@@ -263,143 +215,4 @@ void mram_wake(void)
     restore_interrupts(interrupts);
 
     sleep_us(WAKE_TIME_US);
-}
-
-/**
- * Initialize the MRAM allocation tracking system
- */
-void mram_allocation_init(void)
-{
-    for (int i = 0; i < MAX_MRAM_ALLOCATIONS; i++)
-    {
-        allocations[i].address = 0;
-        allocations[i].length = 0;
-        allocations[i].in_use = false;
-    }
-    allocation_system_initialized = true;
-}
-
-/**
- * Check if two memory ranges overlap
- * @param addr1 Start address of first range
- * @param len1 Length of first range
- * @param addr2 Start address of second range
- * @param len2 Length of second range
- * @return true if ranges overlap, false otherwise
- */
-bool mram_ranges_overlap(uint32_t addr1, size_t len1, uint32_t addr2,
-                         size_t len2)
-{
-    if (len1 == 0 || len2 == 0)
-    {
-        return false;
-    }
-
-    uint32_t end1 = addr1 + len1 - 1;
-    uint32_t end2 = addr2 + len2 - 1;
-
-    return !(end1 < addr2 || end2 < addr1);
-}
-
-/**
- * Register a memory allocation
- * @param address Start address of allocation
- * @param length Size of allocation in bytes
- * @return true if successfully registered, false if no space or collision
- */
-bool mram_register_allocation(uint32_t address, size_t length)
-{
-    if (!allocation_system_initialized)
-    {
-        mram_allocation_init();
-    }
-
-    if (length == 0)
-    {
-        return false;
-    }
-
-    if (mram_check_collision(address, length))
-    {
-        LOG_DEBUG("[mram] Cannot register allocation at 0x%06X (len=%zu): "
-                  "collision detected",
-                  address, length);
-        return false;
-    }
-
-    for (int i = 0; i < MAX_MRAM_ALLOCATIONS; i++)
-    {
-        if (!allocations[i].in_use)
-        {
-            allocations[i].address = address;
-            allocations[i].length = length;
-            allocations[i].in_use = true;
-            return true;
-        }
-    }
-
-    LOG_DEBUG("[mram] Cannot register allocation: no free tracking slots");
-    return false;
-}
-
-/**
- * Check if a new allocation would collide with existing ones
- * @param address Start address to check
- * @param length Size to check in bytes
- * @return true if collision detected, false if safe
- */
-bool mram_check_collision(uint32_t address, size_t length)
-{
-    if (!allocation_system_initialized)
-    {
-        return false;
-    }
-
-    if (length == 0)
-    {
-        return false;
-    }
-
-    for (int i = 0; i < MAX_MRAM_ALLOCATIONS; i++)
-    {
-        if (allocations[i].in_use)
-        {
-            if (mram_ranges_overlap(address, length, allocations[i].address,
-                                    allocations[i].length))
-            {
-                LOG_INFO("[mram] Collision detected: 0x%06X-0x%06X overlaps "
-                         "with existing 0x%06X-0x%06X",
-                         address, address + length - 1, allocations[i].address,
-                         allocations[i].address + allocations[i].length - 1);
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-/**
- * Free a previously registered allocation
- * @param address Start address of allocation to free
- * @return true if successfully freed, false if not found
- */
-bool mram_free_allocation(uint32_t address)
-{
-    if (!allocation_system_initialized)
-    {
-        return false;
-    }
-
-    for (int i = 0; i < MAX_MRAM_ALLOCATIONS; i++)
-    {
-        if (allocations[i].in_use && allocations[i].address == address)
-        {
-            allocations[i].in_use = false;
-            return true;
-        }
-    }
-
-    LOG_DEBUG("[mram] Cannot free allocation at 0x%06X: not found", address);
-    return false;
 }
