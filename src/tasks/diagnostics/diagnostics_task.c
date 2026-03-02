@@ -3,6 +3,7 @@
 #include "macros.h"
 #ifdef BRINGUP
 
+#ifndef TEST
 /**
  * I2C reserves some addresses for special purposes. We exclude these from the
  * scan. These are any addresses of the form 000 0xxx or 111 1xxx
@@ -11,6 +12,7 @@ static bool reserved_addr(uint8_t addr)
 {
     return (addr & 0x78) == 0 || (addr & 0x78) == 0x78;
 }
+#endif
 
 // Add power monitor instance
 static adm1176_t power_monitor;
@@ -30,12 +32,14 @@ void diagnostics_task_dispatch(slate_t *slate)
     slate->loop_counter++;
     LOG_INFO("Loop #%d", slate->loop_counter);
 
+#ifndef TEST
     /*
      * Unique ID
      */
     char id_str[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
     pico_get_unique_board_id_string(id_str, sizeof(id_str));
     LOG_INFO("Chip ID: %s", id_str);
+#endif
 
     /*
      * Power Monitor
@@ -45,6 +49,7 @@ void diagnostics_task_dispatch(slate_t *slate)
     LOG_INFO("Power Monitor - Voltage: %.3fV, Current: %.3fA", voltage,
              current);
 
+#ifndef TEST
     /*
      * I2C
      */
@@ -117,6 +122,7 @@ void diagnostics_task_dispatch(slate_t *slate)
     }
     // LOG_INFO("Radio version: v%d", rfm9x_version(&slate->radio));
     LOG_INFO("Done.\n");
+#endif
 }
 
 sched_task_t diagnostics_task = {.name = "diagnostics",
