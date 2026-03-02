@@ -5,10 +5,6 @@ Pi RP2040 and RP2350 microcontrollers.
 
 ![PXL_20251105_063120461](https://github.com/user-attachments/assets/f1ea9d1d-33db-42ee-8892-54c7ed03953b)
 
-## Getting Started
-
-See [the onboarding doc](docs/ONBOARDING.md) for development environment setup. To set some useful configurations for this repo, run `configure.sh`.
-
 ## Design Objectives
 
 Beyond functional parity with the prior CircuitPython-based Sapling firmware,
@@ -19,26 +15,33 @@ this project has a few additional goals:
 * Simple flight/debug configuration
 * Clean code
 
+## Getting Started
+
+### Pre-requisites
+
+1. Install bazel by following instructions for your platform here:
+
+2. Pull necessary submodules using:
+
+```
+git submodule update --init --recursive
+```
+
+> Historically, see [the onboarding doc](docs/ONBOARDING.md) for development environment setup (pre-bazel).
+
+
 ## Building
-To build the code in this repo, run `cmake -B build -DPROFILE=PICUBED-DEBUG` then `cmake --build build --parallel`.
+To build the code in this repo, run `bazel build :samwise --config=picubed-debug`.
 
 You can use the pre-provided scripts, `source build_tests.sh` and `source build_debug.sh`, to run automatically.
 **NOTE**: These automatically delete the `build_tests` and `build` directories respectively before running, so run with caution!
 
-The following targets will be built:
-* `samwise_pico_debug`: pico exectuable
-* `samwise_picubed_debug`: picubed executable, for debugging
-* `samwise_picubed_flight`: picubed executable, for flight
-* `samwise_picubed_bringup`: picubed executable, for bringing up the board
-(these can be configured in `CMakeLists.txt`)
+The following configuration options are available:
+* `pico`: pico exectuable
+* `picubed-debug`: picubed executable, for debugging
+* `picubed-flight`: picubed executable, for flight
+* `picubed-bringup`: picubed executable, for bringing up the board
+(these can be configured in `.bazelrc`)
 
 ### Build Archives
-The **C Build** github action automatically builds RP2040 and RP2350 archives on pushes to pull requests into main.
-
-## Switching build targets
-To switch between builds for the RP2040 (Pico 1) and RP2350 (Pico 2 and Pycubed), set the `RP2350` flag to 1 when calling `cmake`. For example, to build for the RP2350, run:
-```
-cmake .. -DRP2350=1
-```
-
-**Note that when switching between the RP2040 and RP2350, it is usually necessary to clear the cmake cache (by running `rm -rf build/*`)**
+The **C Build** github action automatically builds RP2350 archives on pushes to pull requests into main.
