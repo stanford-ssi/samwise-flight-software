@@ -4,15 +4,15 @@ on:
   issue_comment:
     types: [created]
 
-concurrency:
-  group: claude-docs-${{ github.event.issue.number }}
-  cancel-in-progress: true
-
 jobs:
   claude:
-    runs-on: ubuntu-latest
+    concurrency:
+      group: claude-docs-${{ github.event.issue.number }}
+      cancel-in-progress: true
 
-    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     # Only run for specific users
     if: |
       (
