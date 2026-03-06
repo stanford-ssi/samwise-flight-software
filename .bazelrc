@@ -29,6 +29,9 @@ build:pico --platforms=//platforms:arm_cortex_m33_platform
 build:pico --define=PICO_BOARD=pico
 build:pico --copt=-DPICO_CRT0_IMAGE_TYPE_TBYB=0
 build:pico --copt=-DPICO=1
+build:pico --compilation_mode=dbg
+build:pico --copt=-Og
+build:pico --copt=-g
 build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:bin_aspect.bzl%pico_bin_aspect
 build:pico --output_groups=+pico_uf2_files,+pico_bin_files
@@ -41,6 +44,8 @@ build:picubed-debug --define=PICO_PLATFORM=rp2350
 build:picubed-debug --define=DEBUG=1
 build:picubed-debug --copt=-DDEBUG=1
 build:picubed-debug --compilation_mode=dbg
+build:picubed-debug --copt=-g
+build:picubed-debug --copt=-Og
 build:picubed-debug --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:picubed-debug --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:bin_aspect.bzl%pico_bin_aspect
 build:picubed-debug --output_groups=+pico_uf2_files,+pico_bin_files
