@@ -21,11 +21,6 @@ void watchdog_init(struct watchdog *wd)
     wd->last_transition = get_absolute_time();
     wd->set = false;
     wd->is_initialized = true;
-
-    // Ensure the software watchdog timer is set to maximum duration
-    // This is used for Try-Before-You-Buy (TBYB) images.
-    // For our use-case, we can ignore this software watchdog timer.
-    watchdog_enable(MAX_TBYB_WATCHDOG_TIMEOUT_MS, false);
 }
 
 void watchdog_feed(struct watchdog *wd)
