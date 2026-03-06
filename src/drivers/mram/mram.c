@@ -43,6 +43,8 @@ void mram_init(void)
 {
     LOG_INFO("[mram] Init start");
 
+    // WE SHOULD BE CALLING <flash_start_xip> HERE
+
     uint8_t wake_cmd = WAKE_CMD;
 
     uint32_t interrupts = save_and_disable_interrupts();
@@ -103,6 +105,9 @@ void mram_read(uint32_t address, uint8_t *data, size_t length)
     cmd_buf[1] = (address >> 16) & 0xFF;
     cmd_buf[2] = (address >> 8) & 0xFF;
     cmd_buf[3] = address & 0xFF;
+
+    // Where are we driving CS high/low?
+    // See pg. 10
 
     for (size_t i = 0; i < length; i++)
     {
@@ -169,6 +174,9 @@ bool mram_write(uint32_t address, const uint8_t *data, size_t length)
     cmd_buf[1] = (address >> 16) & 0xFF;
     cmd_buf[2] = (address >> 8) & 0xFF;
     cmd_buf[3] = address & 0xFF;
+
+    // Where are we driving CS high/low?
+    // See pg. 11
 
     memcpy(&cmd_buf[4], data, length);
 
