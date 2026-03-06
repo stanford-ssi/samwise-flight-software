@@ -1,5 +1,6 @@
 #pragma once
 #include "diagnostics_task.h"
+#include "hardware_test_task.h"
 #include "macros.h"
 #include "print_task.h"
 #include "watchdog_task.h"

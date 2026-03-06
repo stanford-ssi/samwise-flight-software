@@ -93,14 +93,19 @@ inline static FTP_PACKET_SEQUENCE_T ftp_get_last_packet(slate_t *slate)
  */
 inline static void send_ftp_lfs_error_packet(slate_t *slate,
                                              ftp_result_t result,
+                                             filesys_error_t filesys_err,
                                              lfs_ssize_t lfs_error_code)
 {
     assert(result == FILESYS_INIT_ERROR || result == FILESYS_REFORMAT_ERROR ||
            result == FTP_FILE_WRITE_MRAM_ERROR ||
            result == FTP_FILE_WRITE_BUFFER_ERROR || result == FTP_CANCEL_ERROR);
 
-    ftp_send_result_packet_no_file(slate, result, &lfs_error_code,
-                                   sizeof(lfs_error_code));
+    uint8_t err_data[sizeof(filesys_error_t) + sizeof(lfs_ssize_t)];
+    uint8_t *err_data_ptr = err_data;
+    memcpy_inc(&err_data_ptr, &filesys_err, sizeof(filesys_error_t));
+    memcpy_inc(&err_data_ptr, &lfs_error_code, sizeof(lfs_ssize_t));
+
+    ftp_send_result_packet_no_file(slate, result, err_data, sizeof(err_data));
 }
 
 /**
@@ -136,15 +141,16 @@ void ftp_task_init(slate_t *slate)
     slate->ftp_packets_received_tracker = 0;
     slate->ftp_start_cycle_packet_id = 0;
 
-    lfs_ssize_t res = filesys_initialize(slate);
+    lfs_ssize_t lfs_err = LFS_ERR_OK;
+    filesys_error_t res = filesys_initialize(slate, &lfs_err);
 
-    if (res < 0)
+    if (res != FILESYS_OK)
     {
         LOG_ERROR(
             "[FTP] FTP task failed to initialize filesystem with error %d.",
             res);
 
-        send_ftp_lfs_error_packet(slate, FILESYS_INIT_ERROR, res);
+        send_ftp_lfs_error_packet(slate, FILESYS_INIT_ERROR, res, lfs_err);
 
         return;
     }
@@ -159,13 +165,14 @@ void ftp_process_reformat_command(slate_t *slate)
     slate->ftp_packets_received_tracker = 0;
     slate->ftp_start_cycle_packet_id = 0;
 
-    lfs_ssize_t res = filesys_reformat(slate);
-    if (res < 0)
+    lfs_ssize_t lfs_err = LFS_ERR_OK;
+    filesys_error_t res = filesys_reformat_initialize(slate, &lfs_err);
+    if (res != FILESYS_OK)
     {
         LOG_ERROR("[FTP] FTP task failed to format filesystem with error %d.",
                   res);
 
-        send_ftp_lfs_error_packet(slate, FILESYS_REFORMAT_ERROR, res);
+        send_ftp_lfs_error_packet(slate, FILESYS_REFORMAT_ERROR, res, lfs_err);
 
         return;
     }
@@ -191,19 +198,22 @@ void ftp_process_file_start_write_command(
         return;
     }
 
+    lfs_ssize_t lfs_err = LFS_ERR_OK;
     lfs_ssize_t blocksLeftAfterWrite = -1;
-    int8_t res = filesys_start_file_write(
+    filesys_error_t res = filesys_start_file_write(
         slate, command_data.fname_str, command_data.file_len,
-        command_data.file_crc, &blocksLeftAfterWrite);
+        command_data.file_crc, &lfs_err, &blocksLeftAfterWrite);
 
-    if (res != 0)
+    if (res != FILESYS_OK)
     {
         LOG_ERROR("[FTP] Failed to start file write with code %d.", res);
 
-        uint8_t err_data[sizeof(res) + sizeof(blocksLeftAfterWrite)];
+        uint8_t err_data[sizeof(res) + sizeof(lfs_err) +
+                         sizeof(blocksLeftAfterWrite)];
         uint8_t *err_data_ptr = err_data;
 
         memcpy_inc(&err_data_ptr, &res, sizeof(res));
+        memcpy_inc(&err_data_ptr, &lfs_err, sizeof(lfs_err));
         memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
                    sizeof(blocksLeftAfterWrite));
 
@@ -216,10 +226,12 @@ void ftp_process_file_start_write_command(
     {
         LOG_ERROR("[FTP] Could not determine blocks left after file write.");
 
-        uint8_t err_data[sizeof(res) + sizeof(blocksLeftAfterWrite)];
+        uint8_t err_data[sizeof(res) + sizeof(lfs_err) +
+                         sizeof(blocksLeftAfterWrite)];
         uint8_t *err_data_ptr = err_data;
 
         memcpy_inc(&err_data_ptr, &res, sizeof(res));
+        memcpy_inc(&err_data_ptr, &lfs_err, sizeof(lfs_err));
         memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
                    sizeof(blocksLeftAfterWrite));
 
@@ -278,14 +290,15 @@ void ftp_process_file_write_data_command(slate_t *slate,
     const FILESYS_BUFFER_SIZE_T offset = packet_index * FTP_DATA_PAYLOAD_SIZE;
 
     // Write data to buffer
-    int8_t write_res = filesys_write_data_to_buffer(
-        slate, command_data.data, command_data.data_len, offset);
+    lfs_ssize_t lfs_err = LFS_ERR_OK;
+    filesys_error_t write_res = filesys_write_data_to_buffer(
+        slate, command_data.data, command_data.data_len, offset, &lfs_err);
 
-    if (write_res != 0)
+    if (write_res != FILESYS_OK)
     {
         LOG_ERROR("[FTP] Failed to write data to buffer: %d", write_res);
-        send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_BUFFER_ERROR,
-                                  write_res);
+        send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_BUFFER_ERROR, write_res,
+                                  lfs_err);
         return;
     }
 
@@ -346,15 +359,16 @@ void ftp_process_file_write_data_command(slate_t *slate,
             slate->filesys_buffered_file_len - bytes_previously_written;
     }
 
-    lfs_ssize_t mram_write_res =
-        filesys_write_buffer_to_mram(slate, bytes_to_write);
+    lfs_ssize_t mram_lfs_err = LFS_ERR_OK;
+    filesys_error_t mram_write_res =
+        filesys_write_buffer_to_mram(slate, bytes_to_write, &mram_lfs_err);
 
-    if (mram_write_res < 0)
+    if (mram_write_res != FILESYS_OK)
     {
-        LOG_ERROR("[FTP] Failed to write buffer to MRAM: %ld", mram_write_res);
+        LOG_ERROR("[FTP] Failed to write buffer to MRAM: %d", mram_write_res);
         // Send error packet with the error code
         send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_MRAM_ERROR,
-                                  mram_write_res);
+                                  mram_write_res, mram_lfs_err);
         return;
     }
 
@@ -375,14 +389,20 @@ void ftp_process_file_write_data_command(slate_t *slate,
 
     // else:
     // 5. Write complete! Process EOF.
-    unsigned int computed_crc;
-    int8_t complete_res = filesys_complete_file_write(slate, &computed_crc);
+    lfs_ssize_t crc_lfs_err = LFS_ERR_OK;
+    filesys_error_t crc_compute_err = FILESYS_OK;
+    unsigned int computed_crc =
+        filesys_compute_crc(slate, &crc_compute_err, &crc_lfs_err);
 
-    if (complete_res != 0)
+    lfs_ssize_t complete_lfs_err = LFS_ERR_OK;
+    filesys_error_t complete_res =
+        filesys_complete_file_write(slate, &complete_lfs_err);
+
+    if (complete_res != FILESYS_OK)
     {
         LOG_ERROR("[FTP] Error completing file write: %d", complete_res);
         // Determine error type
-        if (complete_res == -4) // CRC Mismatch
+        if (complete_res == FILESYS_ERR_CRC_MISMATCH)
         {
             uint8_t crc_err_data[sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
                                  sizeof(FILESYS_BUFFERED_FILE_LEN_T)];
@@ -400,7 +420,7 @@ void ftp_process_file_write_data_command(slate_t *slate,
         else
         {
             send_ftp_lfs_error_packet(slate, FTP_FILE_WRITE_MRAM_ERROR,
-                                      complete_res);
+                                      complete_res, complete_lfs_err);
         }
 
         return;
@@ -411,9 +431,12 @@ void ftp_process_file_write_data_command(slate_t *slate,
              computed_crc);
 
     // Get file length on disk
+    lfs_ssize_t info_lfs_err = LFS_ERR_OK;
+    filesys_file_info_t file_info;
+    filesys_error_t info_res = filesys_get_file_info(
+        slate, slate->filesys_buffered_fname_str, &file_info, &info_lfs_err);
     FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
-        filesys_get_file_length_on_disk(slate,
-                                        slate->filesys_buffered_fname_str);
+        (info_res == FILESYS_OK) ? file_info.file_size : 0;
 
     uint8_t success_data[sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
                          sizeof(FILESYS_BUFFERED_FILE_LEN_T)];
@@ -431,12 +454,13 @@ void ftp_process_file_write_data_command(slate_t *slate,
 void ftp_process_file_cancel_write_command(
     slate_t *slate, FTP_CANCEL_FILE_WRITE_DATA command_data)
 {
-    int8_t res = filesys_cancel_file_write(slate);
+    lfs_ssize_t lfs_err = LFS_ERR_OK;
+    filesys_error_t res = filesys_cancel_file_write(slate, &lfs_err);
 
-    if (res != 0)
+    if (res != FILESYS_OK)
     {
         LOG_ERROR("[FTP] Failed to cancel file write with code %d.", res);
-        send_ftp_lfs_error_packet(slate, FTP_CANCEL_ERROR, res);
+        send_ftp_lfs_error_packet(slate, FTP_CANCEL_ERROR, res, lfs_err);
         return;
     }
 

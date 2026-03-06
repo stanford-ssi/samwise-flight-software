@@ -312,7 +312,7 @@ int main(void)
         TC_START("Performing HMAC tests (RFC4231 test vectors):");
 
         result = test_1();
-        if (result == TC_FAIL) { 
+        if (result == TC_FAIL) {
 		/* terminate test */
                 TC_ERROR("HMAC test #1 failed.\n");
                 goto exitTest;

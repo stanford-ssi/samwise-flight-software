@@ -1,0 +1,46 @@
+load("//bzl:defs.bzl", "samwise_integration_test", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_MRAM_DEPS = [
+    "//src/common",
+    "//src/drivers/logger",
+    "//src/drivers/mram",
+    "//src/filesys",
+    "//src/error",
+    "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+]
+
+samwise_test(
+    name = "mram_test",
+    srcs = [
+        "mram_test.c",
+        "mram_test.h",
+    ],
+    deps = _MRAM_DEPS,
+)
+
+samwise_integration_test(
+    name = "mram_test",
+    srcs = ["mram_test.c"],
+    hdrs = ["mram_test.h"],
+    int_src = "mram_integration_test.c",
+    deps = _MRAM_DEPS,
+)
+
+samwise_test(
+    name = "filesys_test",
+    srcs = [
+        "filesys_test.c",
+        "filesys_test.h",
+    ],
+    deps = _MRAM_DEPS,
+)
+
+samwise_integration_test(
+    name = "filesys_test",
+    srcs = ["filesys_test.c"],
+    hdrs = ["filesys_test.h"],
+    int_src = "filesys_integration_test.c",
+    deps = _MRAM_DEPS,
+)

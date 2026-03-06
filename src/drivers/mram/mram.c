@@ -14,6 +14,7 @@
 #include "hardware/sync.h"
 #include "pico/stdlib.h"
 
+#include "logger.h"
 #include "macros.h"
 
 // MRAM COMMANDS

@@ -557,7 +557,7 @@ void rfm9x_set_tx_power(rfm9x_t *r, int8_t power)
         if (power < -1)
             power = -1;
 
-        rfm9x_set_pa_output_pin(r, 1);
+        rfm9x_set_pa_output_pin(r, 0);
         rfm9x_set_max_power(r, 0b111);
         rfm9x_set_output_power(r, (power + 1) & 0x0F);
     }
@@ -646,7 +646,6 @@ static void rfm9x_interrupt_received(uint gpio, uint32_t events)
 {
     if (gpio == radio_with_interrupts->d0_pin)
     {
-
         if (rfm9x_tx_done(radio_with_interrupts))
         {
             if (radio_with_interrupts->tx_irq != NULL)
@@ -681,6 +680,8 @@ void rfm9x_init(rfm9x_t *r)
     radio_with_interrupts = r;
 
 #ifndef PICO
+    // With the picubed, always use maximum power for reliable communication
+    r->max_power = 1;
     // Setup RF regulator
     gpio_init(r->rf_reg_pin);
     gpio_set_dir(r->rf_reg_pin, GPIO_OUT);
@@ -781,7 +782,15 @@ void rfm9x_init(rfm9x_t *r)
 
     rfm9x_put8(r, _RH_RF95_REG_26_MODEM_CONFIG3, 0x00); /* No sync word */
     rfm9x_set_tx_power(r, 15);                          /* Known good value */
-    ASSERT(rfm9x_get_tx_power(r) == 15);
+    if (!r->max_power)
+    {
+        ASSERT(rfm9x_get_tx_power(r) == 15);
+    }
+    else
+    {
+        LOG_DEBUG("RFM9X: Max power enabled, statically set to %d",
+                  rfm9x_get_tx_power(r));
+    }
 
     rfm9x_set_pa_ramp(r, 0);
     ASSERT(rfm9x_get_pa_ramp(r) == 0);
@@ -792,8 +801,12 @@ void rfm9x_init(rfm9x_t *r)
     rfm9x_set_agc(r, 1);
     ASSERT(rfm9x_is_agc_on(r) == 1);
 
-    rfm9x_set_ldro(r, 1);
-    ASSERT(rfm9x_is_ldro_on(r) == 1);
+    // LDRO does not work with our current settings
+    //   Coding Rate 5/5
+    //   Spreading Factor 7
+    //   Bandwidth 125kHz)
+    // rfm9x_set_ldro(r, 1);
+    // ASSERT(rfm9x_is_ldro_on(r) == 1);
 
     // Setup interrupt
     gpio_set_irq_enabled_with_callback(r->d0_pin, GPIO_IRQ_EDGE_RISE, true,
@@ -868,7 +881,7 @@ void rfm9x_transmit(rfm9x_t *r)
     // we do not have an LNA
     rfm9x_set_mode(r, TX_MODE);
     uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    dioValue = bits_set(dioValue, 6, 7, 0b00);
+    dioValue = bits_set(dioValue, 6, 7, 0b01);
     rfm9x_put8(r, _RH_RF95_REG_40_DIO_MAPPING1, dioValue);
 }
 
@@ -888,22 +901,16 @@ uint8_t rfm9x_tx_done(rfm9x_t *r)
 
 uint8_t rfm9x_rx_done(rfm9x_t *r)
 {
-    uint8_t dioValue = rfm9x_get8(r, _RH_RF95_REG_40_DIO_MAPPING1);
-    if (dioValue)
-    {
-        return dioValue;
-    }
-    else
-    {
-        return (rfm9x_get8(r, _RH_RF95_REG_12_IRQ_FLAGS) & 0x40) >> 6;
-    }
+    return (rfm9x_get8(r, _RH_RF95_REG_12_IRQ_FLAGS) & 0x40) >> 6;
 }
 
 int rfm9x_await_rx(rfm9x_t *r)
 {
     rfm9x_listen(r);
     while (!rfm9x_rx_done(r))
-        ; // spin until RX done
+    {
+        tight_loop_contents();
+    }
     return 1;
 }
 

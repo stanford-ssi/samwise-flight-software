@@ -63,7 +63,7 @@ def update_boot_count():
         print(f"First time boot! Creating status file in {STATUS_PATH}")
         with open(STATUS_PATH, 'w+') as file:
             file.write('{"boot_count": 0}')
-            
+
     try:
         with open(STATUS_PATH, 'r') as file:
             status: dict = json.load(file)
@@ -82,7 +82,7 @@ def get_boot_count():
             status : dict = json.load(file)
 
         return status['boot_count']
-    
+
     except FileNotFoundError:
         # If not found, return a very large garbage value
         return 999999

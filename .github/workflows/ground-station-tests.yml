@@ -1,0 +1,128 @@
+name: Ground Station Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ground_station/**'
+      - '.github/workflows/ground-station-tests.yml'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ github.event_name != 'pull_request' || steps.filter.outputs.ground_station == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            ground_station:
+              - 'ground_station/**'
+              - '.github/workflows/ground-station-tests.yml'
+
+  test:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
+    name: Test Ground Station (${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.8', '3.11']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: ground_station/pyproject.toml
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ground_station/[test]
+
+    - name: Run tests with pytest
+      run: |
+        cd ground_station
+        python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./ground_station/coverage.xml
+        flags: ground-station
+        name: ground-station-coverage
+        fail_ci_if_error: false
+
+  test-compatibility:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
+    name: Platform Compatibility Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ground_station/[test]
+
+    - name: Run compatibility tests
+      run: |
+        cd ground_station
+        python -m pytest tests/test_compatibility.py -v
+
+    - name: Run filtering tests
+      run: |
+        cd ground_station
+        python -m pytest tests/test_filtering.py -v
+
+  lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_run == 'true' }}
+    name: Lint Ground Station Code
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install "black==24.1.1" "ruff==0.2.1"
+
+    - name: Check code formatting with black
+      run: |
+        cd ground_station
+        black --check --diff .
+
+    - name: Lint with ruff
+      run: |
+        cd ground_station
+        ruff check .
