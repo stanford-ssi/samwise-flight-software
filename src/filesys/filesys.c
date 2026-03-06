@@ -271,11 +271,22 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
         return FILESYS_OK;
     }
 
+    LOG_DEBUG("[filesys] Preparing to write buffer to MRAM for file %s. Buffer "
+              "size to "
+              "write: %u bytes",
+              slate->filesys_buffered_fname_str, n_bytes);
+
     // Reopen the file for appending
     lfs_file_t lfs_open_file;
     lfs_ssize_t open_lfs_err;
     filesys_file_open(&lfs_open_file, slate->filesys_buffered_fname_str,
                       LFS_O_WRONLY | LFS_O_APPEND, &open_lfs_err);
+
+    LOG_DEBUG(
+        "[filesys] Attempting to write buffer to file %s. Buffer dirty: %d, "
+        "Buffer size to write: %u bytes",
+        slate->filesys_buffered_fname_str, slate->filesys_buffer_is_dirty,
+        n_bytes);
 
     if (open_lfs_err < 0)
     {
@@ -286,6 +297,10 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     }
 
     // Write buffer to file
+    LOG_DEBUG(
+        "[filesys] Writing buffer to file %s in MRAM. Buffer size to write: "
+        "%u bytes",
+        slate->filesys_buffered_fname_str, n_bytes);
     lfs_ssize_t bytes_written =
         lfs_file_write(&lfs, &lfs_open_file, slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
@@ -308,6 +323,9 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
 
         return FILESYS_ERR_WRITE_MRAM;
     }
+
+    LOG_DEBUG("[filesys] Finished writing buffer to file %s. Bytes written: %d",
+              slate->filesys_buffered_fname_str, bytes_written);
 
     lfs_ssize_t close_lfs_err;
     filesys_file_close(&lfs_open_file, &close_lfs_err);

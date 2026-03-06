@@ -45,3 +45,22 @@ The following configuration options are available:
 
 ### Build Archives
 The **C Build** github action automatically builds RP2350 archives on pushes to pull requests into main.
+
+# Debugging with OpenOCD on a Pico
+We can use the debug probe with a Pico to run `gdb` on real hardware.
+
+
+```
+sudo apt update
+sudo apt install libusb-1.0.0-dev libhidapi-dev libjim-dev libftdi-dev
+```
+
+Go to some folder (e.g. `~`) and run:
+```
+git clone https://github.com/raspberrypi/openocd.git
+cd openocd
+git submodule update --init --recursive
+./bootstrap
+./configure --disable-werror --enable-cmsis-dap
+make -j4
+```

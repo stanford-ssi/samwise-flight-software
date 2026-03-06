@@ -25,3 +25,4 @@ int test_mram_multiple_independent_regions(void);
 int test_mram_adjacent_regions_no_bleed(void);
 int test_mram_full_byte_range(void);
 int test_mram_single_byte_write_read(void);
+int test_mram_large_write_read(void);

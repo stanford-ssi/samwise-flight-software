@@ -144,3 +144,57 @@ The following functions were removed from `mram.h` but remain defined in
 the mock out of sync with the driver API and add dead code.
 
 **Fix:** remove all five functions from `mram_mock.c`.
+
+## Potential issues
+Hardware-Specific Reasons the File Would Be Shorter Than Declared
+
+  1. Silent mram_write success on a failed SPI transaction
+  mram_write unconditionally returns true even after flash_do_cmd. If the SPI transaction fails (wrong pin config, wrong bus, timing violation), LFS sees success from lfs_mram_wrap_prog and believes the file data was committed. On the subsequent open for reading, LFS reads back old/uninitialized MRAM content.
+  Metadata on-disk could show file_size = 0 (the pre-write state), so lfs_file_read returns 0 immediately.
+
+  2. lfs_mram_wrap_erase is a no-op, leaving stale LFS state
+  LFS assumes erased blocks read as 0xFF. For MRAM, the erase is a no-op. If the MRAM had LFS metadata from a prior run (e.g., from a previous partial write that left a corrupt superblock), lfs_format writes the new superblock on top but adjacent blocks still carry old, potentially contradictory metadata. LFS
+  might read the old metadata path and find a file with 0 or partial content.
+
+  3. WEL bit cleared between the lfs_file_write prog calls
+  MRAM hardware auto-clears the WEL bit after each WRITE command completes. mram_write correctly calls mram_write_enable() before each 16-byte chunk. But if there is a setup-time violation (WEL must be asserted for some tWREN before the WRITE opcode arrives, and the back-to-back SPI commands are too fast), one
+  prog call might land without WEL set. The MRAM silently ignores it. The file ends up short, hitting EOF mid-read.
+
+  4. flash_do_cmd being the wrong API for the MRAM bus
+  mram.c uses hardware/flash.h's flash_do_cmd, which drives the RP2350's QSPI/XIP interface. If the MRAM is connected to a separate GPIO-bitbanged or alternate SPI bus, flash_do_cmd talks to the wrong device entirely. Writes appear to succeed (no return value check); reads return whatever the wrong device (or
+  nothing) replies — likely zeros or 0xFF — and LFS sees a filesystem that was never actually written.
+
+  5. MRAM not woken before use (or woken too briefly)
+  mram_init sends WAKE (0xAB) and waits 400 µs. If the MRAM was in deep sleep and 400 µs is marginal for the specific part, the chip might still be initializing when the first lfs_format write arrives. Writes during the wake period are silently discarded by the MRAM. The result is an empty filesystem, and any
+  subsequent lfs_file_read immediately returns 0.
+
+  6. SPI bus contention corrupting the static command buffer
+  mram_write and mram_read both use function-local static uint8_t cmd_buf[]. If an ISR fires between memcpy(&cmd_buf[4], data, length) and save_and_disable_interrupts() and that ISR also calls mram_write (e.g., a radio ISR flushing a log), the static cmd_buf gets overwritten before flash_do_cmd runs, corrupting
+  the address or data bytes mid-transaction. The write goes to the wrong MRAM address, leaving the intended location unwritten and the file shorter than expected.
+
+  7. Partial write due to LFS block boundary and block_cycles compaction
+  With block_size = 256 and block_cycles = 500, LFS will attempt to relocate a metadata block if it has been written 500 times. If a compaction is triggered mid-write (possible if MRAM was not freshly formatted) and the compaction's prog calls fail silently (reason 1), LFS ends up with a partially-committed file.
+   The declared file_size in the slate is the full 64 bytes, but the actual committed content is less.
+
+  ---
+  Summary Table
+
+  ┌─────┬────────────────────────────────────┬─────────────────────────────────────────┐
+  │  #  │              Trigger               │           Where it manifests            │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 1   │ mram_write always returns true     │ Silent write failure → file has 0 bytes │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 2   │ No-op erase → stale LFS metadata   │ Old metadata shows 0-byte file          │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 3   │ WEL setup-time violation           │ One prog chunk missed → short file      │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 4   │ flash_do_cmd on wrong bus          │ All writes lost → file has 0 bytes      │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 5   │ MRAM not fully awake during format │ Superblock not written → empty FS       │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 6   │ Static SPI buffer corrupted by ISR │ Wrong address written → short file      │
+  ├─────┼────────────────────────────────────┼─────────────────────────────────────────┤
+  │ 7   │ LFS compaction mid-write failure   │ Partial content committed → short file  │
+  └─────┴────────────────────────────────────┴─────────────────────────────────────────┘
+
+  The fix is straightforward: add if (bytes_read == 0) { break; } (or return an error) after the bytes_read < 0 check in the loop.
