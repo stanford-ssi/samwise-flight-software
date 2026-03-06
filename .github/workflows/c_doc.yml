@@ -1,86 +1,48 @@
 name: Claude Documentation
 
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-
-  # Uncomment below to trigger via comment instead of automatic runs
-  # issue_comment:
-  #   types: [created]
-
-concurrency:
-  group: claude-docs-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  issue_comment:
+    types: [created]
 
 jobs:
   claude:
-    runs-on: ubuntu-latest
+    concurrency:
+      group: claude-docs-${{ github.event.issue.number }}
+      cancel-in-progress: true
 
-    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     # Only run for specific users
     if: |
       (
-        github.event_name == 'pull_request'
+        github.event.issue.pull_request
       ) && (
-        github.event.pull_request.draft == false
+        contains(github.event.comment.body, '@claude_doc')
       ) && (
         github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran'
       )
-    # Uncomment condition below if using comment trigger instead
-    # if: |
-    #   github.event_name == 'issue_comment' &&
-    #   github.event.issue.pull_request &&
-    #   contains(github.event.comment.body, '@c_docs') &&
-    #   contains(fromJSON('["authorized-user1", "authorized-user2", "authorized-user3"]'), github.actor)
 
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 5
-
-      # Uncomment step below if using comment trigger
-      # - name: Get PR details from comment
-      #   if: github.event_name == 'issue_comment'
-      #   uses: actions/github-script@v7
-      #   id: get-pr
-      #   with:
-      #     script: |
-      #       const pr = await github.rest.pulls.get({
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         pull_number: context.issue.number
-      #       });
-      #       return pr.data;
+          # This fetches the head of the PR that the comment was made on
+          ref: refs/pull/${{ github.event.issue.number }}/head
 
       - name: Run Claude Docs
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-
-          # Remove trigger_phrase for automatic runs
-          # trigger_phrase: "@c_docs"  # Only needed for comment-triggered runs
-
-          additional_permissions: |
-            actions: read
-
-          # Optional: specify model (uncomment to pin)
-          # model: "claude-sonnet-4-5-20250929"
-          # model: "claude-opus-4-20250514"
-
+          trigger_phrase: "@claude_doc"
           custom_instructions: |
             Tasks:
 
