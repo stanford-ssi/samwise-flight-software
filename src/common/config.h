@@ -23,17 +23,18 @@
 #define FTP_ACTIVE_DISPATCH_MS 100
 
 // The number of packets to require before moving on to the next n packets
-#define FTP_NUM_PACKETS_PER_CYCLE 5
+#define FTP_NUM_PACKETS_PER_CYCLE 256
 
-// Note: FTP_NUM_PACKETS_PER_CYCLE must be <= number of bits in
-// FTP_PACKET_TRACKER_T
-// A bit set means the corresponding packet in this cycle was received.
-typedef uint8_t FTP_PACKET_TRACKER_T;
+// Number of bytes needed to store the packet tracker bitfield
+#define FTP_PACKET_TRACKER_SIZE                                                \
+    ((FTP_NUM_PACKETS_PER_CYCLE + __CHAR_BIT__ - 1) / __CHAR_BIT__)
 
-_Static_assert(FTP_NUM_PACKETS_PER_CYCLE <=
-                   (sizeof(FTP_PACKET_TRACKER_T) * __CHAR_BIT__),
-               "FTP_NUM_PACKETS_PER_CYCLE must be less than or equal to the "
-               "number of bits in FTP_PACKET_TRACKER_T");
+// Packet tracker is a byte array used as a bitfield.
+// A bit being set means the corresponding packet in this cycle was received.
+typedef struct
+{
+    uint8_t bytes[FTP_PACKET_TRACKER_SIZE];
+} FTP_PACKET_TRACKER_T;
 
 // Automatically calculated size of maximum data payload in bytes per packet
 #define FTP_DATA_PAYLOAD_SIZE                                                  \

@@ -18,12 +18,46 @@
 #define MAX_FTP_COMMANDS_PER_DISPATCH 3
 #define MAX_FTP_RETRY_COUNT 3
 
+/* Packet tracker bitfield helpers */
+inline static void ftp_tracker_clear(FTP_PACKET_TRACKER_T *tracker)
+{
+    memset(tracker->bytes, 0, FTP_PACKET_TRACKER_SIZE);
+}
+
+inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
+                                       uint16_t bit_index)
+{
+    tracker->bytes[bit_index / __CHAR_BIT__] |=
+        (1 << (bit_index % __CHAR_BIT__));
+}
+
+inline static bool ftp_tracker_check_mask(const FTP_PACKET_TRACKER_T *tracker,
+                                          uint16_t num_bits)
+{
+    // Check all full bytes
+    uint16_t full_bytes = num_bits / __CHAR_BIT__;
+    for (uint16_t i = 0; i < full_bytes; i++)
+    {
+        if (tracker->bytes[i] != 0xFF)
+            return false;
+    }
+    // Check remaining bits in the last partial byte
+    uint8_t remaining_bits = num_bits % __CHAR_BIT__;
+    if (remaining_bits > 0)
+    {
+        uint8_t mask = (1 << remaining_bits) - 1;
+        if ((tracker->bytes[full_bytes] & mask) != mask)
+            return false;
+    }
+    return true;
+}
+
 /**
  * Every packet from SAT -> Ground has these headers, EXCEPT FOR
  * FILESYS_INIT_ERROR:
  *
  * Headers (FILESYS_BUFFERED_FNAME_T + FTP_FILE_LEN_T +
- * FILESYS_BUFFERED_FILE_CRC_T) FTP_Result (FTP_RESULT_MNEMONIC_SIZE)
+ * FILESYS_BUFFERED_FILE_CRC_T) FTP_Result (sizeof(ftp_result_t))
  *
  * If there is no file being written (e.g. in FILESYS_INIT_ERROR), the
  * FILESYS_BUFFERED_FNAME_T is set to "XX", and the FILESYS_BUFFERED_FILE_LEN_T
@@ -180,9 +214,6 @@ typedef enum ftp_result
 };
 
 typedef int32_t ftp_result_t;
-
-// number of bytes used to identify FTP result
-#define FTP_RESULT_MNEMONIC_SIZE 1
 
 void ftp_task_init(slate_t *slate);
 void ftp_task_dispatch(slate_t *slate);

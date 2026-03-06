@@ -34,7 +34,7 @@ _FTP-specific:_
 * **CRC32**: A 32-bit Cyclic Redundancy Check used to verify the integrity of the uploaded file. This is computed after upload has completed, and is compared to the CRC32 that was sent at the beginning (on start file write).
 
 _SAMWISE Hardware:_
-* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime. // TODO: How much storage is in RAM?
+* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime.
 * **MRAM**: Magnetoresistive RAM, the permanent (non-volatile) memory used for file storage on the satellite. Essentially, think of it like an SSD, not a RAM. This has 512KiB of storage space.
 
 _Filesys:_
@@ -178,7 +178,7 @@ To start writing a file, first make sure that no file is currently being written
 Otherwise, send a FTP_START_FILE_WRITE command with the following body:
 ```c
 uint16_t fname; // Name of the file, maximum 2 bytes
-uint16_t file_len; // Length of the file, maximum 2 bytes
+uint32_t file_len; // Length of the file, maximum 2 bytes
 uint32_t file_crc; // CRC32 for file validation after write
 ```
 

@@ -82,3 +82,21 @@ inline static void file_to_string(FILESYS_BUFFERED_FNAME_T value,
 
     buffer[sizeof(FILESYS_BUFFERED_FNAME_T)] = '\0';
 }
+
+/**
+ * Converts a filename string back to its uint16_t representation.
+ * Inverse of file_to_string.
+ *
+ * @param str The filename string (at least sizeof(FILESYS_BUFFERED_FNAME_T)
+ * bytes).
+ * @return The uint16_t filename value.
+ */
+inline static FILESYS_BUFFERED_FNAME_T
+string_to_file(const FILESYS_BUFFERED_FNAME_STR_T str)
+{
+    FILESYS_BUFFERED_FNAME_T value = 0;
+    for (size_t i = 0; i < sizeof(FILESYS_BUFFERED_FNAME_T); i++)
+        value |= ((FILESYS_BUFFERED_FNAME_T)(uint8_t)str[i])
+                 << (8 * (sizeof(FILESYS_BUFFERED_FNAME_T) - 1 - i));
+    return value;
+}
