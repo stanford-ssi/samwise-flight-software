@@ -19,7 +19,6 @@ TIMEOUT = 10
 
 MAX_SERIAL_RETRIES = 5
 SERIAL_RETRY_DELAY = 1
-ERROR_TIMEOUT = 0.5
 
 # Initialise pins -----------
 initialize()
@@ -69,4 +68,3 @@ with ser:
             command_handler.receive_and_dispatch_command()
         except Exception as e:
             log.error(f"Unhandled error in command loop: {e}", exc_info=True)
-            time.sleep(ERROR_TIMEOUT)
