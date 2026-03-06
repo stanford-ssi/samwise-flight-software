@@ -52,8 +52,8 @@ A buffer of `205 * N` bytes lives on SAMWISE's RAM, which is used to cache the `
 The design is, in rough terms, as follows:
 1. Start a file write
 2. Loop:
-    1. Allow N (=5 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..4 inclusive to be written in any order, and store each one in buffer.
-    2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 5..9 inclusive.
+    1. Allow N (=256 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..255 inclusive to be written in any order, and store each one in buffer.
+    2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually written file. If successful, finally finish the operation.
 
 Here is a relevant flowchart for the design, only showing a full write (for context on how to read a UML sequence diagram, [this](https://creately.com/guides/sequence-diagram-tutorial/) is a good tutorial):
@@ -251,10 +251,10 @@ flowchart LR
 
 ## Useful Constants
 All of these are present in `config.h`:
-* `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle.
+* `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle. Currently set to 256.
 * `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
 * `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
-* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 5 = 1025 bytes`.
+* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 52480 bytes`.
 
 Here are some other calculations to justify design decisions:
 * The file length is stored in a 32-bit unsigned integer, which allows `2^32 = 4294967296 bytes = 4096 MiB` maximum. Note this should never be reached, it just should be greater than `FTP_MAX_FILE_LEN`.
@@ -341,7 +341,7 @@ packet
 +32: "(signed) FTP_Result (actual error originating from FTP)"
 +16: "Packet_Start or New_Packet_Start (first accepted packet id in sequence, inclusive)"
 +16: "Packet_End or New_Packet_End (last accepted packet id in sequence, inclusive)"
-+8: "Received_Bitfield (a bit set indicates the corresponding packet was received) // TODO: change based on N"
++32: "Received_Bitfield (a bit set indicates the corresponding packet was received, 256 bits for N=256)"
 ```
 
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR
