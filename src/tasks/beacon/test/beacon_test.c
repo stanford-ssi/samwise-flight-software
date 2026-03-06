@@ -83,11 +83,15 @@ void test_beacon_serialize()
         {
             for (size_t i = 0; i < len; i++)
             {
-                fprintf(f, "%02x ", tmp_data[i]);
-                if (i % 10 == 9)
-                    fprintf(f, "\n");
+                if (i % 10 == 9 || i == len - 1)
+                {
+                    fprintf(f, "%02x\n", tmp_data[i]);
+                }
+                else
+                {
+                    fprintf(f, "%02x ", tmp_data[i]);
+                }
             }
-            fprintf(f, "\n");
             fclose(f);
         }
     }
