@@ -18,13 +18,11 @@ BAUDRATE = 115200
 TIMEOUT = 10
 
 MAX_SERIAL_RETRIES = 5
-SERIAL_RETRY_DELAY = 2
+SERIAL_RETRY_DELAY = 1
+ERROR_TIMEOUT = 0.5
 
 # Initialise pins -----------
-try:
-    initialize()
-except Exception as e:
-    print(f"GPIO init failed: {e}")
+initialize()
 
 # Setting up the logger ------
 boot_count = -1
@@ -41,6 +39,8 @@ except Exception as e:
         pass
 
 log = logging.getLogger(__name__)
+log.propagate = False
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 # Main code entry point
 log.info(f"Pi running, boot number {boot_count}...")
@@ -69,3 +69,4 @@ with ser:
             command_handler.receive_and_dispatch_command()
         except Exception as e:
             log.error(f"Unhandled error in command loop: {e}", exc_info=True)
+            time.sleep(ERROR_TIMEOUT)
