@@ -91,7 +91,8 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     data_offset += name_len;
 
     // Write 'beat cal' into beacon!
-    strcpy_trunc((char *)(data + data_offset), CALL_TO_ACTION, MAX_STR_LENGTH);
+    strcpy_trunc((char *)(data + data_offset), CALL_TO_ACTION,
+                 MAX_STR_LENGTH - name_len);
     data_offset += CALL_TO_ACTION_LENGTH;
 
     beacon_stats stats = {.reboot_counter = slate->reboot_counter,
@@ -112,7 +113,6 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .panel_B_current = slate->panel_B_current,
                           .device_status = get_device_status(slate)};
 
-    // 1 Extra byte: 1 for \0 terminator
     memcpy(data + data_offset, &stats, sizeof(beacon_stats));
     data_offset += sizeof(beacon_stats);
 
