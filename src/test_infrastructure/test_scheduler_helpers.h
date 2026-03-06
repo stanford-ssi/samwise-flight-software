@@ -139,3 +139,25 @@ void log_discovered_tasks(sched_state_t *state);
  * Log task execution summary
  */
 void log_task_summary(void);
+
+// =============================================================================
+// FSM SIMULATION
+// =============================================================================
+
+/**
+ * Run FSM simulation from current state until state is stable.
+ *
+ * Dispatches the scheduler in a loop, tracking state transitions.
+ * Logs state_enter/state_exit events for visualization.
+ * Stops when the same state is returned for `stable_count_threshold`
+ * consecutive dispatch cycles.
+ *
+ * @param slate Test slate (should have current_state_id set to starting state)
+ * @param dispatch_interval_ms How often to call sched_dispatch (ms)
+ * @param log_interval_ms How often to log milestones (0 = no milestones)
+ * @param stable_count_threshold Stop after this many consecutive same-state
+ * @return The final stable state ID
+ */
+state_id_t run_fsm_simulation(slate_t *slate, uint32_t dispatch_interval_ms,
+                              uint32_t log_interval_ms,
+                              int stable_count_threshold);
