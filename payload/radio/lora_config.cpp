@@ -54,7 +54,7 @@ static SX128x::RadioLoRaSpreadingFactors_t spreading_factor_from_int(int sf) {
     }
 }
 
-static SX128x::RadioLoRaPacketLengthsMode_t header_type_from_string(const std::string& s) {
+static SX128x::RadioLoRaPacketLengthsModes_t header_type_from_string(const std::string& s) {
     if (s == "variable" || s == "explicit") return SX128x::LORA_PACKET_VARIABLE_LENGTH;
     return SX128x::LORA_PACKET_FIXED_LENGTH;
 }
@@ -75,6 +75,7 @@ LoRaConfig load(const std::string& path) {
         if (j.contains("preamble_length")) cfg.preamble_length = j["preamble_length"].get<int>();
         if (j.contains("crc")) cfg.crc = j["crc"].get<bool>();
         if (j.contains("header_type")) cfg.header_type = j["header_type"].get<std::string>();
+        if (j.contains("frequency")) cfg.frequency = j["frequency"].get<int>();
     } catch (const std::exception& e) {
         std::cerr << "lora_config: parse error: " << e.what() << ", using defaults\n";
     }

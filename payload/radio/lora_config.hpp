@@ -14,6 +14,7 @@ struct LoRaConfig {
     int preamble_length = 12;
     bool crc = true;
     std::string header_type = "fixed";
+    int frequency = 2400;  // MHz
 };
 
 // Load config from JSON file. Returns default config if file missing or invalid.

@@ -29,14 +29,29 @@
 
 int main(int argc, char **argv)
 {
-    if (argc < 3)
+    // Usage: Lora_rx <file to receive>               (freq from lora_config.json)
+    //        Lora_rx <freq in MHz> <file to receive>  (freq from CLI, overrides config)
+    if (argc < 2)
     {
-        printf("Usage: Lora_rx <freq in MHz> <file to receive>\n");
+        printf("Usage: Lora_rx [<freq in MHz>] <file to receive>\n");
         return 1;
     }
 
     auto loraCfg = lora_config::load(lora_config::default_config_path());
     const size_t PACKET_SIZE = static_cast<size_t>(loraCfg.packet_size);
+
+    long freq;
+    const char* filepath;
+    if (argc >= 3)
+    {
+        freq = strtol(argv[1], nullptr, 10);
+        filepath = argv[2];
+    }
+    else
+    {
+        freq = loraCfg.frequency;
+        filepath = argv[1];
+    }
 
     // Pins based on hardware configuration
     SX128x_Linux Radio("/dev/spidev0.0", 0,
@@ -77,7 +92,7 @@ int main(int argc, char **argv)
     std::cout << "Firmware Version: " << Radio.GetFirmwareVersion() << "\n";
 
     // Open file
-    std::ofstream fileToReceive(argv[2], std::ios::binary);
+    std::ofstream fileToReceive(filepath, std::ios::binary);
 
     size_t packetCount = 0;
 

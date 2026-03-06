@@ -5,5 +5,6 @@
   "packet_size": 253,
   "preamble_length": 12,
   "crc": true,
-  "header_type": "fixed"
+  "header_type": "fixed",
+  "frequency": 2400
 }

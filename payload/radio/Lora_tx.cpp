@@ -146,10 +146,27 @@ public:
 
 int main(int argc, char **argv)
 {
-    if (argc < 3)
+    // Usage: Lora_tx <file to send>               (freq from lora_config.json)
+    //        Lora_tx <freq in MHz> <file to send>  (freq from CLI, overrides config)
+    if (argc < 2)
     {
-        printf("Usage: Lora_tx <freq in MHz> <file to send>\n");
+        printf("Usage: Lora_tx [<freq in MHz>] <file to send>\n");
         return 1;
+    }
+
+    auto loraCfg = lora_config::load(lora_config::default_config_path());
+
+    long freq;
+    const char* filepath;
+    if (argc >= 3)
+    {
+        freq = strtol(argv[1], nullptr, 10);
+        filepath = argv[2];
+    }
+    else
+    {
+        freq = loraCfg.frequency;
+        filepath = argv[1];
     }
 
     // Pins based on hardware configuration
@@ -173,8 +190,6 @@ int main(int argc, char **argv)
     Radio.SetBufferBaseAddresses(0x00, 0x00);
     puts("SetBufferBaseAddresses done");
 
-    auto loraCfg = lora_config::load(lora_config::default_config_path());
-
     SX128x::ModulationParams_t ModulationParams;
     SX128x::PacketParams_t PacketParams;
     lora_config::apply(loraCfg, ModulationParams, PacketParams);
@@ -187,7 +202,6 @@ int main(int argc, char **argv)
     Radio.SetPacketParams(PacketParams);
     puts("SetPacketParams done");
 
-    auto freq = strtol(argv[1], nullptr, 10);
     Radio.SetRfFrequency(freq * 1000000UL);
     puts("SetRfFrequency done");
 
@@ -208,7 +222,7 @@ int main(int argc, char **argv)
 
     // Create packetized file
     size_t packet_size = static_cast<size_t>(loraCfg.packet_size);
-    PacketizedFile packetizedFile(argv[2], packet_size);
+    PacketizedFile packetizedFile(filepath, packet_size);
 
     // Sending beginning packet with filesize
     printf("Sending %d packets (%d bytes)...\n", packetizedFile.numpackets,

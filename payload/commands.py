@@ -159,12 +159,14 @@ def turn_off_2400():
 
 def send_file_2400(filepath: str):
     '''
-    Send a file using the 2400 Radio - run as a subprocess
+    Send a file using the 2400 Radio - run as a subprocess.
+    Frequency is read from lora_config.json (set via set_lora_config).
     '''
     if not os.path.isfile(filepath): raise FileNotFoundError(f"{filepath} not found!")
 
+    freq = get_lora_config().get("frequency", S_BAND_FREQ)
     turn_on_2400()
-    subprocess.Popen(f"{TX_2400_EXECUTABLE} {S_BAND_FREQ} {filepath}", shell=True)
+    subprocess.Popen(f"{TX_2400_EXECUTABLE} {freq} {filepath}", shell=True)
 
 
 def send_packets_2400(filepath: str, packets: list[int], packet_size: int = 253):
@@ -241,18 +243,23 @@ def get_lora_config() -> dict:
     Lora_rx and Lora_tx read this at runtime for coding rate, bandwidth,
     spreading factor, packet size, etc.
     '''
+    defaults = {
+        "coding_rate": "4_8",
+        "bandwidth": "1600",
+        "spreading_factor": 7,
+        "packet_size": 253,
+        "preamble_length": 12,
+        "crc": True,
+        "header_type": "fixed",
+        "frequency": 2400,
+    }
     if not os.path.isfile(LORA_CONFIG_PATH):
-        return {
-            "coding_rate": "4_8",
-            "bandwidth": "1600",
-            "spreading_factor": 7,
-            "packet_size": 253,
-            "preamble_length": 12,
-            "crc": True,
-            "header_type": "fixed",
-        }
-    with open(LORA_CONFIG_PATH, "r") as file:
-        return json.load(file)
+        return defaults
+    try:
+        with open(LORA_CONFIG_PATH, "r") as file:
+            return json.load(file)
+    except (json.JSONDecodeError, ValueError):
+        return defaults
 
 
 def set_lora_config(config: dict):
@@ -260,7 +267,7 @@ def set_lora_config(config: dict):
     Updates the contents of `lora_config.json`.
     Changes take effect on the next Lora_rx or Lora_tx run (no rebuild needed).
     Valid keys: coding_rate, bandwidth, spreading_factor, packet_size,
-    preamble_length, crc, header_type.
+    preamble_length, crc, header_type, frequency.
     '''
     current = get_lora_config() if os.path.isfile(LORA_CONFIG_PATH) else {}
     current.update(config)
