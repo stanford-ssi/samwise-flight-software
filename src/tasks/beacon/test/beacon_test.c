@@ -51,6 +51,8 @@ void mock_slate(slate_t *slate)
         .state = 'A',
         .boot_count = 42,
     };
+    slate->reboot_counter = 42;
+    slate->battery_voltage = 4000;
 }
 
 void test_beacon_serialize()
@@ -59,12 +61,14 @@ void test_beacon_serialize()
     mock_slate(&slate);
     size_t len = serialize_slate(&slate, tmp_data);
     printf("Serialized length: %zu\n", len);
-    printf("Serialized data (hex): ");
+    printf("Serialized data (hex):\n");
     for (size_t i = 0; i < len; i++)
     {
         printf("%02x ", tmp_data[i]);
+        if (i % 10 == 9)
+            printf("\n");
     }
-    ASSERT(strcmp((char *)tmp_data, "mock_state") == 0);
+    ASSERT(strcmp((char *)tmp_data, "mock_state beat cal!") == 0);
     printf("\n");
 }
 

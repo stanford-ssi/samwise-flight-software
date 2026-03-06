@@ -107,9 +107,7 @@ def test_packet_creation_structure(test_state):
 def test_beacon_decode():
     """Test beacon packet decoding matches C struct layout"""
     # Construct a fake beacon packet matching the C struct layout
-    # Format: data_len (1 byte) + state_name (null terminated) + stats struct
-
-    state_name = b"idle_state\x00"
+    # Format: data_len (1 byte) + debug_string (null terminated) + stats struct + callsign
 
     # struct beacon_stats (all little endian)
     # uint32_t reboot_counter;
@@ -130,37 +128,33 @@ def test_beacon_decode():
     # uint16_t panel_B_current_ma;
     # uint8_t device_status;
 
-    stats_format = "<LQ6L8HB"
-    stats_data = struct.pack(
-        stats_format,
-        42,  # reboots
-        10000,  # time
-        100,
-        10,
-        0,
-        0,  # RX stats
-        200,
-        20,  # TX stats
-        4000,
-        100,  # Battery
-        5000,
-        500,  # Solar
-        3300,
-        50,  # Panel A
-        3300,
-        50,  # Panel B
-        0x01,  # Status
-    )
-
-    # Beacon format: [data_len][state_name + stats]
-    full_payload = state_name + stats_data
-    beacon_packet = bytes([len(full_payload)]) + full_payload
+    # Hex dump of a sample beacon packet
+    # Format: debug_string (null-terminated) + beacon_stats (53 bytes) + adcs (25 bytes) + callsign (6 bytes)
+    # This packet has: reboot_counter=42, battery_voltage=4000
+    # The following packet is printed from //src/tasks/beacon/test/beacon_test.c with the current beacon_task.c implementation
+    beacon_packet_hex = """
+6d 6f 63 6b 5f 73 74 61 74 65
+20 62 65 61 74 20 63 61 6c 21
+00 2a 00 00 00 39 30 00 00 00
+00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 a0 0f 00
+00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 80 3f cd cc
+cc 3d cd cc 4c 3e 9a 99 99 3e
+cd cc cc 3e 41 2a 00 00 00 4b
+43 33 57 4e 59 00
+"""
+    beacon_packet_hex_clean = beacon_packet_hex.replace(" ", "").replace("\n", "")
+    beacon_packet_bytes = bytes.fromhex(beacon_packet_hex_clean)
+    beacon_packet = bytes([len(beacon_packet_bytes)]) + beacon_packet_bytes
 
     result = protocol.decode_beacon_data(beacon_packet)
 
-    assert result.state_name == "idle_state"
+    assert result.state_name == "mock_state beat cal!"
     assert result.stats.reboot_counter == 42
     assert result.stats.battery_voltage == 4000
+    assert result.callsign == "KC3WNY"
 
 
 if __name__ == "__main__":
