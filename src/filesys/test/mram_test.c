@@ -440,6 +440,25 @@ int test_mram_single_byte_write_read(void)
     return 0;
 }
 
+int test_mram_large_write_read(void)
+{
+    LOG_DEBUG("=== Test: Large write/read ===\n");
+    const uint32_t addr = 0x000B00;
+    const size_t large_size = 256; // Max allowed size
+    uint8_t write_buf[large_size];
+    for (size_t i = 0; i < large_size; i++)
+    {
+        write_buf[i] = (uint8_t)(i & 0xFF);
+    }
+    TEST_ASSERT(mram_write(addr, write_buf, large_size),
+                "Large write should succeed");
+    uint8_t read_buf[large_size];
+    mram_read(addr, read_buf, large_size);
+    TEST_ASSERT(memcmp(read_buf, write_buf, large_size) == 0,
+                "Large read should match written data");
+    return 0;
+}
+
 // ============================================================================
 // Main test runner
 // ============================================================================
@@ -474,6 +493,7 @@ int main()
         {test_mram_adjacent_regions_no_bleed, "Adjacent Regions No Bleed"},
         {test_mram_full_byte_range, "Full Byte Range"},
         {test_mram_single_byte_write_read, "Single Byte Write/Read"},
+        {test_mram_large_write_read, "Large Write/Read"},
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);
