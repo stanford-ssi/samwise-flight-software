@@ -5,10 +5,12 @@ cc_library(
     srcs = [
         "filesys.c",
         "lfs_mram_wrapper.c",
+        "lfs_gen_flash_wrapper.c"
     ],
     hdrs = [
         "filesys.h",
         "lfs_mram_wrapper.h",
+        "lfs_gen_flash_wrapper.h"
     ],
     includes = ["."],
     deps = [

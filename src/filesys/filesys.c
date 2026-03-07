@@ -11,11 +11,17 @@ static lfs_t lfs;
 
 const struct lfs_config filesys_lfs_cfg = {
     // block device operations
+#ifndef MRAM
     .read = lfs_mram_wrap_read,
     .prog = lfs_mram_wrap_prog,
     .erase = lfs_mram_wrap_erase,
     .sync = lfs_mram_wrap_sync,
-
+#else
+    .read = lfs_gen_flash_wrap_read,
+    .prog = lfs_gen_flash_wrap_prog,
+    .erase = lfs_gen_flash_wrap_erase,
+    .sync = lfs_gen_flash_wrap_sync,
+#endif
     // block device configuration
     .read_size = 16,
     .prog_size = 16,
