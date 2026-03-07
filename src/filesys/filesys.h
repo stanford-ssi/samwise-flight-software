@@ -21,7 +21,13 @@
 #include "crc32.h"
 
 #include "lfs.h"
+
+#ifndef MRAM
 #include "lfs_mram_wrapper.h"
+#else
+#include "lfs_gen_flash_wrapper.h"
+#endif
+
 #include "logger.h"
 #include "macros.h"
 #include "slate.h"
