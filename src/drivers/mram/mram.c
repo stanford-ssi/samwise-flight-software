@@ -1,6 +1,6 @@
 /**
- * @author Lundeen Cahilly
- * @date 2025-08-18
+ * @author Marc Aaron Reyes
+ * @date 2026-03-05
  *
  * This file contains functions for interfacing with MR25H40MDF
  * MRAM using QSPI on a RP2350B chip.
@@ -18,23 +18,25 @@
 #include "macros.h"
 
 // MRAM COMMANDS
-#define WREN_CMD 0x06 // Write Enable
-#define WRDI_CMD 0x04 // Write Disable
-#define RDSR_CMD 0x05 // Read Status Register
-#define WRSR_CMD 0x01 // Write Status Register
-#define READ_CMD 0x03
-#define WRITE_CMD 0x02
-#define SLEEP_CMD 0xB9
-#define WAKE_CMD 0xAB
+enum {
+    WREN_CMD 0x06, // Write Enable
+    WRDI_CMD 0x04, // Write Disable
+    RDSR_CMD 0x05, // Read Status Register
+    WRSR_CMD 0x01, // Write Status Register
+    READ_CMD 0x03,
+    WRITE_CMD 0x02,
+    SLEEP_CMD 0xB9,
+    WAKE_CMD 0xAB,
 
-// MRAM Timing Constants
-#define WAKE_TIME_US 400 // Wake-up time in microseconds
+    // MRAM Timing Constants
+    WAKE_TIME_US 400, // Wake-up time in microseconds
 
-// Status Register Bit Masks
-#define STATUS_WEL_BIT 0x02  // Write Enable Latch (bit 1)
-#define STATUS_BP0_BIT 0x04  // Block Protect 0 (bit 2)
-#define STATUS_BP1_BIT 0x08  // Block Protect 1 (bit 3)
-#define STATUS_SRWD_BIT 0x80 // Status Register Write Disable (bit 7)
+    // Status Register Bit Masks
+    STATUS_WEL_BIT 0x02,  // Write Enable Latch (bit 1)
+    STATUS_BP0_BIT 0x04,  // Block Protect 0 (bit 2)
+    STATUS_BP1_BIT 0x08,  // Block Protect 1 (bit 3)
+    STATUS_SRWD_BIT 0x80 // Status Register Write Disable (bit 7)
+};
 
 /**
  * Initialize MRAM and wake from sleep mode
