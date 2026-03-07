@@ -131,7 +131,7 @@ void sched_dispatch(slate_t *slate)
     state_id_t next_state_id;
     if (slate->manual_override_state_id != STATE_NONE)
     {
-        // Defense-in-depth: never allow manual override into shutdown
+        // Never allow manual override into shutdown
         if (slate->manual_override_state_id == STATE_SHUTDOWN)
         {
             LOG_ERROR("sched: Manual override to shutdown_state BLOCKED");
