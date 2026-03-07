@@ -1,0 +1,24 @@
+# LittleFS - A Little Fail-Safe filesystem for embedded systems
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "littlefs",
+    srcs = [
+        "lfs.c",
+        "lfs_util.c",
+        # Block device implementations
+        "bd/lfs_emubd.c",
+        "bd/lfs_filebd.c",
+        "bd/lfs_rambd.c",
+    ],
+    hdrs = [
+        "lfs.h",
+        "lfs_util.h",
+        # Block device headers
+        "bd/lfs_emubd.h",
+        "bd/lfs_filebd.h",
+        "bd/lfs_rambd.h",
+    ],
+    includes = ["."],
+)

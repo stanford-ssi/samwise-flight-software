@@ -22,7 +22,8 @@ jobs:
         github.actor == 'devYaoYH' ||
         github.actor == 'developStorm' ||
         github.actor == 'QuackWifHat' ||
-        github.actor == 'HaileThomas'
+        github.actor == 'HaileThomas' ||
+        github.actor == 'megargayu'
       )
     runs-on: ubuntu-latest
     permissions:

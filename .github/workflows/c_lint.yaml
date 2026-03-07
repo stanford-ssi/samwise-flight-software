@@ -7,15 +7,27 @@ on:
       - "**.cpp"
       - "**.h"
   pull_request:
-    paths:
-      # only when a .c, .cpp, or .h file is changed
-      - "**.c"
-      - "**.cpp"
-      - "**.h"
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_lint: ${{ github.event_name != 'pull_request' || steps.filter.outputs.lint == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            lint:
+              - '**.c'
+              - '**.cpp'
+              - '**.h'
+
   Lint-Check:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_lint == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
