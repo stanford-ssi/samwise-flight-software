@@ -100,6 +100,20 @@ cc_binary(
 )
 
 # ============================================================================
+# ELF Output (for SWD/OpenOCD flashing)
+# ============================================================================
+
+# Bazel's cc_binary produces the ELF without an extension. This rule copies
+# it to samwise.elf so tools like OpenOCD can reference it by convention.
+genrule(
+    name = "samwise_elf",
+    srcs = [":samwise"],
+    outs = ["samwise.elf"],
+    cmd = "cp $< $@",
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# ============================================================================
 # UF2 Generation
 # ============================================================================
 
