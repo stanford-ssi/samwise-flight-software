@@ -9,9 +9,9 @@
 #include "flash.h"
 
 /* See the partition file in: /ota_mvp/pt.json
- *   0x00082000 is the location of the shared DATA partition
+ *   0x00079000 is the projected location of the shared DATA partition
  *   TODO: we will need to change this address offset when update the partition
- * table
+ *   table
  */
 #define FLASH_TARGET_OFFSET (0x00079000)
 #define INIT_MARKER 0xABCDABCD // Distinct marker to indicate initialized data
