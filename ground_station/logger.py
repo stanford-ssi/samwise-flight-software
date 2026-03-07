@@ -1,15 +1,36 @@
-import logging
 import os
+import sys
 import time
 
-# Set up standard Python logging for console and system logs
+# Use adafruit_logging on CircuitPython, standard logging on CPython
+_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+
+if _IS_CIRCUITPYTHON:
+    import adafruit_logging as logging
+else:
+    import logging
+
+# Set up logging for console and system logs
 # This allows for structured logging level control (DEBUG, INFO, etc.)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%SZ",
-)
+if not _IS_CIRCUITPYTHON:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    )
+
 logger = logging.getLogger("GS")
+if _IS_CIRCUITPYTHON:
+    logger.setLevel(logging.INFO)
+
+
+def get_logger(name):
+    """Create a named logger, compatible with both CPython and CircuitPython."""
+    lg = logging.getLogger(name)
+    if _IS_CIRCUITPYTHON:
+        lg.setLevel(logging.INFO)
+    return lg
+
 
 # Attempt to get UTC time if possible, fallback to local monotonic
 try:
@@ -21,6 +42,15 @@ except (ImportError, AttributeError):
 
 LOG_DIR = "logs"
 TELEMETRY_FILE = "{}/telemetry_log.csv".format(LOG_DIR)
+
+
+def _path_exists(path):
+    """Check if a file/directory exists, compatible with CircuitPython (no os.path)."""
+    try:
+        os.stat(path)
+        return True
+    except OSError:
+        return False
 
 
 class TelemetryLogger:
@@ -37,7 +67,8 @@ class TelemetryLogger:
         self.initialized = False
         self.file_handle = None
         self.log_to_console = log_to_console
-        self.log_to_csv = log_to_csv
+        # Disable CSV logging on CircuitPython (read-only filesystem)
+        self.log_to_csv = log_to_csv and not _IS_CIRCUITPYTHON
 
         if self.log_to_csv:
             self._ensure_log_dir()
@@ -45,10 +76,10 @@ class TelemetryLogger:
     def _ensure_log_dir(self):
         """Prepares the logs directory and CSV file with headers if they don't exist."""
         try:
-            if not os.path.exists(LOG_DIR):
+            if not _path_exists(LOG_DIR):
                 os.mkdir(LOG_DIR)
 
-            file_exists = os.path.exists(TELEMETRY_FILE)
+            file_exists = _path_exists(TELEMETRY_FILE)
 
             # Open file in append mode and keep it open for performance during a pass
             self.file_handle = open(TELEMETRY_FILE, "a")

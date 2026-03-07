@@ -14,7 +14,6 @@ Dashboard available at http://localhost:8000
 
 import asyncio
 import collections
-import logging
 import os
 import queue
 import threading
@@ -27,10 +26,11 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 import radio_initialization as hardware
+from logger import get_logger
 from radio_commands import LoraRadio, get_radio
 from state import state_manager
 
-logger = logging.getLogger("GS.Server")
+logger = get_logger("GS.Server")
 
 # ---------------------------------------------------------------------------
 # Beacon serialization

@@ -39,6 +39,7 @@ test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "httpx>=0.27.0",
+    "starlette",
 ]
 dev = [
     "pytest>=7.0.0",

@@ -1,6 +1,10 @@
 import struct
 import sys
-from typing import Optional
+
+try:
+    from typing import Optional
+except ImportError:
+    pass
 
 import config
 from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats

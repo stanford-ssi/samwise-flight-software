@@ -1,9 +1,9 @@
-import logging
 import sys
 import time
 
 import config
 import radio_initialization as hardware
+from logger import get_logger
 from radio_commands import get_radio
 from state import state_manager
 
@@ -21,7 +21,7 @@ if not IS_CIRCUITPYTHON:
 else:
     HAS_SELECT = False
 
-logger = logging.getLogger("GS.UI")
+logger = get_logger("GS.UI")
 
 
 def check_stdin_ready():
