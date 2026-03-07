@@ -14,10 +14,12 @@ cc_library(
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
+            "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",
         ],
         "//conditions:default": [
             "//src/drivers/logger",
+            "//src/drivers/neopixel",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         ],
     }),

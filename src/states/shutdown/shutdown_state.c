@@ -1,9 +1,13 @@
 #include "shutdown_state.h"
 #include "logger.h"
+#include "neopixel.h"
+
+#define SHUTDOWN_STATE_COLOR 75, 0, 130 // Indigo: shutdown indicator
 
 state_id_t shutdown_get_next_state(slate_t *slate)
 {
     (void)slate;
+    neopixel_set_color_rgb(SHUTDOWN_STATE_COLOR);
     return STATE_SHUTDOWN;
 }
 
