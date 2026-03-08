@@ -27,6 +27,8 @@
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
 
+// Use create_slate() to create a slate - this ensures proper initialization of
+// fields.
 typedef struct samwise_slate
 {
 #ifdef BRINGUP
@@ -138,7 +140,7 @@ typedef struct samwise_slate
     // efficiency gains.
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
-    uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
+    uint8_t *filesys_buffer; // Allocated on heap! Too large to fit in stack.
     FILESYS_BUFFERED_FNAME_STR_T filesys_buffered_fname_str;
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
@@ -155,5 +157,9 @@ typedef struct samwise_slate
 // real analysis of memory usage.
 _Static_assert(sizeof(slate_t) < 16000,
                "slate_t size exceeds reasonable limits");
+
+// Use this to create a slate! Never directly declare a slate variable - always
+// use this function to ensure proper initialization of fields.
+slate_t create_slate(void);
 
 extern slate_t slate;

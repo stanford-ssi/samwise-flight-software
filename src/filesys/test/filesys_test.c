@@ -135,7 +135,7 @@ int filesys_test_write_readback_success()
 {
     LOG_DEBUG("=== Test: Write and Readback ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -230,7 +230,7 @@ int filesys_test_initialize_reformat_success()
 {
     LOG_DEBUG("=== Test: Initialize and Reformat ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
 
     // Test reformat
     lfs_ssize_t lfs_error_code;
@@ -259,7 +259,7 @@ int filesys_test_start_file_write_already_writing_should_fail()
 {
     LOG_DEBUG("=== Test: Start File Write - Already Writing ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -296,7 +296,7 @@ int filesys_test_write_data_to_buffer_bounds_should_fail()
 {
     LOG_DEBUG("=== Test: Write Data to Buffer - Bounds Checking ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -343,7 +343,7 @@ int filesys_test_write_data_to_buffer_when_no_file_started_should_fail()
 {
     LOG_DEBUG("=== Test: Write Data to Buffer - No File Being Written ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -371,7 +371,7 @@ int filesys_test_write_buffer_to_mram_when_no_file_started_should_fail()
 {
     LOG_DEBUG("=== Test: Write Buffer to MRAM - No File Being Written ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -398,7 +398,7 @@ int filesys_test_write_buffer_to_mram_clean_buffer_success()
 {
     LOG_DEBUG("=== Test: Write Buffer to MRAM - Clean Buffer ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -435,7 +435,7 @@ int filesys_test_complete_file_write_dirty_buffer_success()
 {
     LOG_DEBUG("=== Test: Complete File Write - Dirty Buffer ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -480,7 +480,7 @@ int filesys_test_cancel_file_write_success()
 {
     LOG_DEBUG("=== Test: Cancel File Write ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -540,7 +540,7 @@ int filesys_test_cancel_file_write_no_file_should_fail()
 {
     LOG_DEBUG("=== Test: Cancel File Write - No File Being Written ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -567,7 +567,7 @@ int filesys_test_clear_buffer_success()
 {
     LOG_DEBUG("=== Test: Clear Buffer ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -608,7 +608,7 @@ int filesys_test_crc_correct_success()
 {
     LOG_DEBUG("=== Test: CRC Verification - Correct CRC ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -657,7 +657,7 @@ int filesys_test_crc_incorrect_should_fail()
 {
     LOG_DEBUG("=== Test: CRC Verification - Incorrect CRC ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -707,7 +707,7 @@ int filesys_test_crc_no_file_should_fail()
 {
     LOG_DEBUG("=== Test: CRC Check - No File Being Written ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -733,7 +733,7 @@ int filesys_test_multiple_files_success()
 {
     LOG_DEBUG("=== Test: Multiple File Writes in Sequence ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -805,7 +805,7 @@ int filesys_test_blocks_left_calculation_success()
 {
     LOG_DEBUG("=== Test: Blocks Left Calculation ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -844,7 +844,7 @@ int filesys_test_multi_chunk_write_success()
 {
     LOG_DEBUG("=== Test: Multi-Chunk Write ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -903,7 +903,7 @@ int filesys_test_write_at_offset_success()
 {
     LOG_DEBUG("=== Test: Write at Offset ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -956,7 +956,7 @@ int filesys_test_multiple_files_commit_success()
 {
     LOG_DEBUG("=== Test: Multiple File Writes in Sequence ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1037,7 +1037,7 @@ int filesys_test_write_long_file_crc32_success()
 {
     LOG_DEBUG("=== Test: Write Really Long File with CRC32 ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1088,7 +1088,7 @@ int filesys_test_file_too_large_should_fail()
 {
     LOG_DEBUG("=== Test: File Too Large for Filesystem ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1122,7 +1122,7 @@ int filesys_test_second_file_out_of_space_should_fail()
 {
     LOG_DEBUG("=== Test: Second File Runs Out of Space ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1229,7 +1229,7 @@ int filesys_test_raw_lfs_write_large_file_success()
 {
     LOG_DEBUG("=== Test: Raw LFS Write Large File (510KB) ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1345,7 +1345,7 @@ int filesys_test_list_files_empty_filesystem_success()
 {
     LOG_DEBUG("=== Test: List Files - Empty Filesystem ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1373,7 +1373,7 @@ int filesys_test_list_files_multiple_files_success()
 {
     LOG_DEBUG("=== Test: List Files - Multiple Files ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1496,7 +1496,7 @@ int filesys_test_list_files_max_files_limit_success()
 {
     LOG_DEBUG("=== Test: List Files - Max Files Limit ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1570,7 +1570,7 @@ int filesys_test_list_files_after_cancel_success()
 {
     LOG_DEBUG("=== Test: List Files - After Cancel ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1620,7 +1620,7 @@ int filesys_test_list_files_crc_mismatch_success()
 {
     LOG_DEBUG("=== Test: List Files - CRC Mismatch Detection ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1702,7 +1702,7 @@ int filesys_test_open_file_read_success()
 {
     LOG_DEBUG("=== Test: Open File Read - Success ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1767,7 +1767,7 @@ int filesys_test_open_file_read_crc_mismatch_should_fail()
 {
     LOG_DEBUG("=== Test: Open File Read - CRC Mismatch ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1843,7 +1843,7 @@ int filesys_test_open_file_read_nonexistent_should_fail()
 {
     LOG_DEBUG("=== Test: Open File Read - Nonexistent File ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1869,7 +1869,7 @@ int filesys_test_read_data_full_readback_success()
 {
     LOG_DEBUG("=== Test: Read Data - Full Readback ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -1936,7 +1936,7 @@ int filesys_test_read_data_chunked_success()
 {
     LOG_DEBUG("=== Test: Read Data - Chunked Read ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2005,7 +2005,7 @@ int filesys_test_read_data_past_eof_success()
 {
     LOG_DEBUG("=== Test: Read Data - Past EOF ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2070,7 +2070,7 @@ int filesys_test_read_file_seek_success()
 {
     LOG_DEBUG("=== Test: Read File Seek ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2165,7 +2165,7 @@ int filesys_test_read_file_tell_success()
 {
     LOG_DEBUG("=== Test: Read File Tell ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2247,7 +2247,7 @@ int filesys_test_read_file_size_success()
 {
     LOG_DEBUG("=== Test: Read File Size ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2304,7 +2304,7 @@ int filesys_test_close_file_read_success()
 {
     LOG_DEBUG("=== Test: Close File Read ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2354,7 +2354,7 @@ int filesys_test_read_full_workflow_success()
 {
     LOG_DEBUG("=== Test: Read Full Workflow ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2461,7 +2461,7 @@ int filesys_test_read_multi_chunk_file_success()
 {
     LOG_DEBUG("=== Test: Read Multi-Chunk Written File ===\n");
 
-    slate_t test_slate;
+    slate_t test_slate = create_slate();
     if (filesys_test_setup_clean_filesystem(&test_slate) < 0)
         return -1;
 
@@ -2603,6 +2603,7 @@ int main()
     };
 
     int num_tests = sizeof(tests) / sizeof(tests[0]);
+    bool tests_passed_arr[num_tests];
 
     for (int i = 0; i < num_tests; i++)
     {
@@ -2612,11 +2613,13 @@ int main()
         if (result == 0)
         {
             tests_passed++;
+            tests_passed_arr[i] = true;
             LOG_DEBUG("--- Test %d PASSED ---\n", i + 1);
         }
         else
         {
             tests_failed++;
+            tests_passed_arr[i] = false;
             LOG_ERROR("--- Test %d FAILED ---\n", i + 1);
         }
     }
@@ -2630,6 +2633,14 @@ int main()
     if (tests_failed > 0)
     {
         LOG_ERROR("SOME TESTS FAILED!\n");
+
+        for (int i = 0; i < num_tests; i++)
+        {
+            if (!tests_passed_arr[i])
+            {
+                LOG_ERROR(" - Test %d: %s\n", i + 1, tests[i].name);
+            }
+        }
         return -1;
     }
 

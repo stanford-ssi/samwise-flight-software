@@ -142,7 +142,7 @@ void test_state_transition()
     LOG_DEBUG("=== Test 4: State transition ===");
     log_viz_event("test_start", NULL, "state_transition");
 
-    memset(&test_slate, 0, sizeof(slate_t));
+    test_slate = create_slate();
     test_slate.current_state_id = STATE_RUNNING;
 
     // Running state should always return itself
@@ -165,7 +165,7 @@ void test_scheduler_execution()
     log_viz_event("test_start", NULL, "scheduler_execution");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    test_slate = create_slate();
     reset_task_stats();
 
     test_slate.current_state_id = STATE_RUNNING;
@@ -203,6 +203,7 @@ void test_scheduler_execution()
 
 int main()
 {
+    test_slate = create_slate();
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
 
     viz_log_open("running_state_viz.json");

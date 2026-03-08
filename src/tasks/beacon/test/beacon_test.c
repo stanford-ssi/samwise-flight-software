@@ -34,7 +34,7 @@ sched_state_t mock_state = {
 void mock_slate(slate_t *slate)
 {
     // Reset slate to empty first
-    memset(slate, 0, sizeof(slate_t));
+    *slate = create_slate();
 
     // Register mock state so state_registry_get can find it
     state_registry_register(STATE_INIT, &mock_state);
@@ -79,6 +79,7 @@ void test_beacon_dispatch_without_error()
 
 int main()
 {
+    slate = create_slate();
     test_beacon_serialize();
     test_beacon_dispatch_without_error();
     return 0;

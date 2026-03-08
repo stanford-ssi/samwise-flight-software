@@ -68,7 +68,7 @@ void test_my_state() {
     // Setup
     mock_time_us = 0;
     reset_task_stats();
-    slate_t slate = {0};
+    slate_t slate = create_slate();
     slate.current_state = &my_test_state;
 
     // Open visualization log

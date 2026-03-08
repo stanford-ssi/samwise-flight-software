@@ -269,6 +269,7 @@ void add_commands_to_send_queue(slate_t* s, uint8_t* buffer_location, uint8_t fu
  */
 int main()
 {
+    slate = create_slate();
     // Some ugly code with linter errors
     int x = 10 + 5;
     stdio_init_all();
