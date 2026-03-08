@@ -19,14 +19,20 @@ sched_state_t running_state = {.name = "running",
                                              &diagnostics_task,
                                              &hardware_test_task},
                                .get_next_state = &running_get_next_state};
+#elif defined(PICOHAT)
+sched_state_t running_state = {.name = "running",
+                               .id = STATE_RUNNING,
+                               .num_tasks = 6,
+                               .task_list = {&print_task, &blink_task,
+                                             &beacon_task, &radio_task,
+                                             &command_task, &watchdog_task},
+                               .get_next_state = &running_get_next_state};
 #elif defined(PICO)
 sched_state_t running_state = {
     .name = "running",
     .id = STATE_RUNNING,
     .num_tasks = 3,
-    .task_list = {&print_task, &blink_task,
-                  &hardware_test_task}, // enable radio when we have the test
-                                        // board working
+    .task_list = {&print_task, &blink_task, &hardware_test_task},
     .get_next_state = &running_get_next_state};
 #else
 sched_state_t running_state = {
