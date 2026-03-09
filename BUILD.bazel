@@ -64,6 +64,10 @@ cc_binary(
         "//bzl:pico_profile": [
             "-DPICO",
         ],
+        "//bzl:pico_hat_profile": [
+            "-DPICO",
+            "-DPICOHAT",
+        ],
         "//bzl:picubed_flight_profile": [
             "-DFLIGHT",
         ],
@@ -74,6 +78,7 @@ cc_binary(
     }),
     defines = select({
         "//bzl:pico_profile": ["PICO"],
+        "//bzl:pico_hat_profile": ["PICO", "PICOHAT"],
         "//bzl:picubed_flight_profile": ["FLIGHT"],
         "//bzl:picubed_bringup_profile": ["BRINGUP"],
         "//conditions:default": [],
