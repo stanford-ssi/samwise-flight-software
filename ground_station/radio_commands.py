@@ -159,7 +159,10 @@ class LoraRadio:
             data=data,
         )
 
-        # Send using low-level library
+        # The Adafruit RFM9x library prepends a 4-byte RadioHead header
+        # (destination, node, identifier, flags) to every packet. Map the
+        # first 4 bytes of the samwise packet (dst, src, flags, seq) into
+        # those RadioHead fields so the flight code sees a contiguous packet.
         self.radio.send(
             packet_payload[4:],
             destination=packet_payload[0],
