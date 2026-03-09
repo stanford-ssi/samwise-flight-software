@@ -29,18 +29,23 @@ def test_state():
     test_state_file = os.path.join(runtime_dir, "test_gs_state.json")
     test_state_manager = state_module.StateManager(state_file=test_state_file)
 
-    # Inject our test state into the global state_manager for protocol to use
-    original_state_manager = state_module.state_manager
-    state_module.state_manager = test_state_manager
-
     # Reset state headers for deterministic tests
     test_state_manager.boot_count = 100
     test_state_manager.msg_id = 50
 
+    # Patch BOTH module-level references so protocol.Packet.create() picks up the test state.
+    # protocol.py does `from state import state_manager` which creates a direct binding in the
+    # protocol module namespace - we must patch that binding too, not just state_module.state_manager.
+    original_state_module_ref = state_module.state_manager
+    original_protocol_ref = protocol.state_manager
+    state_module.state_manager = test_state_manager
+    protocol.state_manager = test_state_manager
+
     yield test_state_manager
 
-    # Restore original state manager after test
-    state_module.state_manager = original_state_manager
+    # Restore both references
+    state_module.state_manager = original_state_module_ref
+    protocol.state_manager = original_protocol_ref
 
     # Clean up test state file
     try:
@@ -66,9 +71,6 @@ def test_create_cmd_payload():
 
 @pytest.mark.unit
 @pytest.mark.protocol
-@pytest.mark.skip(
-    reason="State fixture injection needs fixing - state_manager reference timing issue"
-)
 def test_packet_creation_structure(test_state):
     """Test packet creation structure matches protocol specification"""
     builder = protocol.LegacyPacketBuilder()
@@ -145,5 +147,266 @@ def test_beacon_decode():
     assert result.callsign == "KC3WNY"
 
 
+# ---------------------------------------------------------------------------
+# Command packet structure tests
+# These tests show the exact byte layout the GS transmits to the satellite.
+# Run with `pytest -s` to see the printed packet dumps.
+# ---------------------------------------------------------------------------
+
+# Add ground_station to path so we can import config directly
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from ground_station import config as gs_config  # noqa: E402
+
+
+@pytest.mark.unit
+@pytest.mark.protocol
+def test_command_packet_no_op_structure(test_state):
+    """Print and verify the byte layout of a NO_OP command packet (GS -> satellite)."""
+    data = protocol.create_cmd_payload(gs_config.NO_OP)
+    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+
+    header_size = gs_config.PACKET_HEADER_SIZE  # 5
+    data_len = packet[4]
+    footer_start = header_size + data_len
+    footer_end = footer_start + 8
+    boot_count, msg_id = struct.unpack("<II", packet[footer_start:footer_end])
+
+    print("\n=== NO_OP Command Packet (GS -> satellite) ===")
+    print(f"Total size : {len(packet)} bytes")
+    print(f"Header  [{0}:{header_size}]     : {packet[:header_size].hex()}")
+    print(
+        f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
+        f"seq={packet[3]}, data_len={packet[4]}"
+    )
+    print(f"Data    [{header_size}:{footer_start}]     : {packet[header_size:footer_start].hex()}")
+    print(f"  cmd_id={packet[header_size]} (NO_OP={gs_config.NO_OP})")
+    print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
+    print(f"  boot_count={boot_count}, msg_id={msg_id}")
+    print(f"HMAC    [{footer_end}:{len(packet)}] : {packet[footer_end:].hex()}")
+
+    expected_len = header_size + len(data) + 8 + gs_config.PACKET_HMAC_SIZE
+    assert len(packet) == expected_len
+    assert packet[0] == 0xFF  # dst
+    assert packet[1] == 0xFF  # src
+    assert packet[header_size] == gs_config.NO_OP
+    assert boot_count == 100  # from test_state fixture
+    assert msg_id == 51  # 50 + 1 (incremented by get_next_msg_id)
+    assert len(packet[footer_end:]) == gs_config.PACKET_HMAC_SIZE
+
+
+@pytest.mark.unit
+@pytest.mark.protocol
+def test_command_packet_manual_state_override_structure(test_state):
+    """Print and verify the byte layout of a MANUAL_STATE_OVERRIDE command packet."""
+    state_name = "nominal"
+    data = protocol.create_cmd_payload(gs_config.MANUAL_STATE_OVERRIDE, state_name)
+    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+
+    header_size = gs_config.PACKET_HEADER_SIZE
+    data_len = packet[4]
+    footer_start = header_size + data_len
+    footer_end = footer_start + 8
+    boot_count, msg_id = struct.unpack("<II", packet[footer_start:footer_end])
+
+    # Verify HMAC by re-computing over header+data+footer
+    import hmac as _hmac
+    from hashlib import sha256 as _sha256
+
+    payload = packet[:footer_end]
+    expected_hmac = _hmac.new(
+        gs_config.DEFAULT_PACKET_HMAC_PSK, msg=payload, digestmod=_sha256
+    ).digest()
+
+    print(f"\n=== MANUAL_STATE_OVERRIDE('{state_name}') Command Packet (GS -> satellite) ===")
+    print(f"Total size : {len(packet)} bytes")
+    print(f"Header  [{0}:{header_size}]     : {packet[:header_size].hex()}")
+    print(
+        f"  dst=0x{packet[0]:02X}, src=0x{packet[1]:02X}, flags=0x{packet[2]:02X}, "
+        f"seq={packet[3]}, data_len={packet[4]}"
+    )
+    print(f"Data    [{header_size}:{footer_start}]     : {packet[header_size:footer_start].hex()}")
+    print(
+        f"  cmd_id={packet[header_size]} (MANUAL_STATE_OVERRIDE={gs_config.MANUAL_STATE_OVERRIDE})"
+    )
+    print(f"  cmd_payload='{packet[header_size+1:footer_start].decode()}'")
+    print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
+    print(f"  boot_count={boot_count}, msg_id={msg_id}")
+    print(f"HMAC    [{footer_end}:{len(packet)}] : {packet[footer_end:].hex()}")
+    print(f"  (HMAC covers bytes 0..{footer_end}, i.e. header+data+footer)")
+
+    assert packet[header_size] == gs_config.MANUAL_STATE_OVERRIDE
+    assert packet[header_size + 1 : footer_start] == state_name.encode()
+    assert packet[footer_end:] == expected_hmac
+
+
+@pytest.mark.unit
+@pytest.mark.protocol
+def test_command_packet_payload_exec_structure(test_state):
+    """Print and verify the byte layout of a PAYLOAD_EXEC command packet."""
+    exec_str = "run_experiment_1"
+    data = protocol.create_cmd_payload(gs_config.PAYLOAD_EXEC, exec_str)
+    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+
+    header_size = gs_config.PACKET_HEADER_SIZE
+    data_len = packet[4]
+    footer_start = header_size + data_len
+    footer_end = footer_start + 8
+
+    print(f"\n=== PAYLOAD_EXEC('{exec_str}') Command Packet (GS -> satellite) ===")
+    print(f"Full packet hex: {packet.hex()}")
+    print(f"Header  : {packet[:header_size].hex()}")
+    print(f"Data    : {packet[header_size:footer_start].hex()}")
+    print(
+        f"  cmd_id={packet[header_size]}, payload='{packet[header_size+1:footer_start].decode()}'"
+    )
+    print(f"Footer  : {packet[footer_start:footer_end].hex()}")
+    print(f"HMAC    : {packet[footer_end:].hex()}")
+
+    assert packet[header_size] == gs_config.PAYLOAD_EXEC
+    assert packet[header_size + 1 : footer_start] == exec_str.encode()
+
+
+# ---------------------------------------------------------------------------
+# Incoming packet decode tests
+# ---------------------------------------------------------------------------
+#
+# Wire format (after adafruit_rfm9x strips the 4-byte RadioHead header):
+#
+#   [byte 0]        data_len  — number of bytes that follow (= len of beacon content)
+#   [bytes 1..]     beacon content: state_name\0 | stats (53 B) | ADCS (25 B) | callsign (7 B)
+#
+# The RadioHead fields (to/from/id/flags) are NOT in these bytes — the library
+# exposes them as radio.destination / radio.node / radio.identifier / radio.flags.
+#
+# decode_beacon_data() expects exactly this layout: [data_len][content].
+
+# 96 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
+_EXAMPLE_BEACON_CONTENT = bytes.fromhex(
+    "6d6f636b5f737461746500"  # state_name = "mock_state\0"
+    # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
+    "00000000"  # reboot_counter    = 0
+    "3930000000000000"  # time_in_state_ms  = 12345
+    "00000000"  # rx_bytes          = 0
+    "00000000"  # rx_packets        = 0
+    "00000000"  # rx_backpressure_drops = 0
+    "00000000"  # rx_bad_packet_drops   = 0
+    "00000000"  # tx_bytes          = 0
+    "00000000"  # tx_packets        = 0
+    "0000"  # battery_voltage   = 0 mV
+    "0000"  # battery_current   = 0 mA
+    "0000"  # solar_voltage     = 0 mV
+    "0000"  # solar_current     = 0 mA
+    "0000"  # panel_A_voltage   = 0 mV
+    "0000"  # panel_A_current   = 0 mA
+    "0000"  # panel_B_voltage   = 0 mV
+    "0000"  # panel_B_current   = 0 mA
+    "00"  # device_status     = 0x00
+    # ---- ADCS telemetry (25 bytes, struct <fffffBL) ----
+    "0000803f"  # angular_velocity  = 1.0 rad/s
+    "cdcccc3d"  # q0               ≈ 0.1
+    "cdcc4c3e"  # q1               ≈ 0.2
+    "9a99993e"  # q2               ≈ 0.3
+    "cdcccc3e"  # q3               ≈ 0.4
+    "41"  # ADCS state        = 65
+    "2a000000"  # ADCS boot_count   = 42
+    # ---- callsign (6 bytes + null) ----
+    "4b4333574e5900"  # callsign          = "KC3WNY\0"
+)
+
+# Full raw bytes as returned by radio.receive() — starts with the data_len byte.
+_EXAMPLE_RAW_BEACON = bytes([len(_EXAMPLE_BEACON_CONTENT)]) + _EXAMPLE_BEACON_CONTENT
+
+
+@pytest.mark.unit
+@pytest.mark.protocol
+def test_unpack_does_not_verify_hmac():
+    """Packet.unpack() must not attempt HMAC verification on incoming packets.
+
+    Incoming satellite packets are NOT HMAC-signed.  Before the fix, unpack()
+    would print '[Packet] HMAC verification failed' and attempt to read a
+    footer that doesn't exist.  This test uses a minimal crafted response
+    packet (5-byte header + data) to verify the fix in isolation.
+    """
+    # Minimal non-beacon response packet: [dst src flags seq data_len] [data]
+    data = b"\x00\x01\x02\x03"
+    header = struct.pack("BBBBB", 0xFF, 114, 0x00, 0x00, len(data))
+    raw_packet = bytes(header) + data
+
+    pkt = protocol.Packet.unpack(raw_packet)
+
+    assert pkt.dst == 0xFF
+    assert pkt.src == 114
+    assert pkt.data == data
+    # No footer fields on incoming packets
+    assert pkt.boot_count is None
+    assert pkt.msg_id is None
+    assert pkt.hmac_digest is None
+
+
+@pytest.mark.unit
+@pytest.mark.protocol
+def test_decode_example_incoming_packet():
+    """Decode and print the full structure of the example incoming beacon packet.
+
+    Shows the exact bytes returned by radio.receive() and how the ground
+    station decodes them through decode_beacon_data().
+    """
+    raw = _EXAMPLE_RAW_BEACON
+    data_len = raw[0]
+    content = raw[1 : 1 + data_len]
+
+    print("\n=== Example Incoming Beacon Packet (satellite -> GS) ===")
+    print(f"Raw bytes from radio.receive() ({len(raw)} bytes): {raw.hex()}")
+    print(f"  [0]      data_len = {data_len}")
+    print(f"  [1:{1 + data_len}]  beacon content ({data_len} bytes): {content.hex()}")
+    print("  RadioHead fields (to/from/id/flags) were already stripped by the library")
+
+    # decode_beacon_data() consumes the data_len byte then parses the content.
+    beacon = protocol.decode_beacon_data(raw)
+
+    print("\n--- Decoded Beacon Fields ---")
+    print(f"  state_name          : '{beacon.state_name}'")
+    if beacon.stats:
+        print(f"  reboot_counter      : {beacon.stats.reboot_counter}")
+        print(f"  time_in_state_ms    : {beacon.stats.time_in_state_ms}")
+        print(f"  rx_bytes / packets  : {beacon.stats.rx_bytes} / {beacon.stats.rx_packets}")
+        print(f"  tx_bytes / packets  : {beacon.stats.tx_bytes} / {beacon.stats.tx_packets}")
+        print(
+            f"  battery             : {beacon.stats.battery_voltage} mV, "
+            f"{beacon.stats.battery_current} mA"
+        )
+        print(
+            f"  device_status       : 0x{beacon.stats.device_status:02X} "
+            f"{beacon.stats.device_status_flags}"
+        )
+    if beacon.adcs:
+        print(f"  angular_velocity    : {beacon.adcs.angular_velocity:.4f} rad/s")
+        q = beacon.adcs.quaternion
+        print(
+            f"  quaternion          : q0={q.q0:.4f}, q1={q.q1:.4f}, "
+            f"q2={q.q2:.4f}, q3={q.q3:.4f}  |q|={q.magnitude:.4f}"
+        )
+        print(f"  ADCS state          : {beacon.adcs.state}")
+        print(f"  ADCS boot_count     : {beacon.adcs.boot_count}")
+    print(f"  callsign            : '{beacon.callsign}'")
+
+    assert data_len == len(_EXAMPLE_BEACON_CONTENT)
+    assert content == _EXAMPLE_BEACON_CONTENT
+
+    assert beacon.state_name == "mock_state"
+    assert beacon.stats is not None
+    assert beacon.stats.reboot_counter == 0
+    assert beacon.stats.time_in_state_ms == 12345
+    assert beacon.adcs is not None
+    assert abs(beacon.adcs.angular_velocity - 1.0) < 1e-5
+    assert abs(beacon.adcs.quaternion.q0 - 0.1) < 1e-5
+    assert abs(beacon.adcs.quaternion.q1 - 0.2) < 1e-5
+    assert abs(beacon.adcs.quaternion.q2 - 0.3) < 1e-5
+    assert abs(beacon.adcs.quaternion.q3 - 0.4) < 1e-5
+    assert beacon.adcs.state == 65
+    assert beacon.adcs.boot_count == 42
+    assert beacon.callsign == "KC3WNY"
+
+
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    pytest.main([__file__, "-v", "-s"])

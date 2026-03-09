@@ -1,38 +1,40 @@
 
 #include "neopixel.h"
 
-#ifndef PICO
-// Neopixel only available on PICUBED boards
-static inline void put_pixel(uint32_t pixel_grb, uint pin)
+#if !defined(PICO) || defined(PICOHAT)
+// Neopixel available on PICUBED and PICO with radio hat
+
+static PIO neo_pio;
+static uint neo_sm;
+
+static inline void put_pixel(uint32_t pixel_grb)
 {
-    pio_sm_put_blocking(pio0, pin, pixel_grb << 8);
+    pio_sm_put_blocking(neo_pio, neo_sm, pixel_grb << 8u);
 }
 
-static inline uint32_t ugrb_u32(uint8_t g, uint8_t r, uint8_t b)
+static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b)
 {
-    return ((uint32_t)(g) << 16) | ((uint32_t)(r) << 8) | (uint32_t)(b);
+    return ((uint32_t)(r) << 8) | ((uint32_t)(g) << 16) | (uint32_t)(b);
 }
 
 void neopixel_init()
 {
-    PIO pio = pio0;
-    uint sm = 0;
-    uint offset = pio_add_program(pio, &ws2812_program);
+    gpio_init(SAMWISE_NEOPIXEL_PIN);
+    gpio_set_dir(SAMWISE_NEOPIXEL_PIN, GPIO_OUT);
+    gpio_put(SAMWISE_NEOPIXEL_PIN, 0);
 
-    ws2812_program_init(pio, sm, offset, SAMWISE_NEOPIXEL_PIN, 800000.0f, true);
+    neo_pio = pio0;
+    neo_sm = pio_claim_unused_sm(neo_pio, true);
+    uint offset = pio_add_program(neo_pio, &ws2812_program);
+    ws2812_program_init(neo_pio, neo_sm, offset, SAMWISE_NEOPIXEL_PIN,
+                        800000.0f, false);
 }
 
 void neopixel_set_color_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
-    // LOG_DEBUG("Setting neopixel on Pin %u rgb values: %u %u %u",
-    //           SAMWISE_NEOPIXEL_PIN, r, g, b);
-    // Remaps 0-255 to 0-31 for 5-bit color depth
-    r = r >> 3;
-    g = g >> 3;
-    b = b >> 3;
-    put_pixel(ugrb_u32(g, r, b), SAMWISE_NEOPIXEL_PIN);
+    put_pixel(urgb_u32(r >> 3, g >> 3, b >> 3));
 }
-#else
+#else // plain PICO without hat
 // PICO fallback - use onboard LED
 void neopixel_init()
 {
