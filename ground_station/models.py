@@ -7,7 +7,11 @@ On CircuitPython (Pico/Feather), simple classes are used instead.
 """
 
 import sys
-from typing import List, Optional
+
+try:
+    from typing import List, Optional
+except ImportError:
+    pass
 
 # Detect CircuitPython vs CPython
 IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"

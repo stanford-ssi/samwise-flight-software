@@ -51,8 +51,8 @@ void watchdog_feed(struct watchdog *wd)
         // At the end of every hardware watchdog cycle ~5.2s
         // we also want to reset the software watchdog timer to prevent
         // rebooting when we are running a TBYB image.
-        // For our use-case, we can ignore this software watchdog timer since we
-        // will never explicitly buy the new version of the code.
+        // For our use-case, we can indefinitely extend this software watchdog
+        // timer since will never explicitly buy the new version of the code.
         watchdog_update();
     }
 }
