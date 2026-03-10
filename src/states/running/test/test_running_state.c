@@ -205,7 +205,7 @@ int main()
 {
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
 
-    viz_log_open("running_state_viz.json");
+    viz_log_open_log_dir("running_state_viz.json");
 
     mock_time_us = 0;
 
