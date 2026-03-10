@@ -104,3 +104,45 @@ cc_library(
         ],
     }),
 )
+
+# ============================================================================
+# FSM Integration Tests
+# ============================================================================
+
+load("//bzl:defs.bzl", "samwise_test")
+
+# Common deps for all FSM tests
+_FSM_TEST_DEPS = [
+    "//src/states/init:init_state",
+    "//src/states/running:running_state",
+    "//src/states/bringup:bringup_state",
+    "//src/states/burn_wire:burn_wire_state",
+    "//src/states/burn_wire_reset:burn_wire_reset_state",
+]
+
+samwise_test(
+    name = "fsm_test_debug",
+    srcs = ["test/test_fsm.c"],
+    deps = _FSM_TEST_DEPS,
+)
+
+# FLIGHT and BRINGUP tests require global --copt defines to propagate to
+# state source files. They are tagged "manual" so they don't break
+# `bazel test //...`. Run them with their dedicated configs:
+#   bazel test //src/scheduler:fsm_test_flight --config=fsm-flight
+#   bazel test //src/scheduler:fsm_test_bringup --config=fsm-bringup
+samwise_test(
+    name = "fsm_test_flight",
+    srcs = ["test/test_fsm.c"],
+    defines = ["FLIGHT"],
+    tags = ["manual"],
+    deps = _FSM_TEST_DEPS,
+)
+
+samwise_test(
+    name = "fsm_test_bringup",
+    srcs = ["test/test_fsm.c"],
+    defines = ["BRINGUP"],
+    tags = ["manual"],
+    deps = _FSM_TEST_DEPS,
+)

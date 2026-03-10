@@ -25,7 +25,7 @@ bazel test //src/tasks/print:print_test
 
 ### Building Integration Tests (hardware)
 
-Integration tests are compiled into the **bringup** or **pico** firmware image. 
+Integration tests are compiled into the **bringup** or **pico** firmware image.
 They are executed on-device by the `hardware_test_task` scheduler task.
 
 ```bash
@@ -95,8 +95,8 @@ Integration tests exercise real hardware. They are compiled into a
 
 1. **`samwise_integration_test()`** creates a `cc_library` named
    `<name>_hw_lib`. It produces two kinds of compiled objects:
-   - The **integration entry point** (`int_src`) should contain `<name>_int_main` 
-     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that 
+   - The **integration entry point** (`int_src`) should contain `<name>_int_main`
+     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that
      `hardware_test_task` calls at runtime.
    - Any **shared helper sources** (`srcs`) are compiled with
      `-Dmain=_unused_<name>_main_`, which discards their `main()` so it is
