@@ -71,11 +71,19 @@ extern FILE *viz_log;
 extern const char *current_executing_task;
 
 /**
- * Open visualization log file for writing
+ * Open visualization log file for writing at exact path
  * @param filename Path to the log file
  * @return 0 on success, -1 on error
  */
-int viz_log_open(const char *filename);
+int viz_log_open_raw(const char *filename);
+
+/**
+ * Open visualization log file in TEST_UNDECLARED_OUTPUTS_DIR for Bazel
+ * preservation
+ * @param basename Base name for the log file (e.g., "fsm_test_log.json")
+ * @return 0 on success, -1 on error
+ */
+int viz_log_open_log_dir(const char *basename);
 
 /**
  * Close visualization log file

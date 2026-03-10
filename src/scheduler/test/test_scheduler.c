@@ -359,7 +359,7 @@ int main()
 {
     LOG_DEBUG("=== Scheduler Tests (Custom Tasks) ===");
 
-    viz_log_open("scheduler_test_viz.json");
+    viz_log_open_log_dir("scheduler_test_viz.json");
 
     mock_time_us = 0;
 

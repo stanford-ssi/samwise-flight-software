@@ -55,7 +55,7 @@ void reset_task_stats(void)
 extern FILE *viz_log;
 extern const char *current_executing_task;
 
-int viz_log_open(const char *filename)
+int viz_log_open_raw(const char *filename)
 {
     viz_log = fopen(filename, "w");
     if (viz_log != NULL)
@@ -65,6 +65,29 @@ int viz_log_open(const char *filename)
         return 0;
     }
     return -1;
+}
+
+int viz_log_open_log_dir(const char *basename)
+{
+    // Build output filename, writing to TEST_UNDECLARED_OUTPUTS_DIR if
+    // available so Bazel preserves the JSON after the test run.
+    const char *out_dir = getenv("TEST_UNDECLARED_OUTPUTS_DIR");
+
+    // Replace hyphens with underscores for valid filenames
+    for (char *p = basename; *p; p++)
+    {
+        if (*p == '-')
+            *p = '_';
+    }
+
+    if (out_dir != NULL)
+    {
+        char filename[strlen(out_dir) + 1 + strlen(basename) + 1];
+        snprintf(filename, sizeof(filename), "%s/%s", out_dir, basename);
+        return viz_log_open_raw(filename);
+    }
+
+    return viz_log_open_raw(basename);
 }
 
 void viz_log_close(void)
