@@ -78,18 +78,18 @@ jobs:
       - name: Check Binary Size
         if: ${{ matrix.name == 'PICUBED-FLIGHT' }}
         run: |
-          # Check if the .uf2 file exists
-          if [ ! -f "bazel-bin/samwise.uf2" ]; then
-            echo "❌ Error: samwise.uf2 file not found at bazel-bin/samwise.uf2"
+          # Check if the .bin file exists
+          if [ ! -f "bazel-bin/samwise.bin" ]; then
+            echo "❌ Error: samwise.bin file not found at bazel-bin/samwise.bin"
             exit 1
           fi
 
           # Get file size in bytes
-          FILESIZE=$(stat -c%s bazel-bin/samwise.uf2)
+          FILESIZE=$(stat -c%s bazel-bin/samwise.bin)
           MAX_SIZE=153600  # 150 KiB in bytes
 
           echo "📊 Binary size check for ${{ matrix.name }}:"
-          echo "   File: bazel-bin/samwise.uf2"
+          echo "   File: bazel-bin/samwise.bin"
           echo "   Size: ${FILESIZE} bytes ($(echo "scale=2; ${FILESIZE}/1024" | bc -l) KiB)"
           echo "   Limit: ${MAX_SIZE} bytes (150.00 KiB)"
 
