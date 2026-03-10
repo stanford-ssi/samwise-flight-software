@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Samwise Ground Station</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; background: #0d1117; color: #c9d1d9; font-size: 14px; }
+    header {
+      background: #161b22; border-bottom: 1px solid #30363d;
+      padding: 12px 20px; display: flex; align-items: center; gap: 16px;
+    }
+    header h1 { font-size: 18px; color: #58a6ff; }
+    .pill {
+      padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;
+      background: #21262d; border: 1px solid #30363d;
+    }
+    .pill.connected { border-color: #3fb950; color: #3fb950; }
+    .pill.disconnected { border-color: #f85149; color: #f85149; }
+    .stat { color: #8b949e; font-size: 12px; }
+    .stat span { color: #c9d1d9; font-weight: bold; }
+
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+      padding: 16px;
+    }
+    .card h2 { font-size: 13px; color: #8b949e; text-transform: uppercase;
+                letter-spacing: 0.05em; margin-bottom: 12px; border-bottom: 1px solid #21262d;
+                padding-bottom: 8px; }
+
+    .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+    .kv { display: flex; flex-direction: column; }
+    .kv .label { font-size: 11px; color: #8b949e; margin-bottom: 2px; }
+    .kv .value { color: #e6edf3; font-weight: bold; }
+    .kv .value.good { color: #3fb950; }
+    .kv .value.warn { color: #d29922; }
+    .kv .value.bad  { color: #f85149; }
+
+    .badge-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .badge {
+      padding: 1px 7px; border-radius: 10px; font-size: 11px;
+      background: #388bfd26; border: 1px solid #388bfd; color: #79c0ff;
+    }
+
+    /* Command panel */
+    .cmd-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    button {
+      background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; font-family: inherit;
+      font-size: 13px; transition: background 0.15s;
+    }
+    button:hover { background: #30363d; }
+    button.primary { background: #1f6feb; border-color: #388bfd; color: #fff; }
+    button.primary:hover { background: #388bfd; }
+    button.danger { background: #6e211d; border-color: #f85149; color: #ffa198; }
+    button.danger:hover { background: #8e2a26; }
+
+    select, input[type="text"] {
+      background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+      padding: 5px 10px; border-radius: 6px; font-family: inherit; font-size: 13px;
+    }
+    select:focus, input[type="text"]:focus { outline: none; border-color: #388bfd; }
+    #cmd-arg { flex: 1; min-width: 140px; }
+    #cmd-status { font-size: 12px; color: #8b949e; margin-top: 6px; min-height: 16px; }
+
+    /* Packet log */
+    .log-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; color: #8b949e; padding: 4px 8px; border-bottom: 1px solid #21262d;
+         font-weight: normal; white-space: nowrap; }
+    td { padding: 4px 8px; border-bottom: 1px solid #161b22; white-space: nowrap; }
+    tr:hover td { background: #1c2128; }
+    .no-data { color: #8b949e; text-align: center; padding: 20px; font-size: 13px; }
+
+    #state-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 13px;
+      background: #1f3d1f; border: 1px solid #3fb950; color: #3fb950; margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Samwise GS</h1>
+  <span id="conn-pill" class="pill disconnected">Disconnected</span>
+  <div class="stat">Boot: <span id="hdr-boot">—</span></div>
+  <div class="stat">MsgID: <span id="hdr-msg">—</span></div>
+  <div class="stat">Packets: <span id="hdr-pkts">0</span></div>
+  <div class="stat">Last: <span id="hdr-last">—</span></div>
+</header>
+
+<main>
+  <!-- Latest Beacon -->
+  <div class="card">
+    <h2>Latest Beacon</h2>
+    <div id="state-badge">—</div>
+    <div class="kv-grid">
+      <div class="kv"><span class="label">Callsign</span><span class="value" id="b-callsign">—</span></div>
+      <div class="kv"><span class="label">RSSI / SNR</span><span class="value" id="b-signal">—</span></div>
+      <div class="kv"><span class="label">Reboots</span><span class="value" id="b-reboots">—</span></div>
+      <div class="kv"><span class="label">Time in State</span><span class="value" id="b-tis">—</span></div>
+      <div class="kv"><span class="label">Battery V / I</span><span class="value" id="b-batt">—</span></div>
+      <div class="kv"><span class="label">Solar V / I</span><span class="value" id="b-solar">—</span></div>
+      <div class="kv"><span class="label">Panel A V / I</span><span class="value" id="b-panelA">—</span></div>
+      <div class="kv"><span class="label">Panel B V / I</span><span class="value" id="b-panelB">—</span></div>
+      <div class="kv"><span class="label">RX pkt / bytes</span><span class="value" id="b-rx">—</span></div>
+      <div class="kv"><span class="label">TX pkt / bytes</span><span class="value" id="b-tx">—</span></div>
+    </div>
+    <div class="badge-row" id="b-flags"></div>
+
+    <h2 style="margin-top:14px;">ADCS</h2>
+    <div class="kv-grid">
+      <div class="kv"><span class="label">Angular Vel (rad/s)</span><span class="value" id="a-angvel">—</span></div>
+      <div class="kv"><span class="label">ADCS State</span><span class="value" id="a-state">—</span></div>
+      <div class="kv"><span class="label">Quaternion</span><span class="value" id="a-quat">—</span></div>
+      <div class="kv"><span class="label">ADCS Boot</span><span class="value" id="a-boot">—</span></div>
+    </div>
+  </div>
+
+  <!-- Commands -->
+  <div class="card">
+    <h2>Commands</h2>
+    <div class="cmd-row">
+      <button class="primary" onclick="sendNoOp()">Send NO-OP (Ping)</button>
+    </div>
+    <div class="cmd-row" style="align-items:center;">
+      <select id="cmd-type" onchange="onCmdTypeChange()">
+        <option value="payload-on">Payload ON</option>
+        <option value="payload-off">Payload OFF</option>
+        <option value="payload-exec">Payload Exec</option>
+        <option value="payload-shutdown">Payload Shutdown</option>
+        <option value="state-override">State Override</option>
+      </select>
+      <input type="text" id="cmd-arg" placeholder="argument (if required)" style="display:none;">
+      <button onclick="sendCommand()">Send</button>
+    </div>
+    <div id="cmd-status"></div>
+
+    <h2 style="margin-top:20px;">Status</h2>
+    <div class="kv-grid">
+      <div class="kv"><span class="label">Boot Count</span><span class="value" id="s-boot">—</span></div>
+      <div class="kv"><span class="label">Msg ID</span><span class="value" id="s-msg">—</span></div>
+    </div>
+    <div style="margin-top:12px;">
+      <button onclick="refreshStatus()">Refresh Status</button>
+    </div>
+  </div>
+
+  <!-- Packet Log -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <h2>Packet Log</h2>
+    <div class="log-wrap">
+      <table id="log-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>State</th>
+            <th>Callsign</th>
+            <th>RSSI</th>
+            <th>Battery (mV/mA)</th>
+            <th>Solar (mV/mA)</th>
+            <th>Reboots</th>
+            <th>AngVel</th>
+            <th>Flags</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="9" class="no-data">Waiting for packets…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+  // -------------------------------------------------------------------------
+  // WebSocket connection with auto-reconnect
+  // -------------------------------------------------------------------------
+  let ws = null;
+  let pktCount = 0;
+  let reconnectDelay = 1000;
+
+  function connect() {
+    const url = `ws://${location.host}/ws`;
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      setConnected(true);
+      reconnectDelay = 1000;
+      refreshStatus();
+    };
+
+    ws.onmessage = (evt) => {
+      const beacon = JSON.parse(evt.data);
+      pktCount++;
+      updateBeacon(beacon);
+      appendLog(beacon);
+      document.getElementById('hdr-pkts').textContent = pktCount;
+      const ts = new Date(beacon.timestamp * 1000);
+      document.getElementById('hdr-last').textContent = ts.toLocaleTimeString();
+    };
+
+    ws.onclose = () => {
+      setConnected(false);
+      setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, 15000);
+    };
+
+    ws.onerror = () => ws.close();
+  }
+
+  function setConnected(yes) {
+    const pill = document.getElementById('conn-pill');
+    pill.textContent = yes ? 'Connected' : 'Disconnected';
+    pill.className = 'pill ' + (yes ? 'connected' : 'disconnected');
+  }
+
+  // -------------------------------------------------------------------------
+  // Update latest beacon panel
+  // -------------------------------------------------------------------------
+  function fmt(v, unit) { return v !== undefined && v !== null ? v + (unit || '') : '—'; }
+  function fmtF(v, d) { return v !== undefined && v !== null ? Number(v).toFixed(d) : '—'; }
+
+  function updateBeacon(b) {
+    document.getElementById('state-badge').textContent = b.state_name || '—';
+    document.getElementById('b-callsign').textContent = b.callsign || '—';
+
+    const rssi = b.rssi !== null ? b.rssi + ' dBm' : '—';
+    const snr  = b.snr  !== null ? b.snr  + ' dB'  : '';
+    document.getElementById('b-signal').textContent = snr ? `${rssi} / ${snr}` : rssi;
+
+    const s = b.stats;
+    if (s) {
+      document.getElementById('b-reboots').textContent = fmt(s.reboot_counter);
+      document.getElementById('b-tis').textContent =
+        s.time_in_state_ms !== undefined ? (s.time_in_state_ms / 1000).toFixed(1) + ' s' : '—';
+      document.getElementById('b-batt').textContent =
+        `${fmt(s.battery_voltage, ' mV')} / ${fmt(s.battery_current, ' mA')}`;
+      document.getElementById('b-solar').textContent =
+        `${fmt(s.solar_voltage, ' mV')} / ${fmt(s.solar_current, ' mA')}`;
+      document.getElementById('b-panelA').textContent =
+        `${fmt(s.panel_A_voltage, ' mV')} / ${fmt(s.panel_A_current, ' mA')}`;
+      document.getElementById('b-panelB').textContent =
+        `${fmt(s.panel_B_voltage, ' mV')} / ${fmt(s.panel_B_current, ' mA')}`;
+      document.getElementById('b-rx').textContent =
+        `${fmt(s.rx_packets)} / ${fmt(s.rx_bytes, ' B')}`;
+      document.getElementById('b-tx').textContent =
+        `${fmt(s.tx_packets)} / ${fmt(s.tx_bytes, ' B')}`;
+
+      const flagsEl = document.getElementById('b-flags');
+      flagsEl.innerHTML = '';
+      (s.device_status_flags || []).forEach(f => {
+        const span = document.createElement('span');
+        span.className = 'badge';
+        span.textContent = f;
+        flagsEl.appendChild(span);
+      });
+    }
+
+    const a = b.adcs;
+    if (a) {
+      document.getElementById('a-angvel').textContent = fmtF(a.angular_velocity, 4);
+      document.getElementById('a-state').textContent = fmt(a.state);
+      document.getElementById('a-boot').textContent = fmt(a.boot_count);
+      const q = a.quaternion;
+      if (q) {
+        document.getElementById('a-quat').textContent =
+          `${fmtF(q.q0,3)}, ${fmtF(q.q1,3)}, ${fmtF(q.q2,3)}, ${fmtF(q.q3,3)}`;
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Packet log table (max 20 rows, newest first)
+  // -------------------------------------------------------------------------
+  const MAX_LOG_ROWS = 20;
+
+  function appendLog(b) {
+    const tbody = document.getElementById('log-body');
+
+    // Remove placeholder
+    const placeholder = tbody.querySelector('.no-data');
+    if (placeholder) placeholder.parentElement.remove();
+
+    const ts = new Date(b.timestamp * 1000).toLocaleTimeString();
+    const s = b.stats || {};
+    const a = b.adcs  || {};
+    const flags = (s.device_status_flags || []).join(', ') || '—';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${ts}</td>
+      <td>${b.state_name || '—'}</td>
+      <td>${b.callsign || '—'}</td>
+      <td>${b.rssi !== null && b.rssi !== undefined ? b.rssi + ' dBm' : '—'}</td>
+      <td>${s.battery_voltage !== undefined ? s.battery_voltage + ' / ' + s.battery_current : '—'}</td>
+      <td>${s.solar_voltage   !== undefined ? s.solar_voltage   + ' / ' + s.solar_current   : '—'}</td>
+      <td>${s.reboot_counter  !== undefined ? s.reboot_counter  : '—'}</td>
+      <td>${a.angular_velocity !== undefined ? Number(a.angular_velocity).toFixed(4) : '—'}</td>
+      <td>${flags}</td>
+    `;
+
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    // Keep at most MAX_LOG_ROWS rows
+    while (tbody.rows.length > MAX_LOG_ROWS) {
+      tbody.deleteRow(tbody.rows.length - 1);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Commands
+  // -------------------------------------------------------------------------
+  const CMD_NEEDS_ARG = new Set(['payload-exec', 'state-override']);
+
+  function onCmdTypeChange() {
+    const type = document.getElementById('cmd-type').value;
+    const argEl = document.getElementById('cmd-arg');
+    argEl.style.display = CMD_NEEDS_ARG.has(type) ? 'block' : 'none';
+    argEl.placeholder = type === 'payload-exec' ? 'e.g. ["take_photo"]' : 'state name';
+  }
+
+  async function sendNoOp() {
+    try {
+      const r = await fetch('/command/no-op', { method: 'POST' });
+      const j = await r.json();
+      setCmdStatus(r.ok ? `Queued: ${j.type}` : `Error: ${JSON.stringify(j)}`, r.ok);
+      if (r.ok) refreshStatus();
+    } catch (e) {
+      setCmdStatus('Request failed: ' + e.message, false);
+    }
+  }
+
+  async function sendCommand() {
+    const type = document.getElementById('cmd-type').value;
+    const arg  = document.getElementById('cmd-arg').value.trim() || undefined;
+    const body = { type };
+    if (arg) body.arg = arg;
+
+    try {
+      const r = await fetch('/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (r.ok) {
+        setCmdStatus(`Queued: ${j.type}`, true);
+        refreshStatus();
+      } else {
+        setCmdStatus(`Error ${r.status}: ${j.detail || JSON.stringify(j)}`, false);
+      }
+    } catch (e) {
+      setCmdStatus('Request failed: ' + e.message, false);
+    }
+  }
+
+  function setCmdStatus(msg, ok) {
+    const el = document.getElementById('cmd-status');
+    el.textContent = msg;
+    el.style.color = ok ? '#3fb950' : '#f85149';
+  }
+
+  // -------------------------------------------------------------------------
+  // Status refresh
+  // -------------------------------------------------------------------------
+  async function refreshStatus() {
+    try {
+      const r = await fetch('/status');
+      if (!r.ok) return;
+      const j = await r.json();
+      document.getElementById('hdr-boot').textContent = j.boot_count;
+      document.getElementById('hdr-msg').textContent  = j.msg_id;
+      document.getElementById('s-boot').textContent   = j.boot_count;
+      document.getElementById('s-msg').textContent    = j.msg_id;
+    } catch (_) {}
+  }
+
+  // Kick things off
+  onCmdTypeChange();
+  connect();
+</script>
+
+</body>
+</html>

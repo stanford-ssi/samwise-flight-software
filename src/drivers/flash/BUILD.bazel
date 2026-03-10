@@ -19,7 +19,7 @@ cc_library(
 # Note: No dedicated flash mock in test_mocks, using driver_stubs
 cc_library(
     name = "flash_mock",
-    srcs = [],
+    srcs = ["flash_mock.c"],
     hdrs = ["flash.h"],
     includes = ["."],
     deps = [

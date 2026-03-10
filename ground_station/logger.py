@@ -1,15 +1,36 @@
-import logging
 import os
+import sys
 import time
 
-# Set up standard Python logging for console and system logs
+# Use adafruit_logging on CircuitPython, standard logging on CPython
+_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+
+if _IS_CIRCUITPYTHON:
+    import adafruit_logging as logging
+else:
+    import logging
+
+# Set up logging for console and system logs
 # This allows for structured logging level control (DEBUG, INFO, etc.)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%SZ",
-)
+if not _IS_CIRCUITPYTHON:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%SZ",
+    )
+
 logger = logging.getLogger("GS")
+if _IS_CIRCUITPYTHON:
+    logger.setLevel(logging.INFO)
+
+
+def get_logger(name):
+    """Create a named logger, compatible with both CPython and CircuitPython."""
+    lg = logging.getLogger(name)
+    if _IS_CIRCUITPYTHON:
+        lg.setLevel(logging.INFO)
+    return lg
+
 
 # Attempt to get UTC time if possible, fallback to local monotonic
 try:
@@ -21,6 +42,15 @@ except (ImportError, AttributeError):
 
 LOG_DIR = "logs"
 TELEMETRY_FILE = "{}/telemetry_log.csv".format(LOG_DIR)
+
+
+def _path_exists(path):
+    """Check if a file/directory exists, compatible with CircuitPython (no os.path)."""
+    try:
+        os.stat(path)
+        return True
+    except OSError:
+        return False
 
 
 class TelemetryLogger:
@@ -37,7 +67,8 @@ class TelemetryLogger:
         self.initialized = False
         self.file_handle = None
         self.log_to_console = log_to_console
-        self.log_to_csv = log_to_csv
+        # Disable CSV logging on CircuitPython (read-only filesystem)
+        self.log_to_csv = log_to_csv and not _IS_CIRCUITPYTHON
 
         if self.log_to_csv:
             self._ensure_log_dir()
@@ -45,10 +76,10 @@ class TelemetryLogger:
     def _ensure_log_dir(self):
         """Prepares the logs directory and CSV file with headers if they don't exist."""
         try:
-            if not os.path.exists(LOG_DIR):
+            if not _path_exists(LOG_DIR):
                 os.mkdir(LOG_DIR)
 
-            file_exists = os.path.exists(TELEMETRY_FILE)
+            file_exists = _path_exists(TELEMETRY_FILE)
 
             # Open file in append mode and keep it open for performance during a pass
             self.file_handle = open(TELEMETRY_FILE, "a")
@@ -114,98 +145,78 @@ class TelemetryLogger:
         """
         ts = self._get_timestamp()
 
-        # Support both Pydantic models (with .dict()) and raw dictionaries
-        data_dict = beacon_data if isinstance(beacon_data, dict) else beacon_data.dict()
-        stats = data_dict.get("stats", {})
-        adcs = data_dict.get("adcs", {})
-        state = data_dict.get("state_name", "UNKNOWN")
+        # Access model attributes directly — avoids the dict().get() chain which breaks
+        # when _BaseModel.dict() doesn't recursively convert nested model objects.
+        state = beacon_data.state_name
+        stats = beacon_data.stats  # BeaconStats object or None
+        adcs = beacon_data.adcs  # ADCSData object or None
+        callsign = beacon_data.callsign or "N/A"
 
         # 1. Logic for Console Logging
         if self.log_to_console:
             if detailed:
-                # Comprehensive Mission Report
                 print(f"\n--- MISSION TELEMETRY REPORT ({ts}) ---")
-                print(f"State: {state} | Callsign: {data_dict.get('callsign', 'N/A')}")
+                print(f"State: {state} | Callsign: {callsign}")
                 if stats:
-                    print(f"Reboots: {stats.get('reboot_counter', 0)}")
-                    print(f"Time in State: {stats.get('time_in_state_ms', 0)} ms")
+                    print(f"Reboots: {stats.reboot_counter}")
+                    print(f"Time in State: {stats.time_in_state_ms} ms")
+                    print(f"Battery: {stats.battery_voltage} mV | {stats.battery_current} mA")
                     print(
-                        f"Battery: {stats.get('battery_voltage', 0)} mV | {stats.get('battery_current', 0)} mA"
+                        f"Solar: Bus {stats.solar_voltage} mV"
+                        f" | A {stats.panel_A_voltage} mV"
+                        f" | B {stats.panel_B_voltage} mV"
                     )
+                    print(f"Comms: RX {stats.rx_packets} pkts | TX {stats.tx_packets} pkts")
                     print(
-                        f"Solar: Bus {stats.get('solar_voltage', 0)} mV | A {stats.get('panel_A_voltage', 0)} mV | B {stats.get('panel_B_voltage', 0)} mV"
+                        f"Status Flags: 0x{stats.device_status:02x}"
+                        f" ({', '.join(stats.device_status_flags) or 'none'})"
                     )
-                    print(
-                        f"Comms: RX {stats.get('rx_packets', 0)} pkts | TX {stats.get('tx_packets', 0)} pkts"
-                    )
-
-                    # Status Flags
-                    status = stats.get("device_status", 0)
-                    # We can use the Pydantic helper if available, otherwise manual
-                    if hasattr(beacon_data, "stats") and hasattr(
-                        beacon_data.stats, "device_status_flags"
-                    ):
-                        flags = beacon_data.stats.device_status_flags
-                    else:
-                        # Fallback bitmask parsing
-                        flags = []
-                        if status & 0x20:
-                            flags.append("payload_on")
-                        if status & 0x40:
-                            flags.append("adcs_on")
-                    print(f"Status Flags: 0x{status:02x} ({', '.join(flags) if flags else 'none'})")
-
                 if adcs:
-                    w = adcs.get("angular_velocity", 0)
-                    print(f"ADCS: w={w:.6f} rad/s | State: {adcs.get('state', 0)}")
-
+                    print(f"ADCS: w={adcs.angular_velocity:.6f} rad/s | State: {adcs.state}")
                 print(f"Signal: RSSI {rssi} dBm | SNR {snr}")
                 print("---------------------------------------")
             else:
-                # Quick status line
-                reboots = stats.get("reboot_counter", 0)
-                batt = stats.get("battery_voltage", 0)
                 logger.info(
                     "BEACON | State: %s | Reboot: %d | Batt: %d mV | RSSI: %s",
                     state,
-                    reboots,
-                    batt,
+                    stats.reboot_counter if stats else 0,
+                    stats.battery_voltage if stats else 0,
                     str(rssi),
                 )
 
-        # 2. Logic for CSV Persistence (using data_dict to be safe)
+        # 2. Logic for CSV Persistence
         if self.log_to_csv and not console_only and self.initialized and self.file_handle:
             try:
                 row = [
                     ts,
-                    str(beacon_data.get("callsign", "N/A")),
-                    str(beacon_data.get("state_name", "N/A")),
-                    str(stats.get("reboot_counter", 0)),
-                    str(stats.get("time_in_state_ms", 0)),
-                    str(stats.get("battery_voltage", 0)),
-                    str(stats.get("battery_current", 0)),
-                    str(stats.get("solar_voltage", 0)),
-                    str(stats.get("solar_current", 0)),
-                    str(stats.get("panel_A_voltage", 0)),
-                    str(stats.get("panel_A_current", 0)),
-                    str(stats.get("panel_B_voltage", 0)),
-                    str(stats.get("panel_B_current", 0)),
-                    str(stats.get("rx_packets", 0)),
-                    str(stats.get("rx_bytes", 0)),
-                    str(stats.get("tx_packets", 0)),
-                    str(stats.get("tx_bytes", 0)),
-                    str(stats.get("rx_backpressure_drops", 0)),
-                    str(stats.get("rx_bad_packet_drops", 0)),
-                    "0x{:02x}".format(stats.get("device_status", 0)),
+                    callsign,
+                    state,
+                    str(stats.reboot_counter if stats else 0),
+                    str(stats.time_in_state_ms if stats else 0),
+                    str(stats.battery_voltage if stats else 0),
+                    str(stats.battery_current if stats else 0),
+                    str(stats.solar_voltage if stats else 0),
+                    str(stats.solar_current if stats else 0),
+                    str(stats.panel_A_voltage if stats else 0),
+                    str(stats.panel_A_current if stats else 0),
+                    str(stats.panel_B_voltage if stats else 0),
+                    str(stats.panel_B_current if stats else 0),
+                    str(stats.rx_packets if stats else 0),
+                    str(stats.rx_bytes if stats else 0),
+                    str(stats.tx_packets if stats else 0),
+                    str(stats.tx_bytes if stats else 0),
+                    str(stats.rx_backpressure_drops if stats else 0),
+                    str(stats.rx_bad_packet_drops if stats else 0),
+                    "0x{:02x}".format(stats.device_status if stats else 0),
                     str(rssi if rssi is not None else ""),
                     str(snr if snr is not None else ""),
-                    str(adcs.get("state", "")),
-                    "{:.6f}".format(adcs.get("angular_velocity", 0)) if adcs else "",
-                    beacon_data.get("raw_hex", ""),
+                    str(adcs.state if adcs else ""),
+                    "{:.6f}".format(adcs.angular_velocity) if adcs else "",
+                    beacon_data.raw_hex or "",
                 ]
 
                 self.file_handle.write(",".join(row) + "\n")
-                self.file_handle.flush()  # Ensure it's on disk immediately during a pass
+                self.file_handle.flush()
             except Exception as e:
                 logger.error("Telemetry CSV write error: %s", e)
 
