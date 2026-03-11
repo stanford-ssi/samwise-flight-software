@@ -14,7 +14,8 @@ This library provides common infrastructure for writing time-based tests for dif
 - Tracks init count, dispatch count, and last dispatch time per task
 
 ### Visualization Logging
-- `viz_log_open(filename)` - Open JSON log file for test visualization
+- `viz_log_open_log_dir(basename)` - Open JSON log file for test visualization in actual log directory
+- `viz_log_open_raw(filename)` - Raw opening of file at certain path 
 - `viz_log_close()` - Close log file with proper formatting
 - `log_viz_event(type, task, details)` - Log an event with timestamp
 - Compatible with `/web/visualizer/` React app
@@ -72,7 +73,7 @@ void test_my_state() {
     slate.current_state = &my_test_state;
 
     // Open visualization log
-    viz_log_open("my_test.json");
+    viz_log_open_log_dir("my_test.json");
 
     // Initialize tasks
     test_state_init_tasks(&my_test_state, &slate);
