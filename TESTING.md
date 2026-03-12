@@ -81,6 +81,7 @@ The `samwise_test()` macro handles everything automatically:
 - Adds `//src/test_infrastructure`
 - Defines `TEST=1` for conditional compilation
 - Restricts the target to the host platform
+- See the [list](#available-mocks) of supported hardware mocks
 
 ---
 
@@ -231,12 +232,24 @@ deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
 
 ---
 
-### 3. Update Your Task's CMakeLists.txt
+## How It Works
+
+### Mock Substitution (Unit Tests)
+
+The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
+`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
+declares a dependency like `//src/drivers/rfm9x`, the macro transparently
+replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
+
+- Your test source files use the same `#include` paths as production code.
+- No wrapper headers, special include directories, or `#ifdef TEST` guards are
+  needed.
+- The mock implementations are linked instead of the real hardware drivers.
 
 The following embedded dependencies are automatically mocked when using
 `samwise_test()`:
 
-## Available Mocks
+#### Available Mocks
 
 | Real Header                       | Mock Location        | Functionality                                        |
 | --------------------------------- | -------------------- | ---------------------------------------------------- |
@@ -255,7 +268,7 @@ The following embedded dependencies are automatically mocked when using
 | `error.h`                         | error_mock.c         | Prints fatal error and calls `exit(1)`               |
 | `state_ids.h` / `state_machine.h` | state_mock.c         | Defines stub scheduler states with no-op transitions |
 
-### Pico SDK Mocks (test_mocks)
+#### Pico SDK Mocks (test_mocks)
 
 | Real Header         | Mock Location     | Functionality                               |
 | ------------------- | ----------------- | ------------------------------------------- |
@@ -272,20 +285,6 @@ The following embedded dependencies are automatically mocked when using
 | `pico/types.h`      | types.h           | Pico SDK type definitions                   |
 | `pico/unique_id.h`  | unique_id.h       | Board unique ID API (no-op)                 |
 | `pico/util/queue.h` | queue.h           | Pico queue utility API (no-op)              |
-
-## How It Works
-
-### Mock Substitution (Unit Tests)
-
-The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
-`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
-declares a dependency like `//src/drivers/rfm9x`, the macro transparently
-replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
-
-- Your test source files use the same `#include` paths as production code.
-- No wrapper headers, special include directories, or `#ifdef TEST` guards are
-  needed.
-- The mock implementations are linked instead of the real hardware drivers.
 
 ### Integration Test Symbol Renaming
 
