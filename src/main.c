@@ -33,7 +33,7 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
-    slate = create_slate();
+    clear_and_init_slate(&slate);
 
 #ifndef TEST
     // Initialize USB stdio early for PICO platform so logging works

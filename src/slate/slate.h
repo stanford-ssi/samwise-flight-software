@@ -18,6 +18,7 @@
 
 #include "adcs_packet.h"
 #include "config.h"
+#include "logger.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "state_ids.h"
@@ -27,8 +28,8 @@
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
 
-// Use create_slate() to create a slate - this ensures proper initialization of
-// fields.
+// Use clear_and_init_slate() to initialize a slate - this ensures proper
+// initialization of fields.
 typedef struct samwise_slate
 {
 #ifdef BRINGUP
@@ -158,8 +159,22 @@ typedef struct samwise_slate
 _Static_assert(sizeof(slate_t) < 16000,
                "slate_t size exceeds reasonable limits");
 
-// Use this to create a slate! Never directly declare a slate variable - always
-// use this function to ensure proper initialization of fields.
-slate_t create_slate(void);
+/**
+ * Initializes the slate struct by clearing all fields to default values and
+ * allocating the filesys buffer on the heap. This should be called once at
+ * startup before using the slate.
+ *
+ * If trying to completely clear an existing/already allocated slate, please use
+ * free_slate first and then run this function.
+ */
+void clear_and_init_slate(slate_t *slate);
+
+/**
+ * Handles freeing any heap-allocated memory within the slate. This should be
+ * called when the slate is no longer needed to avoid memory leaks. After
+ * calling this function, the slate should not be used unless it is
+ * re-initialized with clear_and_init_slate.
+ */
+void free_slate(slate_t *slate);
 
 extern slate_t slate;

@@ -78,11 +78,9 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
         return FILESYS_ERR_MOUNT;
     }
 
-    free(slate->filesys_buffer);
-    slate->filesys_buffer = malloc(FILESYS_BUFFER_SIZE);
     if (slate->filesys_buffer == NULL)
     {
-        LOG_ERROR("[filesys] Failed to allocate memory for filesystem buffer.");
+        LOG_ERROR("[filesys] No filesys buffer was ever allocated!");
         return FILESYS_ERR_MALLOC;
     }
 

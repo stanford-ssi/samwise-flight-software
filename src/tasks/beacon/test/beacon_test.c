@@ -35,7 +35,7 @@ sched_state_t mock_state = {
 void mock_slate(slate_t *slate)
 {
     // Reset slate to empty first
-    *slate = create_slate();
+    clear_and_init_slate(slate);
 
     // Register mock state so state_registry_get can find it
     state_registry_register(STATE_INIT, &mock_state);
@@ -95,6 +95,7 @@ void test_beacon_serialize()
             fclose(f);
         }
     }
+    free_slate(&slate);
 }
 
 void test_beacon_dispatch_without_error()
@@ -104,12 +105,14 @@ void test_beacon_dispatch_without_error()
     beacon_task_init(&slate);
     beacon_task_dispatch(&slate);
     printf("Beacon dispatch completed without error\n");
+    free_slate(&slate);
 }
 
 int main()
 {
-    slate = create_slate();
+    clear_and_init_slate(&slate);
     test_beacon_serialize();
     test_beacon_dispatch_without_error();
+    free_slate(&slate);
     return 0;
 }

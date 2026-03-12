@@ -1,14 +1,29 @@
 #include "slate.h"
 
-slate_t create_slate(void)
+void clear_and_init_slate(slate_t *slate)
 {
-    slate_t new_slate = {0};
-    new_slate.filesys_buffer = NULL; // Ensure buffer starts as NULL; will be
-                                     // allocated in filesys_initialize
-    return new_slate;
+    memset(slate, 0, sizeof(slate_t)); // Clear all fields to default values (0,
+                                       // false, NULL, etc.)
+
+    // Allocate the buffer on the heap since it's too large for the stack
+    slate->filesys_buffer = malloc(FILESYS_BUFFER_SIZE);
+
+    if (slate->filesys_buffer == NULL)
+    {
+        LOG_ERROR("[slate] Failed to allocate filesys_buffer! This is a "
+                  "critical error!");
+    }
+}
+
+void free_slate(slate_t *slate)
+{
+    // Free the filesys buffer if it was allocated - note free(NULL) is a no-op
+    // as per C specification, so this is safe even if allocation failed.
+    free(slate->filesys_buffer);
+    slate->filesys_buffer = NULL;
 }
 
 /**
- * Statically allocate the slate.
+ * Will be initialized at startup.
  */
 slate_t slate;

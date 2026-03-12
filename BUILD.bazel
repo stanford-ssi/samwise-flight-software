@@ -48,41 +48,16 @@ cc_binary(
         "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
         "@pico-sdk//src/rp2_common/pico_unique_id",
 
-        # Linker script for RP2350
-        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
-
         # External libraries
         "//lib/tinycrypt",
     ],
-    copts = [
-        # Force-include the board header before any other headers
-        "-include", "samwise_picubed.h",
-        # Include board headers directory
-        "-I$(GENDIR)/boards",
-        "-Iboards",
-    ] + select({
-        "//bzl:pico_profile": [
-            "-DPICO",
-        ],
-        "//bzl:pico_hat_profile": [
-            "-DPICO",
-            "-DPICOHAT",
-        ],
-        "//bzl:picubed_flight_profile": [
-            "-DFLIGHT",
-        ],
-        "//bzl:picubed_bringup_profile": [
-            "-DBRINGUP",
-        ],
-        "//conditions:default": [],
-    }),
-    defines = select({
-        "//bzl:pico_profile": ["PICO"],
-        "//bzl:pico_hat_profile": ["PICO", "PICOHAT"],
-        "//bzl:picubed_flight_profile": ["FLIGHT"],
-        "//bzl:picubed_bringup_profile": ["BRINGUP"],
-        "//conditions:default": [],
-    }),
+    # copts = [
+    #     # Force-include the board header before any other headers
+    #     "-include", "samwise_picubed.h",
+    #     # Include board headers directory
+    #     "-I$(GENDIR)/boards",
+    #     "-Iboards",
+    # ],
     local_defines = [
         # USB stdio configuration
         "PICO_STDIO_USB_DEFAULT=1",

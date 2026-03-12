@@ -142,7 +142,7 @@ void test_state_transition()
     LOG_DEBUG("=== Test 4: State transition ===");
     log_viz_event("test_start", NULL, "state_transition");
 
-    test_slate = create_slate();
+    clear_and_init_slate(&test_slate);
     test_slate.current_state_id = STATE_RUNNING;
 
     // Running state should always return itself
@@ -154,6 +154,7 @@ void test_state_transition()
 
     log_viz_event("test_pass", NULL, "state_transition");
     LOG_DEBUG("✓ Test 4 passed");
+    free_slate(&test_slate);
 }
 
 /**
@@ -165,7 +166,7 @@ void test_scheduler_execution()
     log_viz_event("test_start", NULL, "scheduler_execution");
 
     mock_time_us = 0;
-    test_slate = create_slate();
+    clear_and_init_slate(&test_slate);
     reset_task_stats();
 
     test_slate.current_state_id = STATE_RUNNING;
@@ -199,11 +200,12 @@ void test_scheduler_execution()
 
     log_viz_event("test_pass", NULL, "scheduler_execution");
     LOG_DEBUG("✓ Test 5 passed");
+    free_slate(&test_slate);
 }
 
 int main()
 {
-    test_slate = create_slate();
+    clear_and_init_slate(&test_slate);
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
 
     viz_log_open_log_dir("running_state_viz.json");
@@ -222,5 +224,6 @@ int main()
 
     viz_log_close();
 
+    free_slate(&test_slate);
     return 0;
 }
