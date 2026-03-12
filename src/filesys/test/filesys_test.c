@@ -90,7 +90,8 @@ static const unsigned int filesys_test_example_incorrect_crc =
 // Helper function to initialize a clean filesystem for testing
 inline static int filesys_test_setup(slate_t *slate)
 {
-    clear_and_init_slate(slate);
+    TEST_ASSERT(clear_and_init_slate(slate) == 0,
+                "Failed to initialize slate for test setup!");
     lfs_ssize_t lfs_error_code;
     filesys_error_t code = filesys_reformat_initialize(slate, &lfs_error_code);
 
@@ -220,7 +221,8 @@ int filesys_test_initialize_reformat_success(slate_t *slate)
 {
     LOG_DEBUG("=== Test: Initialize and Reformat ===\n");
 
-    clear_and_init_slate(slate);
+    TEST_ASSERT(clear_and_init_slate(slate) == 0,
+                "Failed to initialize slate for test setup!");
 
     // Test reformat
     lfs_ssize_t lfs_error_code;

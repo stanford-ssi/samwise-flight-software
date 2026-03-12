@@ -11,6 +11,9 @@
 
 #pragma once
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef TEST
 #include "pico/types.h"
 #endif
@@ -167,7 +170,7 @@ _Static_assert(sizeof(slate_t) < 16000,
  * If trying to completely clear an existing/already allocated slate, please use
  * free_slate first and then run this function.
  */
-void clear_and_init_slate(slate_t *slate);
+int clear_and_init_slate(slate_t *slate);
 
 /**
  * Handles freeing any heap-allocated memory within the slate. This should be

@@ -1,6 +1,6 @@
 #include "slate.h"
 
-void clear_and_init_slate(slate_t *slate)
+int clear_and_init_slate(slate_t *slate)
 {
     memset(slate, 0, sizeof(slate_t)); // Clear all fields to default values (0,
                                        // false, NULL, etc.)
@@ -12,7 +12,10 @@ void clear_and_init_slate(slate_t *slate)
     {
         LOG_ERROR("[slate] Failed to allocate filesys_buffer! This is a "
                   "critical error!");
+        return -1; // Indicate failure
     }
+
+    return 0;
 }
 
 void free_slate(slate_t *slate)

@@ -35,7 +35,11 @@ sched_state_t mock_state = {
 void mock_slate(slate_t *slate)
 {
     // Reset slate to empty first
-    clear_and_init_slate(slate);
+    if (clear_and_init_slate(slate) != 0)
+    {
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
 
     // Register mock state so state_registry_get can find it
     state_registry_register(STATE_INIT, &mock_state);

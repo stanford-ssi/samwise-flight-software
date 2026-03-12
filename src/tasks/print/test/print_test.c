@@ -4,7 +4,11 @@ slate_t test_slate;
 
 int main()
 {
-    clear_and_init_slate(&test_slate);
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return 1;
+    }
 
     LOG_DEBUG("Task pointer: %s", print_task.name);
     ASSERT(strcmp(print_task.name, "print") == 0);

@@ -142,7 +142,12 @@ void test_state_transition()
     LOG_DEBUG("=== Test 4: State transition ===");
     log_viz_event("test_start", NULL, "state_transition");
 
-    clear_and_init_slate(&test_slate);
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     test_slate.current_state_id = STATE_RUNNING;
 
     // Running state should always return itself
@@ -166,7 +171,12 @@ void test_scheduler_execution()
     log_viz_event("test_start", NULL, "scheduler_execution");
 
     mock_time_us = 0;
-    clear_and_init_slate(&test_slate);
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state_id = STATE_RUNNING;
