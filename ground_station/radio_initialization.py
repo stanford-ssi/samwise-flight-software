@@ -45,8 +45,8 @@ def get_board_pins(board_type):
             "MOSI": board.MOSI,  # Usually D23
             "MISO": board.MISO,  # Usually D22
             "SCK": board.SCK,  # Usually D24
-            "CS": board.A5,  # Analog pin 5
-            "RESET": board.D5,  # Digital pin 5
+            "CS": board.D10,  # Digital pin 10
+            "RESET": board.D11,  # Digital pin 11
             "LED": board.D13,  # Built-in LED
         }
     elif board_type == "RPI":
