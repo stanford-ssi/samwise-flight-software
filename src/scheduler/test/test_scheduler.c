@@ -203,12 +203,10 @@ sched_state_t running_state = {.name = "running",
  */
 void test_all_tasks_different_periods()
 {
-    clear_and_init_slate(&test_slate);
     LOG_DEBUG("=== Test 1: All tasks with different periods ===");
     log_viz_event("test_start", NULL, "all_tasks_different_periods");
 
     mock_time_us = 0;
-    free_slate(&test_slate);
     clear_and_init_slate(&test_slate);
     reset_task_stats();
 

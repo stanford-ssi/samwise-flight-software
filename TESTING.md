@@ -58,6 +58,7 @@ int main()
     my_task.task_init(&test_slate);
     my_task.task_dispatch(&test_slate);
 
+    free_slate(&test_slate); // Do this at the end of every unit test!
     return 0;
 }
 ```

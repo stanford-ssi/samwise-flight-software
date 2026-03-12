@@ -71,6 +71,7 @@ void test_my_state() {
     reset_task_stats();
     slate_t slate;
     clear_and_init_slate(&slate);
+    
     slate.current_state = &my_test_state;
 
     // Open visualization log
@@ -90,6 +91,8 @@ void test_my_state() {
 
     // Close log
     viz_log_close();
+
+    free_slate(&slate);
 }
 ```
 

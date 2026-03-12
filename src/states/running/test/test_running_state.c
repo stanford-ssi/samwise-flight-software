@@ -205,7 +205,6 @@ void test_scheduler_execution()
 
 int main()
 {
-    clear_and_init_slate(&test_slate);
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
 
     viz_log_open_log_dir("running_state_viz.json");
@@ -224,6 +223,5 @@ int main()
 
     viz_log_close();
 
-    free_slate(&test_slate);
     return 0;
 }
