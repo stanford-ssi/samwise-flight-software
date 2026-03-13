@@ -1,5 +1,7 @@
 import serial
 import logging
+import sys
+import time
 
 import commands
 from setup import initialize
@@ -15,28 +17,52 @@ BAUDRATE = 115200
 
 TIMEOUT = 10
 
+MAX_SERIAL_RETRIES = 5
+SERIAL_RETRY_DELAY = 1
+
 # Initialise pins -----------
 initialize()
 
 # Setting up the logger ------
-
-update_boot_count()
-boot_count = get_boot_count()
-setup_logger(boot_count)
-clean_logs()
+boot_count = -1
+try:
+    update_boot_count()
+    boot_count = get_boot_count()
+    setup_logger(boot_count)
+    clean_logs()
+except Exception as e:
+    print(f"Logger setup failed: {e}")
 
 log = logging.getLogger(__name__)
+log.propagate = False
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 # Main code entry point
 log.info(f"Pi running, boot number {boot_count}...")
 
-with serial.Serial(PORT_NAME, BAUDRATE, timeout=TIMEOUT) as ser:
+# Open serial port with retries
+for attempt in range(MAX_SERIAL_RETRIES):
+    try:
+        ser = serial.Serial(PORT_NAME, BAUDRATE, timeout=TIMEOUT)
+        break
+    except serial.SerialException as e:
+        log.error(f"Serial open failed (attempt {attempt + 1}/{MAX_SERIAL_RETRIES}): {e}")
+        time.sleep(SERIAL_RETRY_DELAY)
+else:
+    log.critical("Could not open serial port after retries. Exiting.")
+    sys.exit(1)
 
+with ser:
     command_handler = SerialCommandHandlerPayload(ser, commands.NAMES_TO_COMMANDS)
 
-    #Â Set file transfer protocol in commands module
+    # Set file transfer protocol in commands module
     commands.file_transfer = SerialFileTransfer(ser)
     commands.packet_handler = SerialPacketHandler(ser)
 
     while True:
-        command_handler.receive_and_dispatch_command()
+        try:
+            command_handler.receive_and_dispatch_command()
+        except serial.SerialException as e:
+            pass
+        except Exception as e:
+            log.error(f"Unhandled error in command loop: {e}", exc_info=True)
