@@ -27,6 +27,9 @@ A few notes on this document:
 ## Definitions
 Here are a few definitions for ease of understanding:
 
+_General:_
+* **KiB** - Kibibyte, or 1024 bytes instead of 1000 bytes. This is what we use across FTP and Filesys, please do not get it confused! Whenever you see `KiB`, it means `* 1024 bytes` - and if you see `KB` or `1000 bytes`, then something is very wrong, and you should check to make sure the code is not completely busted.
+
 _FTP-specific:_
 * **Packet Data** or **Data Stored in Packet**: A single part of a file's data, the maximum size that can be sent up from the ground at once. In this implementation, it is 205 bytes. This is controlled by the data field size in `src/packet/packet.h` and our implementation of the structure `FTP_WRITE_TO_FILE` (see below).
 * **Cycle**: A set of N packet data that are processed in RAM before being dumped into MRAM. For example, if N=256, then packets 0-255 are in the first cycle, 256-511 in the second, and so on. This is further explained later in the document.
