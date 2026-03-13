@@ -32,10 +32,6 @@ try:
     clean_logs()
 except Exception as e:
     print(f"Logger setup failed: {e}")
-    try:
-        setup_logger(boot_count)
-    except Exception:
-        pass
 
 log = logging.getLogger(__name__)
 log.propagate = False
@@ -66,5 +62,7 @@ with ser:
     while True:
         try:
             command_handler.receive_and_dispatch_command()
+        except serial.SerialException as e:
+            pass
         except Exception as e:
             log.error(f"Unhandled error in command loop: {e}", exc_info=True)
