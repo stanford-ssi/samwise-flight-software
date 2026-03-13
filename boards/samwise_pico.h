@@ -75,7 +75,7 @@
 
 // pico_cmake_set_default PICO_FLASH_SIZE_BYTES = (2 * 1024 * 1024)
 #ifndef PICO_FLASH_SIZE_BYTES
-#define PICO_FLASH_SIZE_BYTES (2 * 1024 * 1024)
+#define PICO_FLASH_SIZE_BYTES (4 * 1024 * 1024)
 #endif
 // Drive high to force power supply into PWM mode (lower ripple on 3V3 at light loads)
 #define PICO_SMPS_MODE_PIN 23

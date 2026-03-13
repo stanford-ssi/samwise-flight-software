@@ -29,7 +29,7 @@ Here are a few definitions for ease of understanding:
 
 _FTP-specific:_
 * **Packet Data** or **Data Stored in Packet**: A single part of a file's data, the maximum size that can be sent up from the ground at once. In this implementation, it is 205 bytes. This is controlled by the data field size in `src/packet/packet.h` and our implementation of the structure `FTP_WRITE_TO_FILE` (see below).
-* **Cycle**: A set of N packet data that are processed in RAM before being dumped into MRAM. For example, if N=5, then packets 0-4 are in the first cycle, 5-9 in the second, and so on. This is further explained later in the document.
+* **Cycle**: A set of N packet data that are processed in RAM before being dumped into MRAM. For example, if N=256, then packets 0-255 are in the first cycle, 256-511 in the second, and so on. This is further explained later in the document.
 * **Buffer**: An area in RAM that temporarily stores all packet data in a cycle before they are written to MRAM.
 * **CRC32**: A 32-bit Cyclic Redundancy Check used to verify the integrity of the uploaded file. This is computed after upload has completed, and is compared to the CRC32 that was sent at the beginning (on start file write).
 
@@ -52,8 +52,8 @@ A buffer of `205 * N` bytes lives on SAMWISE's RAM, which is used to cache the `
 The design is, in rough terms, as follows:
 1. Start a file write
 2. Loop:
-    1. Allow N (=5 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..4 inclusive to be written in any order, and store each one in buffer.
-    2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 5..9 inclusive.
+    1. Allow N (=256 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..255 inclusive to be written in any order, and store each one in buffer.
+    2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually written file. If successful, finally finish the operation.
 
 Here is a relevant flowchart for the design, only showing a full write (for context on how to read a UML sequence diagram, [this](https://creately.com/guides/sequence-diagram-tutorial/) is a good tutorial):
@@ -140,6 +140,8 @@ _Too low:_
 * High MRAM writes, which will degrade MRAM's lifetime. We need to limit these as much as possible.
 * Very high overhead from having to repeatedly go to the next cycle. For really large files, this could be a BIG problem, as it would take ages to upload the file completely.
 * Similar to above, lots of unnecessary operations that clog up SAMWISE and Ground Station functionality, not only radio link but processing as well (specifically on SAMWISE).
+
+The relevant issue to track this is [#253](https://github.com/stanford-ssi/samwise-flight-software/issues/253).
 
 ## Testing
 We want to be able to test on each level possible. So:
@@ -251,14 +253,15 @@ flowchart LR
 
 ## Useful Constants
 All of these are present in `config.h`:
-* `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle.
+* `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle. Currently set to 256.
 * `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
 * `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
-* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 5 = 1025 bytes`.
+* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 52480 bytes`.
 
 Here are some other calculations to justify design decisions:
 * The file length is stored in a 32-bit unsigned integer, which allows `2^32 = 4294967296 bytes = 4096 MiB` maximum. Note this should never be reached, it just should be greater than `FTP_MAX_FILE_LEN`.
 * A maximum of `2^16 - 2 = 65534` file names can be stored on filesys. **Note that `0x0` in a filename for any of the bytes is not allowed, as LFS handles these as C-strings!** (Hence the subtraction by 2).
+* Setting `N` takes `150 * 1024 / (205 * N)` cycles and `205 * N` bytes of buffered memory on SRAM to complete a 150KiB file, which we estimate as the binary size. Therefore, `N = 256` takes approximately 3 cycles to finish with `51.25KiB` of space being taken on SRAM.
 
 ## Packet Formatting (Ground Station -> SAMWISE)
 **NOTE:** This only shows the `data` field of a sample packet, as defined by the radio task. There are many more attributes that must be added outside of these FTP-specific ones!
@@ -341,7 +344,7 @@ packet
 +32: "(signed) FTP_Result (actual error originating from FTP)"
 +16: "Packet_Start or New_Packet_Start (first accepted packet id in sequence, inclusive)"
 +16: "Packet_End or New_Packet_End (last accepted packet id in sequence, inclusive)"
-+8: "Received_Bitfield (a bit set indicates the corresponding packet was received) // TODO: change based on N"
++32: "Received_Bitfield (a bit set indicates the corresponding packet was received, 256 bits for N=256)"
 ```
 
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR

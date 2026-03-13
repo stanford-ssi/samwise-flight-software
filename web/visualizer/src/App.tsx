@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LogData, TaskInfo } from './types';
+import { LogData, TaskInfo, StateSpan, StateTransition } from './types';
+import { StateMachine } from './components/StateMachine';
 import { Timeline } from './components/Timeline';
 import { EventLog } from './components/EventLog';
 import { TaskList } from './components/TaskList';
@@ -9,10 +10,18 @@ const TASK_COLORS = [
   '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'
 ];
 
+const STATE_COLORS = [
+  '#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4',
+  '#a855f7', '#ec4899', '#14b8a6',
+];
+
 function App() {
   const [logData, setLogData] = useState<LogData | null>(null);
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [stateSpans, setStateSpans] = useState<StateSpan[]>([]);
+  const [transitions, setTransitions] = useState<StateTransition[]>([]);
+  const [profileName, setProfileName] = useState<string>('');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,6 +32,15 @@ function App() {
       try {
         const data = JSON.parse(e.target?.result as string) as LogData;
         setLogData(data);
+
+        // Extract profile name from fsm_start event
+        const fsmStartEvent = data.events.find(ev => ev.event === 'fsm_start');
+        if (fsmStartEvent) {
+          const profileMatch = fsmStartEvent.details.match(/profile=(.+)/);
+          if (profileMatch) {
+            setProfileName(profileMatch[1]);
+          }
+        }
 
         // Extract task information from task_discovered events
         const discoveredTasks = new Map<string, TaskInfo>();
@@ -47,9 +65,66 @@ function App() {
           (a, b) => a.index - b.index
         );
         setTasks(taskList);
-
-        // Initially select all tasks
         setSelectedTasks(new Set(taskList.map(t => t.name)));
+
+        // Extract state spans and transitions from state_enter/state_exit events
+        const spans: StateSpan[] = [];
+        const trans: StateTransition[] = [];
+        const stateColorMap = new Map<string, string>();
+        let colorIdx = 0;
+
+        data.events.forEach((ev) => {
+          if (ev.event === 'state_enter') {
+            const stateMatch = ev.details.match(/state=([^,]+)/);
+            const fromMatch = ev.details.match(/from=([^,]+)/);
+            if (stateMatch) {
+              const stateName = stateMatch[1];
+              if (!stateColorMap.has(stateName)) {
+                stateColorMap.set(stateName, STATE_COLORS[colorIdx % STATE_COLORS.length]);
+                colorIdx++;
+              }
+
+              // Collect tasks discovered for this state (events after this enter)
+              const stateTasks: string[] = [];
+              const enterIdx = data.events.indexOf(ev);
+              for (let i = enterIdx + 1; i < data.events.length; i++) {
+                const nextEv = data.events[i];
+                if (nextEv.event === 'task_discovered') {
+                  stateTasks.push(nextEv.task);
+                } else if (nextEv.event === 'state_exit' || nextEv.event === 'state_enter') {
+                  break;
+                }
+              }
+
+              spans.push({
+                name: stateName,
+                enter_time_ms: ev.time_ms,
+                exit_time_ms: null,
+                tasks: stateTasks,
+                color: stateColorMap.get(stateName)!,
+              });
+
+              if (fromMatch && fromMatch[1] !== 'none') {
+                trans.push({
+                  from_state: fromMatch[1],
+                  to_state: stateName,
+                  time_ms: ev.time_ms,
+                });
+              }
+            }
+          } else if (ev.event === 'state_exit') {
+            // Close the most recent open span
+            for (let i = spans.length - 1; i >= 0; i--) {
+              if (spans[i].exit_time_ms === null) {
+                spans[i].exit_time_ms = ev.time_ms;
+                break;
+              }
+            }
+          }
+        });
+
+        setStateSpans(spans);
+        setTransitions(trans);
       } catch (error) {
         console.error('Error parsing log file:', error);
         alert('Error parsing log file. Please ensure it is valid JSON.');
@@ -57,6 +132,11 @@ function App() {
     };
     reader.readAsText(file);
   };
+
+  const hasFsmData = stateSpans.length > 0;
+  const maxTime = logData
+    ? Math.max(...logData.events.map(e => e.time_ms), 1000)
+    : 1000;
 
   return (
     <div style={{
@@ -71,10 +151,15 @@ function App() {
         borderBottom: '2px solid #333',
       }}>
         <h1 style={{ margin: 0, fontSize: '24px' }}>
-          Satellite Running State Visualizer
+          SAMWISE FSM Visualizer
         </h1>
         <p style={{ margin: '5px 0 0 0', color: '#888', fontSize: '14px' }}>
-          Upload the running_state_viz.json file to visualize task execution
+          Upload a visualization JSON file to visualize state transitions and task execution
+          {profileName && (
+            <span style={{ color: '#6366f1', marginLeft: '10px', fontWeight: 500 }}>
+              [{profileName}]
+            </span>
+          )}
         </p>
       </header>
 
@@ -108,6 +193,13 @@ function App() {
 
         {logData ? (
           <>
+            {hasFsmData && (
+              <StateMachine
+                stateSpans={stateSpans}
+                transitions={transitions}
+                maxTime={maxTime}
+              />
+            )}
             <TaskList
               tasks={tasks}
               selectedTasks={selectedTasks}
@@ -121,7 +213,12 @@ function App() {
                 setSelectedTasks(newSelected);
               }}
             />
-            <Timeline events={logData.events} tasks={tasks} selectedTasks={selectedTasks} />
+            <Timeline
+              events={logData.events}
+              tasks={tasks}
+              selectedTasks={selectedTasks}
+              stateSpans={hasFsmData ? stateSpans : undefined}
+            />
             <EventLog events={logData.events} selectedTasks={selectedTasks} />
           </>
         ) : (

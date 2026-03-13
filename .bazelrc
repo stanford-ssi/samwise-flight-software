@@ -122,6 +122,22 @@ test --test_summary=detailed
 test --config=tests
 
 # ============================================================================
+# FSM Integration Test Configurations
+# ============================================================================
+
+# These configs layer on top of `tests` (which `test` already inherits) and
+# add the global --copt defines needed by the FSM integration tests.
+# Usage:
+#   bazel test //src/scheduler:fsm_test_flight  --config=fsm-flight
+#   bazel test //src/scheduler:fsm_test_bringup --config=fsm-bringup
+#   bazel test //src/scheduler:fsm_test_debug   (no extra config needed)
+
+build:fsm-flight --copt=-DFLIGHT=1
+build:fsm-flight '--copt=-DPACKET_HMAC_PSK="test_key_0000000000000000"'
+
+build:fsm-bringup --copt=-DBRINGUP=1
+
+# ============================================================================
 # Optimization Settings
 # ============================================================================
 
