@@ -38,6 +38,7 @@ You can use the pre-provided scripts, `source build_tests.sh` and `source build_
 
 The following configuration options are available:
 * `pico`: pico exectuable
+* `pico-hat`: pico-hat executable
 * `picubed-debug`: picubed executable, for debugging
 * `picubed-flight`: picubed executable, for flight
 * `picubed-bringup`: picubed executable, for bringing up the board
