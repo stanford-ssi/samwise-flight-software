@@ -210,27 +210,12 @@ int main(void)
 {
     LOG_DEBUG("=== FSM Integration Test (profile: %s) ===", get_profile_name());
 
-    // Build output filename, writing to TEST_UNDECLARED_OUTPUTS_DIR if
-    // available so Bazel preserves the JSON after the test run.
-    char filename[256];
-    const char *out_dir = getenv("TEST_UNDECLARED_OUTPUTS_DIR");
-    char basename[64];
-    snprintf(basename, sizeof(basename), "fsm_viz_%s.json", get_profile_name());
-    // Replace hyphens with underscores for valid filenames
-    for (char *p = basename; *p; p++)
-    {
-        if (*p == '-')
-            *p = '_';
-    }
-    if (out_dir != NULL)
-    {
-        snprintf(filename, sizeof(filename), "%s/%s", out_dir, basename);
-    }
-    else
-    {
-        snprintf(filename, sizeof(filename), "%s", basename);
-    }
-    viz_log_open(filename);
+    char *profile_name = get_profile_name();
+    char basename[8 + strlen(profile_name) +
+                  6]; // "fsm_viz_" + profile_name + ".json\0"
+    snprintf(basename, sizeof(basename), "fsm_viz_%s.json", profile_name);
+
+    viz_log_open_log_dir(basename);
 
     // Log profile info
     char profile_details[64];
