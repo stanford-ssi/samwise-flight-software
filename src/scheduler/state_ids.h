@@ -17,5 +17,6 @@ typedef enum
     STATE_BURN_WIRE,
     STATE_BURN_WIRE_RESET,
     STATE_BRINGUP,
+    STATE_SHUTDOWN,
     STATE_COUNT // Must be last: total number of states
 } state_id_t;
