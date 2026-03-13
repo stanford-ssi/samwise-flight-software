@@ -6,7 +6,7 @@
 # ============================================================================
 
 # Set C/C++ language standards
-build --cxxopt=-std=c++17
+build --cxxopt=-std=gnu++2x
 build --conlyopt=-std=gnu2x
 
 # Show detailed build information
