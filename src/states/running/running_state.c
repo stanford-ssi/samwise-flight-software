@@ -31,11 +31,11 @@ sched_state_t running_state = {
     .task_list = {&print_task, &blink_task, &hardware_test_task},
     .get_next_state = &running_get_next_state};
 #else
-sched_state_t running_state = {
-    .name = "running",
-    .id = STATE_RUNNING,
-    .num_tasks = 8,
-    .task_list = {&print_task, &watchdog_task, &beacon_task, &adcs_task,
-                  &payload_task, &telemetry_task, &radio_task, &command_task},
-    .get_next_state = &running_get_next_state};
+sched_state_t running_state = {.name = "running",
+                               .id = STATE_RUNNING,
+                               .num_tasks = 6,
+                               .task_list = {&print_task, &watchdog_task,
+                                             &beacon_task, &telemetry_task,
+                                             &radio_task, &command_task},
+                               .get_next_state = &running_get_next_state};
 #endif
