@@ -57,7 +57,7 @@ The design is, in rough terms, as follows:
 2. Loop:
     1. Allow N (=256 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..255 inclusive to be written in any order, and store each one in buffer.
     2. Send periodic status reports every 5 seconds containing the current bitfield and debugging information, rather than responding to each individual packet.
-    3. Once all packets in this cycle is complete, write to MRAM, clear buffer, and send FTP_READY_RECEIVE for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
+    3. Once all packets in this cycle is complete, write to MRAM, clear buffer, and send `FTP_FILE_WRITE_SUCCESS` for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually written file. If successful, finally finish the operation.
 
 Note that only starting a file write and starting a new cycle will generate a "Ready_Recieve" packet to be sent. Otherwise, bitfield information is periodically sent.
@@ -107,9 +107,9 @@ We implement the following functions:
 * start file write
 * write packet to buffer (automatically writes to file if all packets are received)
 * cancel file write
-* remove file
-* list all files, their CRC32s, file sizes, & other metadata
-* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart)
+* remove file // TODO
+* list all files, their CRC32s, file sizes, & other metadata // TODO
+* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart) // TODO
 * periodic status reporting with comprehensive debugging information to reduce overhead
 
 Note this means we also **do not have** some common functionalities:
@@ -139,7 +139,7 @@ Based on our knowledge of alt designs and our own design, here are the tradeoffs
 _Too high:_
 * Limited by space on RAM, i.e. buffer size cannot be too large
 * The point of "cycling" is to prevent needing to send all the packets repeatedly from Ground -> SAMWISE. (See 2a above). Having a higher N could make this "harder".
-    * Note that this is not really that big of an issue, as we now provide a bitfield of packets we haven't received yet (see `FTP_READY_RECEIVE` specifications). However, it is possible for this to be a bit finicky still (e.g. it is not that easy for ground station to quickly adapt to this bitfield, especially if it is still cycling through hundreds of disjointed packets and bitfields are changing weirdly every time SAMWISE returns `FTP_READY_RECEIVE`).
+    * Note that this is not really that big of an issue, as we now provide a bitfield of packets we haven't received yet (see `FTP_READY_RECEIVE` & `FTP_FILE_WRITE_SUCCESS` specifications). However, it is possible for this to be a bit finicky still (e.g. it is not that easy for ground station to quickly adapt to this bitfield, especially if it is still cycling through hundreds of disjointed packets and bitfields are changing weirdly every time SAMWISE returns `FTP_READY_RECEIVE`).
 * More susceptible to losing a lot of data already uploaded. For example, if I sent 300/400 packets, but SAMWISE suddenly restarts for whatever reason, then I have to resend all 400 packets as RAM is cleared on restart. 
 * RAM is also in general pretty volatile, so it is not the best idea to keep so much data in RAM (much safer to flush to MRAM).
 * Similar to above, less opportunities for "checkpoints" where you can continue from (see "resume file write" functionality in Overall Design).
@@ -234,7 +234,7 @@ This approach significantly reduces bandwidth usage while providing comprehensiv
 #### Ending a cycle
 If, on the last packet received on cycle, a little-fs error occurs, it will return FTP_FILE_WRITE_MRAM_ERROR.
 
-If not on the last cycle and the cycle is completed successfully, it will return FTP_READY_RECEIVE with a new range of Packet_Start to Packet_End it will now accept. This is the only time an immediate response is sent, as it signals the start of a new cycle.
+If not on the last cycle and the cycle is completed successfully, it will return FTP_FILE_WRITE_SUCCESS with a new range of Packet_Start to Packet_End it will now accept. This is the only time an immediate response is sent, as it signals the start of a new cycle.
 
 #### Ending a file
 If on the last cycle, we start wrapping up the file writing process.
@@ -333,6 +333,35 @@ Each packet has its own `FTP_Result`, as described below. All fields are unsigne
 
 **NOTE 2:** Most of these packets have optional "Additional Data" fields which can store a bunch of free standing characters (a C-string). This is currently not implemented, but kept in the design just in case we implement e.g. log dumping capabilities.
 
+### FTP Result Codes
+
+Success/Status (positive):
+
+| Code | Name | Description |
+|------|------|-------------|
+| `+1` | `FILESYS_REFORMAT_SUCCESS` | Filesystem reformatted successfully |
+| `+10` | `FTP_READY_RECEIVE` | Ready to receive file packets |
+| `+11` | `FTP_FILE_WRITE_SUCCESS` | Cycle complete, ready for next set |
+| `+20` | `FTP_EOF_SUCCESS` | File transfer completed with correct CRC |
+| `+30` | `FTP_CANCEL_SUCCESS` | File transfer cancelled successfully |
+| `+40` | `FTP_STATUS_REPORT` | Periodic status report during file transfer |
+
+Errors (negative). Paired operations mirror their success code (e.g. `±1` for reformat, `±20` for EOF, `±30` for cancel):
+
+| Code | Name | Description |
+|------|------|-------------|
+| `-1` | `FILESYS_REFORMAT_ERROR` | Error formatting filesystem |
+| `-2` | `FILESYS_INIT_ERROR` | Filesystem not initialized (no success pair) |
+| `-11` | `FTP_FILE_WRITE_BUFFER_ERROR` | Error writing file data to buffer |
+| `-12` | `FTP_FILE_WRITE_MRAM_ERROR` | Error writing buffered data to MRAM |
+| `-13` | `FTP_ERROR_PACKET_OUT_OF_RANGE` | Received packet outside expected range |
+| `-20` | `FTP_EOF_CRC_ERROR` | CRC mismatch at EOF |
+| `-30` | `FTP_CANCEL_ERROR` | Error cancelling file write |
+| `-50` | `FTP_ERROR_START_FILE_WRITE` | Error initializing file write |
+| `-51` | `FTP_ERROR_ALREADY_WRITING_FILE` | Already writing a file |
+| `-52` | `FTP_ERROR_NOT_WRITING_FILE` | Not writing a file |
+| `-99` | `FTP_ERROR` | Generic error |
+
 ### No Additional Data Packets
 *These can still store optional C-strings, as noted in Note 2*
 
@@ -353,15 +382,15 @@ packet
 ```
 
 ### Cycle Status Packets
-For (success): `FTP_READY_RECEIVE` (sent only on cycle completion)
+For (success): `FTP_FILE_WRITE_SUCCESS` (sent only on cycle completion)
 
 For (error): `FTP_ERROR_PACKET_OUT_OF_RANGE`
 
-Note that `FTP_READY_RECEIVE` is now only sent when a cycle completes, containing New_Packet_Start and New_Packet_End to signify the start of a new cycle or start of a file write.
+Note that any bitfield information, i.e. `FTP_FILE_WRITE_SUCCESS`, is now only sent when a cycle completes, containing New_Packet_Start and New_Packet_End to signify the start of a new cycle or start of a file write.
 
 ```mermaid
 ---
-title: SAMWISE -> Ground Station Cycle Status Packets (FTP_READY_RECEIVE)
+title: SAMWISE -> Ground Station Cycle Status Packets (FTP_FILE_WRITE_SUCCESS)
 ---
 packet
 +16: "fname"
