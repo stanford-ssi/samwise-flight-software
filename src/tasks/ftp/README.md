@@ -333,6 +333,35 @@ Each packet has its own `FTP_Result`, as described below. All fields are unsigne
 
 **NOTE 2:** Most of these packets have optional "Additional Data" fields which can store a bunch of free standing characters (a C-string). This is currently not implemented, but kept in the design just in case we implement e.g. log dumping capabilities.
 
+### FTP Result Codes
+
+Success/Status (positive):
+
+| Code | Name | Description |
+|------|------|-------------|
+| `+1` | `FILESYS_REFORMAT_SUCCESS` | Filesystem reformatted successfully |
+| `+10` | `FTP_READY_RECEIVE` | Ready to receive file packets |
+| `+11` | `FTP_FILE_WRITE_SUCCESS` | Cycle complete, ready for next set |
+| `+20` | `FTP_EOF_SUCCESS` | File transfer completed with correct CRC |
+| `+30` | `FTP_CANCEL_SUCCESS` | File transfer cancelled successfully |
+| `+40` | `FTP_STATUS_REPORT` | Periodic status report during file transfer |
+
+Errors (negative). Paired operations mirror their success code (e.g. `±1` for reformat, `±20` for EOF, `±30` for cancel):
+
+| Code | Name | Description |
+|------|------|-------------|
+| `-1` | `FILESYS_REFORMAT_ERROR` | Error formatting filesystem |
+| `-2` | `FILESYS_INIT_ERROR` | Filesystem not initialized (no success pair) |
+| `-11` | `FTP_FILE_WRITE_BUFFER_ERROR` | Error writing file data to buffer |
+| `-12` | `FTP_FILE_WRITE_MRAM_ERROR` | Error writing buffered data to MRAM |
+| `-13` | `FTP_ERROR_PACKET_OUT_OF_RANGE` | Received packet outside expected range |
+| `-20` | `FTP_EOF_CRC_ERROR` | CRC mismatch at EOF |
+| `-30` | `FTP_CANCEL_ERROR` | Error cancelling file write |
+| `-50` | `FTP_ERROR_START_FILE_WRITE` | Error initializing file write |
+| `-51` | `FTP_ERROR_ALREADY_WRITING_FILE` | Already writing a file |
+| `-52` | `FTP_ERROR_NOT_WRITING_FILE` | Not writing a file |
+| `-99` | `FTP_ERROR` | Generic error |
+
 ### No Additional Data Packets
 *These can still store optional C-strings, as noted in Note 2*
 
