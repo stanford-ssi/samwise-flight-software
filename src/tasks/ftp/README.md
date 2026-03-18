@@ -56,7 +56,8 @@ The design is, in rough terms, as follows:
 1. Start a file write
 2. Loop:
     1. Allow N (=256 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..255 inclusive to be written in any order, and store each one in buffer.
-    2. Once all packets in this cycle is complete, write to MRAM, and then clear buffer for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
+    2. Send periodic status reports every 5-10 seconds containing the current bitfield and debugging information, rather than responding to each individual packet.
+    3. Once all packets in this cycle is complete, write to MRAM, clear buffer, and send FTP_READY_RECEIVE for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually written file. If successful, finally finish the operation.
 
 Here is a relevant flowchart for the design, only showing a full write (for context on how to read a UML sequence diagram, [this](https://creately.com/guides/sequence-diagram-tutorial/) is a good tutorial):
@@ -79,19 +80,23 @@ sequenceDiagram
     deactivate FTP
     activate GROUND STATION
 
-    loop Until upload done
-        GROUND STATION-)FTP: Data Packet<br />fname, packet_id, 205 bytes of data
-        deactivate GROUND STATION
-        activate FTP
-        FTP->>RAM: Write data to RAM
-        alt Buffer full (cycle finished)
-            RAM->>FILESYS: Append file data on MRAM
-            Note over RAM: Buffer is cleared
-            FTP-->>GROUND STATION: New_Ready<br />New_Packet_Start, New_Packet_End
-        else More packets needed in cycle
-            FTP-->>GROUND STATION: Ready<br />Packet_Start, Packet_End
+    par Data Transfer
+        loop Until upload done
+            GROUND STATION-)FTP: Data Packet<br />fname, packet_id, 205 bytes of data
+            deactivate GROUND STATION
+            activate FTP
+            FTP->>RAM: Write data to RAM
+            alt Buffer full (cycle finished)
+                RAM->>FILESYS: Append file data on MRAM
+                Note over RAM: Buffer is cleared
+                FTP-->>GROUND STATION: New_Ready_Receive<br />New_Packet_Start, New_Packet_End
+            end
+            deactivate FTP
         end
-        deactivate FTP
+    and Periodic Status Updates
+        loop Every 5-10 seconds
+            FTP-->>GROUND STATION: FTP_STATUS_REPORT<br />bitfield, filesys state, debug info
+        end
     end
     FILESYS->>FTP: File read & CRC32 Computed
     activate FTP
@@ -107,6 +112,14 @@ We implement the following functions:
 * remove file
 * list all files, their CRC32s, file sizes, & other metadata
 * resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart)
+* periodic status reporting with comprehensive debugging information
+
+### Design Benefits
+This periodic status update approach provides several advantages over per-packet responses:
+* **Reduced bandwidth overhead**: Sends comprehensive status every 5-10 seconds instead of 32+ bytes per packet
+* **Enhanced debugging**: Status reports include filesystem health, total bytes written, and partial file CRC
+* **Improved reliability**: Less radio traffic reduces chance of important status information being lost
+* **Better performance**: Lower processing overhead per data packet since no immediate response is required
 
 Note this means we also **do not have** some common functionalities:
 * upload multiple files at once
@@ -206,12 +219,20 @@ Note that data_len in the packet is used to determine the length of data - this 
 
 If an error occurs when writing to buffer, it will return FTP_FILE_WRITE_BUFFER_ERROR.
 
-If successful and not the final packet, it will send FTP_READY_RECEIVE, which reiterates the Packet_Start and Packet_End, as well as contains a bitfield of all packets received in this cycle (0s indicate packets needing to be sent).
+#### Periodic Status Updates
+During normal packet reception, FTP does not send immediate responses to reduce radio overhead. Instead, periodic FTP_STATUS_REPORT packets are sent every 5-10 seconds containing:
+* Current packet range (packet_start, packet_end)
+* 32-byte bitfield showing which packets have been received
+* Total bytes written to MRAM so far
+* Partial file CRC for verification
+* Filesystem writing state for debugging
+
+This approach significantly reduces bandwidth usage while providing comprehensive debugging information.
 
 #### Ending a cycle
 If, on the last packet received on cycle, a little-fs error occurs, it will return FTP_FILE_WRITE_MRAM_ERROR.
 
-If not on the last cycle and the cycle is completed successfully, it will return FTP_FILE_WRITE_SUCCESS, with a new range of Packet_Start to Packet_End it will now accept.
+If not on the last cycle and the cycle is completed successfully, it will return FTP_READY_RECEIVE with a new range of Packet_Start to Packet_End it will now accept. This is the only time an immediate response is sent, as it signals the start of a new cycle.
 
 #### Ending a file
 If on the last cycle, we start wrapping up the file writing process.
@@ -330,24 +351,62 @@ packet
 ```
 
 ### Cycle Status Packets
-For (success): `FTP_READY_RECEIVE`, `FTP_FILE_WRITE_SUCCESS`
+For (success): `FTP_READY_RECEIVE` (sent only on cycle completion)
 
 For (error): `FTP_ERROR_PACKET_OUT_OF_RANGE`
 
-Note that for `FTP_FILE_WRITE_SUCCESS`, Packet_Start & Packet_End are technically "New_Packet_Start" and "New_Packet_End", to signify the start of a new cycle. However, the packet structure is still the same.
+Note that `FTP_READY_RECEIVE` is now only sent when a cycle completes, containing New_Packet_Start and New_Packet_End to signify the start of a new cycle.
 
 ```mermaid
 ---
-title: SAMWISE -> Ground Station Cycle Status Packets
+title: SAMWISE -> Ground Station Cycle Status Packets (FTP_READY_RECEIVE)
 ---
 packet
 +16: "fname"
 +32: "file_len (as received on start, NOT computed, in bytes)"
 +32: "file_crc (as received on start, NOT computed, CRC-32)"
 +32: "(signed) FTP_Result (actual error originating from FTP)"
-+16: "Packet_Start or New_Packet_Start (first accepted packet id in sequence, inclusive)"
-+16: "Packet_End or New_Packet_End (last accepted packet id in sequence, inclusive)"
++16: "New_Packet_Start (first accepted packet id in new cycle, inclusive)"
++16: "New_Packet_End (last accepted packet id in new cycle, inclusive)"
 +32: "Received_Bitfield (a bit set indicates the corresponding packet was received, 256 bits for N=256)"
+```
+
+### Periodic Status Report Packets
+For periodic updates: `FTP_STATUS_REPORT` (sent every 5-10 seconds during file transfer)
+
+This packet provides comprehensive debugging information about the current FTP and filesystem state without the overhead of per-packet responses.
+
+```c
+typedef struct {
+    uint16_t fname;                    // Current file being written
+    uint32_t file_len;                 // File length being written
+    uint32_t file_crc;                 // Expected file CRC
+    uint16_t packet_start;             // Current cycle's start packet
+    uint16_t packet_end;               // Current cycle's end packet
+    uint8_t received_bitfield[32];     // 256-bit bitfield (32 bytes)
+    
+    // Additional filesystem & FTP state info for debugging:
+    uint32_t total_bytes_written;      // Total bytes written to MRAM so far
+    uint32_t file_crc_so_far;          // CRC of the file so far as it currently sits on the MRAM, which ground station may use for verification during file transfer (using total_bytes_written). This should be 0 if nothing has been written so far (first cycle).
+    uint8_t filesys_is_writing_file;   // Internal state - if filesys is currently writing a file
+} __attribute__((packed)) FTP_STATUS_REPORT_DATA;
+```
+
+```mermaid
+---
+title: SAMWISE -> Ground Station Periodic Status Report (FTP_STATUS_REPORT)
+---
+packet
++16: "fname"
++32: "file_len (as received on start, NOT computed, in bytes)"
++32: "file_crc (as received on start, NOT computed, CRC-32)"
++32: "(signed) FTP_Result = FTP_STATUS_REPORT"
++16: "packet_start (current cycle's start packet)"
++16: "packet_end (current cycle's end packet)"
++32: "received_bitfield[32] (256-bit bitfield, 32 bytes)"
++32: "total_bytes_written (total bytes written to MRAM so far)"
++32: "file_crc_so_far (CRC of file currently on MRAM)"
++8: "filesys_is_writing_file (internal filesys state flag)"
 ```
 
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR
