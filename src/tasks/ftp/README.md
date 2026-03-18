@@ -37,7 +37,7 @@ _FTP-specific:_
 * **CRC32**: A 32-bit Cyclic Redundancy Check used to verify the integrity of the uploaded file. This is computed after upload has completed, and is compared to the CRC32 that was sent at the beginning (on start file write). Note that the CRC32 algorithm used is the same as implemented in `zlib`, so you may use Python's `import zlib; zlib.crc32(...)` function to compare/interop with CRC32 used throughout this design (implemented at `src/utils/crc32.h`).
 
 _SAMWISE Hardware:_
-* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime. // TODO: How much storage is in RAM?
+* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime. Note that we are now using a `malloc` in Filesys, which means we can use `~51KiB` on heap.
 * **MRAM**: Magnetoresistive RAM, the permanent (non-volatile) memory used for file storage on the satellite. Essentially, think of it like an SSD, not a RAM. This has 512KiB of storage space.
 
 _Filesys:_
@@ -282,7 +282,7 @@ All of these are present in `config.h`:
 * `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle. Currently set to 256.
 * `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
 * `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
-* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 524800 bytes`.
+* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 52480 bytes`.
 
 Here are some other calculations to justify design decisions:
 * The file length is stored in a 32-bit unsigned integer, which allows `2^32 = 4294967296 bytes = 4096 MiB` maximum. Note this should never be reached, it just should be greater than `FTP_MAX_FILE_LEN`.

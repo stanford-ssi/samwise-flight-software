@@ -78,6 +78,12 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
         return FILESYS_ERR_MOUNT;
     }
 
+    if (slate->filesys_buffer == NULL)
+    {
+        LOG_ERROR("[filesys] No filesys buffer was ever allocated!");
+        return FILESYS_ERR_MALLOC;
+    }
+
     slate->filesys_is_writing_file = false;
     filesys_clear_buffer(slate);
 
