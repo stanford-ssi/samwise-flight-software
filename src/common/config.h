@@ -20,6 +20,9 @@
 // Time to wait between dispatches when active
 #define FTP_ACTIVE_DISPATCH_MS 100
 
+// Interval between periodic FTP_STATUS_REPORT packets during file transfer
+#define FTP_STATUS_REPORT_INTERVAL_MS 5000
+
 // The number of packets to require before moving on to the next n packets
 #define FTP_NUM_PACKETS_PER_CYCLE 256
 

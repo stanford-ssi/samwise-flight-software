@@ -150,6 +150,7 @@ typedef struct samwise_slate
     FTP_PACKET_TRACKER_T ftp_packets_received_tracker;
     FTP_PACKET_SEQUENCE_T ftp_start_cycle_packet_id; // Starting packet ID of
                                                      // current cycle
+    absolute_time_t ftp_last_status_report_time;
     queue_t ftp_format_filesystem_data;
     queue_t ftp_start_file_write_data;
     queue_t ftp_write_to_file_data; // Realistically this should be an array of

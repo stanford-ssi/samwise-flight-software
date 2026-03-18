@@ -257,6 +257,7 @@ void ftp_process_file_start_write_command(
 
     slate->ftp_start_cycle_packet_id = 0;
     ftp_tracker_clear(&slate->ftp_packets_received_tracker);
+    slate->ftp_last_status_report_time = get_absolute_time();
 
     LOG_INFO("[FTP] Started write to file! Blocks left after file is done "
              "writing, if successful: %d",
@@ -297,11 +298,21 @@ void ftp_process_file_write_data_command(slate_t *slate,
         return;
     }
 
-    // 1. Write data to buffer at correct offset
     // packet_index is the 0-based index within the current cycle (0 to
     // FTP_NUM_PACKETS_PER_CYCLE - 1)
     const FTP_PACKET_SEQUENCE_T packet_index =
         command_data.packet_id % FTP_NUM_PACKETS_PER_CYCLE;
+
+    // Check for duplicate packet
+    if (ftp_tracker_check_bit(&slate->ftp_packets_received_tracker,
+                              packet_index))
+    {
+        LOG_WARN("[FTP] Duplicate packet ID %d received, ignoring.",
+                 command_data.packet_id);
+        return;
+    }
+
+    // 1. Write data to buffer at correct offset
     const FILESYS_BUFFER_SIZE_T offset = packet_index * FTP_DATA_PAYLOAD_SIZE;
 
     // Write data to buffer
@@ -339,14 +350,11 @@ void ftp_process_file_write_data_command(slate_t *slate,
     LOG_DEBUG("[FTP] Packet %d received. Expecting %d packets in this cycle.",
               command_data.packet_id, packets_in_this_cycle);
 
-    // If not the last in the cycle, send FTP_READY_RECEIVE and return
+    // If not the last in the cycle, return (status reports are sent
+    // periodically)
     if (!ftp_tracker_check_mask_completed(&slate->ftp_packets_received_tracker,
                                           packets_in_this_cycle))
     {
-        // Send FTP_READY_RECEIVE with Packet range
-        send_ftp_cycle_info_packet(slate, FTP_READY_RECEIVE,
-                                   slate->ftp_start_cycle_packet_id,
-                                   slate->ftp_packets_received_tracker);
         return;
     }
 
@@ -496,6 +504,56 @@ void ftp_process_file_cancel_write_command(
                                        FTP_CANCEL_SUCCESS, NULL, 0);
 }
 
+/**
+ * Sends a periodic FTP_STATUS_REPORT packet with cycle info, CRC progress,
+ * total bytes written, and file write state.
+ */
+inline static void send_ftp_status_report(slate_t *slate)
+{
+    uint8_t data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
+                 sizeof(FTP_PACKET_TRACKER_T) +
+                 sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
+                 sizeof(FILESYS_BUFFERED_FILE_LEN_T) + sizeof(uint8_t)];
+
+    uint8_t *data_ptr = data;
+
+    // Packet range
+    const FTP_PACKET_SEQUENCE_T packet_start = slate->ftp_start_cycle_packet_id;
+    const FTP_PACKET_SEQUENCE_T packet_end = ftp_get_last_packet(slate);
+    memcpy_inc(&data_ptr, &packet_start, sizeof(FTP_PACKET_SEQUENCE_T));
+    memcpy_inc(&data_ptr, &packet_end, sizeof(FTP_PACKET_SEQUENCE_T));
+
+    // Received bitfield
+    memcpy_inc(&data_ptr, &slate->ftp_packets_received_tracker,
+               sizeof(FTP_PACKET_TRACKER_T));
+
+    // CRC computed over bytes written to MRAM so far (0 if first cycle)
+    FILESYS_BUFFERED_FILE_CRC_T file_crc_so_far = 0;
+    if (slate->ftp_start_cycle_packet_id > 0)
+    {
+        lfs_ssize_t crc_lfs_err = LFS_ERR_OK;
+        filesys_error_t crc_err = FILESYS_OK;
+        file_crc_so_far = filesys_compute_crc(slate, &crc_err, &crc_lfs_err);
+        if (crc_err != FILESYS_OK)
+            file_crc_so_far = 0;
+    }
+    memcpy_inc(&data_ptr, &file_crc_so_far,
+               sizeof(FILESYS_BUFFERED_FILE_CRC_T));
+
+    // Total bytes written to MRAM so far
+    FILESYS_BUFFERED_FILE_LEN_T total_bytes_written =
+        (FILESYS_BUFFERED_FILE_LEN_T)slate->ftp_start_cycle_packet_id *
+        FTP_DATA_PAYLOAD_SIZE;
+    memcpy_inc(&data_ptr, &total_bytes_written,
+               sizeof(FILESYS_BUFFERED_FILE_LEN_T));
+
+    // File write state
+    uint8_t is_writing = slate->filesys_is_writing_file ? 1 : 0;
+    memcpy_inc(&data_ptr, &is_writing, sizeof(uint8_t));
+
+    ftp_send_result_packet(slate, FTP_STATUS_REPORT, data, sizeof(data));
+}
+
 void ftp_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(FTP_TASK_COLOR);
@@ -538,6 +596,18 @@ void ftp_task_dispatch(slate_t *slate)
             ftp_process_file_cancel_write_command(slate, data);
         else
             LOG_ERROR("[FTP] Failed to remove cancel file command from queue.");
+    }
+
+    // Send periodic status reports during active file transfer
+    if (slate->filesys_is_writing_file)
+    {
+        uint64_t elapsed_us = absolute_time_diff_us(
+            slate->ftp_last_status_report_time, get_absolute_time());
+        if (elapsed_us >= FTP_STATUS_REPORT_INTERVAL_MS * 1000ULL)
+        {
+            send_ftp_status_report(slate);
+            slate->ftp_last_status_report_time = get_absolute_time();
+        }
     }
 
     if (!slate->filesys_is_writing_file)

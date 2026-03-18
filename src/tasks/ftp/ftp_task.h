@@ -39,6 +39,17 @@ inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
 }
 
 /**
+ * Checks if the bit at the given index in the FTP packet tracker is set to 1
+ * (received).
+ */
+inline static bool ftp_tracker_check_bit(const FTP_PACKET_TRACKER_T *tracker,
+                                         uint16_t bit_index)
+{
+    return (tracker->bytes[bit_index / __CHAR_BIT__] &
+            (1 << (bit_index % __CHAR_BIT__))) != 0;
+}
+
+/**
  * Checks if the bits corresponding to the first num_bits packets in the tracker
  * are all set to 1 (received). Handles cases where num_bits is not a multiple
  * of 8.
@@ -224,6 +235,28 @@ enum ftp_result
      * CURRENTLY
      */
     FTP_ERROR, // Generic error
+
+    /**
+     * FTP_STATUS_REPORT:
+     *     Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID in
+     * set (inclusive)
+     *
+     *     Packet_End (FTP_PACKET_SEQUENCE_T) - Last accepted packet
+     * ID in set (inclusive)
+     *
+     *     Received (FTP_PACKET_TRACKER_T) - Bitfield of
+     * received packets in this set.
+     *
+     *     File_CRC_So_Far (FILESYS_BUFFERED_FILE_CRC_T) - CRC computed over
+     * bytes written to MRAM so far (0 if first cycle).
+     *
+     *     Total_Bytes_Written (FILESYS_BUFFERED_FILE_LEN_T) - Total bytes
+     * written to MRAM so far.
+     *
+     *     Filesys_Is_Writing_File (uint8_t) - 1 if a file write is in
+     * progress, 0 otherwise.
+     */
+    FTP_STATUS_REPORT, // Periodic status report during file transfer
 };
 
 typedef int32_t ftp_result_t;
