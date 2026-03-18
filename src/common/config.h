@@ -6,8 +6,6 @@
 #define I2C_TIMEOUT_MS 100
 #define MIN_WATCHDOG_INTERVAL_MS 200
 
-#define MAX_TBYB_WATCHDOG_TIMEOUT_MS 16777
-
 /**
  * Command task configuration
  */

@@ -38,7 +38,7 @@ void fatal_error(char *msg)
     {
         for (uint32_t i = 0; i < 3; i++)
         {
-#ifdef PICO
+#if defined(PICO) && !defined(PICOHAT)
             gpio_put(PICO_DEFAULT_LED_PIN, 1);
             safe_sleep_ms(100);
             gpio_put(PICO_DEFAULT_LED_PIN, 0);

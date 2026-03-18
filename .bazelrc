@@ -26,12 +26,27 @@ build --disk_cache=~/.cache/bazel
 # Raspberry Pi Pico Development Profile (RP2040)
 build:pico --define=profile=pico
 build:pico --platforms=//platforms:arm_cortex_m33_platform
-build:pico --define=PICO_BOARD=pico
+build:pico --define=PICO_BOARD=samwise_pico
+build:pico --define=PICO_PLATFORM=rp2350
 build:pico --copt=-DPICO_CRT0_IMAGE_TYPE_TBYB=0
 build:pico --copt=-DPICO=1
+build:pico --compilation_mode=dbg
+build:pico --copt=-Og
+build:pico --copt=-g
 build:pico --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:bin_aspect.bzl%pico_bin_aspect
 build:pico --output_groups=+pico_uf2_files,+pico_bin_files
+
+# Raspberry Pi Pico + Radio Hat Profile (Pico with UHF radio attached)
+build:pico-hat --define=profile=pico-hat
+build:pico-hat --platforms=//platforms:arm_cortex_m33_platform
+build:pico-hat --define=PICO_BOARD=samwise_pico
+build:pico-hat --define=PICO_PLATFORM=rp2350
+build:pico-hat --copt=-DPICO=1
+build:pico-hat --copt=-DPICOHAT=1
+build:pico-hat --@pico-sdk//bazel/config:PICO_STDIO_USB=True
+build:pico-hat --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
+build:pico-hat --output_groups=+pico_uf2_files
 
 # PiCubed Debug Profile (RP2350 with debug features)
 build:picubed-debug --define=profile=picubed-debug
@@ -41,6 +56,8 @@ build:picubed-debug --define=PICO_PLATFORM=rp2350
 build:picubed-debug --define=DEBUG=1
 build:picubed-debug --copt=-DDEBUG=1
 build:picubed-debug --compilation_mode=dbg
+build:picubed-debug --copt=-g
+build:picubed-debug --copt=-Og
 build:picubed-debug --@pico-sdk//bazel/config:PICO_STDIO_USB=True
 build:picubed-debug --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:bin_aspect.bzl%pico_bin_aspect
 build:picubed-debug --output_groups=+pico_uf2_files,+pico_bin_files
@@ -103,6 +120,22 @@ test --test_summary=detailed
 
 # Use tests profile by default for test commands
 test --config=tests
+
+# ============================================================================
+# FSM Integration Test Configurations
+# ============================================================================
+
+# These configs layer on top of `tests` (which `test` already inherits) and
+# add the global --copt defines needed by the FSM integration tests.
+# Usage:
+#   bazel test //src/scheduler:fsm_test_flight  --config=fsm-flight
+#   bazel test //src/scheduler:fsm_test_bringup --config=fsm-bringup
+#   bazel test //src/scheduler:fsm_test_debug   (no extra config needed)
+
+build:fsm-flight --copt=-DFLIGHT=1
+build:fsm-flight '--copt=-DPACKET_HMAC_PSK="test_key_0000000000000000"'
+
+build:fsm-bringup --copt=-DBRINGUP=1
 
 # ============================================================================
 # Optimization Settings

@@ -23,9 +23,15 @@ bazel test //src/...
 bazel test //src/tasks/print:print_test
 ```
 
+### Debugging Unit Tests (with GDB)
+```bash
+# Runs filesys_test under gdb
+bazel run --config=tests --compilation_mode=dbg --run_under="gdb --args" //src/filesys/test:filesys_test
+```
+
 ### Building Integration Tests (hardware)
 
-Integration tests are compiled into the **bringup** or **pico** firmware image. 
+Integration tests are compiled into the **bringup** or **pico** firmware image.
 They are executed on-device by the `hardware_test_task` scheduler task.
 
 ```bash
@@ -81,6 +87,7 @@ The `samwise_test()` macro handles everything automatically:
 - Adds `//src/test_infrastructure`
 - Defines `TEST=1` for conditional compilation
 - Restricts the target to the host platform
+- See the [list](#available-mocks) of supported hardware mocks
 
 ---
 
@@ -94,15 +101,17 @@ Integration tests exercise real hardware. They are compiled into a
 
 1. **`samwise_integration_test()`** creates a `cc_library` named
    `<name>_hw_lib`. It produces two kinds of compiled objects:
-   - The **integration entry point** (`int_src`) should contain `<name>_int_main` 
-     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that 
+   - The **integration entry point** (`int_src`) should contain `<name>_int_main`
+     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that
      `hardware_test_task` calls at runtime.
    - Any **shared helper sources** (`srcs`) are compiled with
      `-Dmain=_unused_<name>_main_`, which discards their `main()` so it is
      never linked or called — letting you reuse the same test file in both
      `samwise_test()` and `samwise_integration_test()` without conflicts.
 
-2. **`hardware_integration_test_suite()`** collects all `_hw_lib` targets and
+Therefore, the pattern for writing a `test` and an `int_test` is to have a `<name>_test.c` file which has unit tests and a `main()` function, a `<name>_test.h` file with just stubs for the unit tests/shared tests between integration and normal tests, and a `<name>_int_test.c` file that has a single function, `<name>_int_main()` that is run by `hardware_test_task` and can reference anything in `<name>_test.h`. A good example of this is the `filesys` and `mram` tests which are both located in `src/filesys/test/`.
+
+2. **`hardware_integration_test_suite()`** collects all `_hw_lib` targets specified in the function and
    auto-generates `hardware_tests.h` at build time (via
    `//bzl:gen_hw_tests_header`). The generated header declares every
    `<name>_int_main()` entry point and defines `HW_TEST_TABLE`, a struct array
@@ -177,7 +186,7 @@ samwise_integration_test(
     int_src = "my_driver_integration_test.c",
     srcs = ["my_driver_test.c"],       # shared helper — its main() is discarded
     hdrs = ["my_driver_test.h"],
-    deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
+    deps = _DEPS,
 )
 ```
 
@@ -205,11 +214,6 @@ hardware_integration_test_suite(
         "filesys_test":   "//src/filesys/test:filesys_test_hw_lib",
         "my_driver_test": "//src/drivers/my_driver/test:my_driver_test_hw_lib",  # NEW
     },
-    extra_deps = [
-        "//src/common",
-        "//src/drivers/logger",
-        # ... any additional shared link-time deps ...
-    ],
 )
 ```
 
@@ -223,20 +227,28 @@ and prevent remaining tests from executing. The
 `ASSERT` override that logs failures via `LOG_ERROR` instead of aborting, so the
 full test suite always runs to completion.
 
-Add it to your integration test's `deps`:
-
-```starlark
-deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
-```
+Note that `hardware_test_assert` is automatically added as a dependency by bazel, so no need to ask for it in deps. 
 
 ---
 
-### 3. Update Your Task's CMakeLists.txt
+## How It Works
+
+### Mock Substitution (Unit Tests)
+
+The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
+`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
+declares a dependency like `//src/drivers/rfm9x`, the macro transparently
+replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
+
+- Your test source files use the same `#include` paths as production code.
+- No wrapper headers, special include directories, or `#ifdef TEST` guards are
+  needed.
+- The mock implementations are linked instead of the real hardware drivers.
 
 The following embedded dependencies are automatically mocked when using
 `samwise_test()`:
 
-## Available Mocks
+#### Available Mocks
 
 | Real Header                       | Mock Location        | Functionality                                        |
 | --------------------------------- | -------------------- | ---------------------------------------------------- |
@@ -255,7 +267,7 @@ The following embedded dependencies are automatically mocked when using
 | `error.h`                         | error_mock.c         | Prints fatal error and calls `exit(1)`               |
 | `state_ids.h` / `state_machine.h` | state_mock.c         | Defines stub scheduler states with no-op transitions |
 
-### Pico SDK Mocks (test_mocks)
+#### Pico SDK Mocks (test_mocks)
 
 | Real Header         | Mock Location     | Functionality                               |
 | ------------------- | ----------------- | ------------------------------------------- |
@@ -272,20 +284,6 @@ The following embedded dependencies are automatically mocked when using
 | `pico/types.h`      | types.h           | Pico SDK type definitions                   |
 | `pico/unique_id.h`  | unique_id.h       | Board unique ID API (no-op)                 |
 | `pico/util/queue.h` | queue.h           | Pico queue utility API (no-op)              |
-
-## How It Works
-
-### Mock Substitution (Unit Tests)
-
-The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
-`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
-declares a dependency like `//src/drivers/rfm9x`, the macro transparently
-replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
-
-- Your test source files use the same `#include` paths as production code.
-- No wrapper headers, special include directories, or `#ifdef TEST` guards are
-  needed.
-- The mock implementations are linked instead of the real hardware drivers.
 
 ### Integration Test Symbol Renaming
 

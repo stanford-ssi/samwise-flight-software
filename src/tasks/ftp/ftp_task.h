@@ -19,11 +19,18 @@
 #define MAX_FTP_RETRY_COUNT 3
 
 /* Packet tracker bitfield helpers */
+
+/**
+ * Clears the FTP packet tracker, setting all bits to 0 (not received).
+ */
 inline static void ftp_tracker_clear(FTP_PACKET_TRACKER_T *tracker)
 {
     memset(tracker->bytes, 0, FTP_PACKET_TRACKER_SIZE);
 }
 
+/**
+ * Sets the bit at the given index in the FTP packet tracker to 1 (received).
+ */
 inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
                                        uint16_t bit_index)
 {
@@ -31,8 +38,14 @@ inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
         (1 << (bit_index % __CHAR_BIT__));
 }
 
-inline static bool ftp_tracker_check_mask(const FTP_PACKET_TRACKER_T *tracker,
-                                          uint16_t num_bits)
+/**
+ * Checks if the bits corresponding to the first num_bits packets in the tracker
+ * are all set to 1 (received). Handles cases where num_bits is not a multiple
+ * of 8.
+ */
+inline static bool
+ftp_tracker_check_mask_completed(const FTP_PACKET_TRACKER_T *tracker,
+                                 uint16_t num_bits)
 {
     // Check all full bytes
     uint16_t full_bytes = num_bits / __CHAR_BIT__;
@@ -65,7 +78,7 @@ inline static bool ftp_tracker_check_mask(const FTP_PACKET_TRACKER_T *tracker,
  *
  * Additional Data (varies based on FTP_Result) is written in comments below.
  */
-typedef enum ftp_result
+enum ftp_result
 {
     /**
      *  FILESYS_INIT_ERROR:

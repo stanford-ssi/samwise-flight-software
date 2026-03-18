@@ -1,19 +1,18 @@
 /**
- * @brief Mock flash driver for host tests.
- *
- * Provides stub implementations of the flash persistence functions declared in
- * flash.h so that tests can link without the real hardware-dependent driver.
+ * @file flash_mock.c
+ * @brief Mock implementation of flash driver for host testing.
  */
 
 #include "flash.h"
+#include <string.h>
 
 static persistent_data_t mock_data = {0};
 
 persistent_data_t *init_persistent_data(void)
 {
-    mock_data.marker = 0;
-    mock_data.reboot_counter = 0;
-    mock_data.burn_wire_attempts = 0;
+    memset(&mock_data, 0, sizeof(mock_data));
+    mock_data.marker = 0xDEADBEEF;
+    mock_data.reboot_counter = 1;
     return &mock_data;
 }
 

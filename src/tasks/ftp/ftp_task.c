@@ -340,8 +340,8 @@ void ftp_process_file_write_data_command(slate_t *slate,
               command_data.packet_id, packets_in_this_cycle);
 
     // If not the last in the cycle, send FTP_READY_RECEIVE and return
-    if (!ftp_tracker_check_mask(&slate->ftp_packets_received_tracker,
-                                packets_in_this_cycle))
+    if (!ftp_tracker_check_mask_completed(&slate->ftp_packets_received_tracker,
+                                          packets_in_this_cycle))
     {
         // Send FTP_READY_RECEIVE with Packet range
         send_ftp_cycle_info_packet(slate, FTP_READY_RECEIVE,
