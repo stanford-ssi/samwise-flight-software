@@ -8,21 +8,31 @@ package(default_visibility = ["//visibility:public"])
 # without pulling in the full hardware_test_lib.
 cc_library(
     name = "hardware_test_infrastructure",
-    hdrs = ["hardware_test_assert.h"],
+    srcs = ["test_harness.c"],
+    hdrs = ["test_harness.h"],
     includes = ["."],
+    deps = [
+        "//src/drivers/logger",
+    ],
 )
 
 cc_library(
     name = "test_infrastructure",
-    srcs = ["test_scheduler_helpers.c"],
-    hdrs = ["test_scheduler_helpers.h"],
-    includes = ["."],
     testonly = True,
+    srcs = [
+        "test_harness.c",
+        "test_scheduler_helpers.c",
+    ],
+    hdrs = [
+        "test_harness.h",
+        "test_scheduler_helpers.h",
+    ],
+    includes = ["."],
     deps = [
         "//src/drivers/logger:logger_mock",
         "//src/scheduler:scheduler_hdrs",
-        "//src/scheduler:state_machine",
         "//src/scheduler:state_ids",
+        "//src/scheduler:state_machine",
         "//src/scheduler:state_registry",
         "//src/slate",
         "//src/test_mocks",

@@ -9,17 +9,6 @@
 
 #include "filesys_test.h"
 
-// Helper macro for test assertions with error messages
-#define TEST_ASSERT(cond, msg)                                                 \
-    do                                                                         \
-    {                                                                          \
-        if (!(cond))                                                           \
-        {                                                                      \
-            LOG_ERROR("ASSERTION FAILED: %s\n", msg);                          \
-            return -1;                                                         \
-        }                                                                      \
-    } while (0)
-
 /*
  * Some example files that are used below. No buffers should be written that are
  * not in this list.
@@ -2519,120 +2508,78 @@ int filesys_test_read_multi_chunk_file_success()
     return 0;
 }
 
-// ============================================================================
-// Main test runner
-// ============================================================================
+const test_harness_case_t filesys_tests[] = {
+    {0, filesys_test_write_readback_success, "Write and Readback"},
+    {1, filesys_test_initialize_reformat_success, "Initialize and Reformat"},
+    {2, filesys_test_start_file_write_already_writing_should_fail,
+     "Start File Write - Already Writing"},
+    {3, filesys_test_write_data_to_buffer_bounds_should_fail,
+     "Write Data to Buffer - Bounds Checking"},
+    {4, filesys_test_write_data_to_buffer_when_no_file_started_should_fail,
+     "Write Data to Buffer - No File"},
+    {5, filesys_test_write_buffer_to_mram_when_no_file_started_should_fail,
+     "Write Buffer to MRAM - No File"},
+    {6, filesys_test_write_buffer_to_mram_clean_buffer_success,
+     "Write Buffer to MRAM - Clean Buffer"},
+    {7, filesys_test_complete_file_write_dirty_buffer_success,
+     "Complete File Write - Dirty Buffer"},
+    {8, filesys_test_cancel_file_write_success, "Cancel File Write"},
+    {9, filesys_test_cancel_file_write_no_file_should_fail,
+     "Cancel File Write - No File"},
+    {10, filesys_test_clear_buffer_success, "Clear Buffer"},
+    {11, filesys_test_crc_correct_success, "CRC Verification - Correct"},
+    {12, filesys_test_crc_incorrect_should_fail,
+     "CRC Verification - Incorrect"},
+    {13, filesys_test_crc_no_file_should_fail, "CRC Check - No File"},
+    {14, filesys_test_multiple_files_success, "Multiple File Writes"},
+    {15, filesys_test_blocks_left_calculation_success,
+     "Blocks Left Calculation"},
+    {16, filesys_test_multi_chunk_write_success, "Multi-Chunk Write"},
+    {17, filesys_test_write_at_offset_success, "Write at Offset"},
+    {18, filesys_test_multiple_files_commit_success,
+     "Multiple File Writes Committed"},
+    {19, filesys_test_write_long_file_crc32_success,
+     "Write Really Long File with CRC32"},
+    {20, filesys_test_file_too_large_should_fail,
+     "File Too Large for Filesystem"},
+    {21, filesys_test_second_file_out_of_space_should_fail,
+     "Second File Runs Out of Space"},
+    {22, filesys_test_raw_lfs_write_large_file_success,
+     "Raw LFS Write Large File (510KB)"},
+    {23, filesys_test_list_files_empty_filesystem_success,
+     "List Files - Empty Filesystem"},
+    {24, filesys_test_list_files_multiple_files_success,
+     "List Files - Multiple Files"},
+    {25, filesys_test_list_files_max_files_limit_success,
+     "List Files - Max Files Limit"},
+    {26, filesys_test_list_files_after_cancel_success,
+     "List Files - After Cancel"},
+    {27, filesys_test_list_files_crc_mismatch_success,
+     "List Files - CRC Mismatch Detection"},
+    {28, filesys_test_open_file_read_success, "Open File Read - Success"},
+    {29, filesys_test_open_file_read_crc_mismatch_should_fail,
+     "Open File Read - CRC Mismatch"},
+    {30, filesys_test_open_file_read_nonexistent_should_fail,
+     "Open File Read - Nonexistent"},
+    {31, filesys_test_read_data_full_readback_success,
+     "Read Data - Full Readback"},
+    {32, filesys_test_read_data_chunked_success, "Read Data - Chunked Read"},
+    {33, filesys_test_read_data_past_eof_success, "Read Data - Past EOF"},
+    {34, filesys_test_read_file_seek_success, "Read File Seek"},
+    {35, filesys_test_read_file_tell_success, "Read File Tell"},
+    {36, filesys_test_read_file_size_success, "Read File Size"},
+    {37, filesys_test_close_file_read_success, "Close File Read"},
+    {38, filesys_test_read_full_workflow_success, "Read Full Workflow"},
+    {39, filesys_test_read_multi_chunk_file_success, "Read Multi-Chunk File"},
+};
+
+const size_t filesys_tests_len =
+    sizeof(filesys_tests) / sizeof(test_harness_case_t);
+
 int main()
 {
-    LOG_DEBUG("========================================\n");
-    LOG_DEBUG("Starting Filesys Test Suite\n");
-    LOG_DEBUG("========================================\n");
-
-    int result;
-    int tests_passed = 0;
-    int tests_failed = 0;
-
-    // Define test functions
-    struct
-    {
-        int (*test_func)(void);
-        const char *name;
-    } tests[] = {
-        {filesys_test_write_readback_success, "Write and Readback"},
-        {filesys_test_initialize_reformat_success, "Initialize and Reformat"},
-        {filesys_test_start_file_write_already_writing_should_fail,
-         "Start File Write - Already Writing"},
-        {filesys_test_write_data_to_buffer_bounds_should_fail,
-         "Write Data to Buffer - Bounds Checking"},
-        {filesys_test_write_data_to_buffer_when_no_file_started_should_fail,
-         "Write Data to Buffer - No File"},
-        {filesys_test_write_buffer_to_mram_when_no_file_started_should_fail,
-         "Write Buffer to MRAM - No File"},
-        {filesys_test_write_buffer_to_mram_clean_buffer_success,
-         "Write Buffer to MRAM - Clean Buffer"},
-        {filesys_test_complete_file_write_dirty_buffer_success,
-         "Complete File Write - Dirty Buffer"},
-        {filesys_test_cancel_file_write_success, "Cancel File Write"},
-        {filesys_test_cancel_file_write_no_file_should_fail,
-         "Cancel File Write - No File"},
-        {filesys_test_clear_buffer_success, "Clear Buffer"},
-        {filesys_test_crc_correct_success, "CRC Verification - Correct"},
-        {filesys_test_crc_incorrect_should_fail,
-         "CRC Verification - Incorrect"},
-        {filesys_test_crc_no_file_should_fail, "CRC Check - No File"},
-        {filesys_test_multiple_files_success, "Multiple File Writes"},
-        {filesys_test_blocks_left_calculation_success,
-         "Blocks Left Calculation"},
-        {filesys_test_multi_chunk_write_success, "Multi-Chunk Write"},
-        {filesys_test_write_at_offset_success, "Write at Offset"},
-        {filesys_test_multiple_files_commit_success,
-         "Multiple File Writes Committed"},
-        {filesys_test_write_long_file_crc32_success,
-         "Write Really Long File with CRC32"},
-        {filesys_test_file_too_large_should_fail,
-         "File Too Large for Filesystem"},
-        {filesys_test_second_file_out_of_space_should_fail,
-         "Second File Runs Out of Space"},
-        {filesys_test_raw_lfs_write_large_file_success,
-         "Raw LFS Write Large File (510KB)"},
-        {filesys_test_list_files_empty_filesystem_success,
-         "List Files - Empty Filesystem"},
-        {filesys_test_list_files_multiple_files_success,
-         "List Files - Multiple Files"},
-        {filesys_test_list_files_max_files_limit_success,
-         "List Files - Max Files Limit"},
-        {filesys_test_list_files_after_cancel_success,
-         "List Files - After Cancel"},
-        {filesys_test_list_files_crc_mismatch_success,
-         "List Files - CRC Mismatch Detection"},
-        {filesys_test_open_file_read_success, "Open File Read - Success"},
-        {filesys_test_open_file_read_crc_mismatch_should_fail,
-         "Open File Read - CRC Mismatch"},
-        {filesys_test_open_file_read_nonexistent_should_fail,
-         "Open File Read - Nonexistent"},
-        {filesys_test_read_data_full_readback_success,
-         "Read Data - Full Readback"},
-        {filesys_test_read_data_chunked_success, "Read Data - Chunked Read"},
-        {filesys_test_read_data_past_eof_success, "Read Data - Past EOF"},
-        {filesys_test_read_file_seek_success, "Read File Seek"},
-        {filesys_test_read_file_tell_success, "Read File Tell"},
-        {filesys_test_read_file_size_success, "Read File Size"},
-        {filesys_test_close_file_read_success, "Close File Read"},
-        {filesys_test_read_full_workflow_success, "Read Full Workflow"},
-        {filesys_test_read_multi_chunk_file_success, "Read Multi-Chunk File"},
-    };
-
-    int num_tests = sizeof(tests) / sizeof(tests[0]);
-
-    for (int i = 0; i < num_tests; i++)
-    {
-        LOG_DEBUG("\n--- Running Test %d/%d: %s ---\n", i + 1, num_tests,
-                  tests[i].name);
-        result = tests[i].test_func();
-        if (result == 0)
-        {
-            tests_passed++;
-            LOG_DEBUG("--- Test %d PASSED ---\n", i + 1);
-        }
-        else
-        {
-            tests_failed++;
-            LOG_ERROR("--- Test %d FAILED ---\n", i + 1);
-        }
-    }
-
-    LOG_DEBUG("\n========================================\n");
-    LOG_DEBUG("Test Suite Complete\n");
-    LOG_DEBUG("Passed: %d / %d\n", tests_passed, num_tests);
-    LOG_DEBUG("Failed: %d / %d\n", tests_failed, num_tests);
-    LOG_DEBUG("========================================\n");
-
-    if (tests_failed > 0)
-    {
-        LOG_ERROR("SOME TESTS FAILED!\n");
-        return -1;
-    }
-
-    LOG_DEBUG("All Filesys tests passed!\n");
-    return 0;
+    uint16_t indicies[] = {20};
+    return test_harness_include_run("Filesys", filesys_tests, filesys_tests_len,
+                                    indicies,
+                                    sizeof(indicies) / sizeof(uint16_t));
 }

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "filesys.h"
 #include <stdint.h>
+
+#include "filesys.h"
+#include "test_harness.h"
 
 int filesys_test_write_readback_success(void);
 int filesys_test_initialize_reformat_success(void);
@@ -31,3 +33,18 @@ int filesys_test_list_files_multiple_files_success(void);
 int filesys_test_list_files_max_files_limit_success(void);
 int filesys_test_list_files_after_cancel_success(void);
 int filesys_test_list_files_crc_mismatch_success(void);
+int filesys_test_open_file_read_success(void);
+int filesys_test_open_file_read_crc_mismatch_should_fail(void);
+int filesys_test_open_file_read_nonexistent_should_fail(void);
+int filesys_test_read_data_full_readback_success(void);
+int filesys_test_read_data_chunked_success(void);
+int filesys_test_read_data_past_eof_success(void);
+int filesys_test_read_file_seek_success(void);
+int filesys_test_read_file_tell_success(void);
+int filesys_test_read_file_size_success(void);
+int filesys_test_close_file_read_success(void);
+int filesys_test_read_full_workflow_success(void);
+int filesys_test_read_multi_chunk_file_success(void);
+
+extern const test_harness_case_t filesys_tests[];
+extern const size_t filesys_tests_len;
