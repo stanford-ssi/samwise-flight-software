@@ -203,6 +203,8 @@ If a duplicate packet is received (i.e., a packet with the same `packet_id` for 
 
 This approach ensures that duplicate packets do not corrupt the file transfer while providing visibility into potential network issues through logging.
 
+In the future, we may investigate comparing the duplicate packet's contents to those currently in buffer/on disk - but for now, this will simply be ignored.
+
 This is the following body for a packet of data:
 ```c
 uint16_t fname; // Name of the file, for reference/checks
