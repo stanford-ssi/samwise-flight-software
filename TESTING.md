@@ -51,12 +51,14 @@ slate_t test_slate;
 
 int main()
 {
+    clear_and_init_slate(&test_slate);
     LOG_DEBUG("Testing my_task");
     ASSERT(my_task.name != NULL);
 
     my_task.task_init(&test_slate);
     my_task.task_dispatch(&test_slate);
 
+    free_slate(&test_slate); // Do this at the end of every unit test!
     return 0;
 }
 ```
@@ -284,9 +286,13 @@ pass/fail results, and returns `0` if all tests passed or `-1` if any failed:
 // Unit test entry point
 int main(void)
 {
-    return test_harness_run("My Driver", my_driver_tests, my_driver_tests_len);
+    return test_harness_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func);
 }
 ```
+
+Note that `my_init_func` is run for each test case that sets `requires_custom_init=true`. Otherwise, the slate passed into the function is directly initialized with `clear_and_init_slate`. If `my_init_func` is `NULL`, `clear_and_init_slate` is run for every `requires_custom_init=true`, i.e. the parameter is completely useless (as both `false` by default and `true` by `NULL` will call `clear_and_init_slate`).
+
+The function `my_init_func` MUST use `clear_and_init_slate` or similar functionality to initialize slate, as this is not handled when a custom init function is called.
 
 #### 4. Run a subset of tests (optional)
 
@@ -294,7 +300,7 @@ To run only specific tests by ID, use `test_harness_include_run`:
 
 ```c
 uint16_t ids[] = {0, 2};
-test_harness_include_run("My Driver", my_driver_tests, my_driver_tests_len,
+test_harness_include_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func,
                          ids, 2);
 ```
 
@@ -302,7 +308,7 @@ To run all tests _except_ certain IDs, use `test_harness_exclude_run`:
 
 ```c
 uint16_t skip[] = {1};
-test_harness_exclude_run("My Driver", my_driver_tests, my_driver_tests_len,
+test_harness_exclude_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func,
                          skip, 1);
 ```
 
@@ -406,7 +412,7 @@ one-line edit in the `tests` dict.
 2. **One test per file** — easier to debug
 3. **Use meaningful names** — `my_task_test.c`, not `test1.c`
 4. **Use `ASSERT()`** to verify behavior
-5. **Initialize state** — create a fresh `slate_t` for each test
+5. **Initialize state** — create a fresh `slate_t` for each test, using `clear_and_init_slate()`
 6. **Share test logic** — write core test functions in a shared `.c`/`.h` pair
    and reuse them in both `samwise_test()` and `samwise_integration_test()`
 

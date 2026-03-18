@@ -35,7 +35,11 @@ sched_state_t mock_state = {
 void mock_slate(slate_t *slate)
 {
     // Reset slate to empty first
-    memset(slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(slate) != 0)
+    {
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
 
     // Register mock state so state_registry_get can find it
     state_registry_register(STATE_INIT, &mock_state);
@@ -60,6 +64,7 @@ void test_beacon_serialize()
 {
     printf("Starting beacon serialization test\n");
     mock_slate(&slate);
+
     size_t len = serialize_slate(&slate, tmp_data);
     printf("Serialized length: %zu\n", len);
     printf("Serialized data (hex):\n");
@@ -95,15 +100,20 @@ void test_beacon_serialize()
             fclose(f);
         }
     }
+
+    free_slate(&slate);
 }
 
 void test_beacon_dispatch_without_error()
 {
     printf("Starting beacon dispatch test\n");
     mock_slate(&slate);
+
     beacon_task_init(&slate);
     beacon_task_dispatch(&slate);
     printf("Beacon dispatch completed without error\n");
+
+    free_slate(&slate);
 }
 
 int main()
