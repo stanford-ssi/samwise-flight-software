@@ -743,7 +743,7 @@ int filesys_test_blocks_left_calculation_success(slate_t *slate)
     LOG_DEBUG("=== Test: Blocks Left Calculation ===\n");
 
     lfs_ssize_t lfs_error_code;
-    lfs_ssize_t blocks_left_1, blocks_left_2;
+    lfs_ssize_t blocks_left_1;
     FILESYS_BUFFERED_FNAME_STR_T fname = "BL";
 
     // Get initial filesystem size
@@ -1035,8 +1035,6 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
 {
     LOG_DEBUG("=== Test: Second File Runs Out of Space ===\n");
 
-    lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
-
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname1 = "F1";
@@ -1136,7 +1134,6 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
 {
     LOG_DEBUG("=== Test: Raw LFS Write Large File (510KB) ===\n");
 
-    lfs_ssize_t lfs_error_code;
     FILESYS_BUFFERED_FNAME_STR_T fname = "RW";
 
     const size_t LARGE_FILE_SIZE = 510000;

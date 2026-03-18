@@ -120,7 +120,10 @@ int test_harness_exclude_run(const char *suite_name,
                              const uint16_t *exclude_ids,
                              size_t num_exclude_ids)
 {
-    TEST_ASSERT(num_exclude_ids < num_tests);
+    TEST_ASSERT(num_exclude_ids < num_tests,
+                "num_exclude_ids (%zu) must be less than num_tests (%zu)",
+                num_exclude_ids, num_tests);
+
     test_harness_case_t included_cases[num_tests - num_exclude_ids];
     size_t include_idx = 0;
     for (size_t i = 0; i < num_tests; i++)
