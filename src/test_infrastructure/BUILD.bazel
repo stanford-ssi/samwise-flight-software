@@ -3,9 +3,6 @@
 
 package(default_visibility = ["//visibility:public"])
 
-# Non-fatal ASSERT override for BRINGUP hardware tests.
-# Kept as a standalone target so *_hw_lib targets can depend on it
-# without pulling in the full hardware_test_lib.
 cc_library(
     name = "hardware_test_infrastructure",
     srcs = ["test_harness.c"],

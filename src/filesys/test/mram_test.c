@@ -56,7 +56,7 @@ int test_mram_write_disable_enable(void)
 }
 
 // Finish Up
-int test_mram_ranges_overlap()
+int test_mram_ranges_overlap(void)
 {
     LOG_DEBUG("Testing MRAM ranges overlap...\n");
     // TEST_ASSERT();

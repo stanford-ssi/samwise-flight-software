@@ -240,8 +240,9 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
 
     # cc_test does not support `hdrs`; pop it from kwargs before forwarding.
     hdrs = kwargs.pop("hdrs", [])
-    
+
     deps = list(deps)  # Make a mutable copy of deps
+
     # Add standard test infrastructure
     if "//src/test_infrastructure:hardware_test_infrastructure" not in deps:
         deps.append("//src/test_infrastructure:hardware_test_infrastructure")

@@ -32,16 +32,16 @@ int test_harness_run(const char *suite_name, const test_harness_case_t *tests,
 
         if (init_function_to_use(&slate) < 0)
         {
-            LOG_ERROR("Failed to set up slate for test %d: %s\n", i + 1,
+            LOG_ERROR("Failed to set up slate for test %zu: %s\n", i + 1,
                       tests[i].name);
             result = -1;
+            // We won't try to free the slate here since setup failed.
         }
         else
         {
             result = tests[i].test_func(&slate);
+            free_slate(&slate);
         }
-
-        free_slate(&slate);
 
         if (result == 0)
         {
@@ -106,7 +106,7 @@ int test_harness_include_run(const char *suite_name,
 
         if (!found)
         {
-            LOG_ERROR("ID %u not found for test cases!\n", ids[i]);
+            LOG_ERROR("ID %zu not found for test cases!\n", ids[i]);
             return -1;
         }
     }
@@ -120,7 +120,7 @@ int test_harness_exclude_run(const char *suite_name,
                              const uint16_t *exclude_ids,
                              size_t num_exclude_ids)
 {
-    ASSERT(num_exclude_ids < num_tests);
+    TEST_ASSERT(num_exclude_ids < num_tests);
     test_harness_case_t included_cases[num_tests - num_exclude_ids];
     size_t include_idx = 0;
     for (size_t i = 0; i < num_tests; i++)
