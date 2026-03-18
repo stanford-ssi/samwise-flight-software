@@ -419,6 +419,7 @@ typedef struct {
     // Additional filesystem & FTP state info for debugging:
     uint32_t file_crc_so_far;          // CRC of the file so far as it currently sits on the MRAM, which ground station may use for verification during file transfer (using total_bytes_written). This should be 0 if nothing has been written so far (first cycle).
     uint32_t total_bytes_written;      // Total bytes written to MRAM so far
+    uint8_t filesys_buffer_malloced;   // Whether the buffer on filesys was able to be MALLOC-ed or not (i.e. 1/true if it is not NULL).
     uint8_t filesys_is_writing_file;   // Internal state - if filesys is currently writing a file
 } __attribute__((packed)) FTP_STATUS_REPORT_DATA;
 ```
@@ -437,7 +438,8 @@ packet
 +256: "Received_Bitfield (a bit set indicates the corresponding packet was received, 256 bits for N=256)"
 +32: "Computed_CRC (CRC of file so far written on MRAM)"
 +32: "File_Len (total bytes written to MRAM so far)"
-+8: "filesys_is_writing_file (internal filesys state flag - boolean 1 or 0)"
++8: "filesys_buffer_malloced (bool)"
++8: "filesys_is_writing_file (bool)"
 ```
 
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR
