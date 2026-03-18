@@ -208,6 +208,16 @@ Only packets in this range will be accepted, others will fail with an FTP_ERROR_
 
 If a file is not being written, it will return FTP_ERROR_NOT_WRITING_FILE.
 
+#### Duplicate Packet Handling
+If a duplicate packet is received (i.e., a packet with the same `packet_id` for the current file that has already been successfully written to the buffer), the FTP implementation will:
+1. **Completely ignore the duplicate packet** - no processing or buffer updates occur
+2. **Log a warning** indicating that a duplicate packet was received and ignored
+3. **Continue normal operation** - the duplicate does not affect the file transfer process
+
+This approach ensures that duplicate packets do not corrupt the file transfer while providing visibility into potential network issues through logging.
+
+In the future, we may investigate comparing the duplicate packet's contents to those currently in buffer/on disk - but for now, this will simply be ignored.
+
 This is the following body for a packet of data:
 ```c
 uint16_t fname; // Name of the file, for reference/checks
