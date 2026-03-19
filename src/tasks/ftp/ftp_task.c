@@ -1,7 +1,4 @@
 #include "ftp_task.h"
-#include "filesys.h"
-#include "neopixel.h"
-#include "str_utils.h"
 
 void ftp_send_result_packet_custom_file(
     slate_t *slate, FILESYS_BUFFERED_FNAME_STR_T buffered_fname_str,
@@ -307,7 +304,7 @@ void ftp_process_file_write_data_command(slate_t *slate,
     if (ftp_tracker_check_bit(&slate->ftp_packets_received_tracker,
                               packet_index))
     {
-        LOG_WARN("[FTP] Duplicate packet ID %d received, ignoring.",
+        LOG_INFO("[FTP] Duplicate packet ID %d received, ignoring.",
                  command_data.packet_id);
         return;
     }
@@ -554,7 +551,10 @@ inline static void send_ftp_status_report(slate_t *slate)
     uint8_t is_writing = slate->filesys_is_writing_file ? 1 : 0;
     memcpy_inc(&data_ptr, &is_writing, sizeof(uint8_t));
 
-    ftp_send_result_packet(slate, FTP_STATUS_REPORT, data, sizeof(data));
+    ftp_send_result_packet_custom_file(slate, slate->filesys_buffered_fname_str,
+                                       slate->filesys_buffered_file_len,
+                                       slate->filesys_buffered_file_crc,
+                                       FTP_STATUS_REPORT, data, sizeof(data));
 }
 
 void ftp_task_dispatch(slate_t *slate)

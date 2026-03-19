@@ -1,0 +1,19 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+samwise_test(
+    name = "ftp_test",
+    srcs = [
+        "ftp_test.c",
+        "ftp_test.h",
+    ],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/error",
+        "//src/filesys",
+        "//src/tasks/ftp:ftp_task",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+)

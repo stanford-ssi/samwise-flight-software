@@ -472,6 +472,7 @@ filesys_error_t filesys_complete_file_write(slate_t *slate,
 
     // Check CRC here
     filesys_error_t crc_check = filesys_is_crc_correct(slate, lfs_error_code);
+    slate->filesys_is_writing_file = false;
     if (crc_check != FILESYS_OK)
     {
         LOG_INFO("[filesys] CRC check failed during file write completion for "
@@ -483,7 +484,6 @@ filesys_error_t filesys_complete_file_write(slate_t *slate,
     LOG_INFO("[filesys] CRC matches for file %s!",
              slate->filesys_buffered_fname_str);
 
-    slate->filesys_is_writing_file = false;
     LOG_INFO("[filesys] Completed file write for file: %s",
              slate->filesys_buffered_fname_str);
 
