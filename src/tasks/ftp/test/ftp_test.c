@@ -1430,6 +1430,25 @@ int ftp_test_real_file(slate_t *slate)
     ftp_process_file_start_write_command(
         slate, ftp_test_make_start_data(total_bytes, crc));
 
+    ftp_test_ground_info_t ground_info =
+        ftp_test_get_ground_info(slate, ftp_test_pop_last_packet(slate));
+    TEST_ASSERT(ground_info.ftp_result == FTP_READY_RECEIVE,
+                "Expected FTP_READY_RECEIVE, got %d", ground_info.ftp_result);
+    TEST_ASSERT(ground_info.fname == string_to_file(ftp_test_fname),
+                "READY_RECEIVE should have fname 'AB'");
+    TEST_ASSERT(ground_info.file_len == total_bytes,
+                "READY_RECEIVE should have correct file_len, expected %zu, got "
+                "%u",
+                total_bytes, ground_info.file_len);
+
+    ftp_test_cycle_info_t cycle_info = ftp_test_parse_cycle_info(&ground_info);
+    TEST_ASSERT(cycle_info.packet_start == 0,
+                "Expected packet_start 0 for real file, got %u",
+                cycle_info.packet_start);
+    TEST_ASSERT(
+        queue_get_level(&slate->tx_queue) == 0,
+        "No packet should be enqueued after READY_RECEIVE for real file");
+
     file = fopen(file_path, "rb");
     TEST_ASSERT(file != NULL, "Failed to open real file at %s with error: %s",
                 file_path, strerror(errno));
@@ -1446,6 +1465,42 @@ int ftp_test_real_file(slate_t *slate)
         memcpy(wd.data, buffer_packet, num_read);
         wd.data_len = num_read;
         ftp_process_file_write_data_command(slate, wd);
+
+        // Check if new cycle started
+        if (queue_get_level(&slate->tx_queue) > 0)
+        {
+            packet_t pkt = ftp_test_pop_last_packet(slate);
+            ftp_test_ground_info_t info = ftp_test_get_ground_info(slate, pkt);
+            TEST_ASSERT(info.ftp_result == FTP_FILE_WRITE_SUCCESS ||
+                            info.ftp_result == FTP_EOF_SUCCESS,
+                        "Expected FTP_FILE_WRITE_SUCCESS after cycle, got %d",
+                        info.ftp_result);
+
+            if (info.ftp_result == FTP_EOF_SUCCESS)
+            {
+                ftp_test_eof_info_t eof_info = ftp_test_parse_eof_info(&info);
+                TEST_ASSERT(eof_info.computed_crc == crc,
+                            "Expected CRC 0x%08X, got 0x%08X", crc,
+                            eof_info.computed_crc);
+                TEST_ASSERT(eof_info.file_len_on_disk == total_bytes,
+                            "Expected file_len_on_disk %zu, got %u",
+                            total_bytes, eof_info.file_len_on_disk);
+                LOG_DEBUG("Reached EOF for real file after packet_id %u",
+                          packet_id);
+            }
+            else
+            {
+
+                cycle_info = ftp_test_parse_cycle_info(&info);
+                TEST_ASSERT(cycle_info.packet_start == packet_id + 1,
+                            "Expected next cycle to start at packet_id %u, got "
+                            "%u",
+                            packet_id + 1, cycle_info.packet_start);
+                LOG_DEBUG("Completed cycle for real file: now packet_start=%u, "
+                          "packet_end=%u",
+                          cycle_info.packet_start, cycle_info.packet_end);
+            }
+        }
 
         packet_id++;
     }

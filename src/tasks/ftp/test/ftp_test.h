@@ -58,5 +58,8 @@ int ftp_test_e2e_crc_mismatch(slate_t *slate);
 int ftp_test_init_success(slate_t *slate);
 int ftp_test_init_clears_state(slate_t *slate);
 
+/* H. Real File Test */
+int ftp_test_real_file(slate_t *slate);
+
 extern const test_harness_case_t ftp_tests[];
 extern const size_t ftp_tests_len;
