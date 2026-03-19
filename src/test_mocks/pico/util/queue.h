@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "logger.h"
 #include "typedefs.h"
 
 static inline void queue_init(queue_t *q, unsigned int element_size,
