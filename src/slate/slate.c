@@ -22,6 +22,14 @@ void free_slate(slate_t *slate)
 {
     // Free the filesys buffer if it was allocated - note free(NULL) is a no-op
     // as per C specification, so this is safe even if allocation failed.
+    if (slate != NULL)
+    {
+        queue_free(&slate->payload_command_data);
+        queue_free(&slate->tx_queue);
+        queue_free(&slate->rx_queue);
+        queue_free(&slate->rpi_uart_queue);
+    }
+
     free(slate->filesys_buffer);
     slate->filesys_buffer = NULL;
 }

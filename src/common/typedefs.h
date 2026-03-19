@@ -20,6 +20,11 @@ typedef uint64_t absolute_time_t;
 typedef unsigned int uint;
 typedef struct
 {
-    uint8_t _dummy;
+    uint8_t *data;
+    unsigned int element_size;
+    unsigned int element_count;
+    unsigned int head;
+    unsigned int tail;
+    unsigned int level;
 } queue_t;
 #endif
