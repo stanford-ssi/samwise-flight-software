@@ -11,6 +11,9 @@
 
 #pragma once
 
+#include <stdlib.h>
+#include <string.h>
+
 #ifndef TEST
 #include "pico/types.h"
 #endif
@@ -18,6 +21,7 @@
 
 #include "adcs_packet.h"
 #include "config.h"
+#include "logger.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
 #include "state_ids.h"
@@ -27,6 +31,8 @@
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
 
+// Use clear_and_init_slate() to initialize a slate - this ensures proper
+// initialization of fields.
 typedef struct samwise_slate
 {
 #ifdef BRINGUP
@@ -138,7 +144,7 @@ typedef struct samwise_slate
     // efficiency gains.
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
-    uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
+    uint8_t *filesys_buffer; // Allocated on heap! Too large to fit in stack.
     FILESYS_BUFFERED_FNAME_STR_T filesys_buffered_fname_str;
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
@@ -169,5 +175,23 @@ typedef struct samwise_slate
 // real analysis of memory usage.
 // _Static_assert(sizeof(slate_t) < 16000,
 //                "slate_t size exceeds reasonable limits");
+
+/**
+ * Initializes the slate struct by clearing all fields to default values and
+ * allocating the filesys buffer on the heap. This should be called once at
+ * startup before using the slate.
+ *
+ * If trying to completely clear an existing/already allocated slate, please use
+ * free_slate first and then run this function.
+ */
+int clear_and_init_slate(slate_t *slate);
+
+/**
+ * Handles freeing any heap-allocated memory within the slate. This should be
+ * called when the slate is no longer needed to avoid memory leaks. After
+ * calling this function, the slate should not be used unless it is
+ * re-initialized with clear_and_init_slate.
+ */
+void free_slate(slate_t *slate);
 
 extern slate_t slate;

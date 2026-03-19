@@ -37,7 +37,7 @@ _FTP-specific:_
 * **CRC32**: A 32-bit Cyclic Redundancy Check used to verify the integrity of the uploaded file. This is computed after upload has completed, and is compared to the CRC32 that was sent at the beginning (on start file write). Note that the CRC32 algorithm used is the same as implemented in `zlib`, so you may use Python's `import zlib; zlib.crc32(...)` function to compare/interop with CRC32 used throughout this design (implemented at `src/utils/crc32.h`).
 
 _SAMWISE Hardware:_
-* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime.
+* **RAM** or **SRAM**: Standard/normal RAM, which is used to store temporary (volatile) memory during runtime. Note that we are now using a `malloc` in Filesys, which means we can use `~51KiB` on heap.
 * **MRAM**: Magnetoresistive RAM, the permanent (non-volatile) memory used for file storage on the satellite. Essentially, think of it like an SSD, not a RAM. This has 512KiB of storage space.
 
 _Filesys:_
@@ -57,7 +57,7 @@ The design is, in rough terms, as follows:
 2. Loop:
     1. Allow N (=256 for example) "packets" of 205 bytes to be written at a time for the file. For example, when the file first starts, it will allow for packets 0..255 inclusive to be written in any order, and store each one in buffer.
     2. Send periodic status reports every 5 seconds containing the current bitfield and debugging information, rather than responding to each individual packet.
-    3. Once all packets in this cycle is complete, write to MRAM, clear buffer, and send FTP_READY_RECEIVE for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
+    3. Once all packets in this cycle is complete, write to MRAM, clear buffer, and send `FTP_FILE_WRITE_SUCCESS` for the next cycle. So in the previous example, now allow packets 256..511 inclusive.
 3. Once all cycles are complete, run a CRC32 check between the expected file & the actually written file. If successful, finally finish the operation.
 
 Note that only starting a file write and starting a new cycle will generate a "Ready_Recieve" packet to be sent. Otherwise, bitfield information is periodically sent.
@@ -107,9 +107,9 @@ We implement the following functions:
 * start file write
 * write packet to buffer (automatically writes to file if all packets are received)
 * cancel file write
-* remove file
-* list all files, their CRC32s, file sizes, & other metadata
-* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart)
+* remove file // TODO
+* list all files, their CRC32s, file sizes, & other metadata // TODO
+* resume file write (re-initialize RAM metadata so write packet to buffer works if SAMWISE loses RAM data e.g. on restart) // TODO
 * periodic status reporting with comprehensive debugging information to reduce overhead
 
 Note this means we also **do not have** some common functionalities:
@@ -139,7 +139,7 @@ Based on our knowledge of alt designs and our own design, here are the tradeoffs
 _Too high:_
 * Limited by space on RAM, i.e. buffer size cannot be too large
 * The point of "cycling" is to prevent needing to send all the packets repeatedly from Ground -> SAMWISE. (See 2a above). Having a higher N could make this "harder".
-    * Note that this is not really that big of an issue, as we now provide a bitfield of packets we haven't received yet (see `FTP_READY_RECEIVE` specifications). However, it is possible for this to be a bit finicky still (e.g. it is not that easy for ground station to quickly adapt to this bitfield, especially if it is still cycling through hundreds of disjointed packets and bitfields are changing weirdly every time SAMWISE returns `FTP_READY_RECEIVE`).
+    * Note that this is not really that big of an issue, as we now provide a bitfield of packets we haven't received yet (see `FTP_READY_RECEIVE` & `FTP_FILE_WRITE_SUCCESS` specifications). However, it is possible for this to be a bit finicky still (e.g. it is not that easy for ground station to quickly adapt to this bitfield, especially if it is still cycling through hundreds of disjointed packets and bitfields are changing weirdly every time SAMWISE returns `FTP_READY_RECEIVE`).
 * More susceptible to losing a lot of data already uploaded. For example, if I sent 300/400 packets, but SAMWISE suddenly restarts for whatever reason, then I have to resend all 400 packets as RAM is cleared on restart. 
 * RAM is also in general pretty volatile, so it is not the best idea to keep so much data in RAM (much safer to flush to MRAM).
 * Similar to above, less opportunities for "checkpoints" where you can continue from (see "resume file write" functionality in Overall Design).
@@ -234,7 +234,7 @@ This approach significantly reduces bandwidth usage while providing comprehensiv
 #### Ending a cycle
 If, on the last packet received on cycle, a little-fs error occurs, it will return FTP_FILE_WRITE_MRAM_ERROR.
 
-If not on the last cycle and the cycle is completed successfully, it will return FTP_READY_RECEIVE with a new range of Packet_Start to Packet_End it will now accept. This is the only time an immediate response is sent, as it signals the start of a new cycle.
+If not on the last cycle and the cycle is completed successfully, it will return FTP_FILE_WRITE_SUCCESS with a new range of Packet_Start to Packet_End it will now accept. This is the only time an immediate response is sent, as it signals the start of a new cycle.
 
 #### Ending a file
 If on the last cycle, we start wrapping up the file writing process.
@@ -282,7 +282,7 @@ All of these are present in `config.h`:
 * `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle. Currently set to 256.
 * `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
 * `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
-* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 524800 bytes`.
+* `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 52480 bytes`.
 
 Here are some other calculations to justify design decisions:
 * The file length is stored in a 32-bit unsigned integer, which allows `2^32 = 4294967296 bytes = 4096 MiB` maximum. Note this should never be reached, it just should be greater than `FTP_MAX_FILE_LEN`.
@@ -382,15 +382,15 @@ packet
 ```
 
 ### Cycle Status Packets
-For (success): `FTP_READY_RECEIVE` (sent only on cycle completion)
+For (success): `FTP_FILE_WRITE_SUCCESS` (sent only on cycle completion)
 
 For (error): `FTP_ERROR_PACKET_OUT_OF_RANGE`
 
-Note that `FTP_READY_RECEIVE` is now only sent when a cycle completes, containing New_Packet_Start and New_Packet_End to signify the start of a new cycle or start of a file write.
+Note that any bitfield information, i.e. `FTP_FILE_WRITE_SUCCESS`, is now only sent when a cycle completes, containing New_Packet_Start and New_Packet_End to signify the start of a new cycle or start of a file write.
 
 ```mermaid
 ---
-title: SAMWISE -> Ground Station Cycle Status Packets (FTP_READY_RECEIVE)
+title: SAMWISE -> Ground Station Cycle Status Packets (FTP_FILE_WRITE_SUCCESS)
 ---
 packet
 +16: "fname"
@@ -419,6 +419,7 @@ typedef struct {
     // Additional filesystem & FTP state info for debugging:
     uint32_t file_crc_so_far;          // CRC of the file so far as it currently sits on the MRAM, which ground station may use for verification during file transfer (using total_bytes_written). This should be 0 if nothing has been written so far (first cycle).
     uint32_t total_bytes_written;      // Total bytes written to MRAM so far
+    uint8_t filesys_buffer_malloced;   // Whether the buffer on filesys was able to be MALLOC-ed or not (i.e. 1/true if it is not NULL).
     uint8_t filesys_is_writing_file;   // Internal state - if filesys is currently writing a file
 } __attribute__((packed)) FTP_STATUS_REPORT_DATA;
 ```
@@ -437,7 +438,8 @@ packet
 +256: "Received_Bitfield (a bit set indicates the corresponding packet was received, 256 bits for N=256)"
 +32: "Computed_CRC (CRC of file so far written on MRAM)"
 +32: "File_Len (total bytes written to MRAM so far)"
-+8: "filesys_is_writing_file (internal filesys state flag - boolean 1 or 0)"
++8: "filesys_buffer_malloced (bool)"
++8: "filesys_is_writing_file (bool)"
 ```
 
 ### FTP_EOF_SUCCESS and FTP_EOF_CRC_ERROR

@@ -57,12 +57,14 @@ slate_t test_slate;
 
 int main()
 {
+    clear_and_init_slate(&test_slate);
     LOG_DEBUG("Testing my_task");
     ASSERT(my_task.name != NULL);
 
     my_task.task_init(&test_slate);
     my_task.task_dispatch(&test_slate);
 
+    free_slate(&test_slate); // Do this at the end of every unit test!
     return 0;
 }
 ```
@@ -322,7 +324,7 @@ one-line edit in the `tests` dict.
 2. **One test per file** — easier to debug
 3. **Use meaningful names** — `my_task_test.c`, not `test1.c`
 4. **Use `ASSERT()`** to verify behavior
-5. **Initialize state** — create a fresh `slate_t` for each test
+5. **Initialize state** — create a fresh `slate_t` for each test, using `clear_and_init_slate()`
 6. **Share test logic** — write core test functions in a shared `.c`/`.h` pair
    and reuse them in both `samwise_test()` and `samwise_integration_test()`
 7. **Add `hardware_test_assert`** to integration test deps so failures don't

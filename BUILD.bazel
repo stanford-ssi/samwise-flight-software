@@ -13,6 +13,53 @@ package(default_visibility = ["//visibility:public"])
 cc_binary(
     name = "samwise",
     srcs = ["src/main.c"],
+    copts = [
+        # Force-include the board header before any other headers
+        "-include",
+        "samwise_picubed.h",
+        # Include board headers directory
+        "-I$(GENDIR)/boards",
+        "-Iboards",
+    ] + select({
+        "//bzl:pico_profile": [
+            "-DPICO",
+        ],
+        "//bzl:pico_hat_profile": [
+            "-DPICO",
+            "-DPICOHAT",
+        ],
+        "//bzl:picubed_flight_profile": [
+            "-DFLIGHT",
+        ],
+        "//bzl:picubed_bringup_profile": [
+            "-DBRINGUP",
+        ],
+        "//conditions:default": [],
+    }),
+    defines = select({
+        "//bzl:pico_profile": ["PICO"],
+        "//bzl:pico_hat_profile": [
+            "PICO",
+            "PICOHAT",
+        ],
+        "//bzl:picubed_flight_profile": ["FLIGHT"],
+        "//bzl:picubed_bringup_profile": ["BRINGUP"],
+        "//conditions:default": [],
+    }),
+    linkopts = [
+        # Standard embedded link options
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    local_defines = [
+        # USB stdio configuration
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+        # Commit hash can be set with --define=COMMIT_HASH=<hash>
+        # If not set, defaults to "unknown"
+        'COMMIT_HASH=\\"unknown\\"',
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
     deps = [
         # Core libraries
         "//src/common",
@@ -54,49 +101,6 @@ cc_binary(
         # External libraries
         "//lib/tinycrypt",
     ],
-    copts = [
-        # Force-include the board header before any other headers
-        "-include", "samwise_picubed.h",
-        # Include board headers directory
-        "-I$(GENDIR)/boards",
-        "-Iboards",
-    ] + select({
-        "//bzl:pico_profile": [
-            "-DPICO",
-        ],
-        "//bzl:pico_hat_profile": [
-            "-DPICO",
-            "-DPICOHAT",
-        ],
-        "//bzl:picubed_flight_profile": [
-            "-DFLIGHT",
-        ],
-        "//bzl:picubed_bringup_profile": [
-            "-DBRINGUP",
-        ],
-        "//conditions:default": [],
-    }),
-    defines = select({
-        "//bzl:pico_profile": ["PICO"],
-        "//bzl:pico_hat_profile": ["PICO", "PICOHAT"],
-        "//bzl:picubed_flight_profile": ["FLIGHT"],
-        "//bzl:picubed_bringup_profile": ["BRINGUP"],
-        "//conditions:default": [],
-    }),
-    local_defines = [
-        # USB stdio configuration
-        "PICO_STDIO_USB_DEFAULT=1",
-        "PICO_STDIO_UART_DEFAULT=0",
-        # Commit hash can be set with --define=COMMIT_HASH=<hash>
-        # If not set, defaults to "unknown"
-        'COMMIT_HASH=\\"unknown\\"',
-    ],
-    linkopts = [
-        # Standard embedded link options
-        "-Wl,--gc-sections",
-        "-Wl,--build-id=none",
-    ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
 # ============================================================================
