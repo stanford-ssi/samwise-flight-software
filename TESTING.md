@@ -290,9 +290,7 @@ int main(void)
 }
 ```
 
-When `my_init_func` is non-`NULL`, it is run for each test case whose metadata sets `requires_custom_init=true`. For test cases with `requires_custom_init=false`, or for any test run where `my_init_func` is `NULL`, the harness instead initializes the slate by calling `clear_and_init_slate` directly. In other words, setting `requires_custom_init=true` only changes behavior when you also provide a non-`NULL` `my_init_func`; otherwise the default `clear_and_init_slate` initialization is used.
-
-When a custom `my_init_func` is provided, it is responsible for fully initializing the slate itself (typically by calling `clear_and_init_slate` at the start, or by performing equivalent initialization), because the harness does not call `clear_and_init_slate` automatically before invoking your custom initializer.
+A slate initialized with `clear_and_init_slate`, or `my_init_func` if it is non-`NULL`, is provided to every test. When a custom `my_init_func` is provided, it is responsible for fully initializing the slate itself (typically by calling `clear_and_init_slate` at the start, or by performing equivalent initialization), because the harness does not call `clear_and_init_slate` automatically before invoking your custom initializer.
 
 #### 4. Run a subset of tests (optional)
 

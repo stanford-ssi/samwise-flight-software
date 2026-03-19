@@ -20,17 +20,16 @@
     } while (0)
 
 /**
- * Function pointer type for initializing a slate before running a test, if
- * requires_custom_init is true. This allows tests to specify custom slate
- * initialization logic if needed, while still providing a default
- * initialization function (clear_and_init_slate) for convenience.
+ * Function pointer type for initializing a slate before running a test. This
+ * allows tests to specify custom slate initialization logic if needed, while
+ * still providing a default initialization function (clear_and_init_slate) for
+ * convenience.
  */
 typedef int (*test_harness_init_slate_func_t)(slate_t *slate);
 
 /**
  * Function pointer type for individual test cases. Each test case function
- * takes a pointer to a slate (which may or may not be initialized depending on
- * requires_custom_init) and returns 0 on success or a negative value on
+ * takes a pointer to a slate and returns 0 on success or a negative value on
  * failure.
  */
 typedef int (*test_harness_func_t)(slate_t *slate);
@@ -46,8 +45,6 @@ typedef struct test_harness_case
                       // selective test execution
     test_harness_func_t test_func;
     const char *name;
-    bool requires_custom_init; // Indicates if the test requires initialization
-                               // of a slate before running
 } test_harness_case_t;
 
 /**
