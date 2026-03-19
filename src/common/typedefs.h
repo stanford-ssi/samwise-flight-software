@@ -13,7 +13,7 @@ typedef struct watchdog watchdog_t;
  * Platform type portability: in production builds, pull pico-sdk types.
  * In test/host builds, provide equivalent definitions.
  */
-#if !defined(TEST) && !defined(PICO)
+#ifndef TEST
 #include "pico/time.h"
 #else
 typedef uint64_t absolute_time_t;

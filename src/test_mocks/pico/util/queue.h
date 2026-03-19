@@ -15,13 +15,18 @@ static inline void queue_init(queue_t *q, unsigned int element_size,
     q->head = 0;
     q->tail = 0;
     q->level = 0;
-    q->data = (uint8_t *)malloc(element_size * element_count);
+    ASSERT(element_size > 0 && element_count > 0 &&
+           element_size * element_count < UINT32_MAX);
+    q->data = malloc(element_size * element_count);
+    ASSERT(q->data != NULL);
 }
 
 static inline bool queue_try_add(queue_t *q, void *data)
 {
     if (q->level >= q->element_count)
         return false;
+
+    ASSERT(q->element_count > 0 && q->data != NULL);
     memcpy(q->data + q->tail * q->element_size, data, q->element_size);
     q->tail = (q->tail + 1) % q->element_count;
     q->level++;
@@ -32,6 +37,8 @@ static inline bool queue_try_remove(queue_t *q, void *data)
 {
     if (q->level == 0)
         return false;
+
+    ASSERT(q->element_count > 0 && q->data != NULL);
     memcpy(data, q->data + q->head * q->element_size, q->element_size);
     q->head = (q->head + 1) % q->element_count;
     q->level--;
@@ -42,6 +49,8 @@ static inline bool queue_try_peek(queue_t *q, void *data)
 {
     if (q->level == 0)
         return false;
+
+    ASSERT(q->element_count > 0 && q->data != NULL);
     memcpy(data, q->data + q->head * q->element_size, q->element_size);
     return true;
 }
