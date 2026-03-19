@@ -547,6 +547,9 @@ inline static void send_ftp_status_report(slate_t *slate)
     memcpy_inc(&data_ptr, &total_bytes_written,
                sizeof(FILESYS_BUFFERED_FILE_LEN_T));
 
+    uint8_t is_malloced = slate->filesys_buffer != NULL ? 1 : 0;
+    memcpy_inc(&data_ptr, &is_malloced, sizeof(uint8_t));
+
     // File write state
     uint8_t is_writing = slate->filesys_is_writing_file ? 1 : 0;
     memcpy_inc(&data_ptr, &is_writing, sizeof(uint8_t));
