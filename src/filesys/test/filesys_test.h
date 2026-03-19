@@ -1,9 +1,11 @@
 #pragma once
 
-#include "filesys.h"
-#include "slate.h"
 #include <stdint.h>
 
+#include "filesys.h"
+#include "test_harness.h"
+
+int filesys_test_setup(slate_t *slate);
 int filesys_test_write_readback_success(slate_t *slate);
 int filesys_test_initialize_reformat_success(slate_t *slate);
 int filesys_test_start_file_write_already_writing_should_fail(slate_t *slate);
@@ -46,3 +48,6 @@ int filesys_test_read_file_size_success(slate_t *slate);
 int filesys_test_close_file_read_success(slate_t *slate);
 int filesys_test_read_full_workflow_success(slate_t *slate);
 int filesys_test_read_multi_chunk_file_success(slate_t *slate);
+
+extern const test_harness_case_t filesys_tests[];
+extern const size_t filesys_tests_len;
