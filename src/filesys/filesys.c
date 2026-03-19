@@ -11,17 +11,17 @@ static lfs_t lfs;
 
 const struct lfs_config filesys_lfs_cfg = {
     // block device operations
-#ifndef MRAM
-    .read = lfs_mram_wrap_read,
-    .prog = lfs_mram_wrap_prog,
-    .erase = lfs_mram_wrap_erase,
-    .sync = lfs_mram_wrap_sync,
-#else
+    // #ifndef MRAM
+    //     .read = lfs_mram_wrap_read,
+    //     .prog = lfs_mram_wrap_prog,
+    //     .erase = lfs_mram_wrap_erase,
+    //     .sync = lfs_mram_wrap_sync,
+    // #else
     .read = lfs_gen_flash_wrap_read,
     .prog = lfs_gen_flash_wrap_prog,
     .erase = lfs_gen_flash_wrap_erase,
     .sync = lfs_gen_flash_wrap_sync,
-#endif
+    // #endif
     // block device configuration
     .read_size = 16,
     .prog_size = 16,
@@ -49,6 +49,7 @@ static void filesys_file_open(lfs_file_t *file, const char *fname, int flags,
 {
     *lfs_error_code = LFS_ERR_OK;
     int err = lfs_file_opencfg(&lfs, file, fname, flags, &filesys_lfs_file_cfg);
+    LOG_ERROR("[filesys] Attempting to open file %s with error %d", fname, err);
     if (err < 0)
     {
         *lfs_error_code = err;
@@ -73,8 +74,8 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
     *lfs_error_code = LFS_ERR_OK;
 
     // mount the filesystem
-    mram_write_enable();
-    mram_init();
+    // mram_write_enable();
+    // mram_init();
     int err = lfs_mount(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
@@ -102,9 +103,19 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    mram_write_enable();
-    mram_init();
-    int err = lfs_format(&lfs, &filesys_lfs_cfg);
+    // mram_write_enable();
+    // mram_init();
+    int err =
+        lfs_unmount(&lfs); // Unmount in case it's already mounted from before
+    if (err < 0)
+    {
+        *lfs_error_code = err;
+        LOG_ERROR("[filesys] Failed to unmount filesystem before reformat: %d",
+                  err);
+        return FILESYS_ERR_REFORMAT;
+    }
+
+    err = lfs_format(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
     {
@@ -283,10 +294,11 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
         return FILESYS_OK;
     }
 
-    LOG_DEBUG("[filesys] Preparing to write buffer to MRAM for file %s. Buffer "
-              "size to "
-              "write: %u bytes",
-              slate->filesys_buffered_fname_str, n_bytes);
+    // LOG_DEBUG("[filesys] Preparing to write buffer to MRAM for file %s.
+    // Buffer "
+    //           "size to "
+    //           "write: %u bytes",
+    //           slate->filesys_buffered_fname_str, n_bytes);
 
     // Reopen the file for appending
     lfs_file_t lfs_open_file;
@@ -294,11 +306,11 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     filesys_file_open(&lfs_open_file, slate->filesys_buffered_fname_str,
                       LFS_O_WRONLY | LFS_O_APPEND, &open_lfs_err);
 
-    LOG_DEBUG(
-        "[filesys] Attempting to write buffer to file %s. Buffer dirty: %d, "
-        "Buffer size to write: %u bytes",
-        slate->filesys_buffered_fname_str, slate->filesys_buffer_is_dirty,
-        n_bytes);
+    // LOG_DEBUG(
+    //     "[filesys] Attempting to write buffer to file %s. Buffer dirty: %d, "
+    //     "Buffer size to write: %u bytes",
+    //     slate->filesys_buffered_fname_str, slate->filesys_buffer_is_dirty,
+    //     n_bytes);
 
     if (open_lfs_err < 0)
     {
@@ -309,10 +321,10 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     }
 
     // Write buffer to file
-    LOG_DEBUG(
-        "[filesys] Writing buffer to file %s in MRAM. Buffer size to write: "
-        "%u bytes",
-        slate->filesys_buffered_fname_str, n_bytes);
+    // LOG_DEBUG(
+    //     "[filesys] Writing buffer to file %s in MRAM. Buffer size to write: "
+    //     "%u bytes",
+    //     slate->filesys_buffered_fname_str, n_bytes);
     lfs_ssize_t bytes_written =
         lfs_file_write(&lfs, &lfs_open_file, slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
