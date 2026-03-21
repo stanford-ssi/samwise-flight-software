@@ -5,7 +5,9 @@
 
 #pragma once
 
+#ifndef TEST
 #include "neopixel.h"
 #include "pico/stdlib.h"
+#endif
 
-void fatal_error();
+void fatal_error(char *msg);

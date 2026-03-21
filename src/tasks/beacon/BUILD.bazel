@@ -1,0 +1,54 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "beacon_task",
+    srcs = ["beacon_task.c"],
+    hdrs = ["beacon_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/packet:adcs_packet",
+        "//src/packet",
+        "//src/scheduler:state_machine",
+        "//src/scheduler:state_registry",
+        "//src/slate",
+        "//src/utils",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/common/pico_util:pico_util",
+        ],
+    }),
+)
+
+samwise_test(
+    name = "beacon_test",
+    srcs = ["test/beacon_test.c"],
+    deps = [
+        ":beacon_task",
+    ],
+)
+
+# Fails if the checked-in beacon_packet.hex diverges from what beacon_test produces.
+# This catches beacon format drift between C and the ground station decoder.
+# Fix with: ./scripts/update_beacon_test_data.sh
+sh_test(
+    name = "beacon_hex_freshness_test",
+    srcs = ["test/check_beacon_hex_freshness.sh"],
+    args = [
+        "$(location :beacon_test)",
+        "$(location //ground_station/tests/test_data:beacon_packet.hex)",
+    ],
+    data = [
+        ":beacon_test",
+        "//ground_station/tests/test_data:beacon_packet.hex",
+    ],
+)

@@ -1,0 +1,143 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "samwise-ground-station"
+version = "1.0.0"
+description = "LoRA ground station for Samwise CubeSat communication"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Stanford SSI", email = "ssi@lists.stanford.edu"}
+]
+keywords = ["cubesat", "lora", "ground-station", "satellite", "communication"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Aerospace",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "adafruit-circuitpython-rfm9x",
+    "adafruit-circuitpython-hashlib",
+    "circuitpython-hmac",
+    "adafruit-blinka",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+server = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.27.0",
+    "starlette",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=24.0.0",
+    "ruff>=0.2.0",
+    "pre-commit>=3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stanford-ssi/samwise-flight-software"
+Repository = "https://github.com/stanford-ssi/samwise-flight-software"
+Issues = "https://github.com/stanford-ssi/samwise-flight-software/issues"
+
+[project.scripts]
+samwise-gs = "cli:entry"
+
+[tool.setuptools]
+py-modules = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "server", "state", "ui"]
+
+[tool.pytest.ini_options]
+# Test discovery
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+# Output
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+
+# Test markers
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests for component interactions",
+    "compatibility: Platform compatibility tests (CPython vs CircuitPython)",
+    "protocol: Protocol encoding/decoding tests",
+    "filtering: Packet filtering tests",
+    "server: FastAPI server and WebSocket tests",
+]
+
+minversion = "7.0"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "@abstractmethod",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | lib
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+exclude = [
+    ".git",
+    ".venv",
+    "build",
+    "dist",
+    "lib",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N"]
+ignore = ["E501"]  # Line too long
+
+[tool.ruff.lint.isort]
+known-first-party = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "server", "state", "ui"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Unused imports in __init__ are OK
+"models.py" = ["N815", "N803"]  # Allow mixedCase for satellite data field names
+"tests/test_compatibility.py" = ["N806", "E712"]  # Allow UPPER_CASE and boolean comparisons in tests

@@ -1,9 +1,15 @@
 #pragma once
 
-#include "common/config.h"
+#ifndef TEST
+#include "config.h"
 #include "hardware/gpio.h"
+#include "hardware/watchdog.h"
 #include "pico/time.h"
 #include "pins.h"
+#else
+#include "typedefs.h"
+#include <stdbool.h>
+#endif
 
 struct watchdog
 {

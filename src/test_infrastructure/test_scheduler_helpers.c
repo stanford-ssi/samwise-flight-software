@@ -6,6 +6,8 @@
 #include "test_scheduler_helpers.h"
 #include "logger.h"
 #include "pico/stdlib.h"
+#include "state_ids.h"
+#include "state_registry.h"
 #include <string.h>
 
 // =============================================================================
@@ -53,7 +55,7 @@ void reset_task_stats(void)
 extern FILE *viz_log;
 extern const char *current_executing_task;
 
-int viz_log_open(const char *filename)
+int viz_log_open_raw(const char *filename)
 {
     viz_log = fopen(filename, "w");
     if (viz_log != NULL)
@@ -63,6 +65,29 @@ int viz_log_open(const char *filename)
         return 0;
     }
     return -1;
+}
+
+int viz_log_open_log_dir(const char *basename)
+{
+    // Build output filename, writing to TEST_UNDECLARED_OUTPUTS_DIR if
+    // available so Bazel preserves the JSON after the test run.
+    const char *out_dir = getenv("TEST_UNDECLARED_OUTPUTS_DIR");
+
+    // Replace hyphens with underscores for valid filenames
+    for (char *p = basename; *p; p++)
+    {
+        if (*p == '-')
+            *p = '_';
+    }
+
+    if (out_dir != NULL)
+    {
+        char filename[strlen(out_dir) + 1 + strlen(basename) + 1];
+        snprintf(filename, sizeof(filename), "%s/%s", out_dir, basename);
+        return viz_log_open_raw(filename);
+    }
+
+    return viz_log_open_raw(basename);
 }
 
 void viz_log_close(void)
@@ -112,7 +137,8 @@ void test_state_init_tasks(sched_state_t *state, slate_t *slate)
 
 void test_sched_dispatch(slate_t *slate)
 {
-    sched_state_t *current_state_info = slate->current_state;
+    sched_state_t *current_state_info =
+        state_registry_get(slate->current_state_id);
 
     // Loop through all of this state's tasks
     for (size_t i = 0; i < current_state_info->num_tasks; i++)
@@ -151,20 +177,20 @@ void test_sched_dispatch(slate_t *slate)
         1000;
 
     // Handle state transitions (simplified from scheduler.c)
-    sched_state_t *next_state;
-    if (slate->manual_override_state != NULL)
+    state_id_t next_state_id;
+    if (slate->manual_override_state_id != STATE_NONE)
     {
-        next_state = slate->manual_override_state;
-        slate->manual_override_state = NULL;
+        next_state_id = slate->manual_override_state_id;
+        slate->manual_override_state_id = STATE_NONE;
     }
     else
     {
-        next_state = current_state_info->get_next_state(slate);
+        next_state_id = current_state_info->get_next_state(slate);
     }
 
-    if (next_state != current_state_info)
+    if (next_state_id != slate->current_state_id)
     {
-        slate->current_state = next_state;
+        slate->current_state_id = next_state_id;
         slate->entered_current_state_time = get_absolute_time();
         slate->time_in_current_state_ms = 0;
     }
@@ -240,4 +266,99 @@ void log_task_summary(void)
                  stats->dispatch_count);
         log_viz_event("task_summary", stats->task_name, details);
     }
+}
+
+// =============================================================================
+// FSM SIMULATION
+// =============================================================================
+
+state_id_t run_fsm_simulation(slate_t *slate, uint32_t dispatch_interval_ms,
+                              uint32_t log_interval_ms,
+                              int stable_count_threshold)
+{
+    LOG_DEBUG("FSM simulation: dispatch interval %u ms, stable threshold %d",
+              dispatch_interval_ms, stable_count_threshold);
+
+    int consecutive_same_state = 0;
+    state_id_t prev_state_id = slate->current_state_id;
+    uint32_t elapsed_ms = 0;
+
+    // Log initial state entry
+    sched_state_t *initial_state = state_registry_get(slate->current_state_id);
+    if (initial_state != NULL)
+    {
+        char details[128];
+        snprintf(details, sizeof(details), "state=%s, from=none",
+                 initial_state->name);
+        log_viz_event("state_enter", NULL, details);
+        log_discovered_tasks(initial_state);
+    }
+
+    while (consecutive_same_state < stable_count_threshold)
+    {
+        mock_time_us += dispatch_interval_ms * 1000ULL;
+        elapsed_ms += dispatch_interval_ms;
+
+        // Use test version of dispatcher that logs task start/end
+        test_sched_dispatch(slate);
+
+        // Check for state transition
+        if (slate->current_state_id != prev_state_id)
+        {
+            sched_state_t *old_state = state_registry_get(prev_state_id);
+            sched_state_t *new_state =
+                state_registry_get(slate->current_state_id);
+
+            // Log state exit
+            char details[128];
+            snprintf(details, sizeof(details), "state=%s, to=%s",
+                     old_state ? old_state->name : "unknown",
+                     new_state ? new_state->name : "unknown");
+            log_viz_event("state_exit", NULL, details);
+
+            // Log state enter
+            snprintf(details, sizeof(details), "state=%s, from=%s",
+                     new_state ? new_state->name : "unknown",
+                     old_state ? old_state->name : "unknown");
+            log_viz_event("state_enter", NULL, details);
+
+            // Log tasks for the new state
+            if (new_state != NULL)
+            {
+                log_discovered_tasks(new_state);
+            }
+
+            LOG_DEBUG("FSM: %s -> %s at %u ms",
+                      old_state ? old_state->name : "?",
+                      new_state ? new_state->name : "?", elapsed_ms);
+
+            prev_state_id = slate->current_state_id;
+            consecutive_same_state = 0;
+        }
+        else
+        {
+            consecutive_same_state++;
+        }
+
+        if (log_interval_ms > 0 && elapsed_ms % log_interval_ms == 0)
+        {
+            char details[64];
+            snprintf(details, sizeof(details), "elapsed=%u ms", elapsed_ms);
+            log_viz_event("simulation_milestone", NULL, details);
+        }
+
+        // Safety limit: 5 minutes of simulated time
+        if (elapsed_ms > 300000)
+        {
+            LOG_DEBUG("FSM simulation: safety limit reached at %u ms",
+                      elapsed_ms);
+            break;
+        }
+    }
+
+    sched_state_t *final_state = state_registry_get(slate->current_state_id);
+    LOG_DEBUG("FSM simulation: stable in state %s after %u ms",
+              final_state ? final_state->name : "unknown", elapsed_ms);
+
+    return slate->current_state_id;
 }

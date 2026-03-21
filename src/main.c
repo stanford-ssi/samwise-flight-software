@@ -22,7 +22,6 @@ extern slate_t slate;
 // Ensure that PICO_RP2350A is defined to 0 for PICUBED builds.
 // This is to enable full 48pin GPIO support on the RP2350A chip.
 // boards/samwise_picubed.h should define it to 0.
-// The CMakeLists.txt file points to this file for the board definition.
 static_assert(PICO_RP2350A == 0,
               "PICO_RP2350A must be defined to 0 for PICUBED builds.");
 #endif
@@ -34,15 +33,40 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+    if (clear_and_init_slate(&slate) != 0)
+    {
+        ERROR("main: Failed to initialize slate! THIS IS REALLY BAD! "
+              "Continuing with half-initialized slate, but expect more errors "
+              "down the line...");
+        // We won't exit, as most likely only filesys failed. We will just keep
+        // running without a slate, but this is really bad and will likely cause
+        // more errors down the line.
+    }
+
+#ifndef TEST
+    // Initialize USB stdio early for PICO platform so logging works
+    stdio_usb_init();
+#endif
+
+    sleep_ms(1000); // Sleep for a bit to let the USB connection establish for
+                    // logging
+    LOG_DEBUG("main: Starting main function...");
+
+#ifndef PICO
     // We need to first initialize watchdog before any sleep is called.
     // Watchdog needs to be fed periodically to prevent rebooting.
     slate.watchdog = watchdog_mk();
     watchdog_init(&slate.watchdog);
 
+    LOG_DEBUG("main: Watchdog initialized");
+#endif
+
     // Initialize hardware status GPIO pins.
     // This is used to read the status of the solar panels, RBF, etc.
     // Primarily at this point in time, we need to verify the RBF status.
     device_status_init();
+
+    LOG_DEBUG("main: Device initialization complete, entering main loop...");
 
 /*
  * Brief delay after reboot/powering up due to power spikes to prevent
@@ -53,21 +77,28 @@ int main()
     // exolaunch deployment chute.
     safe_sleep_ms(15 * 60 * 1000); // 15 minutes
 #else
+    LOG_DEBUG("main: Sleeping 5s...");
     safe_sleep_ms(5000); // 5 second for debugging
+    LOG_DEBUG("main: Sleep done");
 #endif
 
     /*
      * Initialize persistent data or load existing data if already in flash.
      * The reboot counter is incremented each time this code runs.
      */
+    LOG_DEBUG("main: Initializing persistent data...");
     persistent_data_t *data = init_persistent_data();
+    LOG_DEBUG("main: Persistent data initialized, reboot count = %d",
+              data->reboot_counter);
     increment_reboot_counter();
+    LOG_DEBUG("      rebot_counter++ -> %d", data->reboot_counter);
 
     /*
      * Initialize everything.
      */
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
+    LOG_DEBUG("main: Calling init()...");
     ASSERT(init(&slate));
     slate.reboot_counter = data->reboot_counter;
 

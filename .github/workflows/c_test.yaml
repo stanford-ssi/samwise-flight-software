@@ -2,50 +2,91 @@ name: C/C++ Tests
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   pull_request:
-    paths:
-      - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
-      - ".github/workflows/*.yaml"
   workflow_dispatch:
 
 jobs:
-  Test:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_test: ${{ github.event_name != 'pull_request' || steps.filter.outputs.test == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            test:
+              - 'src/**'
+              - 'bzl/**'
+              - 'BUILD.bazel'
+              - '.bazelrc'
+              - '.github/workflows/*.yaml'
+
+  Unit-Tests:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_test == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-unit
+          repository-cache: true
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake
+      - name: Run unit tests
+        run: source run_tests.sh --test_output=errors
 
-      - name: Configure tests
-        run: cmake -B ${{ github.workspace }}/build-tests -DPROFILE=TEST -DCOMMIT_HASH=${{ github.sha }}
-
-      - name: Build tests
-        run: cmake --build ${{ github.workspace }}/build-tests --parallel 4
-
-      - name: Run all tests
-        run: |
-          cd ${{ github.workspace }}/build-tests
-          ctest --output-on-failure --verbose
-
-      - name: Archive test visualization logs
+      - name: Archive unit test visualization logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-visualization-logs
+          name: unit-test-viz-logs
           path: |
-            ${{ github.workspace }}/build-tests/**/*_viz.json
+            bazel-testlogs/**/test.outputs/*.json
+
+  FSM-Integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_test == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-fsm
+          repository-cache: true
+
+      - name: FSM test (debug)
+        run: bazel test //src/scheduler:fsm_test_debug --test_output=errors
+
+      - name: FSM test (flight)
+        run: bazel test //src/scheduler:fsm_test_flight --config=fsm-flight --test_output=errors
+
+      - name: FSM test (bringup)
+        run: bazel test //src/scheduler:fsm_test_bringup --config=fsm-bringup --test_output=errors
+
+      - name: Archive FSM visualization logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsm-viz-logs
+          path: |
+            bazel-testlogs/**/test.outputs/fsm_viz_*.json

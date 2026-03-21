@@ -1,0 +1,50 @@
+"""
+Packet handling with HMAC-SHA256 authentication for SAMWISE flight software.
+
+This module provides packet authentication using TinyCrypt's HMAC implementation.
+Authentication can be enabled by defining PACKET_HMAC_PSK at build time.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Header-only library for packet_t struct and layout constants.
+# This has minimal deps to avoid circular dependency with //src/common.
+cc_library(
+    name = "packet_hdrs",
+    hdrs = ["packet.h"],
+    includes = ["."],
+    deps = [
+        "//lib/tinycrypt",
+    ] + select({
+        "//bzl:test_mode": [],
+        "//conditions:default": [
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
+
+cc_library(
+    name = "packet",
+    srcs = ["packet.c"],
+    hdrs = ["packet.h"],
+    includes = ["."],
+    deps = [
+        ":packet_hdrs",
+        "//src/common",
+        "//lib/tinycrypt",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
+
+cc_library(
+    name = "adcs_packet",
+    hdrs = ["adcs_packet.h"],
+    includes = ["."],
+)

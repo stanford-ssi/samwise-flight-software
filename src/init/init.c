@@ -38,12 +38,13 @@ static bool init_gpio_pins()
 
 static bool init_drivers(slate_t *slate)
 {
+    LOG_DEBUG("init: onboard_led_mk...");
     slate->onboard_led = onboard_led_mk();
     onboard_led_init(&slate->onboard_led);
 
+    LOG_DEBUG("init: logger_init...");
     logger_init();
 
-    slate->radio = rfm9x_mk();
 #ifdef BRINGUP
     gpio_init(SAMWISE_RF_RST_PIN);
     gpio_set_dir(SAMWISE_RF_RST_PIN, GPIO_OUT);
@@ -64,18 +65,32 @@ static bool init_drivers(slate_t *slate)
     gpio_init(SAMWISE_RF_SCK_PIN);
     gpio_set_dir(SAMWISE_RF_SCK_PIN, GPIO_OUT);
     gpio_put(SAMWISE_RF_SCK_PIN, 0);
-#else
-    rfm9x_init(&slate->radio);
 #endif
 
-    // Initialize Neopixel if on PICUBED
-#ifndef PICO
+    // Initialize radio if on PICUBED or PICO with radio hat
+#if !defined(PICO) || defined(PICOHAT)
+    LOG_DEBUG("init: rfm9x_mk...");
+    slate->radio = rfm9x_mk();
+    LOG_DEBUG("init: rfm9x_init...");
+    rfm9x_init(&slate->radio);
+    LOG_DEBUG("init: rfm9x_init done");
+#endif
+
+    // Initialize neopixel if on PICUBED or PICO with radio hat
+#if !defined(PICO) || defined(PICOHAT)
+    LOG_DEBUG("init: neopixel_init...");
     neopixel_init();
 #endif
 
+    // Initialize remaining drivers if on PICUBED
+#ifndef PICO
+
+    LOG_DEBUG("init: burn_wire_init...");
     // Initialize burn wire
     burn_wire_init(slate);
+#endif
 
+    LOG_DEBUG("init: init_drivers done");
     return true;
 }
 
@@ -93,13 +108,16 @@ bool init(slate_t *slate)
     /*
      * Initialize gpio pins
      */
+    LOG_DEBUG("init: init_gpio_pins...");
     ASSERT(init_gpio_pins());
 
+    LOG_DEBUG("init: init_drivers...");
     ASSERT(init_drivers(slate));
 
     /*
      * Initialize the state machine
      */
+    LOG_DEBUG("init: sched_init...");
     sched_init(slate);
 
     return true;

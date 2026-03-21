@@ -1,0 +1,31 @@
+"""Board definitions for SAMWISE Flight Software
+
+This package exposes custom board header files which define pin mappings
+and board-specific configuration for each supported hardware platform.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# PiCubed board header (RP2350) with custom pin definitions
+cc_library(
+    name = "samwise_picubed",
+    hdrs = ["samwise_picubed.h"],
+    includes = ["."],
+)
+
+# Pico development board header (RP2350) with custom pin definitions
+cc_library(
+    name = "samwise_pico",
+    hdrs = ["samwise_pico.h"],
+    includes = ["."],
+)
+
+# Alias that resolves to the active board based on build config
+alias(
+    name = "board_header",
+    actual = select({
+        "//bzl:pico_profile": ":samwise_pico",
+        "//bzl:pico_hat_profile": ":samwise_pico",
+        "//conditions:default": ":samwise_picubed",
+    }),
+)

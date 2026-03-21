@@ -3,4 +3,5 @@
 echo Formatting all files...
 find src -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs -I {} clang-format -i {}
 find ota_mvp -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs -I {} clang-format -i {}
+find payload -name "*.cpp" -o -name "*.c" -o -name "*.h" | xargs -I {} clang-format -i {}
 echo Done!

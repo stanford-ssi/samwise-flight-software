@@ -1,0 +1,62 @@
+name: Claude Documentation
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude:
+    concurrency:
+      group: claude-docs-${{ github.event.issue.number }}
+      cancel-in-progress: true
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Only run for specific users
+    if: |
+      (
+        github.event.issue.pull_request
+      ) && (
+        contains(github.event.comment.body, '@claude_doc')
+      ) && (
+        github.actor == 'devYaoYH' ||
+        github.actor == 'carter-cochran'
+      )
+
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          # This fetches the head of the PR that the comment was made on
+          ref: refs/pull/${{ github.event.issue.number }}/head
+
+      - name: Run Claude Docs
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          trigger_phrase: "@claude_doc"
+          custom_instructions: |
+            Tasks:
+
+            1) Documentation Updates
+               - Inspect the PR's diff to detect all user-visible changes (APIs, CLI flags, behavior, etc.).
+               - **Goal: Generate Brief Update Documentation.** For every file or module affected by the PR:
+                 - If a relevant documentation file exists, propose an update to reflect the changes.
+                 - If new user-facing code is added without existing documentation, propose the creation of a **new, complete README equivalent paragraph/section** detailing its purpose, usage, and examples.
+               - Tone: factual, concise.
+
+            2) Changelog Generation
+               - Write a faux-CHANGELOG.md per "Keep a Changelog" format (Added/Changed/Fixed/Deprecated/Removed/Security) in terse bullets.
+               - Summarize PR's user-facing changes in terse bullets (1–2 lines), including the PR number in parentheses when available, and @contributors.
+               - If no user-visible changes, add a note under "Changed" or skip that section.
+
+            Output Policy (Strict):
+            - Post a PR comment containing ONLY a summary paragraph followed by a single ```diff fence with the proposed documentation changes.

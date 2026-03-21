@@ -1,0 +1,85 @@
+package(default_visibility = ["//visibility:public"])
+
+# ==========================================
+# 1. MAIN EXECUTABLE (ELF)
+# ==========================================
+cc_binary(
+    name = "ota_elf",
+    srcs = [
+        "main.c",
+        "partition_b.h",
+    ],
+    deps = [
+        # Board header (for non-PICO builds)
+        "//boards:samwise_picubed",
+
+        # Pico-SDK libraries
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
+        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+        "@pico-sdk//src/rp2_common/hardware_i2c:hardware_i2c",
+        "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
+        "@pico-sdk//src/rp2_common/hardware_watchdog:hardware_watchdog",
+        "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
+
+        # Linker script for RP2350
+        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
+    ],
+    copts = [
+        "-include", "samwise_picubed.h",
+        "-I$(GENDIR)/boards",
+        "-Iboards",
+    ],
+    local_defines = [
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+    ] + select({
+        "//bzl:ota_blink": ["BUILD_BLINK"],
+        "//conditions:default": [],
+    }),
+    linkopts = [
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    # You can also copy over any specific copts/linkopts from your root
+    # BUILD file if this specific target requires them.
+)
+
+# ==========================================
+# 2. RAW BINARY GENERATOR (.bin)
+# ==========================================
+genrule(
+    name = "ota_bin_generator",
+    srcs = [":ota_elf"],
+    outs = ["ota.bin"],
+    # Replaced $(OBJCOPY) with the explicit arm-none-eabi-objcopy command
+    cmd = "arm-none-eabi-objcopy -O binary $(location :ota_elf) $@",
+    message = "Extracting raw binary for OTA payload...",
+)
+
+# ==========================================
+# 3. UF2 GENERATOR (.uf2)
+# ==========================================
+genrule(
+    name = "ota_uf2_generator",
+    srcs = [":ota_elf"],
+    outs = ["ota.uf2"],
+    # Swapped rp2350 for rp2350-arm-s
+    cmd = "picotool uf2 convert $(location :ota_elf) -t elf $@ --family rp2350-arm-s",
+    message = "Packaging ELF into UF2 for RP2350...",
+)
+
+# ==========================================
+# 4. UMBRELLA FILEGROUP
+# ==========================================
+# Running `bazel build //ota_mvp:ota --config=pico` will now build
+# the ELF, the .bin, and the .uf2 all at once.
+filegroup(
+    name = "ota",
+    srcs = [
+        ":ota_elf",
+        ":ota_bin_generator",
+        ":ota_uf2_generator",
+    ],
+)

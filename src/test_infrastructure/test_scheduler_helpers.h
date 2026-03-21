@@ -11,7 +11,9 @@
 
 #include "scheduler.h"
 #include "slate.h"
+#include "state_ids.h"
 #include "state_machine.h"
+#include "state_registry.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -69,11 +71,19 @@ extern FILE *viz_log;
 extern const char *current_executing_task;
 
 /**
- * Open visualization log file for writing
+ * Open visualization log file for writing at exact path
  * @param filename Path to the log file
  * @return 0 on success, -1 on error
  */
-int viz_log_open(const char *filename);
+int viz_log_open_raw(const char *filename);
+
+/**
+ * Open visualization log file in TEST_UNDECLARED_OUTPUTS_DIR for Bazel
+ * preservation
+ * @param basename Base name for the log file (e.g., "fsm_test_log.json")
+ * @return 0 on success, -1 on error
+ */
+int viz_log_open_log_dir(const char *basename);
 
 /**
  * Close visualization log file
@@ -139,15 +149,23 @@ void log_discovered_tasks(sched_state_t *state);
 void log_task_summary(void);
 
 // =============================================================================
-// STUB STATE DEFINITIONS
+// FSM SIMULATION
 // =============================================================================
 
 /**
- * Define stub states that scheduler.c expects but aren't used in tests.
- * These can be referenced in test files or defined there.
+ * Run FSM simulation from current state until state is stable.
+ *
+ * Dispatches the scheduler in a loop, tracking state transitions.
+ * Logs state_enter/state_exit events for visualization.
+ * Stops when the same state is returned for `stable_count_threshold`
+ * consecutive dispatch cycles.
+ *
+ * @param slate Test slate (should have current_state_id set to starting state)
+ * @param dispatch_interval_ms How often to call sched_dispatch (ms)
+ * @param log_interval_ms How often to log milestones (0 = no milestones)
+ * @param stable_count_threshold Stop after this many consecutive same-state
+ * @return The final stable state ID
  */
-extern sched_state_t init_state;
-extern sched_state_t running_state;
-extern sched_state_t burn_wire_state;
-extern sched_state_t burn_wire_reset_state;
-extern sched_state_t bringup_state;
+state_id_t run_fsm_simulation(slate_t *slate, uint32_t dispatch_interval_ms,
+                              uint32_t log_interval_ms,
+                              int stable_count_threshold);

@@ -11,21 +11,28 @@
 
 #pragma once
 
-#include "lfs.h"
+#include <stdlib.h>
+#include <string.h>
+
+#ifndef TEST
 #include "pico/types.h"
+#endif
 #include "pico/util/queue.h"
 
-#include "state_machine.h"
-#include "typedefs.h"
-
 #include "adcs_packet.h"
+#include "config.h"
+#include "logger.h"
 #include "onboard_led.h"
 #include "rfm9x.h"
+#include "state_ids.h"
+#include "typedefs.h"
 #include "watchdog.h"
 
 // Largest possible command data structure
 #define MAX_DATASTRUCTURE_SIZE 304
 
+// Use clear_and_init_slate() to initialize a slate - this ensures proper
+// initialization of fields.
 typedef struct samwise_slate
 {
 #ifdef BRINGUP
@@ -39,11 +46,11 @@ typedef struct samwise_slate
      * State machine info.
      */
     uint32_t reboot_counter;
-    sched_state_t *current_state;
+    state_id_t current_state_id;
     absolute_time_t entered_current_state_time;
     uint64_t time_in_current_state_ms;
     // Manually set next state to transition to
-    sched_state_t *manual_override_state;
+    state_id_t manual_override_state_id;
 
     /*
      * Power Telemetry
@@ -130,12 +137,6 @@ typedef struct samwise_slate
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
 
-    /**
-     * Filesystem API variables
-     */
-    lfs_t lfs;
-    lfs_file_t filesys_lfs_open_file;
-
     // NOTE: A buffer ("cache") is provided by little-fs, but it is more meant
     // for efficiency on reads/writes rather than buffering like we want. Since
     // FILESYS_BUFFER_SIZE is not that pretty, we will create an extra buffer
@@ -143,7 +144,7 @@ typedef struct samwise_slate
     // efficiency gains.
     bool filesys_is_writing_file;
     bool filesys_buffer_is_dirty;
-    uint8_t filesys_buffer[FILESYS_BUFFER_SIZE];
+    uint8_t *filesys_buffer; // Allocated on heap! Too large to fit in stack.
     FILESYS_BUFFERED_FNAME_STR_T filesys_buffered_fname_str;
     FILESYS_BUFFERED_FILE_LEN_T filesys_buffered_file_len;
     FILESYS_BUFFERED_FILE_CRC_T filesys_buffered_file_crc;
@@ -155,6 +156,7 @@ typedef struct samwise_slate
     FTP_PACKET_TRACKER_T ftp_packets_received_tracker;
     FTP_PACKET_SEQUENCE_T ftp_start_cycle_packet_id; // Starting packet ID of
                                                      // current cycle
+    absolute_time_t ftp_last_status_report_time;
     queue_t ftp_format_filesystem_data;
     queue_t ftp_start_file_write_data;
     queue_t ftp_write_to_file_data; // Realistically this should be an array of
@@ -168,5 +170,28 @@ typedef struct samwise_slate
     absolute_time_t payload_most_recent_ping_time;
 
 } slate_t;
+
+// We will put a maximum size of ~16 KB on the slate for now, in lieu of any
+// real analysis of memory usage.
+// _Static_assert(sizeof(slate_t) < 16000,
+//                "slate_t size exceeds reasonable limits");
+
+/**
+ * Initializes the slate struct by clearing all fields to default values and
+ * allocating the filesys buffer on the heap. This should be called once at
+ * startup before using the slate.
+ *
+ * If trying to completely clear an existing/already allocated slate, please use
+ * free_slate first and then run this function.
+ */
+int clear_and_init_slate(slate_t *slate);
+
+/**
+ * Handles freeing any heap-allocated memory within the slate. This should be
+ * called when the slate is no longer needed to avoid memory leaks. After
+ * calling this function, the slate should not be used unless it is
+ * re-initialized with clear_and_init_slate.
+ */
+void free_slate(slate_t *slate);
 
 extern slate_t slate;

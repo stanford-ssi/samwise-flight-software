@@ -1,8 +1,9 @@
 #pragma once
 
+#include <stdint.h>
 #include <stdlib.h>
 
-#include "slate.h"
+#include "state_ids.h"
 #include "typedefs.h"
 
 #define MAX_TASKS_PER_STATE 10
@@ -52,6 +53,8 @@ typedef struct sched_state
      */
     const char *name;
 
+    state_id_t id;
+
     size_t num_tasks;
     sched_task_t *task_list[MAX_TASKS_PER_STATE];
 
@@ -60,5 +63,5 @@ typedef struct sched_state
      * @param slate     Pointer to the current satellite slate
      * @return The next state to transition to
      */
-    struct sched_state *(*get_next_state)(slate_t *slate);
+    state_id_t (*get_next_state)(slate_t *slate);
 } sched_state_t;

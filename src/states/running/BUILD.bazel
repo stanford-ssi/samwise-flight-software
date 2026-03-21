@@ -1,0 +1,45 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "running_state",
+    srcs = ["running_state.c"],
+    hdrs = ["running_state.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
+        # Task dependencies
+        "//src/tasks/adcs:adcs_task",
+        "//src/tasks/beacon:beacon_task",
+        "//src/tasks/blink:blink_task",
+        "//src/tasks/command:command_task",
+        "//src/tasks/diagnostics:diagnostics_task",
+        "//src/tasks/payload:payload_task",
+        "//src/tasks/print:print_task",
+        "//src/tasks/radio:radio_task",
+        "//src/tasks/telemetry:telemetry_task",
+        "//src/tasks/watchdog:watchdog_task",
+        "//src/tasks/hardware_test:hardware_test_task",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/neopixel:neopixel_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/neopixel",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
+
+samwise_test(
+    name = "running_state_test",
+    srcs = ["test/test_running_state.c"],
+    deps = [
+        ":running_state",
+    ],
+)

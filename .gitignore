@@ -1,10 +1,119 @@
-# General
-**/.vite
+# ==============================================================================
+# General OS and Editor Files
+# ==============================================================================
 **/.DS_Store
-**/.vite
-**/env
-.vscode
-build*
+.vscode/
 .idea/
-!build_debug.sh
-!build_tests.sh
+*.swp
+*.swo
+*~
+
+# ==============================================================================
+# Python
+# ==============================================================================
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+**/env/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+*.whl
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.tox/
+ground_station/tests/runtime_artifacts/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Pre-commit
+.pre-commit-cache/
+
+# ==============================================================================
+# CMake Build Artifacts
+# ==============================================================================
+build/
+build-*/
+**/CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Run scripts (should not be ignored)
+!run_tests.sh
+
+# ==============================================================================
+# Bazel Build Artifacts
+# ==============================================================================
+bazel-*
+.bazelrc.local
+
+# ==============================================================================
+# Node.js / JavaScript
+# ==============================================================================
+node_modules/
+**/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ==============================================================================
+# Logs and Runtime Artifacts
+# ==============================================================================
+logs/
+*.log
+log.txt
+ground_station/logs/
+
+# Ground Station runtime artifacts
+gs_state.json
+*.json.bak
+
+# Generated change logs / diffs
+changelog.txt
+CHANGELOG.tmp
+
+# ==============================================================================
+# Temporary Files
+# ==============================================================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.#*

@@ -1,0 +1,38 @@
+load("//bzl:defs.bzl", "hardware_integration_test_suite")
+
+package(default_visibility = ["//visibility:public"])
+
+# ── Integration-test suite ────────────────────────────────────────────────
+# To register a new hardware integration test:
+#   1. Create the test in its own package and call samwise_integration_test().
+#   2. Add an entry to the `tests` dict below:
+#          "logical_name": "//package:name_hw_lib"
+#      The logical name becomes the <name>_main() symbol and the display name
+#      in hardware_test_task logs.
+#
+# hardware_tests.h is generated automatically — do NOT edit it by hand.
+hardware_integration_test_suite(
+    name = "hardware_test_lib",
+    tests = {
+        "mram_test": "//src/filesys/test:mram_test_hw_lib",
+        "filesys_test": "//src/filesys/test:filesys_test_hw_lib",
+        "ftp_test": "//src/tasks/ftp/test:ftp_test_hw_lib",
+    },
+)
+
+cc_library(
+    name = "hardware_test_task",
+    srcs = ["hardware_test_task.c"],
+    hdrs = ["hardware_test_task.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/scheduler:state_machine",
+        "//src/slate",
+    ] + select({
+        "//bzl:test_mode": [],
+        "//conditions:default": [
+            ":hardware_test_lib",
+        ],
+    }),
+)

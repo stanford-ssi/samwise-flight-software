@@ -1,0 +1,66 @@
+"""Bazel build configuration settings for SAMWISE flight software.
+
+Defines config_setting targets used in select() blocks throughout the build
+to conditionally include hardware drivers vs mock implementations.
+"""
+
+package(default_visibility = ["//visibility:public"])
+
+# Test mode: use mock implementations instead of real hardware drivers
+config_setting(
+    name = "test_mode",
+    define_values = {"profile": "tests"},
+)
+
+# Raspberry Pi Pico development profile
+config_setting(
+    name = "pico_profile",
+    define_values = {"profile": "pico"},
+)
+
+# Raspberry Pi Pico + Radio Hat profile
+config_setting(
+    name = "pico_hat_profile",
+    define_values = {"profile": "pico-hat"},
+)
+
+# PiCubed debug profile
+config_setting(
+    name = "picubed_debug_profile",
+    define_values = {"profile": "picubed-debug"},
+)
+
+# PiCubed flight profile
+config_setting(
+    name = "picubed_flight_profile",
+    define_values = {"profile": "picubed-flight"},
+)
+
+# PiCubed bringup profile
+config_setting(
+    name = "picubed_bringup_profile",
+    define_values = {"profile": "picubed-bringup"},
+)
+
+# OTA blink variant (for testing A/B partition switching)
+config_setting(
+    name = "ota_blink",
+    define_values = {"BLINK": "1"},
+)
+
+# ── Integration-test header generator ──────────────────────────────────────
+# Called by hardware_integration_test_suite() genrule to produce
+# hardware_tests.h from the list of registered integration-test names.
+py_binary(
+    name = "gen_hw_tests_header",
+    srcs = ["gen_hw_tests_header.py"],
+    python_version = "PY3",
+)
+
+# Static type definitions shared by every hardware_tests.h consumer.
+# strip_include_prefix lets code include this as "hw_test_types.h".
+cc_library(
+    name = "hw_test_types",
+    hdrs = ["hw_test_types.h"],
+    strip_include_prefix = "/bzl",
+)

@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "filesys",
+    srcs = [
+        "filesys.c",
+        "lfs_mram_wrapper.c",
+    ],
+    hdrs = [
+        "filesys.h",
+        "lfs_mram_wrapper.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/utils",
+        "//src/scheduler:state_machine",
+        "//lib/littlefs-SSI:littlefs",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/mram:mram_mock",
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "//src/drivers/logger",
+            "//src/drivers/mram",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)

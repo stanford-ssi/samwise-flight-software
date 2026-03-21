@@ -2,62 +2,111 @@ name: C/C++ Build
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
+      - "bzl/**"
+      - "BUILD.bazel"
+      - ".bazelrc"
       - ".github/workflows/*.yaml"
   pull_request:
-    paths:
-      - "src/**"
-      - "cmake/**"
-      - "CMakeLists.txt"
-      - ".github/workflows/*.yaml"
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ github.event_name != 'pull_request' || steps.filter.outputs.build == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            build:
+              - 'src/**'
+              - 'bzl/**'
+              - 'BUILD.bazel'
+              - '.bazelrc'
+              - '.github/workflows/*.yaml'
+
   Build:
+    needs: changes
+    if: ${{ needs.changes.outputs.should_build == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - name: PICUBED-FLIGHT
-            cmake_args: "-DPROFILE=PICUBED-FLIGHT"
-            build_dir: "build-2350"
+            config: picubed-flight
             artifact: "samwise-products-picubed-flight"
           - name: PICUBED-BRINGUP
-            cmake_args: "-DPROFILE=PICUBED-BRINGUP"
-            build_dir: "build-2350"
+            config: picubed-bringup
             artifact: "samwise-products-picubed-bringup"
           - name: PICUBED-DEBUG
-            cmake_args: "-DPROFILE=PICUBED-DEBUG"
-            build_dir: "build-2350"
+            config: picubed-debug
             artifact: "samwise-products-picubed-debug"
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Setup Project
-        run: ./configure.sh
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
 
-      - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
-
-      - name: Configure profile
+      - name: Build with Bazel
         run: |
+          # Set commit hash for all builds
+          echo "build --define=COMMIT_HASH=${{ github.sha }}" > .bazelrc.local
+
           if [ "${{ matrix.name }}" = "PICUBED-FLIGHT" ]; then
-            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} -DPACKET_HMAC_PSK=${{ secrets.PACKET_HMAC_PSK }} ${{ matrix.cmake_args }}
-          else
-            cmake -B ${{ github.workspace }}/${{ matrix.build_dir }} -DCOMMIT_HASH=${{ github.sha }} ${{ matrix.cmake_args }}
+            # For flight builds, pass the HMAC PSK secret as a C define
+            echo "build --copt=-DPACKET_HMAC_PSK='\"${{ secrets.PACKET_HMAC_PSK }}\"'" >> .bazelrc.local
           fi
 
-      - name: Build profile
-        run: cmake --build ${{ github.workspace }}/${{ matrix.build_dir }} --parallel 4
+          # Build the main binary
+          bazel build :samwise --config=${{ matrix.config }} --incompatible_enable_cc_toolchain_resolution
+
+      - name: Check Binary Size
+        if: ${{ matrix.name == 'PICUBED-FLIGHT' }}
+        run: |
+          # Check if the .bin file exists
+          if [ ! -f "bazel-bin/samwise.bin" ]; then
+            echo "❌ Error: samwise.bin file not found at bazel-bin/samwise.bin"
+            exit 1
+          fi
+
+          # Get file size in bytes
+          FILESIZE=$(stat -c%s bazel-bin/samwise.bin)
+          MAX_SIZE=153600  # 150 KiB in bytes
+
+          echo "📊 Binary size check for ${{ matrix.name }}:"
+          echo "   File: bazel-bin/samwise.bin"
+          echo "   Size: ${FILESIZE} bytes ($(echo "scale=2; ${FILESIZE}/1024" | bc -l) KiB)"
+          echo "   Limit: ${MAX_SIZE} bytes (150.00 KiB)"
+
+          # Check if file size exceeds limit
+          if [ ${FILESIZE} -gt ${MAX_SIZE} ]; then
+            echo "❌ FAILURE: Binary size ${FILESIZE} bytes exceeds limit of ${MAX_SIZE} bytes!"
+            echo "   Exceeds by: $((${FILESIZE} - ${MAX_SIZE})) bytes"
+            exit 1
+          else
+            echo "✅ SUCCESS: Binary size is within limits"
+            echo "   Remaining: $((${MAX_SIZE} - ${FILESIZE})) bytes available"
+          fi
 
       - name: Archive Build Products
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: |
-            ${{ matrix.build_dir }}/src/samwise*.uf2
+            bazel-bin/samwise.uf2
+            bazel-bin/samwise
