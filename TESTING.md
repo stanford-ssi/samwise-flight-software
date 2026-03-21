@@ -15,15 +15,40 @@ Both are defined with Bazel macros in `//bzl:defs.bzl`.
 
 ### Running Unit Tests (host)
 
-```bash
-# Run every unit test
-bazel test //src/...
+Note that the last FTP test requires an environment variable to be set for it to run - otherwise, by default, it will fail! This is set in `run_tests.sh`, so it is highly recommended to run:
 
+```bash
+# Run all tests (//...)
+source run_tests.sh
+
+# Force run all tests (remove cached) -- use this if you need to make *sure* all tests work (I recommend using this very liberally)
+source run_tests.sh -t-
+
+# Output all logs
+source run_tests.sh --test_output=all
+
+# See bazel test command for more options
+```
+
+The actual command would be to run:
+
+```bash
+bazel test --test_env=FTP_TEST_REAL_FILE_PATH="path/to/example/file" //...
+```
+
+The bash script just automatically builds to `bazel-bin` and uses `samwise.bin`, therefore emulating a real OTA! If you do not specify `FTP_TEST_REAL_FILE_PATH`, all tests except `ftp_test` should work.
+
+To run a specific test:
+
+```bash
 # Run a specific test
 bazel test //src/tasks/print:print_test
 ```
 
 ### Debugging Unit Tests (with GDB)
+
+You can tell bazel to run a test under gdb:
+
 ```bash
 # Runs filesys_test under gdb
 bazel run --config=tests --compilation_mode=dbg --run_under="gdb --args" //src/filesys/test:filesys_test

@@ -9,7 +9,7 @@ cc_library(
         "//src/common",
         "//src/filesys",
         "//src/packet",
-        "//src/scheduler",
+        "//src/scheduler:state_machine",
         "//src/slate",
         "//src/tasks/command:command_parser",
         "//src/utils",

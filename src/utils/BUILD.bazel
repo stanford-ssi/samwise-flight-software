@@ -10,7 +10,6 @@ cc_library(
         "crc32.h",
         "safe_sleep.h",
         "str_utils.h",
-        "memcpy_inc.h",
     ],
     includes = ["."],
     deps = [

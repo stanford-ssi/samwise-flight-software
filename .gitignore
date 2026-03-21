@@ -72,10 +72,8 @@ cmake_install.cmake
 Makefile
 *.cmake
 
-# Build scripts (should not be ignored)
-!build_debug.sh
-!build_tests.sh
-!CMakeLists.txt
+# Run scripts (should not be ignored)
+!run_tests.sh
 
 # ==============================================================================
 # Bazel Build Artifacts

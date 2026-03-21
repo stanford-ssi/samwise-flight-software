@@ -48,7 +48,7 @@ jobs:
           repository-cache: true
 
       - name: Run unit tests
-        run: bazel test //src/... --test_output=errors
+        run: source run_tests.sh --test_output=errors
 
       - name: Archive unit test visualization logs
         if: always()

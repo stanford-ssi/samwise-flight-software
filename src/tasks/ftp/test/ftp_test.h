@@ -16,23 +16,23 @@
 /* Setup */
 int ftp_test_setup(slate_t *slate);
 
-/* A. Packet Tracker Tests */
+/* A. Packet Tracker Tests (0X) */
 int ftp_test_tracker_clear(slate_t *slate);
 int ftp_test_tracker_set_and_check(slate_t *slate);
 int ftp_test_tracker_check_mask_full_bytes(slate_t *slate);
 int ftp_test_tracker_check_mask_partial_byte(slate_t *slate);
 int ftp_test_tracker_check_mask_incomplete(slate_t *slate);
 
-/* B. Reformat Tests */
+/* B. Reformat Tests (1X) */
 int ftp_test_reformat_success(slate_t *slate);
 int ftp_test_reformat_clears_state(slate_t *slate);
 
-/* C. Start File Write Tests */
+/* C. Start File Write Tests (2X) */
 int ftp_test_start_write_success(slate_t *slate);
 int ftp_test_start_write_already_writing(slate_t *slate);
 int ftp_test_start_write_sets_slate_state(slate_t *slate);
 
-/* D. Write File Data Tests */
+/* D. Write File Data Tests (3X) */
 int ftp_test_write_data_no_file(slate_t *slate);
 int ftp_test_write_data_single_packet_file(slate_t *slate);
 int ftp_test_write_data_mid_cycle_no_response(slate_t *slate);
@@ -44,21 +44,21 @@ int ftp_test_write_data_duplicate_ignored(slate_t *slate);
 int ftp_test_write_data_out_of_order(slate_t *slate);
 int ftp_test_write_data_last_packet_partial_size(slate_t *slate);
 
-/* E. Cancel File Write Tests */
+/* E. Cancel File Write Tests (5X) */
 int ftp_test_cancel_success(slate_t *slate);
 int ftp_test_cancel_clears_state(slate_t *slate);
 
-/* F. End-to-End Workflow Tests */
+/* F. End-to-End Workflow Tests (8X) */
 int ftp_test_e2e_single_cycle_file(slate_t *slate);
 int ftp_test_e2e_multi_cycle_file(slate_t *slate);
 int ftp_test_e2e_cancel_then_new_file(slate_t *slate);
 int ftp_test_e2e_crc_mismatch(slate_t *slate);
 
-/* G. Init Tests */
+/* G. Init Tests (9X) */
 int ftp_test_init_success(slate_t *slate);
 int ftp_test_init_clears_state(slate_t *slate);
 
-/* H. Real File Test */
+/* H. Real File Test (10X) */
 int ftp_test_real_file(slate_t *slate);
 
 extern const test_harness_case_t ftp_tests[];

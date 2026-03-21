@@ -4,16 +4,17 @@
  */
 #pragma once
 
+#include "pico/stdlib.h"
+
 #include "command_parser.h"
 #include "config.h"
 #include "filesys.h"
 #include "logger.h"
 #include "macros.h"
-#include "memcpy_inc.h"
 #include "neopixel.h"
 #include "payload_uart.h"
-#include "scheduler.h"
 #include "slate.h"
+#include "state_machine.h"
 #include "str_utils.h"
 
 // LED Color for ftp task - Hot Pink

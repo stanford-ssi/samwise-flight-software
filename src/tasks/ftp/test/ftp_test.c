@@ -25,25 +25,27 @@
  */
 
 // 1-packet file: 205 bytes, pattern 0x00..0xCC repeating
-static const uint8_t ftp_test_file_1pkt[205] = {
-    // filled in helper below
-};
 static const uint32_t ftp_test_file_1pkt_crc = 0xe5599aee;
-static const uint32_t ftp_test_file_1pkt_len = 205;
+static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_1pkt_len = 205;
 
 // 3-packet file: 615 bytes, pattern 0x00..0xFF repeating
 static const uint32_t ftp_test_file_3pkt_crc = 0x8e6e6a2d;
-static const uint32_t ftp_test_file_3pkt_len = 615;
+static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_3pkt_len = 615;
 
 // 2-packet file with partial last packet: 400 bytes
 static const uint32_t ftp_test_file_partial_crc = 0xe0bbcad4;
-static const uint32_t ftp_test_file_partial_len = 400;
+static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_partial_len = 400;
+
+static const uint32_t ftp_test_file_2cycles_crc = 0x1c291cae;
+static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_2cycles_len =
+    (FTP_NUM_PACKETS_PER_CYCLE + 1) * FTP_DATA_PAYLOAD_SIZE;
 
 // Intentionally wrong CRC for mismatch tests
 static const uint32_t ftp_test_wrong_crc = 0xDEADBEEF;
 
 // Standard test filename
-static const FILESYS_BUFFERED_FNAME_STR_T ftp_test_fname = "AB";
+static const FILESYS_BUFFERED_FNAME_STR_T ftp_test_fname1 = "AB";
+static const FILESYS_BUFFERED_FNAME_STR_T ftp_test_fname2 = "CD";
 
 /*
  * ============================================================================
@@ -70,28 +72,12 @@ typedef struct ftp_test_ground_info
     uint8_t data[PACKET_DATA_SIZE - sizeof(FILESYS_BUFFERED_FNAME_T) -
                  sizeof(FILESYS_BUFFERED_FILE_LEN_T) -
                  sizeof(FILESYS_BUFFERED_FILE_CRC_T) - sizeof(ftp_result_t)];
-} ftp_test_ground_info_t;
+} __attribute__((packed)) ftp_test_ground_info_t;
 
 ftp_test_ground_info_t ftp_test_get_ground_info(slate_t *slate, packet_t pkt)
 {
     ftp_test_ground_info_t ground_info;
-    uint8_t *ptr = pkt.data;
-
-    memcpy(&ground_info.fname, ptr, sizeof(ground_info.fname));
-    ptr += sizeof(ground_info.fname);
-
-    memcpy(&ground_info.file_len, ptr, sizeof(ground_info.file_len));
-    ptr += sizeof(ground_info.file_len);
-
-    memcpy(&ground_info.file_crc, ptr, sizeof(ground_info.file_crc));
-    ptr += sizeof(ground_info.file_crc);
-
-    memcpy(&ground_info.ftp_result, ptr, sizeof(ground_info.ftp_result));
-    ptr += sizeof(ground_info.ftp_result);
-
-    size_t additional_data_len = pkt.len - (ptr - pkt.data);
-    memcpy(ground_info.data, ptr, additional_data_len);
-
+    memcpy(&ground_info, pkt.data, sizeof(ground_info));
     return ground_info;
 }
 
@@ -104,21 +90,13 @@ typedef struct ftp_test_cycle_info
     FTP_PACKET_SEQUENCE_T packet_start;
     FTP_PACKET_SEQUENCE_T packet_end;
     FTP_PACKET_TRACKER_T tracker;
-} ftp_test_cycle_info_t;
+} __attribute__((packed)) ftp_test_cycle_info_t;
 
 static ftp_test_cycle_info_t
 ftp_test_parse_cycle_info(const ftp_test_ground_info_t *info)
 {
     ftp_test_cycle_info_t cycle;
-    const uint8_t *ptr = info->data;
-
-    memcpy(&cycle.packet_start, ptr, sizeof(cycle.packet_start));
-    ptr += sizeof(cycle.packet_start);
-
-    memcpy(&cycle.packet_end, ptr, sizeof(cycle.packet_end));
-    ptr += sizeof(cycle.packet_end);
-
-    memcpy(&cycle.tracker, ptr, sizeof(cycle.tracker));
+    memcpy(&cycle, info->data, sizeof(cycle));
     return cycle;
 }
 
@@ -129,18 +107,13 @@ typedef struct ftp_test_eof_info
 {
     FILESYS_BUFFERED_FILE_CRC_T computed_crc;
     FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
-} ftp_test_eof_info_t;
+} __attribute__((packed)) ftp_test_eof_info_t;
 
 static ftp_test_eof_info_t
 ftp_test_parse_eof_info(const ftp_test_ground_info_t *info)
 {
     ftp_test_eof_info_t eof;
-    const uint8_t *ptr = info->data;
-
-    memcpy(&eof.computed_crc, ptr, sizeof(eof.computed_crc));
-    ptr += sizeof(eof.computed_crc);
-
-    memcpy(&eof.file_len_on_disk, ptr, sizeof(eof.file_len_on_disk));
+    memcpy(&eof, info->data, sizeof(eof));
     return eof;
 }
 
@@ -161,15 +134,6 @@ static void ftp_test_drain_queue(slate_t *slate)
  */
 
 /**
- * Fill a buffer with a repeating 0x00..0xFF pattern of the given length.
- */
-static void ftp_test_fill_pattern(uint8_t *buf, size_t len)
-{
-    for (size_t i = 0; i < len; i++)
-        buf[i] = (uint8_t)(i % 256);
-}
-
-/**
  * Construct an FTP_WRITE_TO_FILE_DATA for a given packet_id, filling data
  * with the correct portion of a repeating 0x00..0xFF pattern based on the
  * packet's position in the file.
@@ -179,10 +143,11 @@ static void ftp_test_fill_pattern(uint8_t *buf, size_t len)
  * @param out        Output command data struct.
  */
 static void ftp_test_make_write_data(FTP_PACKET_SEQUENCE_T packet_id,
+                                     FILESYS_BUFFERED_FNAME_STR_T fname,
                                      FILESYS_BUFFERED_FILE_LEN_T file_len,
                                      FTP_WRITE_TO_FILE_DATA *out)
 {
-    memcpy(out->fname_str, ftp_test_fname, sizeof(out->fname_str));
+    memcpy(out->fname_str, fname, sizeof(out->fname_str));
     out->packet_id = packet_id;
 
     // Calculate how many bytes this packet carries
@@ -201,11 +166,12 @@ static void ftp_test_make_write_data(FTP_PACKET_SEQUENCE_T packet_id,
  * Construct an FTP_START_FILE_WRITE_DATA.
  */
 static FTP_START_FILE_WRITE_DATA
-ftp_test_make_start_data(FILESYS_BUFFERED_FILE_LEN_T file_len,
+ftp_test_make_start_data(FILESYS_BUFFERED_FNAME_STR_T fname,
+                         FILESYS_BUFFERED_FILE_LEN_T file_len,
                          FILESYS_BUFFERED_FILE_CRC_T file_crc)
 {
     FTP_START_FILE_WRITE_DATA data;
-    memcpy(data.fname_str, ftp_test_fname, sizeof(data.fname_str));
+    memcpy(data.fname_str, fname, sizeof(data.fname_str));
     data.file_len = file_len;
     data.file_crc = file_crc;
     return data;
@@ -214,10 +180,11 @@ ftp_test_make_start_data(FILESYS_BUFFERED_FILE_LEN_T file_len,
 /**
  * Construct an FTP_CANCEL_FILE_WRITE_DATA.
  */
-static FTP_CANCEL_FILE_WRITE_DATA ftp_test_make_cancel_data(void)
+static FTP_CANCEL_FILE_WRITE_DATA
+ftp_test_make_cancel_data(FILESYS_BUFFERED_FNAME_STR_T fname)
 {
     FTP_CANCEL_FILE_WRITE_DATA data;
-    memcpy(data.fname_str, ftp_test_fname, sizeof(data.fname_str));
+    memcpy(data.fname_str, fname, sizeof(data.fname_str));
     return data;
 }
 
@@ -250,13 +217,12 @@ int ftp_test_setup(slate_t *slate)
  * Helper: start a file write via filesys + FTP and verify success.
  * Sets up slate as if ftp_process_file_start_write_command succeeded.
  */
-static int
-ftp_test_helper_start_file_write(slate_t *slate,
-                                 FILESYS_BUFFERED_FILE_LEN_T file_len,
-                                 FILESYS_BUFFERED_FILE_CRC_T file_crc)
+static int ftp_test_helper_start_file_write(
+    slate_t *slate, FILESYS_BUFFERED_FNAME_STR_T fname,
+    FILESYS_BUFFERED_FILE_LEN_T file_len, FILESYS_BUFFERED_FILE_CRC_T file_crc)
 {
     FTP_START_FILE_WRITE_DATA start_data =
-        ftp_test_make_start_data(file_len, file_crc);
+        ftp_test_make_start_data(fname, file_len, file_crc);
     ftp_process_file_start_write_command(slate, start_data);
 
     TEST_ASSERT(slate->filesys_is_writing_file,
@@ -281,13 +247,14 @@ ftp_test_helper_start_file_write(slate_t *slate,
  */
 static int
 ftp_test_helper_send_cycle_packets(slate_t *slate, uint16_t num_packets,
+                                   FILESYS_BUFFERED_FNAME_STR_T fname,
                                    FILESYS_BUFFERED_FILE_LEN_T file_len)
 {
     const FTP_PACKET_SEQUENCE_T base = slate->ftp_start_cycle_packet_id;
     for (uint16_t i = 0; i < num_packets; i++)
     {
         FTP_WRITE_TO_FILE_DATA wd;
-        ftp_test_make_write_data(base + i, file_len, &wd);
+        ftp_test_make_write_data(base + i, fname, file_len, &wd);
         ftp_process_file_write_data_command(slate, wd);
     }
     return 0;
@@ -499,7 +466,7 @@ int ftp_test_start_write_success(slate_t *slate)
     LOG_DEBUG("=== Test: Start Write Success ===");
 
     FTP_START_FILE_WRITE_DATA data = ftp_test_make_start_data(
-        ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
+        ftp_test_fname1, ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
 
     ftp_process_file_start_write_command(slate, data);
 
@@ -511,7 +478,7 @@ int ftp_test_start_write_success(slate_t *slate)
     ftp_test_ground_info_t info = ftp_test_get_ground_info(slate, pkt);
     TEST_ASSERT(info.ftp_result == FTP_READY_RECEIVE,
                 "Expected FTP_READY_RECEIVE, got %d", info.ftp_result);
-    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname1),
                 "Expected fname 'AB'");
     TEST_ASSERT(info.file_len == ftp_test_file_1pkt_len,
                 "Expected file_len %u, got %u", ftp_test_file_1pkt_len,
@@ -536,25 +503,22 @@ int ftp_test_start_write_already_writing(slate_t *slate)
 
     // Start first file
     FTP_START_FILE_WRITE_DATA data1 = ftp_test_make_start_data(
-        ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
+        ftp_test_fname1, ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
     ftp_process_file_start_write_command(slate, data1);
 
     TEST_ASSERT(slate->filesys_is_writing_file,
                 "First file write should be in progress");
 
     // Attempt to start second file while first is in progress
-    FILESYS_BUFFERED_FNAME_STR_T fname2 = "CD";
-    FTP_START_FILE_WRITE_DATA data2;
-    memcpy(data2.fname_str, fname2, sizeof(data2.fname_str));
-    data2.file_len = 100;
-    data2.file_crc = 0x12345678;
+    FTP_START_FILE_WRITE_DATA data2 = ftp_test_make_start_data(
+        ftp_test_fname2, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
 
     ftp_process_file_start_write_command(slate, data2);
 
     // Should still be writing the first file
     TEST_ASSERT(slate->filesys_is_writing_file,
                 "Should still be writing first file");
-    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, ftp_test_fname,
+    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, ftp_test_fname1,
                        sizeof(FILESYS_BUFFERED_FNAME_STR_T)) == 0,
                 "Filename should still be original file 'AB', not 'CD'");
 
@@ -567,7 +531,7 @@ int ftp_test_start_write_already_writing(slate_t *slate)
     TEST_ASSERT(info.ftp_result == FTP_ERROR_ALREADY_WRITING_FILE,
                 "Expected FTP_ERROR_ALREADY_WRITING_FILE, got %d",
                 info.ftp_result);
-    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname1),
                 "Error packet should have first file's fname 'AB'");
     TEST_ASSERT(info.file_len == ftp_test_file_1pkt_len,
                 "Error packet should have first file's len");
@@ -582,14 +546,14 @@ int ftp_test_start_write_sets_slate_state(slate_t *slate)
     LOG_DEBUG("=== Test: Start Write Sets Slate State ===");
 
     FTP_START_FILE_WRITE_DATA data = ftp_test_make_start_data(
-        ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
+        ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
 
     ftp_process_file_start_write_command(slate, data);
 
     TEST_ASSERT(slate->filesys_is_writing_file,
                 "filesys_is_writing_file should be true");
 
-    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, ftp_test_fname,
+    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, ftp_test_fname1,
                        sizeof(FILESYS_BUFFERED_FNAME_STR_T)) == 0,
                 "Buffered filename should match command data");
 
@@ -617,7 +581,7 @@ int ftp_test_start_write_sets_slate_state(slate_t *slate)
     ftp_test_ground_info_t info = ftp_test_get_ground_info(slate, pkt);
     TEST_ASSERT(info.ftp_result == FTP_READY_RECEIVE,
                 "Expected FTP_READY_RECEIVE, got %d", info.ftp_result);
-    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname1),
                 "Expected fname 'AB'");
     TEST_ASSERT(info.file_len == ftp_test_file_3pkt_len,
                 "Expected file_len %u, got %u", ftp_test_file_3pkt_len,
@@ -659,7 +623,7 @@ int ftp_test_write_data_no_file(slate_t *slate)
                 "No file should be writing at start");
 
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, 205, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_1pkt_len, &wd);
 
     ftp_process_file_write_data_command(slate, wd);
 
@@ -683,13 +647,13 @@ int ftp_test_write_data_single_packet_file(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Single Packet File (EOF) ===");
 
     // Start a 1-packet file (205 bytes)
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_1pkt_len,
-                                              ftp_test_file_1pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send the single packet (completes cycle and file)
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_1pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_1pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // After EOF, file write should be complete
@@ -721,13 +685,13 @@ int ftp_test_write_data_mid_cycle_no_response(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Mid Cycle No Response ===");
 
     // Start a 3-packet file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send only packet 0 of 3
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_3pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // File should still be writing
@@ -753,13 +717,9 @@ int ftp_test_write_data_complete_cycle_not_final(slate_t *slate)
 {
     LOG_DEBUG("=== Test: Write Data - Complete Cycle (Not Final) ===");
 
-    // Create a file that requires exactly 2 cycles:
-    // FTP_NUM_PACKETS_PER_CYCLE + 1 = 257 packets
-    const uint32_t file_len =
-        (uint32_t)(FTP_NUM_PACKETS_PER_CYCLE + 1) * FTP_DATA_PAYLOAD_SIZE;
-
     // We don't care about CRC for this test (won't reach EOF)
-    int rc = ftp_test_helper_start_file_write(slate, file_len, 0x00000000);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_2cycles_len, ftp_test_wrong_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     TEST_ASSERT(slate->ftp_start_cycle_packet_id == 0,
@@ -767,7 +727,8 @@ int ftp_test_write_data_complete_cycle_not_final(slate_t *slate)
 
     // Send all 256 packets for the first cycle
     ftp_test_helper_send_cycle_packets(slate, FTP_NUM_PACKETS_PER_CYCLE,
-                                       file_len);
+                                       ftp_test_fname1,
+                                       ftp_test_file_2cycles_len);
 
     // After completing first cycle, should advance to next cycle
     TEST_ASSERT(slate->ftp_start_cycle_packet_id == FTP_NUM_PACKETS_PER_CYCLE,
@@ -814,12 +775,13 @@ int ftp_test_write_data_complete_final_cycle(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Complete Final Cycle (EOF) ===");
 
     // 3-packet file: all in one cycle
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send all 3 packets
-    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_file_3pkt_len);
+    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_fname1,
+                                       ftp_test_file_3pkt_len);
 
     // Should reach EOF
     TEST_ASSERT(!slate->filesys_is_writing_file,
@@ -846,19 +808,20 @@ int ftp_test_write_data_out_of_range_too_low(slate_t *slate)
     // Start a multi-cycle file and complete first cycle to advance packet_id
     const uint32_t file_len =
         (uint32_t)(FTP_NUM_PACKETS_PER_CYCLE + 1) * FTP_DATA_PAYLOAD_SIZE;
-    int rc = ftp_test_helper_start_file_write(slate, file_len, 0x00000000);
+    int rc = ftp_test_helper_start_file_write(slate, ftp_test_fname1, file_len,
+                                              0x00000000);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Complete first cycle
     ftp_test_helper_send_cycle_packets(slate, FTP_NUM_PACKETS_PER_CYCLE,
-                                       file_len);
+                                       ftp_test_fname1, file_len);
 
     TEST_ASSERT(slate->ftp_start_cycle_packet_id == FTP_NUM_PACKETS_PER_CYCLE,
                 "Should be on second cycle");
 
     // Send a packet from the previous cycle (packet 0, which is out of range)
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, file_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, file_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // Tracker should NOT have any bit set for this out-of-range packet
@@ -888,14 +851,14 @@ int ftp_test_write_data_out_of_range_too_high(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Out of Range (Too High) ===");
 
     // Start a 3-packet file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send a packet beyond the current cycle (packet 256 when cycle is 0..255)
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(FTP_NUM_PACKETS_PER_CYCLE, ftp_test_file_3pkt_len,
-                             &wd);
+    ftp_test_make_write_data(FTP_NUM_PACKETS_PER_CYCLE, ftp_test_fname1,
+                             ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // State should be unchanged
@@ -924,13 +887,13 @@ int ftp_test_write_data_duplicate_ignored(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Duplicate Ignored ===");
 
     // Start a 3-packet file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send packet 0
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_3pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     TEST_ASSERT(ftp_tracker_check_bit(&slate->ftp_packets_received_tracker, 0),
@@ -959,15 +922,15 @@ int ftp_test_write_data_out_of_order(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Out of Order ===");
 
     // Start a 3-packet file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send packets in reverse order: 2, 1, 0
     for (int i = 2; i >= 0; i--)
     {
         FTP_WRITE_TO_FILE_DATA wd;
-        ftp_test_make_write_data((FTP_PACKET_SEQUENCE_T)i,
+        ftp_test_make_write_data((FTP_PACKET_SEQUENCE_T)i, ftp_test_fname1,
                                  ftp_test_file_3pkt_len, &wd);
         ftp_process_file_write_data_command(slate, wd);
     }
@@ -996,13 +959,15 @@ int ftp_test_write_data_last_packet_partial_size(slate_t *slate)
     LOG_DEBUG("=== Test: Write Data - Last Packet Partial Size ===");
 
     // File of 400 bytes: 2 packets, second has 400 - 205 = 195 bytes
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_partial_len,
+    int rc = ftp_test_helper_start_file_write(slate, ftp_test_fname1,
+                                              ftp_test_file_partial_len,
                                               ftp_test_file_partial_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send packet 0 (full 205 bytes)
     FTP_WRITE_TO_FILE_DATA wd0;
-    ftp_test_make_write_data(0, ftp_test_file_partial_len, &wd0);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_partial_len,
+                             &wd0);
     TEST_ASSERT(wd0.data_len == FTP_DATA_PAYLOAD_SIZE,
                 "First packet should be full size (%u), got %u",
                 FTP_DATA_PAYLOAD_SIZE, wd0.data_len);
@@ -1010,7 +975,8 @@ int ftp_test_write_data_last_packet_partial_size(slate_t *slate)
 
     // Send packet 1 (195 bytes - partial)
     FTP_WRITE_TO_FILE_DATA wd1;
-    ftp_test_make_write_data(1, ftp_test_file_partial_len, &wd1);
+    ftp_test_make_write_data(1, ftp_test_fname1, ftp_test_file_partial_len,
+                             &wd1);
     TEST_ASSERT(wd1.data_len == 195, "Last packet should be 195 bytes, got %u",
                 wd1.data_len);
     ftp_process_file_write_data_command(slate, wd1);
@@ -1049,17 +1015,18 @@ int ftp_test_cancel_success(slate_t *slate)
     LOG_DEBUG("=== Test: Cancel Success ===");
 
     // Start a file write
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send one packet so there's some state
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_3pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // Cancel
-    FTP_CANCEL_FILE_WRITE_DATA cancel_data = ftp_test_make_cancel_data();
+    FTP_CANCEL_FILE_WRITE_DATA cancel_data =
+        ftp_test_make_cancel_data(ftp_test_fname1);
     ftp_process_file_cancel_write_command(slate, cancel_data);
 
     // File write should be cancelled
@@ -1071,7 +1038,7 @@ int ftp_test_cancel_success(slate_t *slate)
     ftp_test_ground_info_t info = ftp_test_get_ground_info(slate, pkt);
     TEST_ASSERT(info.ftp_result == FTP_CANCEL_SUCCESS,
                 "Expected FTP_CANCEL_SUCCESS, got %d", info.ftp_result);
-    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(info.fname == string_to_file(ftp_test_fname1),
                 "Cancel packet should have original fname 'AB'");
     TEST_ASSERT(info.file_len == ftp_test_file_3pkt_len,
                 "Cancel packet should have original file_len");
@@ -1086,16 +1053,17 @@ int ftp_test_cancel_clears_state(slate_t *slate)
     LOG_DEBUG("=== Test: Cancel Clears State ===");
 
     // Start a file and send some packets
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_3pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // Cancel
-    FTP_CANCEL_FILE_WRITE_DATA cancel_data = ftp_test_make_cancel_data();
+    FTP_CANCEL_FILE_WRITE_DATA cancel_data =
+        ftp_test_make_cancel_data(ftp_test_fname1);
     ftp_process_file_cancel_write_command(slate, cancel_data);
 
     TEST_ASSERT(!slate->filesys_is_writing_file,
@@ -1110,7 +1078,7 @@ int ftp_test_cancel_clears_state(slate_t *slate)
 
     // After cancel, should be able to start a new file
     FTP_START_FILE_WRITE_DATA new_data = ftp_test_make_start_data(
-        ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
+        ftp_test_fname1, ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
     ftp_process_file_start_write_command(slate, new_data);
 
     TEST_ASSERT(slate->filesys_is_writing_file,
@@ -1143,12 +1111,13 @@ int ftp_test_e2e_single_cycle_file(slate_t *slate)
     ftp_test_drain_queue(slate); // drain FILESYS_REFORMAT_SUCCESS
 
     // Start a 3-packet (615-byte) file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send all 3 packets in order
-    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_file_3pkt_len);
+    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_fname1,
+                                       ftp_test_file_3pkt_len);
 
     // File should be complete
     TEST_ASSERT(!slate->filesys_is_writing_file,
@@ -1157,7 +1126,7 @@ int ftp_test_e2e_single_cycle_file(slate_t *slate)
     // Verify file exists on filesystem via filesys API
     lfs_ssize_t lfs_err;
     filesys_file_info_t file_info;
-    filesys_error_t res = filesys_get_file_info(slate, (char *)ftp_test_fname,
+    filesys_error_t res = filesys_get_file_info(slate, (char *)ftp_test_fname1,
                                                 &file_info, &lfs_err);
     TEST_ASSERT(res == FILESYS_OK,
                 "Should be able to get file info after successful write");
@@ -1193,12 +1162,13 @@ int ftp_test_e2e_multi_cycle_file(slate_t *slate)
     // (256 in first cycle, 1 in second)
     const uint32_t file_len = (uint32_t)257 * FTP_DATA_PAYLOAD_SIZE;
 
-    int rc = ftp_test_helper_start_file_write(slate, file_len, 516126806);
+    int rc = ftp_test_helper_start_file_write(slate, ftp_test_fname1, file_len,
+                                              516126806);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Complete first cycle (256 packets)
     ftp_test_helper_send_cycle_packets(slate, FTP_NUM_PACKETS_PER_CYCLE,
-                                       file_len);
+                                       ftp_test_fname1, file_len);
 
     TEST_ASSERT(slate->filesys_is_writing_file,
                 "Should still be writing after first cycle");
@@ -1220,7 +1190,7 @@ int ftp_test_e2e_multi_cycle_file(slate_t *slate)
                 cycle.packet_start);
 
     // Complete second cycle (1 packet)
-    ftp_test_helper_send_cycle_packets(slate, 1, file_len);
+    ftp_test_helper_send_cycle_packets(slate, 1, ftp_test_fname1, file_len);
 
     TEST_ASSERT(!slate->filesys_is_writing_file,
                 "File write should be complete after second cycle");
@@ -1244,17 +1214,18 @@ int ftp_test_e2e_cancel_then_new_file(slate_t *slate)
     ftp_test_drain_queue(slate); // drain FILESYS_REFORMAT_SUCCESS
 
     // Start first file
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_file_3pkt_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_file_3pkt_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send 1 packet
     FTP_WRITE_TO_FILE_DATA wd;
-    ftp_test_make_write_data(0, ftp_test_file_3pkt_len, &wd);
+    ftp_test_make_write_data(0, ftp_test_fname1, ftp_test_file_3pkt_len, &wd);
     ftp_process_file_write_data_command(slate, wd);
 
     // Cancel
-    FTP_CANCEL_FILE_WRITE_DATA cancel_data = ftp_test_make_cancel_data();
+    FTP_CANCEL_FILE_WRITE_DATA cancel_data =
+        ftp_test_make_cancel_data(ftp_test_fname1);
     ftp_process_file_cancel_write_command(slate, cancel_data);
 
     TEST_ASSERT(!slate->filesys_is_writing_file,
@@ -1266,34 +1237,17 @@ int ftp_test_e2e_cancel_then_new_file(slate_t *slate)
         ftp_test_get_ground_info(slate, cancel_pkt);
     TEST_ASSERT(cancel_info.ftp_result == FTP_CANCEL_SUCCESS,
                 "Expected FTP_CANCEL_SUCCESS, got %d", cancel_info.ftp_result);
-    TEST_ASSERT(cancel_info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(cancel_info.fname == string_to_file(ftp_test_fname1),
                 "Cancel packet should have original fname 'AB'");
 
     // Start a new file with different name
-    FILESYS_BUFFERED_FNAME_STR_T fname2 = "XY";
-    FTP_START_FILE_WRITE_DATA start2;
-    memcpy(start2.fname_str, fname2, sizeof(start2.fname_str));
-    start2.file_len = ftp_test_file_1pkt_len;
-    start2.file_crc = ftp_test_file_1pkt_crc;
-
-    ftp_process_file_start_write_command(slate, start2);
-
-    TEST_ASSERT(slate->filesys_is_writing_file,
-                "Should be writing new file after cancel + start");
-    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, fname2,
+    rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname2, ftp_test_file_1pkt_len, ftp_test_file_1pkt_crc);
+    TEST_ASSERT(rc == 0,
+                "ftp_test_helper_start_file_write failed for new file");
+    TEST_ASSERT(memcmp(slate->filesys_buffered_fname_str, ftp_test_fname2,
                        sizeof(FILESYS_BUFFERED_FNAME_STR_T)) == 0,
-                "Should be writing file 'XY'");
-
-    // Verify new file's READY_RECEIVE has correct fname
-    packet_t new_pkt = ftp_test_pop_last_packet(slate);
-    ftp_test_ground_info_t new_info = ftp_test_get_ground_info(slate, new_pkt);
-    TEST_ASSERT(new_info.ftp_result == FTP_READY_RECEIVE,
-                "Expected FTP_READY_RECEIVE for new file, got %d",
-                new_info.ftp_result);
-    TEST_ASSERT(new_info.fname == string_to_file(fname2),
-                "New file READY_RECEIVE should have fname 'XY'");
-    TEST_ASSERT(new_info.file_len == ftp_test_file_1pkt_len,
-                "New file should have correct file_len");
+                "Should be writing file 'CD'");
 
     return 0;
 }
@@ -1306,12 +1260,13 @@ int ftp_test_e2e_crc_mismatch(slate_t *slate)
     ftp_test_drain_queue(slate); // drain FILESYS_REFORMAT_SUCCESS
 
     // Start a file with an intentionally wrong CRC
-    int rc = ftp_test_helper_start_file_write(slate, ftp_test_file_3pkt_len,
-                                              ftp_test_wrong_crc);
+    int rc = ftp_test_helper_start_file_write(
+        slate, ftp_test_fname1, ftp_test_file_3pkt_len, ftp_test_wrong_crc);
     TEST_ASSERT(rc == 0, "ftp_test_helper_start_file_write failed");
 
     // Send all packets correctly
-    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_file_3pkt_len);
+    ftp_test_helper_send_cycle_packets(slate, 3, ftp_test_fname1,
+                                       ftp_test_file_3pkt_len);
 
     // File write should complete (even though CRC will mismatch)
     TEST_ASSERT(!slate->filesys_is_writing_file,
@@ -1428,13 +1383,13 @@ int ftp_test_real_file(slate_t *slate)
 
     // 2. Write file via FTP
     ftp_process_file_start_write_command(
-        slate, ftp_test_make_start_data(total_bytes, crc));
+        slate, ftp_test_make_start_data(ftp_test_fname1, total_bytes, crc));
 
     ftp_test_ground_info_t ground_info =
         ftp_test_get_ground_info(slate, ftp_test_pop_last_packet(slate));
     TEST_ASSERT(ground_info.ftp_result == FTP_READY_RECEIVE,
                 "Expected FTP_READY_RECEIVE, got %d", ground_info.ftp_result);
-    TEST_ASSERT(ground_info.fname == string_to_file(ftp_test_fname),
+    TEST_ASSERT(ground_info.fname == string_to_file(ftp_test_fname1),
                 "READY_RECEIVE should have fname 'AB'");
     TEST_ASSERT(ground_info.file_len == total_bytes,
                 "READY_RECEIVE should have correct file_len, expected %zu, got "
@@ -1459,7 +1414,7 @@ int ftp_test_real_file(slate_t *slate)
            0)
     {
         FTP_WRITE_TO_FILE_DATA wd;
-        ftp_test_make_write_data(packet_id, total_bytes, &wd);
+        ftp_test_make_write_data(packet_id, ftp_test_fname1, total_bytes, &wd);
 
         // Copy the actual data read into the wd.data buffer
         memcpy(wd.data, buffer_packet, num_read);
@@ -1511,7 +1466,7 @@ int ftp_test_real_file(slate_t *slate)
     lfs_ssize_t lfs_err;
     filesys_file_info_t info;
     filesys_error_t res =
-        filesys_get_file_info(slate, (char *)ftp_test_fname, &info, &lfs_err);
+        filesys_get_file_info(slate, (char *)ftp_test_fname1, &info, &lfs_err);
     TEST_ASSERT(res == FILESYS_OK,
                 "Should be able to get file info for real file after write");
     TEST_ASSERT(info.file_size == total_bytes,
@@ -1527,10 +1482,10 @@ int ftp_test_real_file(slate_t *slate)
 
     lfs_file_t lfs_file;
     filesys_file_info_t written_info;
-    filesys_open_file_read(slate, &lfs_file, (char *)ftp_test_fname,
-                           &written_info, &lfs_err);
+    filesys_open_file_read(slate, &lfs_file, ftp_test_fname1, &written_info,
+                           &lfs_err);
 
-    size_t filesys_num_read;
+    FILESYS_BUFFERED_FILE_LEN_T filesys_num_read;
     while ((num_read = fread(buffer_packet, 1, sizeof(buffer_written), file)) >
            0)
     {
@@ -1629,8 +1584,4 @@ const size_t ftp_tests_len = sizeof(ftp_tests) / sizeof(test_harness_case_t);
 int main()
 {
     return test_harness_run("FTP", ftp_tests, ftp_tests_len, ftp_test_setup);
-    uint16_t cases[] = {100};
-    return test_harness_include_run("FTP", ftp_tests, ftp_tests_len,
-                                    ftp_test_setup, cases,
-                                    sizeof(cases) / sizeof(uint16_t));
 }

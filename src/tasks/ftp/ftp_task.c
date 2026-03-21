@@ -21,24 +21,25 @@ void ftp_send_result_packet_custom_file(
 
     uint8_t data[PACKET_DATA_SIZE];
 
-    uint8_t *data_ptr = data;
-
     // Send fname as 2-byte FILESYS_BUFFERED_FNAME_T (not 3-byte str)
-    FILESYS_BUFFERED_FNAME_T fname = string_to_file(buffered_fname_str);
-    memcpy_inc(&data_ptr, &fname, sizeof(FILESYS_BUFFERED_FNAME_T));
+    struct
+    {
+        FILESYS_BUFFERED_FNAME_T fname;
+        FILESYS_BUFFERED_FILE_LEN_T file_len;
+        FILESYS_BUFFERED_FILE_CRC_T file_crc;
+        ftp_result_t ftp_result;
+    } __attribute__((packed)) packet_data = {
+        .fname = string_to_file(buffered_fname_str),
+        .file_len = buffered_file_len,
+        .file_crc = buffered_file_crc,
+        .ftp_result = result,
+    };
 
-    memcpy_inc(&data_ptr, &buffered_file_len,
-               sizeof(FILESYS_BUFFERED_FILE_LEN_T));
-
-    memcpy_inc(&data_ptr, &buffered_file_crc,
-               sizeof(FILESYS_BUFFERED_FILE_CRC_T));
-
-    memcpy_inc(&data_ptr, &result, sizeof(ftp_result_t));
+    memcpy(data, &packet_data, sizeof(packet_data));
 
     if (additional_data != NULL && additional_data_len > 0)
-        memcpy_inc(&data_ptr, additional_data, additional_data_len);
-
-    assert(data_ptr - data == packet_len); // Sanity check
+        memcpy(data + sizeof(packet_data), additional_data,
+               additional_data_len);
 
     packet_t pkt;
     // TODO: What are all of these fields supposed to be?
@@ -102,16 +103,20 @@ inline static void send_ftp_lfs_error_packet(slate_t *slate,
            result == FTP_FILE_WRITE_MRAM_ERROR ||
            result == FTP_FILE_WRITE_BUFFER_ERROR || result == FTP_CANCEL_ERROR);
 
-    uint8_t err_data[sizeof(filesys_error_t) + sizeof(lfs_ssize_t)];
-    uint8_t *err_data_ptr = err_data;
-    memcpy_inc(&err_data_ptr, &filesys_err, sizeof(filesys_error_t));
-    memcpy_inc(&err_data_ptr, &lfs_error_code, sizeof(lfs_ssize_t));
+    struct
+    {
+        filesys_error_t filesys_err;
+        lfs_ssize_t lfs_error_code;
+    } __attribute__((packed)) err_data = {
+        .filesys_err = filesys_err,
+        .lfs_error_code = lfs_error_code,
+    };
 
     if (result == FILESYS_INIT_ERROR || result == FILESYS_REFORMAT_ERROR)
-        ftp_send_result_packet_no_file(slate, result, err_data,
+        ftp_send_result_packet_no_file(slate, result, &err_data,
                                        sizeof(err_data));
     else
-        ftp_send_result_packet(slate, result, err_data, sizeof(err_data));
+        ftp_send_result_packet(slate, result, &err_data, sizeof(err_data));
 }
 
 /**
@@ -126,18 +131,18 @@ send_ftp_cycle_info_packet(slate_t *slate, ftp_result_t result,
     assert(result == FTP_READY_RECEIVE || result == FTP_FILE_WRITE_SUCCESS ||
            result == FTP_ERROR_PACKET_OUT_OF_RANGE);
 
-    uint8_t result_data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
-                        sizeof(FTP_PACKET_TRACKER_T)];
+    struct
+    {
+        FTP_PACKET_SEQUENCE_T packet_start;
+        FTP_PACKET_SEQUENCE_T packet_end;
+        FTP_PACKET_TRACKER_T tracker;
+    } __attribute__((packed)) result_data = {
+        .packet_start = packet_start,
+        .packet_end = ftp_get_last_packet(slate),
+        .tracker = packets_received_tracker,
+    };
 
-    const FTP_PACKET_SEQUENCE_T packet_end = ftp_get_last_packet(slate);
-
-    uint8_t *result_data_ptr = result_data;
-    memcpy_inc(&result_data_ptr, &packet_start, sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&result_data_ptr, &packet_end, sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&result_data_ptr, &packets_received_tracker,
-               sizeof(FTP_PACKET_TRACKER_T));
-
-    ftp_send_result_packet(slate, result, result_data, sizeof(result_data));
+    ftp_send_result_packet(slate, result, &result_data, sizeof(result_data));
 }
 
 void ftp_task_init(slate_t *slate)
@@ -214,19 +219,21 @@ void ftp_process_file_start_write_command(
     {
         LOG_ERROR("[FTP] Failed to start file write with code %d.", res);
 
-        uint8_t err_data[sizeof(res) + sizeof(lfs_err) +
-                         sizeof(blocksLeftAfterWrite)];
-        uint8_t *err_data_ptr = err_data;
-
-        memcpy_inc(&err_data_ptr, &res, sizeof(res));
-        memcpy_inc(&err_data_ptr, &lfs_err, sizeof(lfs_err));
-        memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
-                   sizeof(blocksLeftAfterWrite));
+        struct
+        {
+            filesys_error_t filesys_err;
+            lfs_ssize_t lfs_error_code;
+            lfs_ssize_t blocks_left_after_write;
+        } __attribute__((packed)) err_data = {
+            .filesys_err = res,
+            .lfs_error_code = lfs_err,
+            .blocks_left_after_write = blocksLeftAfterWrite,
+        };
 
         // Use command_data fields since slate may not be initialized
         ftp_send_result_packet_custom_file(
             slate, command_data.fname_str, command_data.file_len,
-            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, err_data,
+            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, &err_data,
             sizeof(err_data));
         return;
     }
@@ -235,19 +242,21 @@ void ftp_process_file_start_write_command(
     {
         LOG_ERROR("[FTP] Could not determine blocks left after file write.");
 
-        uint8_t err_data[sizeof(res) + sizeof(lfs_err) +
-                         sizeof(blocksLeftAfterWrite)];
-        uint8_t *err_data_ptr = err_data;
-
-        memcpy_inc(&err_data_ptr, &res, sizeof(res));
-        memcpy_inc(&err_data_ptr, &lfs_err, sizeof(lfs_err));
-        memcpy_inc(&err_data_ptr, &blocksLeftAfterWrite,
-                   sizeof(blocksLeftAfterWrite));
+        struct
+        {
+            filesys_error_t filesys_err;
+            lfs_ssize_t lfs_error_code;
+            lfs_ssize_t blocks_left_after_write;
+        } __attribute__((packed)) err_data = {
+            .filesys_err = res,
+            .lfs_error_code = lfs_err,
+            .blocks_left_after_write = blocksLeftAfterWrite,
+        };
 
         // Use command_data fields since slate may not be initialized
         ftp_send_result_packet_custom_file(
             slate, command_data.fname_str, command_data.file_len,
-            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, err_data,
+            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, &err_data,
             sizeof(err_data));
         return;
     }
@@ -429,15 +438,14 @@ void ftp_process_file_write_data_command(slate_t *slate,
             FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
                 (crc_info_res == FILESYS_OK) ? crc_file_info.file_size : 0;
 
-            uint8_t crc_err_data[sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
-                                 sizeof(FILESYS_BUFFERED_FILE_LEN_T)];
-
-            uint8_t *crc_err_data_ptr = crc_err_data;
-            memcpy_inc(&crc_err_data_ptr, &computed_crc,
-                       sizeof(FILESYS_BUFFERED_FILE_CRC_T));
-
-            memcpy_inc(&crc_err_data_ptr, &file_len_on_disk,
-                       sizeof(FILESYS_BUFFERED_FILE_LEN_T));
+            struct
+            {
+                FILESYS_BUFFERED_FILE_CRC_T computed_crc;
+                FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
+            } __attribute__((packed)) crc_err_data = {
+                .computed_crc = computed_crc,
+                .file_len_on_disk = file_len_on_disk,
+            };
 
             ftp_send_result_packet(slate, FTP_EOF_CRC_ERROR, &crc_err_data,
                                    sizeof(crc_err_data));
@@ -463,14 +471,14 @@ void ftp_process_file_write_data_command(slate_t *slate,
     FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
         (info_res == FILESYS_OK) ? file_info.file_size : 0;
 
-    uint8_t success_data[sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
-                         sizeof(FILESYS_BUFFERED_FILE_LEN_T)];
-
-    uint8_t *success_data_ptr = success_data;
-    memcpy_inc(&success_data_ptr, &computed_crc,
-               sizeof(FILESYS_BUFFERED_FILE_CRC_T));
-    memcpy_inc(&success_data_ptr, &file_len_on_disk,
-               sizeof(FILESYS_BUFFERED_FILE_LEN_T));
+    struct
+    {
+        FILESYS_BUFFERED_FILE_CRC_T computed_crc;
+        FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
+    } __attribute__((packed)) success_data = {
+        .computed_crc = computed_crc,
+        .file_len_on_disk = file_len_on_disk,
+    };
 
     ftp_send_result_packet(slate, FTP_EOF_SUCCESS, &success_data,
                            sizeof(success_data));
@@ -507,23 +515,6 @@ void ftp_process_file_cancel_write_command(
  */
 inline static void send_ftp_status_report(slate_t *slate)
 {
-    uint8_t data[sizeof(FTP_PACKET_SEQUENCE_T) * 2 +
-                 sizeof(FTP_PACKET_TRACKER_T) +
-                 sizeof(FILESYS_BUFFERED_FILE_CRC_T) +
-                 sizeof(FILESYS_BUFFERED_FILE_LEN_T) + sizeof(uint8_t)];
-
-    uint8_t *data_ptr = data;
-
-    // Packet range
-    const FTP_PACKET_SEQUENCE_T packet_start = slate->ftp_start_cycle_packet_id;
-    const FTP_PACKET_SEQUENCE_T packet_end = ftp_get_last_packet(slate);
-    memcpy_inc(&data_ptr, &packet_start, sizeof(FTP_PACKET_SEQUENCE_T));
-    memcpy_inc(&data_ptr, &packet_end, sizeof(FTP_PACKET_SEQUENCE_T));
-
-    // Received bitfield
-    memcpy_inc(&data_ptr, &slate->ftp_packets_received_tracker,
-               sizeof(FTP_PACKET_TRACKER_T));
-
     // CRC computed over bytes written to MRAM so far (0 if first cycle)
     FILESYS_BUFFERED_FILE_CRC_T file_crc_so_far = 0;
     if (slate->ftp_start_cycle_packet_id > 0)
@@ -534,27 +525,35 @@ inline static void send_ftp_status_report(slate_t *slate)
         if (crc_err != FILESYS_OK)
             file_crc_so_far = 0;
     }
-    memcpy_inc(&data_ptr, &file_crc_so_far,
-               sizeof(FILESYS_BUFFERED_FILE_CRC_T));
 
     // Total bytes written to MRAM so far
     FILESYS_BUFFERED_FILE_LEN_T total_bytes_written =
         (FILESYS_BUFFERED_FILE_LEN_T)slate->ftp_start_cycle_packet_id *
         FTP_DATA_PAYLOAD_SIZE;
-    memcpy_inc(&data_ptr, &total_bytes_written,
-               sizeof(FILESYS_BUFFERED_FILE_LEN_T));
 
-    uint8_t is_malloced = slate->filesys_buffer != NULL ? 1 : 0;
-    memcpy_inc(&data_ptr, &is_malloced, sizeof(uint8_t));
+    struct
+    {
+        FTP_PACKET_SEQUENCE_T packet_start;
+        FTP_PACKET_SEQUENCE_T packet_end;
+        FTP_PACKET_TRACKER_T tracker;
+        FILESYS_BUFFERED_FILE_CRC_T file_crc_so_far;
+        FILESYS_BUFFERED_FILE_LEN_T total_bytes_written;
+        uint8_t is_malloced;
+        uint8_t is_writing;
+    } __attribute__((packed)) status_report_data = {
+        .packet_start = slate->ftp_start_cycle_packet_id,
+        .packet_end = ftp_get_last_packet(slate),
+        .tracker = slate->ftp_packets_received_tracker,
+        .file_crc_so_far = file_crc_so_far,
+        .total_bytes_written = total_bytes_written,
+        .is_malloced = (slate->filesys_buffer != NULL) ? 1 : 0,
+        .is_writing = slate->filesys_is_writing_file ? 1 : 0,
+    };
 
-    // File write state
-    uint8_t is_writing = slate->filesys_is_writing_file ? 1 : 0;
-    memcpy_inc(&data_ptr, &is_writing, sizeof(uint8_t));
-
-    ftp_send_result_packet_custom_file(slate, slate->filesys_buffered_fname_str,
-                                       slate->filesys_buffered_file_len,
-                                       slate->filesys_buffered_file_crc,
-                                       FTP_STATUS_REPORT, data, sizeof(data));
+    ftp_send_result_packet_custom_file(
+        slate, slate->filesys_buffered_fname_str,
+        slate->filesys_buffered_file_len, slate->filesys_buffered_file_crc,
+        FTP_STATUS_REPORT, status_report_data, sizeof(status_report_data));
 }
 
 void ftp_task_dispatch(slate_t *slate)
