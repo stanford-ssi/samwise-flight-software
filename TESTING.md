@@ -24,6 +24,9 @@ source run_tests.sh
 # Force run all tests (remove cached) -- use this if you need to make *sure* all tests work (I recommend using this very liberally)
 source run_tests.sh -t-
 
+# You can also do this to more aggressively clean
+bazel clean
+
 # Output all logs
 source run_tests.sh --test_output=all
 

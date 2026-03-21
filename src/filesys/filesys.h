@@ -137,12 +137,10 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
  * // FILESYS_ERR_SET_CRC_ATTR if there was an error setting the CRC attribute,
  * // FILESYS_OK on success.
  */
-filesys_error_t filesys_start_file_write(slate_t *slate,
-                                         FILESYS_BUFFERED_FNAME_STR_T fname_str,
-                                         FILESYS_BUFFERED_FILE_LEN_T file_size,
-                                         FILESYS_BUFFERED_FILE_CRC_T file_crc,
-                                         lfs_ssize_t *lfs_error_code,
-                                         lfs_ssize_t *blocks_left_after_write);
+filesys_error_t filesys_start_file_write(
+    slate_t *slate, const FILESYS_BUFFERED_FNAME_STR_T fname_str,
+    FILESYS_BUFFERED_FILE_LEN_T file_size, FILESYS_BUFFERED_FILE_CRC_T file_crc,
+    lfs_ssize_t *lfs_error_code, lfs_ssize_t *blocks_left_after_write);
 
 /**
  * Writes data to the current file buffer at the specified offset.
@@ -305,7 +303,7 @@ typedef struct __attribute__((packed))
  *         info->flags rather than causing this function to return an error.
  */
 filesys_error_t filesys_get_file_info(slate_t *slate,
-                                      FILESYS_BUFFERED_FNAME_STR_T fname,
+                                      const FILESYS_BUFFERED_FNAME_STR_T fname,
                                       filesys_file_info_t *info,
                                       lfs_ssize_t *lfs_error_code);
 
@@ -374,7 +372,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
  *         FILESYS_OK on success.
  */
 filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
-                                       FILESYS_BUFFERED_FNAME_STR_T fname,
+                                       const FILESYS_BUFFERED_FNAME_STR_T fname,
                                        filesys_file_info_t *info,
                                        lfs_ssize_t *lfs_error_code);
 

@@ -1,7 +1,7 @@
 #include "ftp_task.h"
 
 void ftp_send_result_packet_custom_file(
-    slate_t *slate, FILESYS_BUFFERED_FNAME_STR_T buffered_fname_str,
+    slate_t *slate, const FILESYS_BUFFERED_FNAME_STR_T buffered_fname_str,
     FILESYS_BUFFERED_FILE_LEN_T buffered_file_len,
     FILESYS_BUFFERED_FILE_CRC_T buffered_file_crc, ftp_result_t result,
     const void *additional_data, size_t additional_data_len)
@@ -553,7 +553,7 @@ inline static void send_ftp_status_report(slate_t *slate)
     ftp_send_result_packet_custom_file(
         slate, slate->filesys_buffered_fname_str,
         slate->filesys_buffered_file_len, slate->filesys_buffered_file_crc,
-        FTP_STATUS_REPORT, status_report_data, sizeof(status_report_data));
+        FTP_STATUS_REPORT, &status_report_data, sizeof(status_report_data));
 }
 
 void ftp_task_dispatch(slate_t *slate)

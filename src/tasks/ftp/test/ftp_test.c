@@ -36,7 +36,7 @@ static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_3pkt_len = 615;
 static const uint32_t ftp_test_file_partial_crc = 0xe0bbcad4;
 static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_partial_len = 400;
 
-static const uint32_t ftp_test_file_2cycles_crc = 0x1c291cae;
+static const uint32_t ftp_test_file_2cycles_crc = 0x1ec37856;
 static const FILESYS_BUFFERED_FILE_LEN_T ftp_test_file_2cycles_len =
     (FTP_NUM_PACKETS_PER_CYCLE + 1) * FTP_DATA_PAYLOAD_SIZE;
 
@@ -143,7 +143,7 @@ static void ftp_test_drain_queue(slate_t *slate)
  * @param out        Output command data struct.
  */
 static void ftp_test_make_write_data(FTP_PACKET_SEQUENCE_T packet_id,
-                                     FILESYS_BUFFERED_FNAME_STR_T fname,
+                                     const FILESYS_BUFFERED_FNAME_STR_T fname,
                                      FILESYS_BUFFERED_FILE_LEN_T file_len,
                                      FTP_WRITE_TO_FILE_DATA *out)
 {
@@ -166,7 +166,7 @@ static void ftp_test_make_write_data(FTP_PACKET_SEQUENCE_T packet_id,
  * Construct an FTP_START_FILE_WRITE_DATA.
  */
 static FTP_START_FILE_WRITE_DATA
-ftp_test_make_start_data(FILESYS_BUFFERED_FNAME_STR_T fname,
+ftp_test_make_start_data(const FILESYS_BUFFERED_FNAME_STR_T fname,
                          FILESYS_BUFFERED_FILE_LEN_T file_len,
                          FILESYS_BUFFERED_FILE_CRC_T file_crc)
 {
@@ -181,7 +181,7 @@ ftp_test_make_start_data(FILESYS_BUFFERED_FNAME_STR_T fname,
  * Construct an FTP_CANCEL_FILE_WRITE_DATA.
  */
 static FTP_CANCEL_FILE_WRITE_DATA
-ftp_test_make_cancel_data(FILESYS_BUFFERED_FNAME_STR_T fname)
+ftp_test_make_cancel_data(const FILESYS_BUFFERED_FNAME_STR_T fname)
 {
     FTP_CANCEL_FILE_WRITE_DATA data;
     memcpy(data.fname_str, fname, sizeof(data.fname_str));
@@ -218,7 +218,7 @@ int ftp_test_setup(slate_t *slate)
  * Sets up slate as if ftp_process_file_start_write_command succeeded.
  */
 static int ftp_test_helper_start_file_write(
-    slate_t *slate, FILESYS_BUFFERED_FNAME_STR_T fname,
+    slate_t *slate, const FILESYS_BUFFERED_FNAME_STR_T fname,
     FILESYS_BUFFERED_FILE_LEN_T file_len, FILESYS_BUFFERED_FILE_CRC_T file_crc)
 {
     FTP_START_FILE_WRITE_DATA start_data =
@@ -247,7 +247,7 @@ static int ftp_test_helper_start_file_write(
  */
 static int
 ftp_test_helper_send_cycle_packets(slate_t *slate, uint16_t num_packets,
-                                   FILESYS_BUFFERED_FNAME_STR_T fname,
+                                   const FILESYS_BUFFERED_FNAME_STR_T fname,
                                    FILESYS_BUFFERED_FILE_LEN_T file_len)
 {
     const FTP_PACKET_SEQUENCE_T base = slate->ftp_start_cycle_packet_id;
