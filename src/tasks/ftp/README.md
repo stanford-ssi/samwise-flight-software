@@ -422,7 +422,7 @@ typedef struct {
     uint32_t total_bytes_written;      // Total bytes written to MRAM so far
     uint8_t filesys_buffer_malloced;   // Whether the buffer on filesys was able to be MALLOC-ed or not (i.e. 1/true if it is not NULL).
     uint8_t filesys_is_writing_file;   // Internal state - if filesys is currently writing a file
-} __attribute__((packed)) FTP_STATUS_REPORT_DATA;
+} FTP_STATUS_REPORT_DATA;
 ```
 
 ```mermaid

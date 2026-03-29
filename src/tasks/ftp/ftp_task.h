@@ -6,6 +6,7 @@
 
 #include "pico/stdlib.h"
 
+#include "buffer_utils.h"
 #include "command_parser.h"
 #include "config.h"
 #include "filesys.h"
@@ -30,7 +31,7 @@
  */
 inline static void ftp_tracker_clear(FTP_PACKET_TRACKER_T *tracker)
 {
-    memset(tracker->bytes, 0, FTP_PACKET_TRACKER_SIZE);
+    memset(tracker, 0, FTP_PACKET_TRACKER_SIZE);
 }
 
 /**
@@ -39,8 +40,7 @@ inline static void ftp_tracker_clear(FTP_PACKET_TRACKER_T *tracker)
 inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
                                        uint16_t bit_index)
 {
-    tracker->bytes[bit_index / __CHAR_BIT__] |=
-        (1 << (bit_index % __CHAR_BIT__));
+    (*tracker)[bit_index / __CHAR_BIT__] |= (1 << (bit_index % __CHAR_BIT__));
 }
 
 /**
@@ -50,7 +50,7 @@ inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
 inline static bool ftp_tracker_check_bit(const FTP_PACKET_TRACKER_T *tracker,
                                          uint16_t bit_index)
 {
-    return (tracker->bytes[bit_index / __CHAR_BIT__] &
+    return ((*tracker)[bit_index / __CHAR_BIT__] &
             (1 << (bit_index % __CHAR_BIT__))) != 0;
 }
 
@@ -67,7 +67,7 @@ ftp_tracker_check_mask_completed(const FTP_PACKET_TRACKER_T *tracker,
     uint16_t full_bytes = num_bits / __CHAR_BIT__;
     for (uint16_t i = 0; i < full_bytes; i++)
     {
-        if (tracker->bytes[i] != 0xFF)
+        if ((*tracker)[i] != 0xFF)
             return false;
     }
     // Check remaining bits in the last partial byte
@@ -75,7 +75,7 @@ ftp_tracker_check_mask_completed(const FTP_PACKET_TRACKER_T *tracker,
     if (remaining_bits > 0)
     {
         uint8_t mask = (1 << remaining_bits) - 1;
-        if ((tracker->bytes[full_bytes] & mask) != mask)
+        if (((*tracker)[full_bytes] & mask) != mask)
             return false;
     }
     return true;

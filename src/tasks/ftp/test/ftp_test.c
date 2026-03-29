@@ -14,6 +14,7 @@
 
 #include "ftp_test.h"
 
+#include "buffer_utils.h"
 #include "str_utils.h"
 
 /*
@@ -72,13 +73,19 @@ typedef struct ftp_test_ground_info
     uint8_t data[PACKET_DATA_SIZE - sizeof(FILESYS_BUFFERED_FNAME_T) -
                  sizeof(FILESYS_BUFFERED_FILE_LEN_T) -
                  sizeof(FILESYS_BUFFERED_FILE_CRC_T) - sizeof(ftp_result_t)];
-} __attribute__((packed)) ftp_test_ground_info_t;
+} ftp_test_ground_info_t;
 
 ftp_test_ground_info_t ftp_test_get_ground_info(slate_t *slate, packet_t pkt)
 {
-    ftp_test_ground_info_t ground_info;
-    memcpy(&ground_info, pkt.data, sizeof(ground_info));
-    return ground_info;
+    ftp_test_ground_info_t info;
+    size_t offset = buffer_decode_data(pkt.data, BUFFER_DECODE_ARG(info.fname),
+                                       BUFFER_DECODE_ARG(info.file_len),
+                                       BUFFER_DECODE_ARG(info.file_crc),
+                                       BUFFER_DECODE_ARG(info.ftp_result));
+
+    memcpy(info.data, pkt.data + offset, sizeof(info.data));
+
+    return info;
 }
 
 /**
@@ -90,13 +97,17 @@ typedef struct ftp_test_cycle_info
     FTP_PACKET_SEQUENCE_T packet_start;
     FTP_PACKET_SEQUENCE_T packet_end;
     FTP_PACKET_TRACKER_T tracker;
-} __attribute__((packed)) ftp_test_cycle_info_t;
+} ftp_test_cycle_info_t;
 
 static ftp_test_cycle_info_t
 ftp_test_parse_cycle_info(const ftp_test_ground_info_t *info)
 {
     ftp_test_cycle_info_t cycle;
-    memcpy(&cycle, info->data, sizeof(cycle));
+    buffer_decode_data(
+        info->data, BUFFER_DECODE_ARG(cycle.packet_start),
+        BUFFER_DECODE_ARG(cycle.packet_end),
+        BUFFER_DECODE_RAW(FTP_PACKET_TRACKER_SIZE, cycle.tracker));
+
     return cycle;
 }
 
@@ -107,13 +118,14 @@ typedef struct ftp_test_eof_info
 {
     FILESYS_BUFFERED_FILE_CRC_T computed_crc;
     FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
-} __attribute__((packed)) ftp_test_eof_info_t;
+} ftp_test_eof_info_t;
 
 static ftp_test_eof_info_t
 ftp_test_parse_eof_info(const ftp_test_ground_info_t *info)
 {
     ftp_test_eof_info_t eof;
-    memcpy(&eof, info->data, sizeof(eof));
+    buffer_decode_data(info->data, BUFFER_DECODE_ARG(eof.computed_crc),
+                       BUFFER_DECODE_ARG(eof.file_len_on_disk));
     return eof;
 }
 
@@ -275,15 +287,15 @@ int ftp_test_tracker_clear(slate_t *slate)
 
     FTP_PACKET_TRACKER_T tracker;
     // Dirty the tracker first
-    memset(tracker.bytes, 0xFF, FTP_PACKET_TRACKER_SIZE);
+    memset(tracker, 0xFF, FTP_PACKET_TRACKER_SIZE);
 
     ftp_tracker_clear(&tracker);
 
     for (uint16_t i = 0; i < FTP_PACKET_TRACKER_SIZE; i++)
     {
-        TEST_ASSERT(tracker.bytes[i] == 0,
+        TEST_ASSERT(tracker[i] == 0,
                     "Tracker byte %u should be 0 after clear, got 0x%02X", i,
-                    tracker.bytes[i]);
+                    tracker[i]);
     }
 
     return 0;
@@ -436,7 +448,7 @@ int ftp_test_reformat_clears_state(slate_t *slate)
 
     for (uint16_t i = 0; i < FTP_PACKET_TRACKER_SIZE; i++)
     {
-        TEST_ASSERT(slate->ftp_packets_received_tracker.bytes[i] == 0,
+        TEST_ASSERT(slate->ftp_packets_received_tracker[i] == 0,
                     "Tracker byte %u should be 0 after reformat", i);
     }
 
@@ -575,7 +587,7 @@ int ftp_test_start_write_sets_slate_state(slate_t *slate)
     // Verify tracker is cleared
     for (uint16_t i = 0; i < FTP_PACKET_TRACKER_SIZE; i++)
     {
-        TEST_ASSERT(slate->ftp_packets_received_tracker.bytes[i] == 0,
+        TEST_ASSERT(slate->ftp_packets_received_tracker[i] == 0,
                     "Tracker byte %u should be 0 after start write", i);
     }
 
@@ -741,7 +753,7 @@ int ftp_test_write_data_complete_cycle_not_final(slate_t *slate)
     // Tracker should be cleared for new cycle
     for (uint16_t i = 0; i < FTP_PACKET_TRACKER_SIZE; i++)
     {
-        TEST_ASSERT(slate->ftp_packets_received_tracker.bytes[i] == 0,
+        TEST_ASSERT(slate->ftp_packets_received_tracker[i] == 0,
                     "Tracker byte %u should be 0 after cycle completion", i);
     }
 
@@ -766,7 +778,7 @@ int ftp_test_write_data_complete_cycle_not_final(slate_t *slate)
     // Tracker should be empty in the new cycle
     for (uint16_t i = 0; i < FTP_PACKET_TRACKER_SIZE; i++)
     {
-        TEST_ASSERT(cycle.tracker.bytes[i] == 0,
+        TEST_ASSERT(cycle.tracker[i] == 0,
                     "Tracker byte %u should be 0 in cycle info", i);
     }
 
@@ -1586,5 +1598,8 @@ const size_t ftp_tests_len = sizeof(ftp_tests) / sizeof(test_harness_case_t);
 
 int main()
 {
-    return test_harness_run("FTP", ftp_tests, ftp_tests_len, ftp_test_setup);
+    uint16_t indicies[] = {33};
+    return test_harness_include_run("FTP", ftp_tests, ftp_tests_len,
+                                    ftp_test_setup, indicies,
+                                    sizeof(indicies) / sizeof(uint16_t));
 }

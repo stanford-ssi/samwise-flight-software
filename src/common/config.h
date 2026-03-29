@@ -32,10 +32,7 @@
 
 // Packet tracker is a byte array used as a bitfield.
 // A bit being set means the corresponding packet in this cycle was received.
-typedef struct
-{
-    uint8_t bytes[FTP_PACKET_TRACKER_SIZE];
-} FTP_PACKET_TRACKER_T;
+typedef uint8_t FTP_PACKET_TRACKER_T[FTP_PACKET_TRACKER_SIZE];
 
 // Automatically calculated size of maximum data payload in bytes per packet
 #define FTP_DATA_PAYLOAD_SIZE                                                  \

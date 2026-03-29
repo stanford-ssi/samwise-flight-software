@@ -22,28 +22,20 @@ void ftp_send_result_packet_custom_file(
     uint8_t data[PACKET_DATA_SIZE];
 
     // Send fname as 2-byte FILESYS_BUFFERED_FNAME_T (not 3-byte str)
-    struct
-    {
-        FILESYS_BUFFERED_FNAME_T fname;
-        FILESYS_BUFFERED_FILE_LEN_T file_len;
-        FILESYS_BUFFERED_FILE_CRC_T file_crc;
-        ftp_result_t ftp_result;
-    } __attribute__((packed)) packet_data = {
-        .fname = string_to_file(buffered_fname_str),
-        .file_len = buffered_file_len,
-        .file_crc = buffered_file_crc,
-        .ftp_result = result,
-    };
-
-    memcpy(data, &packet_data, sizeof(packet_data));
+    size_t len = buffer_encode_data(
+        data, BUFFER_ENCODE_ARG(string_to_file(buffered_fname_str)),
+        BUFFER_ENCODE_ARG(buffered_file_len),
+        BUFFER_ENCODE_ARG(buffered_file_crc), BUFFER_ENCODE_ARG(result));
 
     if (additional_data != NULL && additional_data_len > 0)
-        memcpy(data + sizeof(packet_data), additional_data,
-               additional_data_len);
+    {
+        memcpy(data + len, additional_data, additional_data_len);
+        len += additional_data_len;
+    }
 
     packet_t pkt;
     // TODO: What are all of these fields supposed to be?
-    rfm9x_format_packet(&pkt, 0, 0, 0, 0, packet_len, data);
+    rfm9x_format_packet(&pkt, 0, 0, 0, 0, len, data);
 
     if (!queue_try_add(&slate->tx_queue, &pkt))
         LOG_ERROR("[FTP] Failed to enqueue FTP result packet %d for TX!",
@@ -103,20 +95,14 @@ inline static void send_ftp_lfs_error_packet(slate_t *slate,
            result == FTP_FILE_WRITE_MRAM_ERROR ||
            result == FTP_FILE_WRITE_BUFFER_ERROR || result == FTP_CANCEL_ERROR);
 
-    struct
-    {
-        filesys_error_t filesys_err;
-        lfs_ssize_t lfs_error_code;
-    } __attribute__((packed)) err_data = {
-        .filesys_err = filesys_err,
-        .lfs_error_code = lfs_error_code,
-    };
+    uint8_t err_data[PACKET_DATA_SIZE];
+    size_t len = buffer_encode_data(err_data, BUFFER_ENCODE_ARG(filesys_err),
+                                    BUFFER_ENCODE_ARG(lfs_error_code));
 
     if (result == FILESYS_INIT_ERROR || result == FILESYS_REFORMAT_ERROR)
-        ftp_send_result_packet_no_file(slate, result, &err_data,
-                                       sizeof(err_data));
+        ftp_send_result_packet_no_file(slate, result, err_data, len);
     else
-        ftp_send_result_packet(slate, result, &err_data, sizeof(err_data));
+        ftp_send_result_packet(slate, result, err_data, len);
 }
 
 /**
@@ -131,18 +117,13 @@ send_ftp_cycle_info_packet(slate_t *slate, ftp_result_t result,
     assert(result == FTP_READY_RECEIVE || result == FTP_FILE_WRITE_SUCCESS ||
            result == FTP_ERROR_PACKET_OUT_OF_RANGE);
 
-    struct
-    {
-        FTP_PACKET_SEQUENCE_T packet_start;
-        FTP_PACKET_SEQUENCE_T packet_end;
-        FTP_PACKET_TRACKER_T tracker;
-    } __attribute__((packed)) result_data = {
-        .packet_start = packet_start,
-        .packet_end = ftp_get_last_packet(slate),
-        .tracker = packets_received_tracker,
-    };
+    uint8_t result_data[PACKET_DATA_SIZE];
+    size_t len = buffer_encode_data(
+        result_data, BUFFER_ENCODE_ARG(packet_start),
+        BUFFER_ENCODE_ARG(ftp_get_last_packet(slate)),
+        BUFFER_ENCODE_RAW(FTP_PACKET_TRACKER_SIZE, packets_received_tracker));
 
-    ftp_send_result_packet(slate, result, &result_data, sizeof(result_data));
+    ftp_send_result_packet(slate, result, result_data, len);
 }
 
 void ftp_task_init(slate_t *slate)
@@ -219,22 +200,15 @@ void ftp_process_file_start_write_command(
     {
         LOG_ERROR("[FTP] Failed to start file write with code %d.", res);
 
-        struct
-        {
-            filesys_error_t filesys_err;
-            lfs_ssize_t lfs_error_code;
-            lfs_ssize_t blocks_left_after_write;
-        } __attribute__((packed)) err_data = {
-            .filesys_err = res,
-            .lfs_error_code = lfs_err,
-            .blocks_left_after_write = blocksLeftAfterWrite,
-        };
+        uint8_t err_data[PACKET_DATA_SIZE];
+        size_t len = buffer_encode_data(
+            err_data, BUFFER_ENCODE_ARG(res), BUFFER_ENCODE_ARG(lfs_err),
+            BUFFER_ENCODE_ARG(blocksLeftAfterWrite));
 
         // Use command_data fields since slate may not be initialized
         ftp_send_result_packet_custom_file(
             slate, command_data.fname_str, command_data.file_len,
-            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, &err_data,
-            sizeof(err_data));
+            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, err_data, len);
         return;
     }
 
@@ -242,22 +216,15 @@ void ftp_process_file_start_write_command(
     {
         LOG_ERROR("[FTP] Could not determine blocks left after file write.");
 
-        struct
-        {
-            filesys_error_t filesys_err;
-            lfs_ssize_t lfs_error_code;
-            lfs_ssize_t blocks_left_after_write;
-        } __attribute__((packed)) err_data = {
-            .filesys_err = res,
-            .lfs_error_code = lfs_err,
-            .blocks_left_after_write = blocksLeftAfterWrite,
-        };
+        uint8_t err_data[PACKET_DATA_SIZE];
+        size_t len = buffer_encode_data(
+            err_data, BUFFER_ENCODE_ARG(res), BUFFER_ENCODE_ARG(lfs_err),
+            BUFFER_ENCODE_ARG(blocksLeftAfterWrite));
 
         // Use command_data fields since slate may not be initialized
         ftp_send_result_packet_custom_file(
             slate, command_data.fname_str, command_data.file_len,
-            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, &err_data,
-            sizeof(err_data));
+            command_data.file_crc, FTP_ERROR_START_FILE_WRITE, err_data, len);
         return;
     }
 
@@ -435,20 +402,16 @@ void ftp_process_file_write_data_command(slate_t *slate,
             filesys_error_t crc_info_res =
                 filesys_get_file_info(slate, slate->filesys_buffered_fname_str,
                                       &crc_file_info, &crc_info_lfs_err);
+
             FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
                 (crc_info_res == FILESYS_OK) ? crc_file_info.file_size : 0;
 
-            struct
-            {
-                FILESYS_BUFFERED_FILE_CRC_T computed_crc;
-                FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
-            } __attribute__((packed)) crc_err_data = {
-                .computed_crc = computed_crc,
-                .file_len_on_disk = file_len_on_disk,
-            };
+            uint8_t crc_err_data[PACKET_DATA_SIZE];
+            size_t len = buffer_encode_data(
+                crc_err_data, BUFFER_ENCODE_ARG(computed_crc),
+                BUFFER_ENCODE_ARG(file_len_on_disk));
 
-            ftp_send_result_packet(slate, FTP_EOF_CRC_ERROR, &crc_err_data,
-                                   sizeof(crc_err_data));
+            ftp_send_result_packet(slate, FTP_EOF_CRC_ERROR, crc_err_data, len);
         }
         else
         {
@@ -471,22 +434,18 @@ void ftp_process_file_write_data_command(slate_t *slate,
     FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk =
         (info_res == FILESYS_OK) ? file_info.file_size : 0;
 
-    struct
-    {
-        FILESYS_BUFFERED_FILE_CRC_T computed_crc;
-        FILESYS_BUFFERED_FILE_LEN_T file_len_on_disk;
-    } __attribute__((packed)) success_data = {
-        .computed_crc = computed_crc,
-        .file_len_on_disk = file_len_on_disk,
-    };
+    uint8_t success_data[PACKET_DATA_SIZE];
+    size_t len =
+        buffer_encode_data(success_data, BUFFER_ENCODE_ARG(computed_crc),
+                           BUFFER_ENCODE_ARG(file_len_on_disk));
 
     // Note slate->filesys_is_writing_file is false at this point, so we cannot
     // use ftp_send_result_packet (which would use _no_file since it checks that
     // flag).
-    ftp_send_result_packet_custom_file(
-        slate, slate->filesys_buffered_fname_str,
-        slate->filesys_buffered_file_len, slate->filesys_buffered_file_crc,
-        FTP_EOF_SUCCESS, &success_data, sizeof(success_data));
+    ftp_send_result_packet_custom_file(slate, slate->filesys_buffered_fname_str,
+                                       slate->filesys_buffered_file_len,
+                                       slate->filesys_buffered_file_crc,
+                                       FTP_EOF_SUCCESS, success_data, len);
 }
 
 void ftp_process_file_cancel_write_command(
@@ -537,29 +496,21 @@ inline static void send_ftp_status_report(slate_t *slate)
         (FILESYS_BUFFERED_FILE_LEN_T)slate->ftp_start_cycle_packet_id *
         FTP_DATA_PAYLOAD_SIZE;
 
-    struct
-    {
-        FTP_PACKET_SEQUENCE_T packet_start;
-        FTP_PACKET_SEQUENCE_T packet_end;
-        FTP_PACKET_TRACKER_T tracker;
-        FILESYS_BUFFERED_FILE_CRC_T file_crc_so_far;
-        FILESYS_BUFFERED_FILE_LEN_T total_bytes_written;
-        uint8_t is_malloced;
-        uint8_t is_writing;
-    } __attribute__((packed)) status_report_data = {
-        .packet_start = slate->ftp_start_cycle_packet_id,
-        .packet_end = ftp_get_last_packet(slate),
-        .tracker = slate->ftp_packets_received_tracker,
-        .file_crc_so_far = file_crc_so_far,
-        .total_bytes_written = total_bytes_written,
-        .is_malloced = (slate->filesys_buffer != NULL) ? 1 : 0,
-        .is_writing = slate->filesys_is_writing_file ? 1 : 0,
-    };
+    uint8_t status_report_data[PACKET_DATA_SIZE];
+    size_t len = buffer_encode_data(
+        status_report_data, BUFFER_ENCODE_ARG(slate->ftp_start_cycle_packet_id),
+        BUFFER_ENCODE_ARG(ftp_get_last_packet(slate)),
+        BUFFER_ENCODE_RAW(FTP_PACKET_TRACKER_SIZE,
+                          slate->ftp_packets_received_tracker),
+        BUFFER_ENCODE_ARG(file_crc_so_far),
+        BUFFER_ENCODE_ARG(total_bytes_written),
+        BUFFER_ENCODE_ARG((slate->filesys_buffer != NULL) ? 1 : 0),
+        BUFFER_ENCODE_ARG(slate->filesys_is_writing_file ? 1 : 0));
 
     ftp_send_result_packet_custom_file(
         slate, slate->filesys_buffered_fname_str,
         slate->filesys_buffered_file_len, slate->filesys_buffered_file_crc,
-        FTP_STATUS_REPORT, &status_report_data, sizeof(status_report_data));
+        FTP_STATUS_REPORT, status_report_data, len);
 }
 
 void ftp_task_dispatch(slate_t *slate)

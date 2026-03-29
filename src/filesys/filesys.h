@@ -269,7 +269,7 @@ filesys_error_t filesys_cancel_file_write(slate_t *slate,
 #define FILESYS_FILE_INFO_COMPUTED_CRC_VALID 0x02 // computed CRC is valid
 #define FILESYS_FILE_INFO_EXPECTED_CRC_VALID 0x04 // expected CRC attr was read
 
-typedef struct __attribute__((packed))
+typedef struct
 {
     FILESYS_BUFFERED_FNAME_STR_T fname;    // File name (null-terminated)
     FILESYS_BUFFERED_FILE_LEN_T file_size; // File size on disk (bytes)
