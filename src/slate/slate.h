@@ -173,8 +173,8 @@ typedef struct samwise_slate
 
 // We will put a maximum size of ~16 KB on the slate for now, in lieu of any
 // real analysis of memory usage.
-// _Static_assert(sizeof(slate_t) < 16000,
-//                "slate_t size exceeds reasonable limits");
+_Static_assert(sizeof(slate_t) < 16000,
+               "slate_t size exceeds reasonable limits");
 
 /**
  * Initializes the slate struct by clearing all fields to default values and

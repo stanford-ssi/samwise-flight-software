@@ -185,8 +185,8 @@ To start writing a file, first make sure that no file is currently being written
 
 Otherwise, send a FTP_START_FILE_WRITE command with the following body:
 ```c
-uint16_t fname; // Name of the file, maximum 2 bytes
-uint32_t file_len; // Length of the file, maximum 2 bytes
+uint16_t fname; // Name of the file, represented by FILESYS_BUFFERED_FNAME_T
+uint32_t file_len; // Length of the file, represented by FILESYS_BUFFERED_FILE_LEN_T 
 uint32_t file_crc; // CRC32 for file validation after write
 ```
 
@@ -282,6 +282,7 @@ All of these are present in `config.h`:
 * `FTP_NUM_PACKETS_PER_CYCLE` = `N` (in this doc) - The amount of packets uploaded per cycle. Currently set to 256.
 * `FTP_DATA_PAYLOAD_SIZE` - The amount of file data stored in a single packet, or `205 bytes`.
 * `FTP_MAX_FILE_LEN` - The maximum file length that can possibly be uploaded using this design. It is calculated by `2^16 * 205 = 13434880 bytes` (about `~12.8 MiB`), which is the maximum number of packets per file times the amount of data uploaded in each packet. Note that this is MUCH bigger than the maximum allowed in MRAM `512 KiB`.
+  * Note that this is less than the "representable maximum" as defined by `file_len`, which is `2^32 = 4294967296 bytes` (exactly `4 GiB`), which would never fit. However, the point still stands that neither value would ever fit in MRAM, which only has `512 KiB` maximum.
 * `FILESYS_BUFFER_SIZE` - The amount of data buffered in RAM every cycle. This is handled by Filesys, but is relevant to FTP, so it is included here. This is simply `FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE = 205 bytes * 256 = 52480 bytes`.
 
 Here are some other calculations to justify design decisions:

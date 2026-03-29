@@ -12,10 +12,12 @@
 #include "pins.h"
 #else
 #include "hardware/spi.h"
+#include "logger.h"
 #include "packet.h"
 #include "typedefs.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #endif
 
 #define PAYLOAD_SIZE                                                           \

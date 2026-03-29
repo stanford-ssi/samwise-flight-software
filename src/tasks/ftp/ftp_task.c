@@ -480,8 +480,13 @@ void ftp_process_file_write_data_command(slate_t *slate,
         .file_len_on_disk = file_len_on_disk,
     };
 
-    ftp_send_result_packet(slate, FTP_EOF_SUCCESS, &success_data,
-                           sizeof(success_data));
+    // Note slate->filesys_is_writing_file is false at this point, so we cannot
+    // use ftp_send_result_packet (which would use _no_file since it checks that
+    // flag).
+    ftp_send_result_packet_custom_file(
+        slate, slate->filesys_buffered_fname_str,
+        slate->filesys_buffered_file_len, slate->filesys_buffered_file_crc,
+        FTP_EOF_SUCCESS, &success_data, sizeof(success_data));
 }
 
 void ftp_process_file_cancel_write_command(
@@ -505,6 +510,7 @@ void ftp_process_file_cancel_write_command(
 
     LOG_INFO("[FTP] Successfully cancelled file write for file %s.",
              command_data.fname_str);
+
     ftp_send_result_packet_custom_file(slate, fname_str, file_len, file_crc,
                                        FTP_CANCEL_SUCCESS, NULL, 0);
 }
@@ -565,7 +571,8 @@ void ftp_task_dispatch(slate_t *slate)
     {
         ftp_process_reformat_command(slate);
 
-        if (!queue_try_remove(&slate->ftp_format_filesystem_data, NULL))
+        uint8_t dummy;
+        if (!queue_try_remove(&slate->ftp_format_filesystem_data, &dummy))
             LOG_ERROR("[FTP] Failed to remove format file command from queue.");
     }
 

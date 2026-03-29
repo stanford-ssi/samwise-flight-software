@@ -210,6 +210,9 @@ int ftp_test_setup(slate_t *slate)
     ftp_tracker_clear(&slate->ftp_packets_received_tracker);
     slate->ftp_start_cycle_packet_id = 0;
 
+    // Note we never use any ftp-related queues in this setup, so we don't
+    // initialize them here.
+
     return 0;
 }
 

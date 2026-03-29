@@ -51,5 +51,6 @@ void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
     pkt->flags = flags;
     pkt->seq = seq;
     pkt->len = len;
+    ASSERT(len <= PACKET_DATA_SIZE);
     memcpy(pkt->data, data, len);
 }

@@ -106,7 +106,7 @@ int test_harness_include_run(const char *suite_name,
 
         if (!found)
         {
-            LOG_ERROR("ID %zu not found for test cases!\n", ids[i]);
+            LOG_ERROR("ID %hu not found for test cases!\n", ids[i]);
             return -1;
         }
     }

@@ -90,7 +90,11 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("[Command] FTP_REFORMAT command received.");
 
             // Add command into queue.
-            if (!queue_try_add(&slate->ftp_format_filesystem_data, NULL))
+            uint8_t dummy_data =
+                0; // We just need to enqueue something since the
+                   // command doesn't have any data, but queue
+                   // functions require a pointer to data.
+            if (!queue_try_add(&slate->ftp_format_filesystem_data, &dummy_data))
                 LOG_ERROR("[Command] Failed to enqueue FTP_FORMAT_FILESYSTEM "
                           "command.");
 
@@ -242,7 +246,11 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("FTP_FORMAT_FILESYSTEM command received.");
 
             // Add command into queue.
-            if (!queue_try_add(&slate->ftp_format_filesystem_data, NULL))
+            uint8_t dummy_data =
+                0; // We just need to enqueue something since the
+                   // command doesn't have any data, but queue
+                   // functions require a pointer to data.
+            if (!queue_try_add(&slate->ftp_format_filesystem_data, &dummy_data))
                 LOG_ERROR("Failed to enqueue FTP_FORMAT_FILESYSTEM command.");
 
             break;
