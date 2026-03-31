@@ -33,6 +33,16 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+    if (clear_and_init_slate(&slate) != 0)
+    {
+        ERROR("main: Failed to initialize slate! THIS IS REALLY BAD! "
+              "Continuing with half-initialized slate, but expect more errors "
+              "down the line...");
+        // We won't exit, as most likely only filesys failed. We will just keep
+        // running without a slate, but this is really bad and will likely cause
+        // more errors down the line.
+    }
+
 #ifndef TEST
     // Initialize USB stdio early for PICO platform so logging works
     stdio_usb_init();
