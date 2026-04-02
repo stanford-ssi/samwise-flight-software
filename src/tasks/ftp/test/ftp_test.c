@@ -1537,62 +1537,68 @@ int ftp_test_real_file(slate_t *slate)
 
 const test_harness_case_t ftp_tests[] = {
     /* A. Packet Tracker */
-    {0, ftp_test_tracker_clear, "Tracker Clear", false},
-    {1, ftp_test_tracker_set_and_check, "Tracker Set and Check", false},
+    {0, ftp_test_tracker_clear, "Tracker Clear"},
+    {1, ftp_test_tracker_set_and_check, "Tracker Set and Check"},
     {2, ftp_test_tracker_check_mask_full_bytes,
-     "Tracker Check Mask - Full Bytes", false},
+     "Tracker Check Mask - Full Bytes"},
     {3, ftp_test_tracker_check_mask_partial_byte,
-     "Tracker Check Mask - Partial Byte", false},
+     "Tracker Check Mask - Partial Byte"},
     {4, ftp_test_tracker_check_mask_incomplete,
-     "Tracker Check Mask - Incomplete", false},
+     "Tracker Check Mask - Incomplete"},
 
     /* B. Reformat */
-    {10, ftp_test_reformat_success, "Reformat Success", true},
-    {11, ftp_test_reformat_clears_state, "Reformat Clears State", true},
+    {10, ftp_test_reformat_success, "Reformat Success"},
+    {11, ftp_test_reformat_clears_state, "Reformat Clears State"},
 
     /* C. Start File Write */
-    {20, ftp_test_start_write_success, "Start Write Success", true},
-    {21, ftp_test_start_write_already_writing, "Start Write - Already Writing",
-     true},
-    {22, ftp_test_start_write_sets_slate_state, "Start Write Sets Slate State",
-     true},
+    {20, ftp_test_start_write_success, "Start Write Success"},
+    {
+        21,
+        ftp_test_start_write_already_writing,
+        "Start Write - Already Writing",
+    },
+    {
+        22,
+        ftp_test_start_write_sets_slate_state,
+        "Start Write Sets Slate State",
+    },
 
     /* D. Write File Data */
-    {30, ftp_test_write_data_no_file, "Write Data - No File", true},
+    {30, ftp_test_write_data_no_file, "Write Data - No File"},
     {31, ftp_test_write_data_single_packet_file,
-     "Write Data - Single Packet File", true},
+     "Write Data - Single Packet File"},
     {32, ftp_test_write_data_mid_cycle_no_response,
-     "Write Data - Mid Cycle No Response", true},
+     "Write Data - Mid Cycle No Response"},
     {33, ftp_test_write_data_complete_cycle_not_final,
-     "Write Data - Complete Cycle (Not Final)", true},
+     "Write Data - Complete Cycle (Not Final)"},
     {34, ftp_test_write_data_complete_final_cycle,
-     "Write Data - Complete Final Cycle", true},
+     "Write Data - Complete Final Cycle"},
     {35, ftp_test_write_data_out_of_range_too_low,
-     "Write Data - Out of Range (Low)", true},
+     "Write Data - Out of Range (Low)"},
     {36, ftp_test_write_data_out_of_range_too_high,
-     "Write Data - Out of Range (High)", true},
+     "Write Data - Out of Range (High)"},
     {37, ftp_test_write_data_duplicate_ignored,
-     "Write Data - Duplicate Ignored", true},
-    {38, ftp_test_write_data_out_of_order, "Write Data - Out of Order", true},
+     "Write Data - Duplicate Ignored"},
+    {38, ftp_test_write_data_out_of_order, "Write Data - Out of Order"},
     {39, ftp_test_write_data_last_packet_partial_size,
-     "Write Data - Last Packet Partial Size", true},
+     "Write Data - Last Packet Partial Size"},
 
     /* E. Cancel */
-    {50, ftp_test_cancel_success, "Cancel Success", true},
-    {51, ftp_test_cancel_clears_state, "Cancel Clears State", true},
+    {50, ftp_test_cancel_success, "Cancel Success"},
+    {51, ftp_test_cancel_clears_state, "Cancel Clears State"},
 
     /* F. End-to-End */
-    {80, ftp_test_e2e_single_cycle_file, "E2E Single Cycle File", true},
-    {81, ftp_test_e2e_multi_cycle_file, "E2E Multi-Cycle File", true},
-    {82, ftp_test_e2e_cancel_then_new_file, "E2E Cancel Then New File", true},
-    {83, ftp_test_e2e_crc_mismatch, "E2E CRC Mismatch", true},
+    {80, ftp_test_e2e_single_cycle_file, "E2E Single Cycle File"},
+    {81, ftp_test_e2e_multi_cycle_file, "E2E Multi-Cycle File"},
+    {82, ftp_test_e2e_cancel_then_new_file, "E2E Cancel Then New File"},
+    {83, ftp_test_e2e_crc_mismatch, "E2E CRC Mismatch"},
 
     /* G. Init */
-    {90, ftp_test_init_success, "Init Success", true},
-    {91, ftp_test_init_clears_state, "Init Clears State", true},
+    {90, ftp_test_init_success, "Init Success"},
+    {91, ftp_test_init_clears_state, "Init Clears State"},
 
     /* H. Real File */
-    {100, ftp_test_real_file, "Real File", true}};
+    {100, ftp_test_real_file, "Real File"}};
 
 const size_t ftp_tests_len = sizeof(ftp_tests) / sizeof(test_harness_case_t);
 
