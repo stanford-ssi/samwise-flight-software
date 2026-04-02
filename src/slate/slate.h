@@ -96,7 +96,7 @@ typedef struct samwise_slate
     /*
      * Command switch
      */
-    queue_t payload_command_data;
+    queue_t payload_command_data; // Initialized in command_task.c
 
     uint8_t struct_buffer[MAX_DATASTRUCTURE_SIZE];
 
@@ -111,8 +111,8 @@ typedef struct samwise_slate
      */
     rfm9x_t radio;
     uint8_t radio_node;
-    queue_t tx_queue;
-    queue_t rx_queue;
+    queue_t tx_queue; // Initialized in radio_task.c
+    queue_t rx_queue; // Initialized in radio_task.c
     uint32_t rx_bytes;
     uint32_t rx_packets;
     uint32_t rx_backpressure_drops;
@@ -123,7 +123,7 @@ typedef struct samwise_slate
     /*
      * RPi UART Communication
      */
-    queue_t rpi_uart_queue;
+    queue_t rpi_uart_queue; // Initialized in payload_uart.c
     absolute_time_t rpi_uart_last_byte_receive_time;
     int curr_command_seq_num;
     bool is_payload_on;

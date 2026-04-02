@@ -26,9 +26,7 @@ int test_harness_run(const char *suite_name, const test_harness_case_t *tests,
 
         slate_t slate;
         test_harness_init_slate_func_t init_function_to_use =
-            init_func != NULL && tests[i].requires_custom_init
-                ? init_func
-                : clear_and_init_slate;
+            init_func != NULL ? init_func : clear_and_init_slate;
 
         if (init_function_to_use(&slate) < 0)
         {
