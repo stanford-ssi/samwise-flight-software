@@ -48,14 +48,15 @@ enum filesys_error
     FILESYS_ERR_DELETE_FILE = -12,         // Failed to delete file
     FILESYS_ERR_REFORMAT = -13,            // Failed to reformat the filesystem
     FILESYS_ERR_MOUNT = -14,               // Failed to mount the filesystem
-    FILESYS_ERR_WRITE_MRAM = -15,          // Failed to write to MRAM
-    FILESYS_ERR_OPEN_DIR = -16,            // Failed to open directory
-    FILESYS_ERR_READ_DIR = -17,            // Failed to read directory entry
-    FILESYS_ERR_CLOSE_DIR = -18,           // Failed to close directory
-    FILESYS_ERR_GET_CRC_ATTR = -19,        // Failed to get CRC attribute
-    FILESYS_ERR_READ_FILE = -20,           // Failed to read from file
-    FILESYS_ERR_SEEK_FILE = -21,           // Failed to seek in file
-    FILESYS_ERR_FILE_SIZE = -22,           // Failed to get file size
+    FILESYS_ERR_MALLOC = -15,              // Failed to allocate memory
+    FILESYS_ERR_WRITE_MRAM = -16,          // Failed to write to MRAM
+    FILESYS_ERR_OPEN_DIR = -17,            // Failed to open directory
+    FILESYS_ERR_READ_DIR = -18,            // Failed to read directory entry
+    FILESYS_ERR_CLOSE_DIR = -19,           // Failed to close directory
+    FILESYS_ERR_GET_CRC_ATTR = -20,        // Failed to get CRC attribute
+    FILESYS_ERR_READ_FILE = -21,           // Failed to read from file
+    FILESYS_ERR_SEEK_FILE = -22,           // Failed to seek in file
+    FILESYS_ERR_FILE_SIZE = -23,           // Failed to get file size
 };
 
 typedef int32_t filesys_error_t;
