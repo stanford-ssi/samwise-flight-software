@@ -19,6 +19,7 @@ TIMEOUT = 10
 
 MAX_SERIAL_RETRIES = 5
 SERIAL_RETRY_DELAY = 1
+SERIAL_EXCEPTION_LOG_INTERVAL = 100
 
 # Initialise pins -----------
 initialize()
@@ -59,10 +60,14 @@ with ser:
     commands.file_transfer = SerialFileTransfer(ser)
     commands.packet_handler = SerialPacketHandler(ser)
 
+    serial_exception_count = 0
+
     while True:
         try:
             command_handler.receive_and_dispatch_command()
         except serial.SerialException as e:
-            pass
+            serial_exception_count += 1
+            if serial_exception_count % SERIAL_EXCEPTION_LOG_INTERVAL == 0:
+                log.warning(f"SerialException count: {serial_exception_count}")
         except Exception as e:
             log.error(f"Unhandled error in command loop: {e}", exc_info=True)
