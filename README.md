@@ -19,7 +19,8 @@ this project has a few additional goals:
 
 ### Pre-requisites
 
-1. Install bazel by following instructions for your platform here:
+1. Install bazelisk by following instructions for your platform here: https://github.com/bazelbuild/bazelisk.
+   * You can also use bazel, but this is not recommended.
 
 2. Pull necessary submodules using:
 

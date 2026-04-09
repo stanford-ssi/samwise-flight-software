@@ -18,20 +18,19 @@ its costs: implicit heap allocations caused random (catastrophic) errors, lack
 of proper interrupt support meant lots of polling, lack of explicit static
 memory allocation made the aforementioned heap allocations worse, etc.
 
-This year, we decided to finally pivot and ***rewrite all flight
-software in C***.
+This year, we decided to finally pivot and **_rewrite all flight
+software in C_**.
 
-We *also* switched microcontrollers from the SAMD51 (which was mostly hidden
+We _also_ switched microcontrollers from the SAMD51 (which was mostly hidden
 from us by CircuitPython) to the lovely RP2350 (A.K.A. the Raspberry Pi Pico 2).
 
-What does that mean for ***you***? Lots of opportunity to build on what you
+What does that mean for **_you_**? Lots of opportunity to build on what you
 learned in CS 106A, 106B, 107, 107E, etc. etc. and build some **real satellite
-flight code**. Not only is this a *great* learning experience, but it's
+flight code**. Not only is this a _great_ learning experience, but it's
 **great** on a resume! SSI software alumni have gone on to NASA, SpaceX, and
 grad school ;)
 
-Today we're going to be building a blinking LED. That sounds trivial, but it's a
-good way to get all the tools you need set up.
+We're going to use our actual flight software on a special build (`PICO`) that runs some minimal code!
 
 # Part 0: Install
 
@@ -45,15 +44,16 @@ integrated terminal (tutorial
 [tutorial](https://ubuntu.com/tutorials/command-line-for-beginners#4-creating-folders-and-files) on terminal usage - ignore the Ubuntu specific stuff.
 
 Install Homebrew if you don't already have it:
+
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-After installin Homebrew, close and re-open your terminal.
+After installing Homebrew, close and re-open your terminal.
 
-Install CMake & compiler toolchain:
+Install compiler toolchain:
+
 ```
-brew install cmake
 brew install --cask gcc-arm-embedded
 ```
 
@@ -65,9 +65,11 @@ For [ubuntu/linux](https://askubuntu.com/questions/1243252/how-to-install-arm-no
 changed their method for distributing the tool change. Now you
 must manually install. As of this lab, the following works:
 
-        wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2
+```
+wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2
 
-        sudo tar xjf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C /usr/local/
+sudo tar xjf gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 -C /usr/local/
+```
 
 We want to get these binaries on our `$PATH` so we don't have to type the
 full path to them every time. There's a fast and messy option, or a slower
@@ -76,58 +78,70 @@ and cleaner option.
 The fast and messy option is to add symlinks to these in your system `bin`
 folder:
 
-        sudo ln -s /usr/local/gcc-arm-none-eabi-10.3-2021.10/bin/* /usr/bin/
+```
+sudo ln -s /usr/local/gcc-arm-none-eabi-10.3-2021.10/bin/* /usr/bin/
+```
 
 The cleaner option is to add `/usr/local/gcc-arm-none-eabi-10.3-2021.10/bin` to
 your `$PATH` variable in your shell configuration file (e.g., `.zshrc` or
 `.bashrc`), save it, and `source` the configuration. When you run:
 
-        arm-none-eabi-gcc
-        arm-none-eabi-ar
-        arm-none-eabi-objdump
+```
+arm-none-eabi-gcc
+arm-none-eabi-ar
+arm-none-eabi-objdump
+```
 
 You should not get a "Command not found" error.
 
 If gcc can't find header files, try:
 
-       sudo apt-get install libnewlib-arm-none-eabi
+```
+sudo apt-get install libnewlib-arm-none-eabi
+```
 
 ### Windows
 
 Unfortunately, I have not gotten to fully supporting Windows. The best option is
-to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm) & [CMake](https://cmake.org/download/) according to their respective websites.
+to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm) according to its respective websites.
 
-[WIP] we'll working on getting support via VSCode RPi extension ([PR](https://github.com/stanford-ssi/samwise-flight-software/pull/153))
+~~[WIP] we'll working on getting support via VSCode RPi extension ([PR](https://github.com/stanford-ssi/samwise-flight-software/pull/153))~~
+
+[WIP] We can try `MSYS2 + MinGW + `https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads to get windows support, but this has never been tried before.
 
 Tentative steps:
 
-1. install VSCode RPi extension (https://github.com/raspberrypi/pico-vscode)
-2. import the samwise-flight-software repo folder as a new project using the extension interface
-    - default settings are ok
-3. update `.vscode/settings.json` with the following additional fields:
-```
-    "cmake.configureArgs": [
-        "-DPROFILE=PICUBED-DEBUG" <-- or change to PICO, PICUBED-FLIGHT, etc...
-    ],
-    "raspberry-pi-pico.useCmakeTools": false,
-```
-4. open command palette (ctrl + shift + p) then execute builds with "CMake: Build"
+1. Build the project
+2. Use `picotool` to flash onto the PICO
+   - If on WSL, use `usbipd`
+3. Finally, use `tio` to listen
 
-# Part 1: CMake, Building & Project Structure
+# Part 1: Bazel, Building & Project Structure
 
-Take a look at this minimal CMake project which mirrors the structure of our main software repo.
+Look around the `samwise-flight-software` repository, and look for `BUILD.bazel` or any `*.bazel` files. Try to understand them - reading through can be really helpful.
 
-[Minimal CMake Proj](https://github.com/devYaoYH/cmake_proj_structure/tree/main)
+In general:
 
-You can try pulling this repo and get yourself familiarized with using CMake to compile code and run tests.
+- `bazel` is a build system that allows you to automatically link and compile files easily, similar to `cmake` (but MUCH better!)
+- Features of `bazel`: tests, caching (so we don't have to compile everything every time), `genrule`s (to get into later), and much more
+- `.bazelrc` is where we configure `bazel`, including the different build profiles.
+  - We will focus on `pico`, which is what we are playing with, but `picubed-flight` is the final version that will go onto our satellite!
+  - We also link `pico-sdk` here, which allows us to use the library with the pico/raspi/etc.
+- `BUILD.bazel` specifies _targets_, i.e. a component that needs to be compiled, along with its _dependencies_, which are the subcomponents it requires to function.
+  - The root `BUILD.bazel` is our actual binary `samwise`, and depends on essentially all code in the repository (of course!)
+  - Then, each path in `dependencies` as shown in `//BUILD.bazel` has its own `BUILD.bazel` file - for example, `//src/tasks/print/BUILD.bazel` has a `print_task`, which simply prints a message every few seconds, and it depends on `logger`, for example.
+  - We can use `select` to change dependencies based on the current configuration - this is how we change loggers, for example, if we are on a computer or if we are on `pico`.
 
-# Part 2: Blinking LED
+Please ask if you have any questions!
+
+# Part 2: First PICO Build
 
 All microcontrollers come with some pins you can turn on and off, communicate
-over, etc. These pins are called *general purpose input/output pins* or GPIO
+over, etc. These pins are called _general purpose input/output pins_ or GPIO
 pins. You can configure them from software.
 
 Generally, these are the steps:
+
 - Initialize the pin
 - Set the direction (input or output) of the pin
 - Write (if it's output) or read (if it's input) from the pin
@@ -142,30 +156,19 @@ use is the sleeping methods, which are exactly like the ones from Python.
 
 ## Git
 
-You should create a clone of [this tepository](https://github.com/shetaye/ssi-onboarding-24/tree/main) using VSCode
+You should create a clone of [this repository](https://github.com/megargayu/ssi-onboarding-26/) using VSCode
 (or a git client of your choice). If you are using VSCode, they provide a
 [tutorial](https://code.visualstudio.com/docs/sourcecontrol/intro-to-git) on how
 to do this.
 
 The rest of this guide takes place from within this folder/repository.
 
-To download the SDK, you need to run
-```
-git submodule update --init
-```
-from within the cloned repository (e.g. `ssi-onboarding-24`). You will need to
-do this once per clone. You should see a bunch of files appear in `pico-sdk/`.
-
-You also need to run the same command within the `pico-sdk` directory:
-
-```
-cd pico-sdk
-git submodule update --init
-```
+Note that the way that this is setup is almost identical to `samwise-flight-software`. There is a lot of stuff in there, so read its `README` to understand it better!
 
 ## Code
 
-Put this in `main.c`
+Put this in `src/main.c`:
+
 ```c
 #include "pico/stdlib.h"
 
@@ -183,70 +186,40 @@ int main() {
 
 ## Building
 
-We use **CMake** to build our project. It is like Makefiles for Makefiles.
-Honestly, it isn't pretty, but it works quite well! CMake needs to be aware of
-all your source files. Each source file is tied to a single *executable* that
-CMake will build.
+Run:
 
-For this example, all you need to do is go to `CMakeLists.txt` and replace `#
-FIXME #` with the name of the c file you put all the prior code into.
-
-In a terminal (e.g. the integrated VSCode terminal), make a new directory called
-`build` (at the same level as `CMakeLists.txt` and `main.c`).
-
-Your directory structure should look like:
-
-```
-ssi-onboarding-24/
-    build/
-    CMakeLists.txt
-    main.c
-    README.md
-    <whatever other files are in here>
+```bash
+bazel build :ssi-onboarding-26 --config=pico
 ```
 
-Because of the way we have configured CMake, there is one weird step. Run these
-commands:
-
-```
-mkdir -p ~/.pico-sdk/cmake
-touch ~/.pico-sdk/cmake/pico-vscode.cmake
-```
-
-Now, enter `build`, then initialize CMake:
-
-```
-cd build/
-cmake ..
-```
-
-Re-run `cmake ..`, and keep repeating this process while pop-ups happen.
-
-Once `cmake ..` has finished, run the following from within `build`:
-```
-make
-```
-
-You should now have a file at
-```
-ssi-onboarding-24/
-    build/
-        onboarding.uf2
-```
-
-You will repeat the `cd build/`, `cmake ..`, and `make` steps every time you want to make changes
+Which should generate a bunch of folders, including most importantly `bazel-bin/ssi-onboarding-26.uf2`, which is the actual binary! This is essentially the same command for `SAMWISE`, except we use `:samwise` (a different target name) and various configurations, as explained briefly above (`.bazelrc`).
 
 ## Uploading
 
-Unplug your pi, hold the button on your pi, plug it in, then move
-`build/onboarding.uf2` into the drive that shows up. The light should start to
-blink!
+1. Unplug your PICO
+2. Hold the BOOT button on your PICO
+3. While holding, plug it in. A window should pop up with a directory that corresponds to the PICO, or it should generally be available in Finder/Windows Explorer/etc.
+4. Copy `bazel-bin/ssi-onboarding-26.uf2` into the drive that shows up.
+5. The folder should close almost immediately, and after the pico reboots, the light should start to blink!
+
+If all of this works, success!
+
+## More
+
+Please keep reading the README.md in the onboarding docs for more in depth and detailed steps! We will not reproduce all of it here.
 
 # Part 3: Samwise Software!
 
 NOTE: If you made it so far, GREAT!
 
-Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `build/src/samwise.uf2` generated (SUCCESS!).
+We can build using:
+
+```bash
+bazel build :samwise --config=picubed-debug
+```
+Which builds a debug build for the actual satellite.
+
+Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `bazel-bin/samwise.uf2` generated (SUCCESS!).
 
 ## Code Structure
 
