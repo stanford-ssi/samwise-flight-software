@@ -34,14 +34,16 @@ We're going to use our actual flight software on a special build (`PICO`) that r
 
 # Part 0: Install
 
-### MacOS
-
 You will need to use the terminal to install some programs. If you are not
 familiar with a terminal, I recommend first installing [Visual Studio
 Code](https://code.visualstudio.com/). Then, you should use the VS Code
 integrated terminal (tutorial
 [here](https://code.visualstudio.com/docs/terminal/basics)). Ubuntu has a neat
 [tutorial](https://ubuntu.com/tutorials/command-line-for-beginners#4-creating-folders-and-files) on terminal usage - ignore the Ubuntu specific stuff.
+
+## MacOS - Homebrew
+
+On MacOS, we will use Homebrew to install everything. This is an extremely useful package manager.
 
 Install Homebrew if you don't already have it:
 
@@ -50,6 +52,76 @@ Install Homebrew if you don't already have it:
 ```
 
 After installing Homebrew, close and re-open your terminal.
+
+## Bazelisk
+
+First, we need to install Bazelisk, our build system manager. You can install it on MacOS with Homebrew:
+
+```bash
+brew install bazelisk
+```
+
+Or find your binary on the [Github Releases Page](https://github.com/bazelbuild/bazelisk/releases).
+
+## Picotool
+
+This is technically optional, but highly recommended for ease of use. Picotool essentially allows you to work directly with the pico without unplugging/plugging/pressing buttons, which can save a lot of time.
+
+### Linux & WSL2
+
+You can find binaries at the [`pico-sdk-tools Github`](https://github.com/raspberrypi/pico-sdk-tools/releases).
+
+I recommend putting your relevant binary in `/usr/local/bin/picotool` and then adding `/usr/local/bin` to `PATH` if it's not there already.
+
+1. To check PATH, run `echo $PATH | grep /usr/local/bin`. If the output has a highlighted version of that string, then you don't need to do anything.
+2. To add to PATH, edit `~/.bashrc` or `~/.zshrc` if you are using `zsh`, and add the line:
+   ```bash
+   export PATH="/usr/local/bin:$PATH"
+   ```
+   Then restart your shell.
+
+### Mac
+
+`brew install picotool` should work.
+
+### Windows
+
+Should be similar to Linux, but I've never tried it before. (Good luck!)
+
+## Tio
+
+This software allows you to communicate with a pico and read its logs.
+
+### Linux
+
+Run `sudo snap install tio --classic`.
+
+If you don't have `snap`, install it, for example, on Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install snapd
+```
+
+Note you may have to add snap's bin to path - so in `.bazelrc` or `.zshrc`:
+
+```bash
+export PATH="/snap/bin:$PATH"
+```
+
+### Mac
+
+`brew install tio`
+
+### Windows
+
+No idea :)
+
+## ARM GCC
+
+We need a specific version of GCC for compilation onto pico.
+
+### MacOS
 
 Install compiler toolchain:
 
@@ -109,12 +181,16 @@ to install the [compiler toolchain](https://developer.arm.com/downloads/-/gnu-rm
 
 [WIP] We can try `MSYS2 + MinGW + `https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads to get windows support, but this has never been tried before.
 
-Tentative steps:
+## Moving on
+
+Now we should be done with installation! Here are our
+tentative steps:
 
 1. Build the project
-2. Use `picotool` to flash onto the PICO
+2. Drag and drop to flash onto the PICO
+3. Use `picotool` to flash onto the PICO
    - If on WSL, use `usbipd`
-3. Finally, use `tio` to listen
+4. Finally, use `tio` to listen
 
 # Part 1: Bazel, Building & Project Structure
 
@@ -173,6 +249,8 @@ Put this in `src/main.c`:
 #include "pico/stdlib.h"
 
 int main() {
+    stdio_usb_init();
+
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
     while (1) {
@@ -198,28 +276,165 @@ Which should generate a bunch of folders, including most importantly `bazel-bin/
 
 1. Unplug your PICO
 2. Hold the BOOT button on your PICO
-3. While holding, plug it in. A window should pop up with a directory that corresponds to the PICO, or it should generally be available in Finder/Windows Explorer/etc.
+3. While holding, plug it in. A window should pop up with a directory that corresponds to the PICO, or it should generally be available in Finder/Windows Explorer/etc. On Mac, a drive called "RP2350" or similar should appear on your desktop.
 4. Copy `bazel-bin/ssi-onboarding-26.uf2` into the drive that shows up.
 5. The folder should close almost immediately, and after the pico reboots, the light should start to blink!
 
 If all of this works, success!
 
-## More
+## Uploading (Cool version)
 
-Please keep reading the README.md in the onboarding docs for more in depth and detailed steps! We will not reproduce all of it here.
+If you are not all about that drag-and-drop life:
+
+1. Unplug your PICO
+2. Hold the BOOT button on your PICO
+3. While holding, plug it in. A window should pop up with a directory that corresponds to the PICO, or it should generally be available in Finder/Windows Explorer/etc. On Mac, a drive called "RP2350" or similar should appear on your desktop.
+4. In the repository, run:
+
+   ```bash
+   picotool load bazel-bin/ssi-onboarding-26.uf2 -f
+   ```
+
+   You may have to click the "RESET" button after doing this - but the LED should start blinking!
+
+   Note that you may have to put `sudo` at the beginning if it doesn't work.
+
+   Additionally, if you are on `WSL`, you must use `usbipd` (see instructions below)
+
+Note this is cool but also useful. You no longer need to reattach and attach the stick now. If you repeat step 5 again and again, it will automatically force the pico to reboot and then flash the new code. Try it out yourself - edit `main.c` and only run step 4 again! (Make sure to build first!).
+
+## WSL2 Integration
+
+If you are on WSL2, you also have to do an additional step:
+
+Your pico is only accessible from Windows by default. In order for WSL to see it, you have to tell Windows to link it into WSL.
+
+Every time you connect the Pico and either want to `tio` or `picotool`, therefore:
+
+1. Unplug your PICO
+2. Hold the BOOT button on your PICO
+3. While holding, plug it in. A window should pop up with a directory that corresponds to the PICO, or it should generally be available in Finder/Windows Explorer/etc. On Mac, a drive called "RP2350" or similar should appear on your desktop.
+4. From powershell, run `usbipd list`. You should see a bunch of stuff, including:
+
+```
+BUSID  VID:PID    DEVICE                                                        STATE
+2-3    2e8a:000f  USB Mass Storage Device, RP2350 Boot                          Not shared
+```
+
+Each `BUSID` is a port on your computer. Therefore, it usually is the same if you plug it into the same port, but can change around otherwise.
+
+5. If `STATE == Not shared`, then run `usbipd bind --busid {your-bus-id}`. For example, I would use `usbipd bind --busid 2-3` for myself. Usually, you only need to do this once, unless you change ports, update, etc.
+
+6. Now that state is shared, run:
+
+   ```powershell
+   usbipd attach --wsl --busid {your-bus-id} --auto-attach
+   ```
+
+   It should output like:
+
+   ```
+   usbipd: info: Using WSL distribution 'Ubuntu' to attach; the device will be available in all WSL 2 distributions.
+   usbipd: info: Loading vhci_hcd module.
+   usbipd: info: Detected networking mode 'nat'.
+   usbipd: info: Using IP address 172.17.192.1 to reach the host.
+   usbipd: info: Starting endless attach loop; press Ctrl+C to quit.
+   WSL Monitoring host 172.17.192.1 for BUSID: 2-3
+   WSL 2026-04-08 17:39:21 Device 2-3 is available. Attempting to attach...
+   WSL 2026-04-08 17:39:21 Attach command for device 2-3 succeeded.
+   ```
+
+   And also make the signature Windows detach noise (indicating it is no longer attached to Windows).
+
+   This will automatically repeatedly attach your pico to WSL, until you quit the program (i.e. CTRL+C). So if you reboot or reflash any software, it will keep trying to attach your pico to WSL.
+
+7. Now, `picotool info` (or `sudo picotool info`) should say something like:
+   ```
+   Program Information
+   binary start:  0x10000000
+   binary end:    0x10003cd4
+   target chip:   RP2350
+   image type:    ARM Secure
+   ```
+   And running step 5 in "Uploading (Cool version)" should now produce a blinking LED! Note that it will make the attach/detach noise a lot of times as the `--auto-attach` in the Powershell window will force it to attach to WSL as soon as possible. This may be annoying; you may have to deal with it :(.
+
+## Reading from PICO
+
+What if we want to read logs in real time?
+
+1. Now, let's edit `main.c` to actually log a counter:
+
+   ```c
+   #include "pico/stdlib.h"
+   #include "pico/printf.h"
+
+   int main() {
+       stdio_usb_init();
+       int counter = 0;
+
+       gpio_init(PICO_DEFAULT_LED_PIN);
+       gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+       while (1) {
+           gpio_put(PICO_DEFAULT_LED_PIN, 0);
+           sleep_ms(250);
+           gpio_put(PICO_DEFAULT_LED_PIN, 1);
+           sleep_ms(1000);
+
+           printf("Hello, world! Our counter is: %d\n", counter);
+           counter++;
+       }
+   }
+   ```
+
+2. Now, before we flash, let's setup `tio` by running (note you may have to add `sudo` to the start of any of these commands if you get a "permission denied"):
+   - Linux/WSL: It should be `tio /dev/ttyACM0`. If not, try repeating similar steps to Mac below, or just looking for an item under `/dev/` that appears when you plug in the pico.
+   - Mac: Try typing `tio /dev/tty.`, then pressing the "TAB" button. You should see a list of items appear - type in the item that starts with `usbmodem` and ends with some number.
+
+     If there are multiple options, try pressing tab before you plug in, and then pressing it after, and seeing which item appeared (which should be the correct one).
+
+     If nothing appears, but your pico is flashing, something is wrong with your port. Try using a different cord or flipping the USB-C Cable (yes, that sometimes works)!
+
+3. Now, either use method (a) or the cool version to build and flash the new code onto the pico.
+4. You should see something like this!:
+
+   ```
+   [17:56:05.115] Waiting for tty device..
+   [17:56:09.122] Connected to /dev/ttyACM0
+   Hello, world! Our counter is: 2
+   Hello, world! Our counter is: 3
+   Hello, world! Our counter is: 4
+   Hello, world! Our counter is: 5
+   Hello, world! Our counter is: 6
+   Hello, world! Our counter is: 7
+   Hello, world! Our counter is: 8
+   Hello, world! Our counter is: 9
+   Hello, world! Our counter is: 10
+   ```
+
+   Note that sometimes the first few logs are not available as `tio` connects after the code already started running on the pico.
 
 # Part 3: Samwise Software!
 
 NOTE: If you made it so far, GREAT!
+
+Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `bazel-bin/samwise.uf2` generated (SUCCESS!).
 
 We can build using:
 
 ```bash
 bazel build :samwise --config=picubed-debug
 ```
+
 Which builds a debug build for the actual satellite.
 
-Try to compile and build our main [repository](https://github.com/stanford-ssi/samwise-flight-software/tree/main/src#building-from-source) you should get a `bazel-bin/samwise.uf2` generated (SUCCESS!).
+Note that if you try to flash this onto your pico, it will cause an error, which is correct!
+This happens because the `picubed-debug` build assumes more components are plugged in/available than the pico has, like the radio, and so it crashes when it can't initialize/find them. Therefore, we have to build for pico itself, which disables these features for testing:
+
+```bash
+bazel build :samwise --config=pico
+```
+
+And then you can flash with the steps provided above! If everything works right, you should get a `print task` that outputs a counter, and periodically a lot of data being spat out (i.e. hardware test task)!
 
 ## Code Structure
 
@@ -242,3 +457,7 @@ You will also see references to a "slate." The slate is a huge block of
 statically allocated memory.
 
 Moving forward, you are going to write your own tasks and test it!
+
+# Part 4: What's next?
+
+You've successfully been onboarded! Now, I would suggest trying to get an understanding of our code base. Look through files, understand what's being outputted on the pico, and read the explanation provided of the files in our onboarding code base [here](https://github.com/megargayu/ssi-onboarding-26/).
