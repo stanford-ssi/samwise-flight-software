@@ -119,6 +119,7 @@ typedef struct samwise_slate
     uint32_t adcs_num_failed_checks;
     adcs_packet_t adcs_telemetry;
     bool is_adcs_telem_valid;
+    queue_t adcs_uart_queue;
 
 } slate_t;
 

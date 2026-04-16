@@ -329,7 +329,8 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
             uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
         }
 
-        if (receive_ack(slate))
+        if (receive_ack(slate)) // Picubed has 3 seconds to acknowledge 1
+                                // response (one iteration of their loop)
         {
             syn_acknowledged = true;
             break;
