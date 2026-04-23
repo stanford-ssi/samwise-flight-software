@@ -15,11 +15,11 @@
 
 void adcs_task_init(slate_t *slate)
 {
-    adcs_driver_init(slate);
+    adcs_driver_init();
 
     slate->adcs_num_failed_checks = 0;
 
-    adcs_driver_power_on(slate);
+    adcs_driver_power_on();
 }
 
 void adcs_task_dispatch(slate_t *slate)
@@ -27,7 +27,7 @@ void adcs_task_dispatch(slate_t *slate)
     neopixel_set_color_rgb(ADCS_TASK_COLOR);
 
     // Check if the board is alive
-    if (!adcs_driver_is_alive(slate))
+    if (!adcs_driver_is_alive())
     {
         // Not alive - increment persistence counter and reboot if persistent
         slate->adcs_num_failed_checks++;
@@ -37,15 +37,15 @@ void adcs_task_dispatch(slate_t *slate)
         {
             slate->adcs_num_failed_checks = 0;
 
-            adcs_driver_power_off(slate);
+            adcs_driver_power_off();
             sleep_ms(100);
-            adcs_driver_power_on(slate);
+            adcs_driver_power_on();
         }
     }
     else
     {
         // Board is alive - get telemetry
-        adcs_driver_get_telemetry(slate, &slate->adcs_telemetry);
+        adcs_driver_get_telemetry(&slate->adcs_telemetry);
     }
 
     neopixel_set_color_rgb(0, 0, 0);
