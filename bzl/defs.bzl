@@ -159,8 +159,8 @@ def samwise_test(name, srcs, deps = [], copts = [], defines = [], **kwargs):
     test_deps = _remap_deps_to_mocks(deps)
 
     # Add standard test infrastructure
-    if "//src/test_infrastructure" not in test_deps:
-        test_deps.append("//src/test_infrastructure")
+    if "//src/test_infrastructure:test_infrastructure" not in test_deps:
+        test_deps.append("//src/test_infrastructure:test_infrastructure")
 
     # Combine defines with TEST flag
     test_defines = list(defines)
@@ -240,6 +240,8 @@ def samwise_integration_test(name, int_src, srcs = [], deps = [], copts = [], de
 
     # cc_test does not support `hdrs`; pop it from kwargs before forwarding.
     hdrs = kwargs.pop("hdrs", [])
+
+    deps = list(deps)  # Make a mutable copy of deps
 
     # Add standard test infrastructure
     if "//src/test_infrastructure:hardware_test_infrastructure" not in deps:
