@@ -25,7 +25,7 @@ bazel test //src/tasks/print:print_test
 
 ### Building Integration Tests (hardware)
 
-Integration tests are compiled into the **bringup** or **pico** firmware image. 
+Integration tests are compiled into the **bringup** or **pico** firmware image.
 They are executed on-device by the `hardware_test_task` scheduler task.
 
 ```bash
@@ -51,12 +51,14 @@ slate_t test_slate;
 
 int main()
 {
+    clear_and_init_slate(&test_slate);
     LOG_DEBUG("Testing my_task");
     ASSERT(my_task.name != NULL);
 
     my_task.task_init(&test_slate);
     my_task.task_dispatch(&test_slate);
 
+    free_slate(&test_slate); // Do this at the end of every unit test!
     return 0;
 }
 ```
@@ -81,6 +83,7 @@ The `samwise_test()` macro handles everything automatically:
 - Adds `//src/test_infrastructure`
 - Defines `TEST=1` for conditional compilation
 - Restricts the target to the host platform
+- See the [list](#available-mocks) of supported hardware mocks
 
 ---
 
@@ -94,15 +97,17 @@ Integration tests exercise real hardware. They are compiled into a
 
 1. **`samwise_integration_test()`** creates a `cc_library` named
    `<name>_hw_lib`. It produces two kinds of compiled objects:
-   - The **integration entry point** (`int_src`) should contain `<name>_int_main` 
-     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that 
+   - The **integration entry point** (`int_src`) should contain `<name>_int_main`
+     as a function, giving it a unique symbol (e.g. `mram_test_int_main`) that
      `hardware_test_task` calls at runtime.
    - Any **shared helper sources** (`srcs`) are compiled with
      `-Dmain=_unused_<name>_main_`, which discards their `main()` so it is
      never linked or called — letting you reuse the same test file in both
      `samwise_test()` and `samwise_integration_test()` without conflicts.
 
-2. **`hardware_integration_test_suite()`** collects all `_hw_lib` targets and
+Therefore, the pattern for writing a `test` and an `int_test` is to have a `<name>_test.c` file which has unit tests and a `main()` function, a `<name>_test.h` file with just stubs for the unit tests/shared tests between integration and normal tests, and a `<name>_int_test.c` file that has a single function, `<name>_int_main()` that is run by `hardware_test_task` and can reference anything in `<name>_test.h`. A good example of this is the `filesys` and `mram` tests which are both located in `src/filesys/test/`.
+
+2. **`hardware_integration_test_suite()`** collects all `_hw_lib` targets specified in the function and
    auto-generates `hardware_tests.h` at build time (via
    `//bzl:gen_hw_tests_header`). The generated header declares every
    `<name>_int_main()` entry point and defines `HW_TEST_TABLE`, a struct array
@@ -142,7 +147,7 @@ runtime:
 // src/drivers/my_driver/test/my_driver_integration_test.c
 #include "my_driver_test.h"
 
-void my_driver_test_int_main(void)
+void main(void)
 {
     LOG_DEBUG("Starting my_driver integration tests\n");
     my_driver_init();
@@ -177,7 +182,7 @@ samwise_integration_test(
     int_src = "my_driver_integration_test.c",
     srcs = ["my_driver_test.c"],       # shared helper — its main() is discarded
     hdrs = ["my_driver_test.h"],
-    deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
+    deps = _DEPS,
 )
 ```
 
@@ -205,38 +210,133 @@ hardware_integration_test_suite(
         "filesys_test":   "//src/filesys/test:filesys_test_hw_lib",
         "my_driver_test": "//src/drivers/my_driver/test:my_driver_test_hw_lib",  # NEW
     },
-    extra_deps = [
-        "//src/common",
-        "//src/drivers/logger",
-        # ... any additional shared link-time deps ...
-    ],
 )
 ```
 
 That's it! The next bringup or pico build will automatically include your test.
 
-### Using `hardware_test_assert`
+### Using `test_harness`
 
-Integration tests run on hardware where a `fatal_error()` would halt the MCU
-and prevent remaining tests from executing. The
-`//src/tasks/hardware_test:hardware_test_assert` library provides a non-fatal
-`ASSERT` override that logs failures via `LOG_ERROR` instead of aborting, so the
-full test suite always runs to completion.
+A test harness for running and reporting on groups of test cases has been
+provided in `src/test_infrastructure/` and is automatically linked during
+`samwise_test` and/or `samwise_integration_test`.
 
-Add it to your integration test's `deps`:
+#### 1. Write test functions that return `int`
 
-```starlark
-deps = _DEPS + ["//src/tasks/hardware_test:hardware_test_assert"],
+Each test function must return `0` on success or non-zero on failure. Use the
+`TEST_ASSERT` macro for assertions — it logs the failure message and returns
+`-1` automatically:
+
+```c
+// src/drivers/my_driver/test/my_driver_test.c
+#include "my_driver_test.h"
+
+int test_my_driver_read(void)
+{
+    uint8_t buf[16] = {0};
+    my_driver_read(buf, sizeof(buf));
+    TEST_ASSERT(buf[0] == 0xAB, "First byte should be 0xAB");
+    return 0;
+}
+
+int test_my_driver_write(void)
+{
+    int rc = my_driver_write(data, sizeof(data));
+    TEST_ASSERT(rc == 0, "Write should succeed");
+    return 0;
+}
 ```
+
+#### 2. Define a test case table
+
+Build an array of `test_harness_case_t` entries. Each entry has a unique
+numeric ID, a function pointer, and a human-readable name:
+
+```c
+// src/drivers/my_driver/test/my_driver_test.c (continued)
+const test_harness_case_t my_driver_tests[] = {
+    {0, test_my_driver_read,  "Read"},
+    {1, test_my_driver_write, "Write"},
+};
+const size_t my_driver_tests_len =
+    sizeof(my_driver_tests) / sizeof(my_driver_tests[0]);
+```
+
+Export the table and its length in the shared header so both unit and
+integration entry points can reference it:
+
+```c
+// src/drivers/my_driver/test/my_driver_test.h
+#include "test_harness.h"
+
+int test_my_driver_read(void);
+int test_my_driver_write(void);
+
+extern const test_harness_case_t my_driver_tests[];
+extern const size_t my_driver_tests_len;
+```
+
+#### 3. Run the suite
+
+Call `test_harness_run` from your entry point (`main()` for unit tests,
+and for integration tests). It runs every case, logs
+pass/fail results, and returns `0` if all tests passed or `-1` if any failed:
+
+```c
+// Unit test entry point
+int main(void)
+{
+    return test_harness_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func);
+}
+```
+
+A slate initialized with `clear_and_init_slate`, or `my_init_func` if it is non-`NULL`, is provided to every test. When a custom `my_init_func` is provided, it is responsible for fully initializing the slate itself (typically by calling `clear_and_init_slate` at the start, or by performing equivalent initialization), because the harness does not call `clear_and_init_slate` automatically before invoking your custom initializer.
+
+#### 4. Run a subset of tests (optional)
+
+To run only specific tests by ID, use `test_harness_include_run`:
+
+```c
+uint16_t ids[] = {0, 2};
+test_harness_include_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func,
+                         ids, 2);
+```
+
+To run all tests _except_ certain IDs, use `test_harness_exclude_run`:
+
+```c
+uint16_t skip[] = {1};
+test_harness_exclude_run("My Driver", my_driver_tests, my_driver_tests_len, my_init_func,
+                         skip, 1);
+```
+
+#### 5. Integration tests
+
+Note that because we export the tests array in the header file, we can easily use the same `test_harness_run` function in integration tests! In fact, you can copy paste the same code described in (3) or (4) into the integration test file as well.
+
+See `src/filesys/test/` for a complete working example of the test harness
+in use.
 
 ---
 
-### 3. Update Your Task's CMakeLists.txt
+## How It Works
+
+### Mock Substitution (Unit Tests)
+
+The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
+`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
+declares a dependency like `//src/drivers/rfm9x`, the macro transparently
+replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
+
+- Your test source files use the same `#include` paths as production code.
+- No wrapper headers, special include directories, or `#ifdef TEST` guards are
+  needed.
+- The mock implementations are linked instead of the real hardware drivers.
 
 The following embedded dependencies are automatically mocked when using
 `samwise_test()`:
 
-## Available Mocks
+#### Available Mocks
 
 | Real Header                       | Mock Location        | Functionality                                        |
 | --------------------------------- | -------------------- | ---------------------------------------------------- |
@@ -255,7 +355,7 @@ The following embedded dependencies are automatically mocked when using
 | `error.h`                         | error_mock.c         | Prints fatal error and calls `exit(1)`               |
 | `state_ids.h` / `state_machine.h` | state_mock.c         | Defines stub scheduler states with no-op transitions |
 
-### Pico SDK Mocks (test_mocks)
+#### Pico SDK Mocks (test_mocks)
 
 | Real Header         | Mock Location     | Functionality                               |
 | ------------------- | ----------------- | ------------------------------------------- |
@@ -272,20 +372,6 @@ The following embedded dependencies are automatically mocked when using
 | `pico/types.h`      | types.h           | Pico SDK type definitions                   |
 | `pico/unique_id.h`  | unique_id.h       | Board unique ID API (no-op)                 |
 | `pico/util/queue.h` | queue.h           | Pico queue utility API (no-op)              |
-
-## How It Works
-
-### Mock Substitution (Unit Tests)
-
-The `samwise_test()` macro uses a mapping table (`_MOCK_MAPPINGS` in
-`bzl/defs.bzl`) to rewrite dependency labels at analysis time. When your test
-declares a dependency like `//src/drivers/rfm9x`, the macro transparently
-replaces it with `//src/drivers/rfm9x:rfm9x_mock`. This means:
-
-- Your test source files use the same `#include` paths as production code.
-- No wrapper headers, special include directories, or `#ifdef TEST` guards are
-  needed.
-- The mock implementations are linked instead of the real hardware drivers.
 
 ### Integration Test Symbol Renaming
 
@@ -324,11 +410,9 @@ one-line edit in the `tests` dict.
 2. **One test per file** — easier to debug
 3. **Use meaningful names** — `my_task_test.c`, not `test1.c`
 4. **Use `ASSERT()`** to verify behavior
-5. **Initialize state** — create a fresh `slate_t` for each test
+5. **Initialize state** — create a fresh `slate_t` for each test, using `clear_and_init_slate()`
 6. **Share test logic** — write core test functions in a shared `.c`/`.h` pair
    and reuse them in both `samwise_test()` and `samwise_integration_test()`
-7. **Add `hardware_test_assert`** to integration test deps so failures don't
-   halt the MCU
 
 ## Troubleshooting
 

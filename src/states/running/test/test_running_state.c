@@ -142,7 +142,12 @@ void test_state_transition()
     LOG_DEBUG("=== Test 4: State transition ===");
     log_viz_event("test_start", NULL, "state_transition");
 
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     test_slate.current_state_id = STATE_RUNNING;
 
     // Running state should always return itself
@@ -154,6 +159,7 @@ void test_state_transition()
 
     log_viz_event("test_pass", NULL, "state_transition");
     LOG_DEBUG("✓ Test 4 passed");
+    free_slate(&test_slate);
 }
 
 /**
@@ -165,7 +171,12 @@ void test_scheduler_execution()
     log_viz_event("test_start", NULL, "scheduler_execution");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state_id = STATE_RUNNING;
@@ -199,13 +210,14 @@ void test_scheduler_execution()
 
     log_viz_event("test_pass", NULL, "scheduler_execution");
     LOG_DEBUG("✓ Test 5 passed");
+    free_slate(&test_slate);
 }
 
 int main()
 {
     LOG_DEBUG("=== Running State Tests (Real Tasks) ===");
 
-    viz_log_open("running_state_viz.json");
+    viz_log_open_log_dir("running_state_viz.json");
 
     mock_time_us = 0;
 

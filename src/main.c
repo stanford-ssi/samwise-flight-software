@@ -33,11 +33,23 @@ static_assert(PICO_RP2350A == 0,
  */
 int main()
 {
+    if (clear_and_init_slate(&slate) != 0)
+    {
+        ERROR("main: Failed to initialize slate! THIS IS REALLY BAD! "
+              "Continuing with half-initialized slate, but expect more errors "
+              "down the line...");
+        // We won't exit, as most likely only filesys failed. We will just keep
+        // running without a slate, but this is really bad and will likely cause
+        // more errors down the line.
+    }
+
 #ifndef TEST
     // Initialize USB stdio early for PICO platform so logging works
     stdio_usb_init();
 #endif
 
+    sleep_ms(1000); // Sleep for a bit to let the USB connection establish for
+                    // logging
     LOG_DEBUG("main: Starting main function...");
 
 #ifndef PICO
@@ -65,13 +77,16 @@ int main()
     // exolaunch deployment chute.
     safe_sleep_ms(15 * 60 * 1000); // 15 minutes
 #else
+    LOG_DEBUG("main: Sleeping 5s...");
     safe_sleep_ms(5000); // 5 second for debugging
+    LOG_DEBUG("main: Sleep done");
 #endif
 
     /*
      * Initialize persistent data or load existing data if already in flash.
      * The reboot counter is incremented each time this code runs.
      */
+    LOG_DEBUG("main: Initializing persistent data...");
     persistent_data_t *data = init_persistent_data();
     LOG_DEBUG("main: Persistent data initialized, reboot count = %d",
               data->reboot_counter);
@@ -83,6 +98,7 @@ int main()
      */
     LOG_DEBUG("main: Slate uses %d bytes", sizeof(slate));
     LOG_INFO("main: Initializing...");
+    LOG_DEBUG("main: Calling init()...");
     ASSERT(init(&slate));
     slate.reboot_counter = data->reboot_counter;
 

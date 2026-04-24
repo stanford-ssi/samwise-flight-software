@@ -1,13 +1,12 @@
-import logging
-
 import adafruit_rfm9x
 import board
 import busio
 import digitalio
 
 import config
+from logger import get_logger
 
-logger = logging.getLogger("GS.RadioInit")
+logger = get_logger("GS.RadioInit")
 
 # Global hardware objects
 rfm9x = None
@@ -46,8 +45,8 @@ def get_board_pins(board_type):
             "MOSI": board.MOSI,  # Usually D23
             "MISO": board.MISO,  # Usually D22
             "SCK": board.SCK,  # Usually D24
-            "CS": board.A5,  # Analog pin 5
-            "RESET": board.D5,  # Digital pin 5
+            "CS": board.D10,  # Digital pin 10
+            "RESET": board.D11,  # Digital pin 11
             "LED": board.D13,  # Built-in LED
         }
     elif board_type == "RPI":
@@ -76,6 +75,10 @@ def initialize():
     """Initialize hardware and radio"""
     global rfm9x, led, spi, cs, reset
 
+    # Guard against double initialization (pins can only be claimed once)
+    if rfm9x is not None:
+        return rfm9x
+
     # Detect board and configure pins
     board_type = detect_board()
     logger.info("Detected board: %s", board_type)
@@ -91,10 +94,9 @@ def initialize():
         pins["RESET"],
     )
 
-    # Setup LED
-    if pins.get("LED") is not None:
-        led = digitalio.DigitalInOut(pins["LED"])
-        led.direction = digitalio.Direction.OUTPUT
+    # Setup LED (may already be in use by the system)
+    led = digitalio.DigitalInOut(pins["LED"])
+    led.direction = digitalio.Direction.OUTPUT
 
     # Setup Radio
     spi = busio.SPI(pins["SCK"], MOSI=pins["MOSI"], MISO=pins["MISO"])
