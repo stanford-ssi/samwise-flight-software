@@ -2516,5 +2516,6 @@ const size_t filesys_tests_len =
 
 int main()
 {
-    return filesys_test_probe_max_file_capacity();
+    return test_harness_run("Filesys", filesys_tests, filesys_tests_len,
+                            filesys_test_setup);
 }

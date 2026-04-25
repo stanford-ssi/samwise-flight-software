@@ -16,7 +16,7 @@ const struct lfs_config filesys_lfs_cfg = {
     .prog = lfs_mram_wrap_prog,
     .erase = lfs_mram_wrap_erase,
     .sync = lfs_mram_wrap_sync,
-#else
+#else // This is not really used right now, but kept for legacy.
     .read = lfs_gen_flash_wrap_read,
     .prog = lfs_gen_flash_wrap_prog,
     .erase = lfs_gen_flash_wrap_erase,

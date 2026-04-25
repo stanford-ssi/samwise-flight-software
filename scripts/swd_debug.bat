@@ -7,6 +7,9 @@ rem
 rem This starts OpenOCD as a GDB server on port 3333, then connects
 rem arm-none-eabi-gdb. The firmware is flashed before debugging begins.
 
+rem Note this never really worked, and was not tested extensively. If this is useful in
+rem the future, try it out!
+
 IF "%1"=="" (SET CONFIG=--config=picubed-debug) ELSE (SET CONFIG=%1)
 
 FOR /F "tokens=*" %%i IN ('git rev-parse --show-toplevel') DO SET REPO_ROOT=%%i

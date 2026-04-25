@@ -1,5 +1,8 @@
 # MRAM Driver — Proposed Changes
 
+THIS DOC IS OLD/MOSTLY IRRELEVANT NOW. If there are any issues in the future, 
+however, this can be referenced.
+
 This document lists known discrepancies between `mram_mock.c` and `mram.c` that need
 to be fixed, along with the downstream test impact of each.
 
