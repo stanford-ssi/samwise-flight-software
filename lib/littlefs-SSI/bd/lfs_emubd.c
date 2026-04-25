@@ -196,7 +196,7 @@ int lfs_emubd_destroy(const struct lfs_config *cfg) {
     }
     free(bd->blocks);
 
-    // clean up other resources 
+    // clean up other resources
     lfs_emubd_decblock(bd->ooo_data);
     if (bd->disk) {
         bd->disk->rc -= 1;
@@ -314,7 +314,7 @@ int lfs_emubd_read(const struct lfs_config *cfg, lfs_block_t block,
         memset(buffer,
                 (bd->cfg->erase_value != -1) ? bd->cfg->erase_value : 0,
                 size);
-    }   
+    }
 
     // track reads
     bd->readed += size;
@@ -736,4 +736,3 @@ int lfs_emubd_copy(const struct lfs_config *cfg, lfs_emubd_t *copy) {
     LFS_EMUBD_TRACE("lfs_emubd_copy -> %d", 0);
     return 0;
 }
-

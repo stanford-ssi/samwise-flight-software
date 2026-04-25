@@ -86,7 +86,7 @@ intmax_t bench_define(size_t define);
 #define BENCH_DEFINE(i) bench_define(i)
 
 // a few preconfigured defines that control how benches run
- 
+
 #define READ_SIZE_i          0
 #define PROG_SIZE_i          1
 #define ERASE_SIZE_i         2

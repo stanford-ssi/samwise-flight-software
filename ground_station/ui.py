@@ -239,12 +239,15 @@ def interactive_command_loop():
             # 3. Periodic status line to show we're alive
             current_time = time.monotonic()
             if current_time - last_status_time > status_interval:
+                pass
+                """
                 print(
                     f"\r[STATUS] Monitoring... Boot:{state_manager.boot_count} MsgID:{state_manager.msg_id}   ",
                     end="",
                     flush=True,
                 )
                 last_status_time = current_time
+                """
 
             time.sleep(0.01)  # Low latency
 

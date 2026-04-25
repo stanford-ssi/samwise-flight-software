@@ -22,6 +22,7 @@ typedef enum
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
     MANUAL_STATE_OVERRIDE,
+    PAYLOAD_SHUTDOWN,
     ADCS_EXEC,
     ADCS_PACKET
     // add more commands here as needed

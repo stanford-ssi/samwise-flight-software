@@ -22,7 +22,7 @@ code = '''
 
     lfs_file_close(&lfs, &file) => 0;
     lfs_unmount(&lfs) => 0;
-    
+
     lfs_mount(&lfs, cfg) => 0;
     lfs_file_open(&lfs, &file, "baldynoop", LFS_O_RDWR) => 0;
     lfs_file_size(&lfs, &file) => LARGESIZE;
