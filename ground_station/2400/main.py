@@ -1,6 +1,5 @@
 import os
 import subprocess
-import RPi.GPIO as gpio
 from setup import initialize
 
 RX_2400_EXECUTABLE = "/home/pi/radio/build/Lora_rx"
@@ -51,14 +50,14 @@ def turn_on_2400():
     '''
     Turn on the 2400 radio - will be run automatically
     '''
-    gpio.output(RADIO_2400_ENABLE, 1)
+    subprocess.run(["pinctrl", "set", str(RADIO_2400_ENABLE), "op", "dh"], check=True)
 
 
 def turn_off_2400():
     '''
     Turn off the 2400 radio - must be run manually!
     '''
-    gpio.output(RADIO_2400_ENABLE, 0)
+    subprocess.run(["pinctrl", "set", str(RADIO_2400_ENABLE), "op", "dl"], check=True)
 
 
 def main():
