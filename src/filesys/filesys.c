@@ -520,7 +520,6 @@ void filesys_clear_buffer(slate_t *slate)
     slate->filesys_buffer_is_dirty = false;
     for (FILESYS_BUFFER_SIZE_T i = 0; i < FILESYS_BUFFER_SIZE; i++)
         slate->filesys_buffer[i] = 0; // Clear buffer contents
-
 }
 
 filesys_error_t filesys_cancel_file_write(slate_t *slate,

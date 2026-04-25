@@ -380,8 +380,7 @@ int test_flash_wrap_erase(slate_t *slate)
                             sizeof(read_buf));
     for (int i = 0; i < 16; i++)
     {
-        TEST_ASSERT(read_buf[i] == 0xFF,
-                    "erased block should read 0xFF");
+        TEST_ASSERT(read_buf[i] == 0xFF, "erased block should read 0xFF");
     }
     return 0;
 }
@@ -472,8 +471,8 @@ int test_flash_wrap_lfs_write_read_file(slate_t *slate)
     lfs_file_t file;
     struct lfs_file_config file_cfg = {.buffer = file_buf};
 
-    err = lfs_file_opencfg(&lfs, &file, "test.txt",
-                           LFS_O_WRONLY | LFS_O_CREAT, &file_cfg);
+    err = lfs_file_opencfg(&lfs, &file, "test.txt", LFS_O_WRONLY | LFS_O_CREAT,
+                           &file_cfg);
     TEST_ASSERT(err == 0, "file open for write should succeed");
 
     const char *msg = "Hello from flash mock!";
@@ -487,7 +486,8 @@ int test_flash_wrap_lfs_write_read_file(slate_t *slate)
     TEST_ASSERT(err == 0, "file open for read should succeed");
 
     char read_buf[64] = {0};
-    lfs_ssize_t bytes_read = lfs_file_read(&lfs, &file, read_buf, sizeof(read_buf));
+    lfs_ssize_t bytes_read =
+        lfs_file_read(&lfs, &file, read_buf, sizeof(read_buf));
     TEST_ASSERT(bytes_read == (lfs_ssize_t)strlen(msg),
                 "should read back same number of bytes");
     TEST_ASSERT(memcmp(read_buf, msg, strlen(msg)) == 0,
@@ -512,7 +512,8 @@ const test_harness_case_t mram_tests[] = {
     {7, test_mram_write_exceeds_max_length, "Write Exceeds Max Length"},
     {8, test_mram_clear_exceeds_max_length, "Clear Exceeds Max Length"},
     {9, test_mram_write_overwrite, "Write Overwrite"},
-    {10, test_mram_multiple_independent_regions, "Multiple Independent Regions"},
+    {10, test_mram_multiple_independent_regions,
+     "Multiple Independent Regions"},
     {11, test_mram_adjacent_regions_no_bleed, "Adjacent Regions No Bleed"},
     {12, test_mram_full_byte_range, "Full Byte Range"},
     {13, test_mram_single_byte_write_read, "Single Byte Write/Read"},
