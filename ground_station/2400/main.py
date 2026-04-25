@@ -2,8 +2,12 @@ import os
 import subprocess
 from setup import initialize
 
-RX_2400_EXECUTABLE = "/home/pi/radio/build/Lora_rx"
-TX_2400_EXECUTABLE = "/home/pi/radio/build/Lora_tx"
+# Resolve the Lora_{rx,tx} executables relative to this file so the listener
+# works regardless of where the repo is checked out. Build them with:
+#   cd ground_station/2400/radio && mkdir -p build && cd build && cmake .. && make -j4
+_HERE = os.path.dirname(os.path.abspath(__file__))
+RX_2400_EXECUTABLE = os.path.join(_HERE, "radio", "build", "Lora_rx")
+TX_2400_EXECUTABLE = os.path.join(_HERE, "radio", "build", "Lora_tx")
 
 IMAGES_DIR = "/home/pi/images"
 VIDEOS_DIR = "/home/pi/videos"
