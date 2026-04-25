@@ -33,11 +33,11 @@ def get_board_pins(board_type):
     """Get pin configuration for specific board"""
     if board_type == "PICO2":
         return {
-            "MOSI": board.GP15,
-            "MISO": board.GP12,
-            "SCK": board.GP14,
-            "CS": board.GP13,
-            "RESET": board.GP11,
+            "MOSI": board.GP19,
+            "MISO": board.GP16,
+            "SCK": board.GP18,
+            "CS": board.GP17,
+            "RESET": board.GP21,
             "LED": board.LED,
         }
     elif board_type == "FEATHER_M4":

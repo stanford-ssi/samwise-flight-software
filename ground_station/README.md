@@ -1,12 +1,12 @@
 # Samwise Ground Station
 
-An optimized, mission-ready LoRA communication system designed for coordinating 
-with the Samwise Cubesat. Optimized for high-performance monitoring on 
+An optimized, mission-ready LoRA communication system designed for coordinating
+with the Samwise Cubesat. Optimized for high-performance monitoring on
 Raspberry Pi or CircuitPython microcontrollers.
 
 ## 📁 System Architecture
 
-The ground station is designed with a modular, object-oriented architecture to 
+The ground station is designed with a modular, object-oriented architecture to
 ensure reliable data capture even during high-throughput satellite passes.
 
 ```text
@@ -15,25 +15,25 @@ ground_station/              # Python package (imported as 'gs')
 ├── requirements.txt         # Python dependencies (Pydantic for RPi,
 │                            # optional on CircuitPython)
 ├── __init__.py              # Module initialization exposing main APIs
-├── config.py                # Radio/protocol settings with flight 
+├── config.py                # Radio/protocol settings with flight
 │                            # software code pointers
-├── radio_initialization.py  # Platform-agnostic hardware setup 
+├── radio_initialization.py  # Platform-agnostic hardware setup
 │                            # (Pi/Pico/Feather)
-├── radio_commands.py        # OOP LoraRadio class with high-level 
+├── radio_commands.py        # OOP LoraRadio class with high-level
 │                            # mission commands
-├── protocol.py              # Packet architecture: Base Packet class 
+├── protocol.py              # Packet architecture: Base Packet class
 │                            # with inheritance
-├── ui.py                    # Non-blocking Interactive UI and Debug 
+├── ui.py                    # Non-blocking Interactive UI and Debug
 │                            # Listen modes
-├── state.py                 # Optimized persistent state manager (low 
+├── state.py                 # Optimized persistent state manager (low
 │                            # file I/O)
-├── models.py                # Data models: Packet, BeaconPacket, 
+├── models.py                # Data models: Packet, BeaconPacket,
 │                            # AdcsTelemetryPacket
-│                            # (Pydantic on RPi, simple classes on 
+│                            # (Pydantic on RPi, simple classes on
 │                            # CircuitPython)
-├── logger.py                # Mission telemetry logger (CSV + structured 
+├── logger.py                # Mission telemetry logger (CSV + structured
 │                            # console)
-├── logs/                    # Persistent telemetry CSV archives 
+├── logs/                    # Persistent telemetry CSV archives
 │                            # (Auto-generated)
 ├── lib/                     # CircuitPython libraries (.mpy files)
 │   ├── adafruit_rfm9x.mpy
@@ -45,38 +45,38 @@ ground_station/              # Python package (imported as 'gs')
 ### Key Architectural Improvements:
 
 #### Object-Oriented Radio Interface
-The **`LoraRadio`** class in `radio_commands.py` provides a clean OOP wrapper 
-around the low-level RFM9x hardware, encapsulating both hardware access and 
+The **`LoraRadio`** class in `radio_commands.py` provides a clean OOP wrapper
+around the low-level RFM9x hardware, encapsulating both hardware access and
 high-level mission commands.
 
 #### Packet Inheritance Hierarchy
-The **`Packet`** base class in `models.py` handles radio-level protocol 
-(authentication, parsing), while specialized classes like **`BeaconPacket`** 
+The **`Packet`** base class in `models.py` handles radio-level protocol
+(authentication, parsing), while specialized classes like **`BeaconPacket`**
 and **`AdcsTelemetryPacket`** understand their specific data formats.
 
 #### Optimized State Management
-The **`StateManager`** in `state.py` minimizes file I/O for high-throughput 
-scenarios (file transfer protocol requires tens of thousands of packets), using 
+The **`StateManager`** in `state.py` minimizes file I/O for high-throughput
+scenarios (file transfer protocol requires tens of thousands of packets), using
 batched writes and atomic file operations.
 
 #### Flight Software Integration
-All configuration in **`config.py`** includes code pointers to corresponding 
-flight software implementations, ensuring ground station and satellite stay 
+All configuration in **`config.py`** includes code pointers to corresponding
+flight software implementations, ensuring ground station and satellite stay
 synchronized.
 
 ### Why we split the software this way:
-*   **Separation of Concerns**: Decouples radio hardware 
-(`radio_initialization.py`) from orbital protocol (`protocol.py`) and operator 
+*   **Separation of Concerns**: Decouples radio hardware
+(`radio_initialization.py`) from orbital protocol (`protocol.py`) and operator
 interface (`ui.py`).
-*   **Mission Reliability**: Heavy operations like telemetry logging and state 
-persistence are optimized to prevent blocking the mission-critical radio 
+*   **Mission Reliability**: Heavy operations like telemetry logging and state
+persistence are optimized to prevent blocking the mission-critical radio
 polling loop.
-*   **Type Safety**: Data models provide structured validation (Pydantic on 
-RPi, simple classes on CircuitPython) to ensure malformed satellite data is 
+*   **Type Safety**: Data models provide structured validation (Pydantic on
+RPi, simple classes on CircuitPython) to ensure malformed satellite data is
 caught and handled.
-*   **Platform Compatibility**: Automatic detection and graceful degradation 
+*   **Platform Compatibility**: Automatic detection and graceful degradation
 between CPython (RPi) and CircuitPython (Pico/Feather).
-*   **Maintainability**: Code pointers to flight software ensure ground station 
+*   **Maintainability**: Code pointers to flight software ensure ground station
 configurations stay synchronized with satellite implementations.
 
 ---
@@ -84,7 +84,7 @@ configurations stay synchronized with satellite implementations.
 ## 🚀 Getting Started
 
 ### 1. Main Entrypoint
-The **`code.py`** file is the system's entrypoint. It initializes the hardware, 
+The **`code.py`** file is the system's entrypoint. It initializes the hardware,
 loads the latest mission state, and launches the operator menu.
 
 ### 2. Running on Raspberry Pi (Recommended)
@@ -107,7 +107,7 @@ pip3 install -e .[dev]
 python3 code.py
 ```
 
-**Verify Blinka**: Ensure the Adafruit Blinka library is configured for your 
+**Verify Blinka**: Ensure the Adafruit Blinka library is configured for your
 Pi's hardware pins.
 
 ### 3. Running on CircuitPython Microcontrollers (Pico 2 / Feather M4)
@@ -122,16 +122,16 @@ Perfect for portable/field ground stations.
 #### Step-by-Step Deployment
 
 **1. Install CircuitPython Firmware**
-- **Pico 2**: Download from 
+- **Pico 2**: Download from
 [circuitpython.org/board/raspberry_pi_pico2](https://circuitpython.org/board/raspberry_pi_pico2/)
-- **Feather M4**: Download from 
+- **Feather M4**: Download from
 [circuitpython.org/board/feather_m4_express](https://circuitpython.org/board/feather_m4_express/)
 - Hold BOOTSEL button while plugging in USB
 - Drag the `.uf2` file to the `RPI-RP2` drive
 - Board will reboot and appear as `CIRCUITPY`
 
 **2. Install Required Libraries**
-The ground station needs these CircuitPython libraries (already included in 
+The ground station needs these CircuitPython libraries (already included in
 `lib/`):
 ```bash
 # Copy the entire lib/ folder to your device
@@ -206,7 +206,7 @@ Enter choice (1 or 2):
 - **No Pydantic**: Models use simple Python classes instead (automatic fallback)
 - **Limited CSV logging**: Works but may be slower for high-throughput scenarios
 - **Degraded interactive mode**: Input checking uses polling instead of `select()`
-- **Memory constraints**: Less RAM available than RPi (2MB on Pico vs 1GB+ on 
+- **Memory constraints**: Less RAM available than RPi (2MB on Pico vs 1GB+ on
 RPi)
 
 ✅ **What Works on CircuitPython:**
@@ -254,19 +254,19 @@ MemoryError: memory allocation failed
 ### 📡 Debug Listen Mode
 A "read-only" high-speed monitoring mode.
 *   **Continuous radio polling**: Optimized for 10ms latency.
-*   **Automated Beacon Decoding**: Instantly parses incoming beacons into 
+*   **Automated Beacon Decoding**: Instantly parses incoming beacons into
 human-readable telemetry.
-*   **UTC Centric**: All timestamps follow ISO-8601 UTC for coordination with 
+*   **UTC Centric**: All timestamps follow ISO-8601 UTC for coordination with
 mission TLEs.
 
 ### 🎮 Interactive Command Mode
 The primary mode for satellite control.
-*   **Non-Blocking Logic**: The radio continues to monitor for satellite 
-packets *even while you are typing commands*. You will never miss data while 
+*   **Non-Blocking Logic**: The radio continues to monitor for satellite
+packets *even while you are typing commands*. You will never miss data while
 interacting with the menu.
-*   **HMAC Authentication**: Every outgoing command is cryptographically signed 
+*   **HMAC Authentication**: Every outgoing command is cryptographically signed
 and sequence-checked to prevent replays.
-*   **Lazy Saving**: State is cached in RAM and committed to the SD card 
+*   **Lazy Saving**: State is cached in RAM and committed to the SD card
 periodically to protect your hardware during high-speed burst operations.
 
 ---
@@ -274,25 +274,25 @@ periodically to protect your hardware during high-speed burst operations.
 ## 📊 Mission Telemetry
 
 Every packet received is automatically archived in **`logs/telemetry_log.csv`**.
-*   **Raw Traceability**: The logs include the raw hex payload for forensic 
+*   **Raw Traceability**: The logs include the raw hex payload for forensic
 recovery.
-*   **Link Quality**: RSSI and SNR (Signal-to-Noise Ratio) are tracked for 
+*   **Link Quality**: RSSI and SNR (Signal-to-Noise Ratio) are tracked for
 every packet to analyze antenna performance during a pass.
 
 ---
 
 ## ⚙️ Configuration
 
-Mission-specific settings (Frequency: 438.1 MHz, HMAC Keys, etc.) should be 
+Mission-specific settings (Frequency: 438.1 MHz, HMAC Keys, etc.) should be
 adjusted in **`config.py`**.
 
-**Note**: The ground station automatically synchronizes its `boot_count` 
-whenever it hears a beacon, ensuring that your next command is always correctly 
+**Note**: The ground station automatically synchronizes its `boot_count`
+whenever it hears a beacon, ensuring that your next command is always correctly
 authenticated without manual setup.
 
 ### 🛡️ Packet Filtering (Noise Rejection)
 
-The ground station includes built-in filters to reject noisy packets not from 
+The ground station includes built-in filters to reject noisy packets not from
 the Samwise satellite:
 
 #### **1. RSSI Threshold Filter**
@@ -310,7 +310,7 @@ PACKET DROPPED | RSSI too low: -125 dBm < -120 dBm threshold
 ```
 
 #### **2. Callsign Verification**
-Verifies that beacons contain the expected amateur radio callsign suffix 
+Verifies that beacons contain the expected amateur radio callsign suffix
 (**KC3WNY**) assigned to Samwise.
 
 ```python
@@ -354,5 +354,5 @@ config = {
 | **Memory Available** | 1GB+ | ~2MB |
 | **Best Use Case** | **Permanent ground stations** | **Portable/field operations** |
 
-**Recommendation**: Use **Raspberry Pi** for primary ground stations. Use 
+**Recommendation**: Use **Raspberry Pi** for primary ground stations. Use
 **CircuitPython** devices for portable/backup stations.

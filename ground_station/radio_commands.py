@@ -199,9 +199,10 @@ class LoraRadio:
         """Send manual state override command"""
         self.send_command(config.MANUAL_STATE_OVERRIDE, state_name)
 
-    def send_adcs_exec(self, command_byte)
+    def send_adcs_exec(self, command_byte):
         """Send single command byte to adcs"""
         self.send_command(config.ADCS_EXEC, command_byte)
+
 
 # Singleton management handled during initialization
 radio = None
