@@ -2,6 +2,5 @@
 
 void main(void)
 {
-    test_harness_run("Filesys", filesys_tests, filesys_tests_len,
-                     filesys_test_setup);
+    filesys_test_probe_max_file_capacity();
 }

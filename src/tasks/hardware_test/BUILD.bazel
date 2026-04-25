@@ -14,7 +14,7 @@ package(default_visibility = ["//visibility:public"])
 hardware_integration_test_suite(
     name = "hardware_test_lib",
     tests = {
-        # "mram_test": "//src/filesys/test:mram_test_hw_lib",
+        "mram_test": "//src/filesys/test:mram_test_hw_lib",
         "filesys_test": "//src/filesys/test:filesys_test_hw_lib",
     },
 )

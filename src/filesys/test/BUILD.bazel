@@ -20,13 +20,13 @@ samwise_test(
     deps = _MRAM_DEPS,
 )
 
-# samwise_integration_test(
-#     name = "mram_test",
-#     srcs = ["mram_test.c"],
-#     hdrs = ["mram_test.h"],
-#     int_src = "mram_integration_test.c",
-#     deps = _MRAM_DEPS,
-# )
+samwise_integration_test(
+    name = "mram_test",
+    srcs = ["mram_test.c"],
+    hdrs = ["mram_test.h"],
+    int_src = "mram_integration_test.c",
+    deps = _MRAM_DEPS,
+)
 
 samwise_test(
     name = "filesys_test",

@@ -3,7 +3,7 @@
  * @date 2025-08-18
  *
  * This file contains functions for interfacing with MR25H40MDF
- * MRAM using QSPI on a RP2350B chip.
+ * MRAM via QMI direct mode (CS1 / GPIO47) on a RP2350B chip.
  */
 
 #pragma once

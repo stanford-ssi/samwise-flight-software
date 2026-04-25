@@ -32,3 +32,8 @@ int lfs_gen_flash_wrap_erase(const struct lfs_config *c, lfs_block_t block);
 // Sync the state of the underlying block device. Negative error codes
 // are propagated to the user.
 int lfs_gen_flash_wrap_sync(const struct lfs_config *c);
+
+#ifdef TEST
+// Reset the mock flash backing store to all 0xFF (erased state).
+void lfs_gen_flash_wrap_mock_reset(void);
+#endif

@@ -22,11 +22,11 @@
 
 #include "lfs.h"
 
-// #ifndef MRAM
-// #include "lfs_mram_wrapper.h"
-// #else
+#ifdef MRAM
+#include "lfs_mram_wrapper.h"
+#else
 #include "lfs_gen_flash_wrapper.h"
-// #endif
+#endif
 
 #include "logger.h"
 #include "macros.h"
