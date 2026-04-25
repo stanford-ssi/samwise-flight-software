@@ -61,8 +61,9 @@
  * Placed in SRAM via __no_inline_not_in_flash_func because QMI direct
  * mode stalls XIP. Callers MUST disable interrupts before calling.
  */
-static void __no_inline_not_in_flash_func(mram_qmi_cmd)(
-    const uint8_t *txbuf, uint8_t *rxbuf, size_t count)
+static void __no_inline_not_in_flash_func(mram_qmi_cmd)(const uint8_t *txbuf,
+                                                        uint8_t *rxbuf,
+                                                        size_t count)
 {
     // Enable direct mode with an explicit clock divider.
     // A direct write is used intentionally to get a clean register state;
