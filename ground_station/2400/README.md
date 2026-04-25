@@ -63,14 +63,22 @@ sudo python3 main.py  # start listening
 time. Received files are written to `/home/pi/images/2400_image_<N>.jpg`
 where `<N>` is the count of files already in that directory.
 
+## Hardware notes
+
+Both the payload and GS boards silkscreen `TCXO_EN: 25`, so all four
+SX1280 init sites pass GPIO 25 as the 9th element of the pin tuple:
+
+- `payload/radio/Lora_tx.cpp`
+- `payload/radio/Lora_rx.cpp`
+- `ground_station/2400/radio/Lora_tx.cpp`
+- `ground_station/2400/radio/Lora_rx.cpp`
+
+The unused `payload/radio/Lora_tx_packets.cpp` (called by the still-TODO
+`send_packets_2400` in `payload/commands.py`) uses a completely different
+pin map and is not in sync — fix it before wiring `send_packets_2400` up.
+
 ## Known open issues (not fixed in this port)
 
-- **TCXO pin mismatch:** `radio/Lora_rx.cpp` enables a TCXO on GPIO 25 (the
-  9th element in the `SX128x_Linux` pin tuple), but `payload/radio/Lora_tx.cpp`
-  does not. If the payload board actually has a TCXO requiring this enable,
-  the TX is running on the bare crystal and the resulting frequency offset
-  may keep packets out of the RX passband. Confirm against the payload
-  schematic and align both sides — either both pass `25` or neither does.
 - **TX power is 0 dBm** in the payload's `Lora_tx.cpp` — marginal at 2.4 GHz.
 - **Last-packet edge case:** if the file's size is exactly divisible by 253
   bytes, the TX produces a 0-byte final packet and the RX hangs waiting for

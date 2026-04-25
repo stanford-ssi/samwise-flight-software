@@ -151,7 +151,10 @@ int main(int argc, char **argv)
     }
 
     // Pins based on hardware configuration
-    SX128x_Linux Radio("/dev/spidev0.0", 0, {26, 22, 5, 19, -1, -1, 23, 24});
+    // Last element (25) is TCXO_EN — the payload board has a TCXO that must
+    // be enabled or the carrier drifts off-frequency, blocking RX on the GS
+    // (whose Lora_rx.cpp already enables this same pin).
+    SX128x_Linux Radio("/dev/spidev0.0", 0, {26, 22, 5, 19, -1, -1, 23, 24, 25});
 
     // Assume we're running on a high-end Raspberry Pi,
     // so we set the SPI clock speed to the maximum value supported by the chip
