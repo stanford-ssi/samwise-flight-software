@@ -3,8 +3,8 @@
  *
  * Identically similar to lfs_mram_wrapper.h, it just wraps
  * the I/O function for the flash for integration with LittleFS.
- * 
- * Note: This file is no longer used, as it is not necessary (we 
+ *
+ * Note: This file is no longer used, as it is not necessary (we
  * fixed the original mram.c driver!). We keep it here for
  * legacy :).
  *
