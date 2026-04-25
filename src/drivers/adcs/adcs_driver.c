@@ -8,7 +8,6 @@
 #include "hardware/uart.h"
 #include "pico/stdlib.h"
 #include "pins.h"
-#include "slate.h"
 
 #include "adcs_driver.h"
 
@@ -26,6 +25,9 @@
 // Timeout between bytes in microseconds
 // currently set to 500ms (faily generous)
 #define ADCS_BYTE_TIMEOUT_US (500000)
+
+static is_adcs_on = false;
+static is_adcs_telem_valid = false;
 
 /**
  * @brief Helper function to read up to num_bytes bytes from ADCS uart with a
@@ -73,19 +75,14 @@ static uint32_t adcs_driver_read_uart_with_timeout(char *buf,
     return num_bytes;
 }
 
-adcs_result_t adcs_driver_init(slate_t *slate)
+adcs_result_t adcs_driver_init()
 {
-    if (!slate)
-    {
-        return ADCS_ERROR_INVALID_PARAM;
-    }
-
     // Initialize power pins
     gpio_init(SAMWISE_ADCS_EN);
     gpio_set_dir(SAMWISE_ADCS_EN, GPIO_OUT);
 
     // Power on the board by default
-    adcs_driver_power_on(slate);
+    adcs_driver_power_on();
 
     // Initialize uart for sending commands/receiving telemetry
     uart_init(SAMWISE_ADCS_UART, ADCS_UART_BAUD);
@@ -105,29 +102,29 @@ adcs_result_t adcs_driver_init(slate_t *slate)
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_power_on(slate_t *slate)
+adcs_result_t adcs_driver_power_on()
 {
     // Set power enable high to turn on the board and allow time to settle
-    slate->is_adcs_on = true;
+    is_adcs_on = true;
     gpio_put(SAMWISE_ADCS_EN, 1);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_power_off(slate_t *slate)
+adcs_result_t adcs_driver_power_off()
 {
     // Set power enable low to turn on the board and allow time to settle
-    slate->is_adcs_on = false;
+    is_adcs_on = false;
     gpio_put(SAMWISE_ADCS_EN, 0);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
+adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet)
 {
-    if (!slate || !packet)
+    if (!packet)
     {
         return ADCS_ERROR_INVALID_PARAM;
     }
@@ -142,7 +139,7 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
     uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
         (char *)packet, sizeof(adcs_packet_t), ADCS_BYTE_TIMEOUT_US);
 
-    slate->is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
+    is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
 
     LOG_INFO("[ADCS] state: %02x", packet->state);
     LOG_INFO("[ADCS] boot_count: %u", packet->boot_count);
@@ -152,7 +149,7 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
         LOG_INFO("[ADCS] packet[%d]: %02x", i, ((char *)packet)[i]);
     }
 
-    if (!slate->is_adcs_telem_valid)
+    if (!is_adcs_telem_valid)
     {
         LOG_ERROR("[ADCS] Failed to read full telemetry packet, "
                   "expected %zu bytes, got %u bytes",
@@ -161,18 +158,13 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
     }
 
     // Return true if we received all expected bytes
-    return slate->is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
+    return is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
 }
 
-bool adcs_driver_is_alive(slate_t *slate)
+bool adcs_driver_is_alive()
 {
-    if (!slate)
-    {
-        return ADCS_ERROR_INVALID_PARAM;
-    }
-
     // Return immediately if board is off
-    if (!slate->is_adcs_on)
+    if (is_adcs_on)
     {
         return false;
     }

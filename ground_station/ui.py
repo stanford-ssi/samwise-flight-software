@@ -222,6 +222,10 @@ def interactive_command_loop():
                 elif cmd == "6":
                     print("Sending payload shutdown...")
                     radio.send_payload_shutdown()
+                elif cmd == "7":
+                    adcs_command = str(input("Enter adcs command: "))
+                    print("Sending adcs command byte")
+                    radio.send_adcs_exec(adcs_command)
                 elif cmd == "":
                     # Pressed enter, show status and prompt
                     print(
@@ -235,12 +239,15 @@ def interactive_command_loop():
             # 3. Periodic status line to show we're alive
             current_time = time.monotonic()
             if current_time - last_status_time > status_interval:
+                pass
+                """
                 print(
                     f"\r[STATUS] Monitoring... Boot:{state_manager.boot_count} MsgID:{state_manager.msg_id}   ",
                     end="",
                     flush=True,
                 )
                 last_status_time = current_time
+                """
 
             time.sleep(0.01)  # Low latency
 

@@ -79,7 +79,7 @@ intmax_t test_define(size_t define);
 #define TEST_DEFINE(i) test_define(i)
 
 // a few preconfigured defines that control how tests run
- 
+
 #define READ_SIZE_i          0
 #define PROG_SIZE_i          1
 #define ERASE_SIZE_i         2

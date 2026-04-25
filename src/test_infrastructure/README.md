@@ -15,7 +15,7 @@ This library provides common infrastructure for writing time-based tests for dif
 
 ### Visualization Logging
 - `viz_log_open_log_dir(basename)` - Open JSON log file for test visualization in actual log directory
-- `viz_log_open_raw(filename)` - Raw opening of file at certain path 
+- `viz_log_open_raw(filename)` - Raw opening of file at certain path
 - `viz_log_close()` - Close log file with proper formatting
 - `log_viz_event(type, task, details)` - Log an event with timestamp
 - Compatible with `/web/visualizer/` React app
@@ -71,7 +71,7 @@ void test_my_state() {
     reset_task_stats();
     slate_t slate;
     clear_and_init_slate(&slate);
-    
+
     slate.current_state = &my_test_state;
 
     // Open visualization log

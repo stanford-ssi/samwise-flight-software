@@ -322,7 +322,7 @@ code = '''
                     assert(strcmp(info.name, &path[2*d+1]) == 0);
                     assert(info.type == LFS_TYPE_DIR);
                 }
-                
+
                 lfs_stat(&lfs, full_path, &info) => LFS_ERR_NOENT;
             } else {
                 // try to delete path in reverse order,

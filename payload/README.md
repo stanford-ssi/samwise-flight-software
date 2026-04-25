@@ -18,11 +18,11 @@ The Samwise Payload is designed for a 2U Cubesat. Its primary objectives are:
 
 ### 1. Operating System
 
-**PREREQUISITE:** Installed **Raspberry Pi OS Lite (64-bit)** using [Raspberry Pi Imager](https://www.raspberrypi.com/software/). 
+**PREREQUISITE:** Installed **Raspberry Pi OS Lite (64-bit)** using [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
 
 > [!WARNING]
 > Ensure your installation meets the specifications on the arducam website:
-> 
+>
 > *We currently only guarantee that the Camera Adaptation is supported on Raspberry Pi Bullseye and **Bookworm OS**.*
 > *Please make sure your kernel version is up to date (at least 5.15.63 or later)" with `uname -r`*
 
@@ -56,7 +56,7 @@ git clone https://github.com/stanford-ssi-samwise-flight-software.git
 cp -a /home/pi/samwise-flight-software/payload/. /home/pi/code/
 # OPTIONAL: delete repo rm -r /home/pi/samwise-flight-software
 cd /home/pi/code
-git clone 
+git clone
 
 # Run the following commands
 cd /home/pi/code
@@ -135,9 +135,9 @@ Then reboot and rerun the diagnostic commands.
 
 Notes: cam0 maps to camera A and cam2 maps to camera C (based on current lab wiring). There has been variance among RPIs in which `cam#` combinations work reliably; if needed, test alternate combinations and document what works for that specific Pi. If using other connection points, enable the matching cams:
 
-* **Camera A** → cam0  
-* **Camera B** → cam1  
-* **Camera C** → cam2  
+* **Camera A** → cam0
+* **Camera B** → cam1
+* **Camera C** → cam2
 * **Camera D** → cam3
 
 Reference: [Arducam Multi-Camera Adapter Quick Start Guide](https://docs.arducam.com/Raspberry-Pi-Camera/Multi-Camera-CamArray/Quick-Start-Guide-for-Multi-Adapter-Board/)

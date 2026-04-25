@@ -39,7 +39,7 @@ code = '''
             lfs_file_t file;
             lfs_file_open(&lfs, &file, (char*)buffer,
                     LFS_O_WRONLY | LFS_O_CREAT) => 0;
-            
+
             lfs_size_t size = NAMEMULT;
             for (int j = 0; j < i*FILEMULT; j++) {
                 lfs_file_write(&lfs, &file, buffer, size) => size;
@@ -67,7 +67,7 @@ code = '''
             buffer[2*NAMEMULT+1] = '\0';
             lfs_file_t file;
             lfs_file_open(&lfs, &file, (char*)buffer, LFS_O_RDONLY) => 0;
-            
+
             int size = NAMEMULT;
             for (int j = 0; j < i*FILEMULT; j++) {
                 uint8_t rbuffer[1024];
@@ -119,7 +119,7 @@ code = '''
         lfs_file_t file;
         lfs_file_open(&lfs, &file, (char*)buffer,
                 LFS_O_WRONLY | LFS_O_CREAT) => 0;
-        
+
         lfs_size_t size = NAMEMULT;
         for (int j = 0; j < i*FILEMULT; j++) {
             lfs_file_write(&lfs, &file, buffer, size) => size;
@@ -147,7 +147,7 @@ code = '''
         buffer[2*NAMEMULT+1] = '\0';
         lfs_file_t file;
         lfs_file_open(&lfs, &file, (char*)buffer, LFS_O_RDONLY) => 0;
-        
+
         lfs_size_t size = NAMEMULT;
         for (int j = 0; j < i*FILEMULT; j++) {
             uint8_t rbuffer[1024];
@@ -198,7 +198,7 @@ code = '''
         lfs_file_t file;
         lfs_file_open(&lfs, &file, (char*)buffer,
                 LFS_O_WRONLY | LFS_O_CREAT) => 0;
-        
+
         lfs_size_t size = NAMEMULT;
         for (int j = 0; j < i*FILEMULT; j++) {
             lfs_file_write(&lfs, &file, buffer, size) => size;
@@ -226,7 +226,7 @@ code = '''
         buffer[2*NAMEMULT+1] = '\0';
         lfs_file_t file;
         lfs_file_open(&lfs, &file, (char*)buffer, LFS_O_RDONLY) => 0;
-        
+
         lfs_size_t size = NAMEMULT;
         for (int j = 0; j < i*FILEMULT; j++) {
             uint8_t rbuffer[1024];

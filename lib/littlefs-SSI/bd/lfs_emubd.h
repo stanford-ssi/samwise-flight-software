@@ -107,7 +107,7 @@ struct lfs_emubd_config {
     // Data for power-loss callback
     void *powerloss_data;
 
-    // True to track when power-loss could have occured. Note this involves 
+    // True to track when power-loss could have occured. Note this involves
     // heavy memory usage!
     bool track_branches;
 

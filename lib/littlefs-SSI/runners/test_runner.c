@@ -2243,7 +2243,7 @@ int main(int argc, char **argv) {
                                 stop = start;
                                 start = 0;
                             }
-                            
+
                             if (*optarg != ')') {
                                 goto invalid_define;
                             }

@@ -114,6 +114,12 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             }
             break;
         }
+        case ADCS_EXEC:
+        {
+            LOG_INFO("//////////////////////////");
+            LOG_INFO("RECEIVED ADCS EXEC COMMAND");
+            LOG_INFO("//////////////////////////");
+        }
 
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
