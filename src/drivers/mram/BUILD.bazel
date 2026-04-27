@@ -10,7 +10,7 @@ cc_library(
         "//src/common",
         "//src/drivers/logger",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
         "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync",
     ],
     target_compatible_with = ["//platforms:arm_cortex_m33"],

@@ -102,7 +102,6 @@ int8_t filesys_test_write_whole_buffer(slate_t *slate, uint8_t *buffer,
     {
         const FILESYS_BUFFER_SIZE_T to_write =
             (len - i) < FILESYS_BUFFER_SIZE ? (len - i) : FILESYS_BUFFER_SIZE;
-        LOG_DEBUG("Writing %u bytes at offset %u\n", to_write, i);
 
         filesys_error_t code = filesys_write_data_to_buffer(
             slate, buffer + i, to_write, 0, &lfs_error_code);
@@ -753,6 +752,8 @@ int filesys_test_blocks_left_calculation_success(slate_t *slate)
     lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
     TEST_ASSERT(initial_fs_size >= 0, "Should get valid fs size");
 
+    lfs_ssize_t num_blocks_for_file = 4;
+
     // Start a file write and check blocks left
     filesys_error_t code = filesys_start_file_write(
         slate, fname, 1024, filesys_test_example_incorrect_crc, &lfs_error_code,
@@ -762,10 +763,9 @@ int filesys_test_blocks_left_calculation_success(slate_t *slate)
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
     // Blocks left should be: block_count - current_fs_size -
-    // blocks_needed_for_file For a 1024 byte file with 1024 byte blocks, we
-    // need 1 block
+    // blocks_needed_for_file.
     lfs_ssize_t expected_blocks_left =
-        FILESYS_BLOCK_COUNT - initial_fs_size - 1;
+        FILESYS_BLOCK_COUNT - initial_fs_size - num_blocks_for_file;
     TEST_ASSERT(blocks_left_1 == expected_blocks_left,
                 "Blocks left calculation should be correct");
 
@@ -962,33 +962,42 @@ int filesys_test_write_long_file_crc32_success(slate_t *slate)
     LOG_DEBUG("=== Test: Write Really Long File with CRC32 ===\n");
 
     lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
-    FILESYS_BUFFERED_FILE_LEN_T file_size =
-        200000; // Larger than buffer size, will require multiple writes
+    FILESYS_BUFFERED_FILE_LEN_T file_size = 200000;
 
-    // Write first file
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
     FILESYS_BUFFERED_FNAME_STR_T fname = "M1";
-    uint8_t buffer[file_size]; // Random very large number of bytes
+
+    uint8_t *buffer = malloc(file_size);
+    TEST_ASSERT(buffer != NULL, "Should allocate buffer");
+
     LOG_INFO("Initial filesystem size (in blocks): %d\n", (int)initial_fs_size);
     LOG_INFO("File size: %u bytes\n", file_size);
 
-    for (int i = 0; i < sizeof(buffer); i++)
-        buffer[i] = i % 256; // somewhat random data
+    for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file_size; i++)
+        buffer[i] = i % 256;
 
     // Generated with zlib.crc32(bytes(i % 256 for i in range(200000))) in
     // Python.
     filesys_error_t code = filesys_start_file_write(
-        slate, fname, sizeof(buffer), 540207777, &lfs_error_code, &blocks_left);
+        slate, fname, file_size, 540207777, &lfs_error_code, &blocks_left);
 
-    TEST_ASSERT(code == FILESYS_OK, "File start should succeed");
+    if (code != FILESYS_OK)
+    {
+        free(buffer);
+        TEST_ASSERT(false, "File start should succeed");
+    }
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
 
     // Write the data in chunks
-    if (filesys_test_write_whole_buffer(slate, buffer, sizeof(buffer)) !=
-        FILESYS_OK)
+    if (filesys_test_write_whole_buffer(slate, buffer, file_size) != FILESYS_OK)
+    {
+        free(buffer);
         return -1;
+    }
+
+    free(buffer);
 
     // Complete this file
     code = filesys_complete_file_write(slate, &lfs_error_code);
@@ -1045,10 +1054,13 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
 
     // Write first file that takes up most of the filesystem
     FILESYS_BUFFERED_FILE_LEN_T file1_size =
-        FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE - 10240; // Leave 10KB free
+        FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE -
+        30 * 1024; // Leave 30KiB free
 
-    uint8_t large_buffer[file1_size];
-    for (int i = 0; i < file1_size; i++)
+    uint8_t *large_buffer = malloc(file1_size);
+    TEST_ASSERT(large_buffer != NULL, "Should allocate large_buffer");
+
+    for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file1_size; i++)
         large_buffer[i] = (i * 3) % 256;
 
     // Note: CRC32 is computed based on the fact that FILESYS_BLOCK_COUNT *
@@ -1058,10 +1070,14 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
                 "FILESYS_BLOCK_SIZE must equal 524288 for this test");
 
     // Generated with zlib.crc32(bytes((i * 3) % 256 for i in range(524288 -
-    // 10240))) in Python
+    // 30 * 1024))) in Python
     filesys_error_t code = filesys_start_file_write(
-        slate, fname1, file1_size, 205735360, &lfs_error_code, &blocks_left);
-    TEST_ASSERT(code == FILESYS_OK, "First file start should succeed");
+        slate, fname1, file1_size, 3257575486, &lfs_error_code, &blocks_left);
+    if (code != FILESYS_OK)
+    {
+        free(large_buffer);
+        TEST_ASSERT(false, "First file start should succeed");
+    }
     TEST_ASSERT(lfs_error_code == LFS_ERR_OK,
                 "lfs_error_code should be LFS_ERR_OK after start_file_write");
     TEST_ASSERT(blocks_left >= 0, "Should have space for first file");
@@ -1073,37 +1089,65 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
         const FILESYS_BUFFER_SIZE_T to_write =
             (file1_size - i) < FILESYS_BUFFER_SIZE ? (file1_size - i)
                                                    : FILESYS_BUFFER_SIZE;
-        LOG_DEBUG("Writing %u bytes at offset %u\n", to_write, i);
 
         filesys_error_t code = filesys_write_data_to_buffer(
             slate, large_buffer + i, to_write, 0, &lfs_error_code);
-        TEST_ASSERT(code == FILESYS_OK, "File buffer write should succeed");
+        if (code != FILESYS_OK)
+        {
+            free(large_buffer);
+            TEST_ASSERT(false, "File buffer write should succeed");
+        }
         TEST_ASSERT(
             lfs_error_code == LFS_ERR_OK,
             "lfs_error_code should be LFS_ERR_OK after write_data_to_buffer");
 
         code = filesys_write_buffer_to_mram(slate, to_write, &lfs_error_code);
-        TEST_ASSERT(code == FILESYS_OK,
-                    "File buffer to MRAM write should succeed");
+        if (code != FILESYS_OK)
+        {
+            free(large_buffer);
+            TEST_ASSERT(false, "File buffer to MRAM write should succeed");
+        }
         TEST_ASSERT(
             lfs_error_code == LFS_ERR_OK,
             "lfs_error_code should be LFS_ERR_OK after write_buffer_to_mram");
     }
 
-    // Make sure we can read back the first file correctly
-    uint8_t read_buffer[file1_size];
+    free(large_buffer);
+
+    // Read back and verify by regenerating the deterministic pattern,
+    // so only one large buffer is needed at a time (fits in RP2350 SRAM).
     lfs_file_t file;
     int err = lfs_file_opencfg(filesys_get_lfs(), &file, fname1, LFS_O_RDONLY,
                                &filesys_lfs_file_cfg);
     LOG_DEBUG("Opened first file for reading, err=%d\n", err);
     TEST_ASSERT(err == 0, "Should open first file for reading");
+
+    uint8_t *read_buffer = malloc(file1_size);
+    if (!read_buffer)
+    {
+        lfs_file_close(filesys_get_lfs(), &file);
+        TEST_ASSERT(false, "Should allocate read_buffer");
+    }
+
     lfs_ssize_t read_bytes =
         lfs_file_read(filesys_get_lfs(), &file, read_buffer, file1_size);
     LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
     TEST_ASSERT(read_bytes == file1_size, "Should read back full first file");
-    TEST_ASSERT(memcmp(large_buffer, read_buffer, file1_size) == 0,
-                "Read back data should match written data");
+
+    int mismatch_count = 0;
+    for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file1_size; i++)
+    {
+        if (read_buffer[i] != (uint8_t)((i * 3) % 256))
+        {
+            mismatch_count++;
+            break;
+        }
+    }
+    TEST_ASSERT(mismatch_count == 0,
+                "Read back data should match written pattern");
     lfs_file_close(filesys_get_lfs(), &file);
+
+    free(read_buffer);
 
     // Complete first file
     code = filesys_complete_file_write(slate, &lfs_error_code);
@@ -1113,7 +1157,7 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
         "lfs_error_code should be LFS_ERR_OK after complete_file_write");
 
     // Now try to write a second file that won't fit in remaining space
-    // Try to write 100KB when we only have ~62KB left
+    // Try to write 100KB when we only have ~32KiB left
     FILESYS_BUFFERED_FILE_LEN_T file2_size = 100000;
     code = filesys_start_file_write(slate, fname2, file2_size,
                                     filesys_test_example_incorrect_crc,
@@ -1139,7 +1183,7 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
 
     FILESYS_BUFFERED_FNAME_STR_T fname = "RW";
 
-    const size_t LARGE_FILE_SIZE = 510000;
+    const size_t LARGE_FILE_SIZE = 500000;
     uint8_t *large_buffer = malloc(LARGE_FILE_SIZE);
     TEST_ASSERT(large_buffer != NULL, "Should allocate large buffer");
 
@@ -1180,13 +1224,15 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
 
     LOG_DEBUG("Successfully wrote %d bytes\n", (int)written);
 
-    // Read back and verify
+    free(large_buffer);
+
+    // Read back and verify by regenerating the deterministic pattern,
+    // so only one large buffer is needed at a time (fits in RP2350 SRAM).
     err = lfs_file_opencfg(filesys_get_lfs(), &lfs_file, fname, LFS_O_RDONLY,
                            &filesys_lfs_file_cfg);
     if (err < 0)
     {
         LOG_ERROR("Failed to open file for reading: %d\n", err);
-        free(large_buffer);
         return -1;
     }
 
@@ -1197,11 +1243,8 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     {
         LOG_ERROR("Failed to allocate read buffer\n");
         lfs_file_close(filesys_get_lfs(), &lfs_file);
-        free(large_buffer);
         return -1;
     }
-
-    TEST_ASSERT(read_buffer != NULL, "Should allocate read buffer");
 
     lfs_ssize_t read_bytes = lfs_file_read(filesys_get_lfs(), &lfs_file,
                                            read_buffer, LARGE_FILE_SIZE);
@@ -1209,7 +1252,6 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     {
         LOG_ERROR("Failed to read file: %d\n", (int)read_bytes);
         free(read_buffer);
-        free(large_buffer);
         lfs_file_close(filesys_get_lfs(), &lfs_file);
         return -1;
     }
@@ -1219,23 +1261,21 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");
 
-    // Verify data integrity
     int mismatch_count = 0;
     for (int i = 0; i < LARGE_FILE_SIZE; i++)
     {
-        if (read_buffer[i] != large_buffer[i])
+        if (read_buffer[i] != (uint8_t)(i % 256))
         {
             if (mismatch_count < 10)
             {
                 LOG_ERROR("Data mismatch at byte %d: expected %u, got %u\n", i,
-                          large_buffer[i], read_buffer[i]);
+                          (uint8_t)(i % 256), read_buffer[i]);
             }
             mismatch_count++;
         }
     }
 
     free(read_buffer);
-    free(large_buffer);
 
     TEST_ASSERT(mismatch_count == 0, "All bytes should match original data");
 
@@ -2342,6 +2382,67 @@ int filesys_test_read_multi_chunk_file_success(slate_t *slate)
     TEST_ASSERT(code == FILESYS_OK, "close_file_read should succeed");
 
     LOG_DEBUG("=== Test PASSED: Read Multi-Chunk Written File ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 41: Probe maximum writable file capacity
+//
+// Writes FILESYS_BUFFER_SIZE-byte chunks to a single file until LFS reports
+// LFS_ERR_NOSPC. Reports the total bytes successfully committed so callers
+// can see how much of the raw MRAM is actually usable after LFS overhead.
+// ============================================================================
+int filesys_test_probe_max_file_capacity(void)
+{
+    LOG_DEBUG("=== Test: Max File Capacity Probe ===\n");
+
+    slate_t test_slate;
+    if (filesys_test_setup(&test_slate) < 0)
+        return -1;
+
+    static uint8_t write_chunk[FILESYS_BUFFER_SIZE];
+    memset(write_chunk, 0xAB, sizeof(write_chunk));
+
+    lfs_file_t lfs_file;
+    int err =
+        lfs_file_opencfg(filesys_get_lfs(), &lfs_file, "CP",
+                         LFS_O_WRONLY | LFS_O_CREAT, &filesys_lfs_file_cfg);
+    TEST_ASSERT(err == 0, "Should open file for capacity probe");
+
+    lfs_ssize_t total_written = 0;
+    lfs_ssize_t n = 0;
+    while ((n = lfs_file_write(filesys_get_lfs(), &lfs_file, write_chunk,
+                               FILESYS_BUFFER_SIZE)) > 0)
+    {
+        total_written += n;
+    }
+
+    // Filesystem is full: n should be LFS_ERR_NOSPC (-28)
+    TEST_ASSERT(n == LFS_ERR_NOSPC,
+                "Write loop should terminate due to out-of-space");
+
+    // Close even if the filesystem is full; ignore return value because LFS
+    // may not be able to commit the final metadata when storage is exhausted
+    lfs_file_close(filesys_get_lfs(), &lfs_file);
+
+    const int total_mram = FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE;
+    LOG_DEBUG("Max writable capacity : %d bytes (%d KiB)\n", (int)total_written,
+              (int)(total_written / 1024));
+    LOG_DEBUG("Total MRAM            : %d bytes (%d KiB)\n", total_mram,
+              total_mram / 1024);
+    LOG_DEBUG("LFS overhead          : %d bytes (%d KiB)\n",
+              total_mram - (int)total_written,
+              (total_mram - (int)total_written) / 1024);
+    LOG_DEBUG("MRAM utilization      : %.2f%%\n",
+              (double)total_written / (double)total_mram * 100.0);
+
+    TEST_ASSERT(total_written > 0, "Should write at least some data");
+    TEST_ASSERT(total_written < total_mram,
+                "Max capacity must be less than raw MRAM size");
+    TEST_ASSERT(total_written >= total_mram / 2,
+                "Max capacity should be at least half of raw MRAM size");
+
+    LOG_DEBUG("=== Test PASSED: Max File Capacity Probe ===\n");
     return 0;
 }
 

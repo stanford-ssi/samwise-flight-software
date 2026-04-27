@@ -8,14 +8,20 @@
 #include <string.h>
 
 static lfs_t lfs;
+static bool lfs_mounted = false;
 
 const struct lfs_config filesys_lfs_cfg = {
-    // block device operations
+#ifdef MRAM
     .read = lfs_mram_wrap_read,
     .prog = lfs_mram_wrap_prog,
     .erase = lfs_mram_wrap_erase,
     .sync = lfs_mram_wrap_sync,
-
+#else // This is not really used right now, but kept for legacy.
+    .read = lfs_gen_flash_wrap_read,
+    .prog = lfs_gen_flash_wrap_prog,
+    .erase = lfs_gen_flash_wrap_erase,
+    .sync = lfs_gen_flash_wrap_sync,
+#endif
     // block device configuration
     .read_size = 16,
     .prog_size = 16,
@@ -67,8 +73,9 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
     *lfs_error_code = LFS_ERR_OK;
 
     // mount the filesystem
-    mram_write_enable();
+#ifdef MRAM
     mram_init();
+#endif
     int err = lfs_mount(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
@@ -87,6 +94,7 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
     slate->filesys_is_writing_file = false;
     filesys_clear_buffer(slate);
 
+    lfs_mounted = true;
     LOG_INFO("[filesys] Filesystem mounted successfully");
     return FILESYS_OK;
 }
@@ -96,8 +104,15 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
 {
     *lfs_error_code = LFS_ERR_OK;
 
-    mram_write_enable();
+#ifdef MRAM
     mram_init();
+#endif
+    if (lfs_mounted)
+    {
+        lfs_unmount(&lfs);
+        lfs_mounted = false;
+    }
+
     int err = lfs_format(&lfs, &filesys_lfs_cfg);
 
     if (err < 0)
@@ -249,9 +264,6 @@ filesys_error_t filesys_write_data_to_buffer(slate_t *slate,
     slate->filesys_buffer_is_dirty = true;
     memcpy(&slate->filesys_buffer[offset], data, n_bytes);
 
-    LOG_INFO("[filesys] Wrote %u bytes to buffer at offset %u", n_bytes,
-             offset);
-
     return FILESYS_OK;
 }
 
@@ -289,7 +301,6 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
         return FILESYS_ERR_OPEN_FILE;
     }
 
-    // Write buffer to file
     lfs_ssize_t bytes_written =
         lfs_file_write(&lfs, &lfs_open_file, slate->filesys_buffer, n_bytes);
     if (bytes_written < 0)
@@ -324,9 +335,6 @@ filesys_error_t filesys_write_buffer_to_mram(slate_t *slate,
     }
 
     filesys_clear_buffer(slate);
-
-    LOG_INFO("[filesys] Wrote %d bytes from buffer to file %s in MRAM",
-             bytes_written, slate->filesys_buffered_fname_str);
 
     return FILESYS_OK;
 }
@@ -370,6 +378,23 @@ static unsigned int filesys_compute_file_crc(
             LOG_ERROR("[filesys] Failed to read file %s at %d bytes left for "
                       "CRC computation: Error code %d",
                       fname, bytes_remaining, bytes_read);
+            *error_code = FILESYS_ERR_CRC_CHECK;
+
+            // Discard error from close since we are already reporting the read
+            // error
+            lfs_ssize_t close_lfs_err;
+            filesys_file_close(&lfs_open_file, &close_lfs_err);
+
+            return crc; // We will return the crc so far, but error_code
+                        // indicates failure
+        }
+
+        if (bytes_read == 0)
+        {
+            LOG_ERROR(
+                "[filesys] Unexpected end of file %s during CRC computation. "
+                "Bytes remaining: %d",
+                fname, bytes_remaining);
             *error_code = FILESYS_ERR_CRC_CHECK;
 
             // Discard error from close since we are already reporting the read
@@ -493,8 +518,6 @@ void filesys_clear_buffer(slate_t *slate)
     slate->filesys_buffer_is_dirty = false;
     for (FILESYS_BUFFER_SIZE_T i = 0; i < FILESYS_BUFFER_SIZE; i++)
         slate->filesys_buffer[i] = 0; // Clear buffer contents
-
-    LOG_INFO("[filesys] Marked filesystem buffer as clean.");
 }
 
 filesys_error_t filesys_cancel_file_write(slate_t *slate,
