@@ -132,12 +132,10 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
     return FILESYS_OK;
 }
 
-filesys_error_t filesys_start_file_write(slate_t *slate,
-                                         FILESYS_BUFFERED_FNAME_STR_T fname_str,
-                                         FILESYS_BUFFERED_FILE_LEN_T file_size,
-                                         FILESYS_BUFFERED_FILE_CRC_T file_crc,
-                                         lfs_ssize_t *lfs_error_code,
-                                         lfs_ssize_t *blocks_left_after_write)
+filesys_error_t filesys_start_file_write(
+    slate_t *slate, const FILESYS_BUFFERED_FNAME_STR_T fname_str,
+    FILESYS_BUFFERED_FILE_LEN_T file_size, FILESYS_BUFFERED_FILE_CRC_T file_crc,
+    lfs_ssize_t *lfs_error_code, lfs_ssize_t *blocks_left_after_write)
 {
     *lfs_error_code = LFS_ERR_OK;
 
@@ -497,6 +495,7 @@ filesys_error_t filesys_complete_file_write(slate_t *slate,
 
     // Check CRC here
     filesys_error_t crc_check = filesys_is_crc_correct(slate, lfs_error_code);
+    slate->filesys_is_writing_file = false;
     if (crc_check != FILESYS_OK)
     {
         LOG_INFO("[filesys] CRC check failed during file write completion for "
@@ -508,7 +507,6 @@ filesys_error_t filesys_complete_file_write(slate_t *slate,
     LOG_INFO("[filesys] CRC matches for file %s!",
              slate->filesys_buffered_fname_str);
 
-    slate->filesys_is_writing_file = false;
     LOG_INFO("[filesys] Completed file write for file: %s",
              slate->filesys_buffered_fname_str);
 
@@ -625,7 +623,7 @@ filesys_error_t filesys_list_files(slate_t *slate,
 /* ===== Read Operations ===== */
 
 filesys_error_t filesys_get_file_info(slate_t *slate,
-                                      FILESYS_BUFFERED_FNAME_STR_T fname,
+                                      const FILESYS_BUFFERED_FNAME_STR_T fname,
                                       filesys_file_info_t *info,
                                       lfs_ssize_t *lfs_error_code)
 {
@@ -710,7 +708,7 @@ filesys_error_t filesys_get_file_info(slate_t *slate,
 }
 
 filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
-                                       FILESYS_BUFFERED_FNAME_STR_T fname,
+                                       const FILESYS_BUFFERED_FNAME_STR_T fname,
                                        filesys_file_info_t *info,
                                        lfs_ssize_t *lfs_error_code)
 {

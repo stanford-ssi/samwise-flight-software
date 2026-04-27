@@ -15,6 +15,8 @@
 
 const int PAYLOAD_DATA_CAPACITY = 32;
 
+const int FTP_DATA_CAPACITY = 32;
+
 /// @brief Initialize the command switch task
 /// @param slate Slate
 void command_task_init(slate_t *slate)
@@ -22,6 +24,15 @@ void command_task_init(slate_t *slate)
     // Initialize queues for storing processed commands
     queue_init(&slate->payload_command_data, sizeof(PAYLOAD_COMMAND_DATA),
                PAYLOAD_DATA_CAPACITY);
+
+    queue_init(&slate->ftp_start_file_write_data,
+               sizeof(FTP_START_FILE_WRITE_DATA), FTP_DATA_CAPACITY);
+
+    queue_init(&slate->ftp_write_to_file_data, sizeof(FTP_WRITE_TO_FILE_DATA),
+               FTP_DATA_CAPACITY);
+
+    queue_init(&slate->ftp_cancel_file_write_data,
+               sizeof(FTP_CANCEL_FILE_WRITE_DATA), FTP_DATA_CAPACITY);
 
     slate->num_uploaded_bytes = 0;
     slate->packet_buffer_index = 0;

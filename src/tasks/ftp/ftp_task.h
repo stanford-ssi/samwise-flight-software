@@ -1,0 +1,356 @@
+/**
+ * @author Ayush Garg
+ * @date  2025-10-29
+ */
+#pragma once
+
+#include "pico/stdlib.h"
+
+#include "buffer_utils.h"
+#include "command_parser.h"
+#include "config.h"
+#include "filesys.h"
+#include "logger.h"
+#include "macros.h"
+#include "neopixel.h"
+#include "payload_uart.h"
+#include "slate.h"
+#include "state_machine.h"
+#include "str_utils.h"
+
+// LED Color for ftp task - Hot Pink
+#define FTP_TASK_COLOR 255, 105, 180
+
+#define MAX_FTP_COMMANDS_PER_DISPATCH 3
+#define MAX_FTP_RETRY_COUNT 3
+
+/* Packet tracker bitfield helpers */
+
+/**
+ * Clears the FTP packet tracker, setting all bits to 0 (not received).
+ */
+inline static void ftp_tracker_clear(FTP_PACKET_TRACKER_T *tracker)
+{
+    memset(tracker, 0, FTP_PACKET_TRACKER_SIZE);
+}
+
+/**
+ * Sets the bit at the given index in the FTP packet tracker to 1 (received).
+ */
+inline static void ftp_tracker_set_bit(FTP_PACKET_TRACKER_T *tracker,
+                                       uint16_t bit_index)
+{
+    (*tracker)[bit_index / __CHAR_BIT__] |= (1 << (bit_index % __CHAR_BIT__));
+}
+
+/**
+ * Checks if the bit at the given index in the FTP packet tracker is set to 1
+ * (received).
+ */
+inline static bool ftp_tracker_check_bit(const FTP_PACKET_TRACKER_T *tracker,
+                                         uint16_t bit_index)
+{
+    return ((*tracker)[bit_index / __CHAR_BIT__] &
+            (1 << (bit_index % __CHAR_BIT__))) != 0;
+}
+
+/**
+ * Checks if the bits corresponding to the first num_bits packets in the tracker
+ * are all set to 1 (received). Handles cases where num_bits is not a multiple
+ * of 8.
+ */
+inline static bool
+ftp_tracker_check_mask_completed(const FTP_PACKET_TRACKER_T *tracker,
+                                 uint16_t num_bits)
+{
+    // Check all full bytes
+    uint16_t full_bytes = num_bits / __CHAR_BIT__;
+    for (uint16_t i = 0; i < full_bytes; i++)
+    {
+        if ((*tracker)[i] != 0xFF)
+            return false;
+    }
+    // Check remaining bits in the last partial byte
+    uint8_t remaining_bits = num_bits % __CHAR_BIT__;
+    if (remaining_bits > 0)
+    {
+        uint8_t mask = (1 << remaining_bits) - 1;
+        if (((*tracker)[full_bytes] & mask) != mask)
+            return false;
+    }
+    return true;
+}
+
+/**
+ * Every packet from SAT -> Ground has these headers, EXCEPT FOR
+ * FILESYS_INIT_ERROR:
+ *
+ * Headers (FILESYS_BUFFERED_FNAME_T + FTP_FILE_LEN_T +
+ * FILESYS_BUFFERED_FILE_CRC_T) FTP_Result (sizeof(ftp_result_t))
+ *
+ * If there is no file being written (e.g. in FILESYS_INIT_ERROR), the
+ * FILESYS_BUFFERED_FNAME_T is set to "XX", and the FILESYS_BUFFERED_FILE_LEN_T
+ * and FILESYS_BUFFERED_FILE_CRC_T are set to 0.
+ *
+ * Additional Data (varies based on FTP_Result) is written in comments below.
+ */
+enum ftp_result
+{
+    /* ── Success / Status (positive) ─────────────────────────────────── */
+
+    /**
+     *  FILESYS_REFORMAT_SUCCESS:
+     *      (No additional data)
+     */
+    FILESYS_REFORMAT_SUCCESS = 1, // +1 mirrors FILESYS_REFORMAT_ERROR = -1
+
+    /**
+     * FTP_READY_RECEIVE:
+     *     Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID in
+     * set (inclusive)
+     *
+     *     Packet_End (FTP_PACKET_SEQUENCE_T) - Last accepted packet
+     * ID in set (inclusive)
+     *
+     *     Received (FTP_PACKET_TRACKER_T) - Bitfield of
+     * received packets in this set.
+     */
+    FTP_READY_RECEIVE = 10, // Ready to receive file packets
+
+    /**
+     * FTP_FILE_WRITE_SUCCESS:
+     *     New Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID
+     * in new set (inclusive)
+     *
+     *      New Packet_End (FTP_PACKET_SEQUENCE_T) - Last
+     * accepted packet ID in new set (inclusive)
+     *
+     *      Received (FTP_PACKET_TRACKER_T) - Bitfield of
+     * received packets in this set. (Only included for consistency with
+     * FTP_READY_RECEIVE).
+     */
+    FTP_FILE_WRITE_SUCCESS = 11, // Cycle complete, ready for next set
+
+    /**
+     * FTP_EOF_SUCCESS:
+     *     Computed_CRC (FILESYS_BUFFERED_FILE_CRC_T) - CRC computed over entire
+     * file
+     *
+     *     File_Length_Disk (FTP_FILE_LEN_T) - Length of file as stored on disk
+     */
+    FTP_EOF_SUCCESS = 20, // +20 mirrors FTP_EOF_CRC_ERROR = -20
+
+    /**
+     * FTP_CANCEL_SUCCESS:
+     *     (No additional data)
+     */
+    FTP_CANCEL_SUCCESS = 30, // +30 mirrors FTP_CANCEL_ERROR = -30
+
+    /**
+     * FTP_STATUS_REPORT:
+     *     Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID in
+     * set (inclusive)
+     *
+     *     Packet_End (FTP_PACKET_SEQUENCE_T) - Last accepted packet
+     * ID in set (inclusive)
+     *
+     *     Received (FTP_PACKET_TRACKER_T) - Bitfield of
+     * received packets in this set.
+     *
+     *     File_CRC_So_Far (FILESYS_BUFFERED_FILE_CRC_T) - CRC computed over
+     * bytes written to MRAM so far (0 if first cycle).
+     *
+     *     Total_Bytes_Written (FILESYS_BUFFERED_FILE_LEN_T) - Total bytes
+     * written to MRAM so far.
+     *
+     *     Filesys_Is_Writing_File (uint8_t) - 1 if a file write is in
+     * progress, 0 otherwise.
+     */
+    FTP_STATUS_REPORT = 40, // Periodic status report during file transfer
+
+    /* ── Errors (negative) ───────────────────────────────────────────── */
+
+    /**
+     * All other errors:
+     *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
+     * CURRENTLY
+     */
+    FTP_ERROR = -99, // Generic error
+
+    /**
+     *  FILESYS_INIT_ERROR:
+     *      LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar
+     *      Data (char[]) - Additional error data (optional, plaintext)
+     */
+    FILESYS_INIT_ERROR = -2, // Filesystem not initialized (no success pair)
+
+    /**
+     *  FILESYS_REFORMAT_ERROR:
+     *     LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar
+     *    Data (char[]) - Additional error data (optional, plaintext)
+     */
+    FILESYS_REFORMAT_ERROR = -1, // -1 mirrors FILESYS_REFORMAT_SUCCESS = +1
+
+    // TODO: add distinct error code for out of space?
+    /**
+     * FTP_ERROR_START_FILE_WRITE:
+     *     LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar. Note
+     * if this is 0, the failure must have occured on Blocks Left.
+     *
+     *     Blocks Left - Number of blocks left after attempted file write
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
+     * CURRENTLY
+     */
+    FTP_ERROR_START_FILE_WRITE = -50, // Error initializing file write
+
+    /**
+     * FTP_ERROR_ALREADY_WRITING_FILE:
+     *     Filename (FILESYS_BUFFERED_FNAME_STR_T) - Name of file currently
+     * being written
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext)
+     * NOT USED
+     */
+    FTP_ERROR_ALREADY_WRITING_FILE = -51, // Error: Already writing a file
+
+    /**
+     * FTP_ERROR_NOT_WRITING_FILE:
+     *   (No additional data)
+     */
+    FTP_ERROR_NOT_WRITING_FILE = -52, // Error: Not writing a file
+
+    /**
+     * FTP_FILE_WRITE_BUFFER_ERROR:
+     *      LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar.
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
+     * CURRENTLY
+     */
+    FTP_FILE_WRITE_BUFFER_ERROR = -11, // Error writing file data to buffer
+
+    /**
+     * FTP_FILE_WRITE_ERROR or FTP_CANCEL_ERROR:
+     *     LFS_Error_Code (lfs_ssize_t) - LittleFS error code or similar
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
+     * CURRENTLY
+     */
+    FTP_FILE_WRITE_MRAM_ERROR = -12, // Error writing buffered data to MRAM
+
+    /**
+     * FTP_ERROR_PACKET_OUT_OF_RANGE:
+     *     Packet_Start (FTP_PACKET_SEQUENCE_T) - First accepted packet ID in
+     * set (inclusive)
+     *     Packet_End (FTP_PACKET_SEQUENCE_T) - Last accepted packet
+     * ID in set (inclusive)
+     *      Received (FTP_PACKET_TRACKER_T) - Bitfield of received packets in
+     * this set.
+     */
+    FTP_ERROR_PACKET_OUT_OF_RANGE =
+        -13, // Received packet outside expected range
+
+    /**
+     * FTP_EOF_CRC_ERROR:
+     *     Computed_CRC (FILESYS_BUFFERED_FILE_CRC_T) - CRC computed over entire
+     * file
+     *
+     *     File_Length_Disk (FTP_FILE_LEN_T) - Length of file as stored on disk
+     *
+     *     Data (char[]) - Additional error data (optional, plaintext) NOT USED
+     * CURRENTLY
+     */
+    // Error: CRC mismatch at EOF - any other EOF error goes to
+    // FTP_FILE_WRITE_MRAM_ERROR
+    FTP_EOF_CRC_ERROR = -20, // -20 mirrors FTP_EOF_SUCCESS = +20
+
+    FTP_CANCEL_ERROR = -30, // -30 mirrors FTP_CANCEL_SUCCESS = +30
+};
+
+typedef int32_t ftp_result_t;
+
+void ftp_task_init(slate_t *slate);
+void ftp_task_dispatch(slate_t *slate);
+
+/* COMMANDS */
+/**
+ * Processes an FTP_REFORMAT command. Formats the filesystem on MRAM. This is a
+ * destructive operation that erases all data on the filesystem.
+ *
+ * @param slate Pointer to the slate structure.
+ * TODO: Add confirmation step?
+ */
+void ftp_process_reformat_command(slate_t *slate);
+
+/**
+ * Processes an FTP_START_FILE_WRITE command. Initializes file write state.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param command_data Pointer to the command data.
+ */
+void ftp_process_file_start_write_command(
+    slate_t *slate, FTP_START_FILE_WRITE_DATA command_data);
+
+/**
+ * Processes an FTP_WRITE_FILE_DATA command. If successful, writes data to
+ * buffer; if buffer is full, writes buffer to MRAM and sends back
+ * FTP_FILE_WRITE_SUCCESS so the next set of packets can be sent.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param command_data Pointer to the command data.
+ */
+void ftp_process_file_write_data_command(slate_t *slate,
+                                         FTP_WRITE_TO_FILE_DATA command_data);
+
+/**
+ * Processes an FTP_CANCEL_FILE_WRITE command. Cancels the ongoing file write,
+ * deleting all data destructively in the process. (I.e. deallocates buffers,
+ * the data is not zeroed out).
+ *
+ * @param slate Pointer to the slate structure.
+ * @param command_data Pointer to the command data.
+ */
+void ftp_process_file_cancel_write_command(
+    slate_t *slate, FTP_CANCEL_FILE_WRITE_DATA command_data);
+
+/**
+ * Processes an FTP_FORMAT_FILESYSTEM command. Formats the filesystem on MRAM.
+ * This is a destructive operation that erases all data on the filesystem.
+ *
+ * @param slate Pointer to the slate structure.
+ */
+void ftp_process_format_filesystem_command(slate_t *slate);
+
+/* HELPER FUNCTIONS */
+/**
+ * Sends an FTP result packet back to ground, after running one of these
+ * commands. This version is used when no file is being written, and so
+ * sends a file with fname="XX", len=0, crc=0 as the file headers.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param result FTP result code.
+ * @param additional_data Pointer to additional data (see FTP_Result comments
+ * for details).
+ * @param additional_data_len Length of the additional data in bytes.
+ */
+void ftp_send_result_packet_no_file(
+    slate_t *slate, ftp_result_t result,
+    const void *additional_data, // See FTP_Result comments for details
+    size_t additional_data_len);
+
+/**
+ * Sends an FTP result packet back to ground, after running one of these
+ * commands.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param result FTP result code.
+ * @param additional_data Pointer to additional data (see FTP_Result comments
+ * for details).
+ * @param additional_data_len Length of the additional data in bytes.
+ */
+void ftp_send_result_packet(slate_t *slate, ftp_result_t result,
+                            const void *additional_data, // See FTP_Result
+                                                         // comments for details
+                            size_t additional_data_len);
+
+extern sched_task_t ftp_task;
