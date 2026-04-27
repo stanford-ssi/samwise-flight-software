@@ -241,20 +241,6 @@ void dispatch_command(slate_t *slate, packet_t *packet)
 
             break;
         }
-        case FTP_FORMAT_FILESYSTEM:
-        {
-            LOG_INFO("FTP_FORMAT_FILESYSTEM command received.");
-
-            // Add command into queue.
-            uint8_t dummy_data =
-                0; // We just need to enqueue something since the
-                   // command doesn't have any data, but queue
-                   // functions require a pointer to data.
-            if (!queue_try_add(&slate->ftp_format_filesystem_data, &dummy_data))
-                LOG_ERROR("Failed to enqueue FTP_FORMAT_FILESYSTEM command.");
-
-            break;
-        }
         /* Toggle Commands */
         // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:

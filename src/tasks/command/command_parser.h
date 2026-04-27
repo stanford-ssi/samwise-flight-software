@@ -24,12 +24,26 @@ typedef enum
     PAYLOAD_TURN_OFF,
     MANUAL_STATE_OVERRIDE,
 
-    /* FTP Commands */
+    /* FTP Commands
+       All docs are in src/tasks/ftp/README.md. See this doc for specifics on
+       how to use these commands. */
+
+    // Reformats and initializes the Little-FS portion of the MRAM, which should
+    // only be done when it seems corrupted (will lose all data in the
+    // partition)!
     FTP_REFORMAT,
+
+    // Starts a file write with a certain file name, file length, and file crc.
     FTP_START_FILE_WRITE,
+
+    // Writes a packet's worth of data to the file, which can happen out of
+    // order. Specific packet format outlined in src/tasks/ftp/README.md. Note
+    // this automatically completes the file write if all packets are recieved.
     FTP_WRITE_TO_FILE,
+
+    // Cancels the current file write, thereby clearing the SRAM cache. Note
+    // that it doesn't explicitly delete the file on MRAM.
     FTP_CANCEL_FILE_WRITE,
-    FTP_FORMAT_FILESYSTEM,
 
     // add more commands here as needed
 } Command;
