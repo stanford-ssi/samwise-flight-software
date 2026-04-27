@@ -1604,8 +1604,5 @@ const size_t ftp_tests_len = sizeof(ftp_tests) / sizeof(test_harness_case_t);
 
 int main()
 {
-    uint16_t indicies[] = {33};
-    return test_harness_include_run("FTP", ftp_tests, ftp_tests_len,
-                                    ftp_test_setup, indicies,
-                                    sizeof(indicies) / sizeof(uint16_t));
+    return test_harness_run("FTP", ftp_tests, ftp_tests_len, ftp_test_setup);
 }

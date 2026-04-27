@@ -15,37 +15,29 @@ Both are defined with Bazel macros in `//bzl:defs.bzl`.
 
 ### Running Unit Tests (host)
 
-Note that the last FTP test requires an environment variable to be set for it to run - otherwise, by default, it will fail! This is set in `run_tests.sh`, so it is highly recommended to run:
+Note: The last `ftp_test` generates a binary of `picubed-debug` to try to upload it to the mock MRAM with FTP commands only. If issues happen during building or building is slow, you can remove the last FTP test to prevent rebuilding the repository twice. This is done through the `//bzl:firmware_for_test.bzl` function.
 
 ```bash
 # Run all tests (//...)
-source run_tests.sh
+bazelisk test //...
 
 # Force run all tests (remove cached) -- use this if you need to make *sure* all tests work (I recommend using this very liberally)
-source run_tests.sh -t-
+bazelisk test //... -t-
 
 # You can also do this to more aggressively clean
-bazel clean
+bazelisk clean
 
 # Output all logs
-source run_tests.sh --test_output=all
+bazelisk test //... --test_output=all
 
-# See bazel test command for more options
+# See `bazelisk help test` command for more options
 ```
-
-The actual command would be to run:
-
-```bash
-bazel test --test_env=FTP_TEST_REAL_FILE_PATH="path/to/example/file" //...
-```
-
-The bash script just automatically builds to `bazel-bin` and uses `samwise.bin`, therefore emulating a real OTA! If you do not specify `FTP_TEST_REAL_FILE_PATH`, all tests except `ftp_test` should work.
 
 To run a specific test:
 
 ```bash
 # Run a specific test
-bazel test //src/tasks/print:print_test
+bazelisk test //src/tasks/print:print_test
 ```
 
 ### Debugging Unit Tests (with GDB)
@@ -54,7 +46,7 @@ You can tell bazel to run a test under gdb:
 
 ```bash
 # Runs filesys_test under gdb
-bazel run --config=tests --compilation_mode=dbg --run_under="gdb --args" //src/filesys/test:filesys_test
+bazelisk run --config=tests --compilation_mode=dbg --run_under="gdb --args" //src/filesys/test:filesys_test
 ```
 
 ### Building Integration Tests (hardware)
@@ -64,8 +56,8 @@ They are executed on-device by the `hardware_test_task` scheduler task.
 
 ```bash
 # Build the bringup firmware (includes all registered integration tests)
-bazel build :samwise --config=picubed-bringup
-bazel build :samwise --config=pico # This works too
+bazelisk build :samwise --config=picubed-bringup
+bazelisk build :samwise --config=pico # This works too
 ```
 
 ---
@@ -223,7 +215,7 @@ samwise_integration_test(
 > **Note:** `samwise_test` and `samwise_integration_test` can share the same
 > `name` because they produce differently-suffixed targets (`my_driver_test`
 > vs `my_driver_test_hw_lib`) and are compiled at different times (i.e.)
-> `bazel test` vs `bazel build`.
+> `bazelisk test` vs `bazelisk build`.
 
 > **Note:** Helper sources passed via `srcs` may contain their own standalone
 > `main()`. The macro compiles them with `-Dmain=_unused_<name>_main_` so
@@ -473,12 +465,12 @@ and explicit-target form (`//src/drivers/rfm9x:rfm9x`) are mapped.
 ### Integration test not running on hardware
 
 1. Verify `samwise_integration_test()` produces a `<name>_hw_lib` target
-   (`bazel query //path/to:my_test_hw_lib`).
+   (`bazelisk query //path/to:my_test_hw_lib`).
 2. Verify the `_hw_lib` target is listed in the `tests` dict of
    `hardware_integration_test_suite()` in
    `src/tasks/hardware_test/BUILD.bazel`.
-3. Build with a bringup or pico config: `bazel build :samwise --config=picubed-bringup`,
-   `bazel build :samwise --config=pico`.
+3. Build with a bringup or pico config: `bazelisk build :samwise --config=picubed-bringup`,
+   `bazelisk build :samwise --config=pico`.
 
 ## Example: Complete Test Setup
 

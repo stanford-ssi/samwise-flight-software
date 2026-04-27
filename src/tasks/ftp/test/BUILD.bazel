@@ -16,6 +16,8 @@ samwise_test(
         "ftp_test.c",
         "ftp_test.h",
     ],
+    data = ["//:samwise_bin_for_test"],
+    env = {"FTP_TEST_REAL_FILE_PATH": "$(rootpath //:samwise_bin_for_test)"},
     deps = _FTP_DEPS,
 )
 
