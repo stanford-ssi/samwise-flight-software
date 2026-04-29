@@ -8,6 +8,8 @@
 #include "logger.h"
 #include "typedefs.h"
 
+void fatal_error(char *msg);
+
 static inline void queue_init(queue_t *q, unsigned int element_size,
                               unsigned int element_count)
 {

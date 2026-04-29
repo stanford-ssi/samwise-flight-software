@@ -28,6 +28,8 @@ build:pico --define=profile=pico
 build:pico --platforms=//platforms:arm_cortex_m33_platform
 build:pico --define=PICO_BOARD=samwise_pico
 build:pico --define=PICO_PLATFORM=rp2350
+build:pico --define=MRAM=1
+build:pico --copt=-DMRAM=1
 build:pico --copt=-DPICO_CRT0_IMAGE_TYPE_TBYB=0
 build:pico --copt=-DPICO=1
 build:pico --compilation_mode=dbg
