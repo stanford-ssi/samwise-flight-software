@@ -56,7 +56,7 @@ def get_board_pins(board_type):
             "SCK": board.SCK,  # Usually D24
             "CS": board.CE1,  # Lifted from run_sequence.py
             "RESET": board.D25,  # Lifted from run_sequence.py
-            # 'LED': board.D13        # Built-in LED
+            'LED': board.D13        # Built-in LED
         }
     else:
         # Default to Pico pins

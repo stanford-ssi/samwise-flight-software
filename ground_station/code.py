@@ -11,16 +11,20 @@ def main():
     initialize()
 
     print("\nSelect mode:")
-    print("1. Debug Listen Mode (watch for any packets)")
-    print("2. Interactive Command Mode")
+    print("1. Merry (UHF): 433 Debug Listen Mode (watch for any packets)")
+    print("2. Merry (UHF): 433 Interactive Command Mode")
+    print("3. Pippin (S-Band): 2400 Listen Mode")
 
     try:
         choice = input("Enter choice (1 or 2): ").strip()
         if choice == "1":
+            print("\n=== Starting Merry Board | 433 Debug Listen Mode ===")
             debug_listen_mode()
-        else:
-            print("\n=== Starting Interactive Command Loop ===")
+        elif choice == "2":
+            print("\n=== Starting Merry Board | 433 Interactive Command Loop ===")
             interactive_command_loop()
+        elif choice == "3":
+            print("\n=== Starting Pippin Board | 2400 Listen Mode")
     except KeyboardInterrupt:
         print("\nGoodbye!")
 
