@@ -90,6 +90,7 @@ cc_library(
         "//src/states/bringup:bringup_state",
         "//src/states/burn_wire:burn_wire_state",
         "//src/states/burn_wire_reset:burn_wire_reset_state",
+        "//src/states/shutdown:shutdown_state",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",

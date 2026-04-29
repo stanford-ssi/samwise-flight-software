@@ -52,6 +52,10 @@ typedef struct samwise_slate
     // Manually set next state to transition to
     state_id_t manual_override_state_id;
 
+    // Shutdown: 3 consecutive SHUTDOWN commands required to trigger
+    uint8_t shutdown_cmd_counter;
+    bool shutdown_triggered;
+
     /*
      * Power Telemetry
      */
