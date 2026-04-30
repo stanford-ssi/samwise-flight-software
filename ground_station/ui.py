@@ -174,7 +174,7 @@ def show_command_menu():
     print("3. Send Payload Turn On")
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
-    print("6. Send Payload Shutdown")
+    print("6. Send Comms Shutdown")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -220,8 +220,8 @@ def interactive_command_loop():
                     state_name = str(input("Enter state name: ") or "running_state")
                     radio.send_manual_state_override(state_name)
                 elif cmd == "6":
-                    print("Sending payload shutdown...")
-                    radio.send_payload_shutdown()
+                    print("Sending comms shutdown...")
+                    radio.send_comms_shutdown()
                 elif cmd == "":
                     # Pressed enter, show status and prompt
                     print(

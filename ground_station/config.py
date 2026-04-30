@@ -32,7 +32,8 @@ PAYLOAD_EXEC = 1  # src/tasks/command/command_parser.h:CMD_PAYLOAD_EXEC
 PAYLOAD_TURN_ON = 2  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_ON
 PAYLOAD_TURN_OFF = 3  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_OFF
 MANUAL_STATE_OVERRIDE = 4  # src/tasks/command/command_parser.h:CMD_MANUAL_STATE_OVERRIDE
-PAYLOAD_SHUTDOWN = 5  # src/tasks/command/command_parser.h:CMD_PAYLOAD_SHUTDOWN
+COMMS_SHUTDOWN = 5  # src/tasks/command/command_parser.h:CMD_PAYLOAD_SHUTDOWN (stops satellite communications)
+# TODO: Add dedicated PAYLOAD_SHUTDOWN command ID when flight software adds separate payload shutdown support
 
 # Packet filtering configuration
 # These filters help reject noisy packets not from the satellite
