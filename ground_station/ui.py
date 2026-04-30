@@ -24,6 +24,20 @@ else:
 logger = get_logger("GS.UI")
 
 
+def safe_print(*args, **kwargs):
+    """print() wrapper that swallows transient OSError on flush.
+
+    On some platforms (notably macOS over certain pty/serial monitors),
+    stdout can briefly return EINVAL during flush. Those errors are not
+    actionable from the loop, so we silently ignore them rather than
+    spamming the catch-all error handler.
+    """
+    try:
+        print(*args, **kwargs)
+    except OSError:
+        pass
+
+
 def check_stdin_ready():
     """Check if stdin has data available without blocking.
 
@@ -32,7 +46,11 @@ def check_stdin_ready():
     """
     if HAS_SELECT:
         # Unix/Linux/Mac with select support
-        rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        try:
+            rlist, _, _ = select.select([sys.stdin], [], [], 0)
+        except (OSError, ValueError):
+            # stdin fd may be invalid/closed/non-selectable in some envs
+            return False
         return bool(rlist)
     else:
         # CircuitPython fallback - try to read with timeout
@@ -188,11 +206,15 @@ def interactive_command_loop():
     last_status_time = time.monotonic()
     status_interval = 10.0  # Show status every 10 seconds
 
+    last_error_time = 0.0
+    error_print_interval = 5.0  # Throttle catch-all error prints
+    suppressed_error_count = 0
+
     while True:
         try:
             # 1. Continuously check for packets (most important)
             radio = get_radio()
-            radio.try_get_packet(timeout=0.01)
+            radio.try_get_packet(timeout=0.1)
 
             # 2. Check for user input without blocking
             # Platform-agnostic non-blocking stdin check
@@ -224,7 +246,7 @@ def interactive_command_loop():
                     radio.send_payload_shutdown()
                 elif cmd == "":
                     # Pressed enter, show status and prompt
-                    print(
+                    safe_print(
                         f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-6, q, h): ",
                         end="",
                         flush=True,
@@ -235,7 +257,7 @@ def interactive_command_loop():
             # 3. Periodic status line to show we're alive
             current_time = time.monotonic()
             if current_time - last_status_time > status_interval:
-                print(
+                safe_print(
                     f"\r[STATUS] Monitoring... Boot:{state_manager.boot_count} MsgID:{state_manager.msg_id}   ",
                     end="",
                     flush=True,
@@ -249,7 +271,18 @@ def interactive_command_loop():
             state_manager.shutdown()
             break
         except Exception as e:
-            print(f"Error: {e}")
+            now = time.monotonic()
+            if now - last_error_time >= error_print_interval:
+                if suppressed_error_count:
+                    suffix = f" (repeated {suppressed_error_count + 1} times)"
+                else:
+                    suffix = ""
+                print(f"\nError: {e}{suffix}")
+                logger.error("Interactive loop error: %s%s", e, suffix, exc_info=True)
+                last_error_time = now
+                suppressed_error_count = 0
+            else:
+                suppressed_error_count += 1
             time.sleep(0.1)
 
 
