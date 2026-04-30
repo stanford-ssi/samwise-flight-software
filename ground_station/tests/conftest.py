@@ -8,18 +8,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Mock hardware libraries globally for all tests
-# This must happen BEFORE any path manipulation to avoid import conflicts
 sys.modules["board"] = MagicMock()
 sys.modules["busio"] = MagicMock()
 sys.modules["digitalio"] = MagicMock()
 sys.modules["adafruit_rfm9x"] = MagicMock()
-
-# Add parent directory to path for all tests
-# Use append instead of insert to avoid shadowing stdlib modules
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
 
 
 @pytest.fixture(scope="session")

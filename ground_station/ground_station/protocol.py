@@ -6,10 +6,10 @@ try:
 except ImportError:
     pass
 
-import config
-from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
-from models import Packet as ModelPacket
-from state import state_manager
+import ground_station.config as config
+from ground_station.models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
+from ground_station.models import PacketModel
+from ground_station.state import state_manager
 
 # On CPython (Raspberry Pi) always use stdlib hmac/hashlib — circuitpython_hmac has a
 # name-mangling bug (_HMAC__translate) that causes NameError on Python 3.
@@ -50,7 +50,7 @@ class Packet:
             raise ValueError(f"Data too large: {len(data)} bytes")
 
         # Create model representing the unsaved packet
-        pkt = ModelPacket(
+        pkt = PacketModel(
             dst=dst,
             src=src,
             flags=flags,
@@ -68,7 +68,7 @@ class Packet:
         return payload + h.digest()
 
     @staticmethod
-    def unpack(packet_bytes: bytes) -> ModelPacket:
+    def unpack(packet_bytes: bytes) -> PacketModel:
         """Unpack raw bytes from an incoming packet into a Packet model.
 
         Note: HMAC is NOT verified here. Incoming packets from the satellite
@@ -87,7 +87,7 @@ class Packet:
         data_end = config.PACKET_HEADER_SIZE + data_len
         data = packet_bytes[config.PACKET_HEADER_SIZE : data_end]
 
-        return ModelPacket(dst=dst, src=src, flags=flags, seq=seq, data=data)
+        return PacketModel(dst=dst, src=src, flags=flags, seq=seq, data=data)
 
 
 class BeaconPacket(Packet):

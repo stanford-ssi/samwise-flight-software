@@ -25,10 +25,10 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-import radio_initialization as hardware
-from logger import get_logger
-from radio_commands import LoraRadio, get_radio
-from state import state_manager
+from ground_station import radio_initialization as hardware
+from ground_station.logger import get_logger
+from ground_station.radio_commands import LoraRadio, get_radio
+from ground_station.state import state_manager
 
 logger = get_logger("GS.Server")
 
@@ -324,7 +324,12 @@ def create_app(radio_override: Optional[LoraRadio] = None) -> FastAPI:
 
 app = create_app()
 
-if __name__ == "__main__":
+
+def run(host: str = "127.0.0.1", port: int = 8000):
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=host, port=port)
+
+
+if __name__ == "__main__":
+    run()

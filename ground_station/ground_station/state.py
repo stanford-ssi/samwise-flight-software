@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from logger import get_logger
+from ground_station.logger import get_logger
 
 STATE_FILE = "gs_state.json"
 _IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"

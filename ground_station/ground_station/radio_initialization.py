@@ -3,8 +3,8 @@ import board
 import busio
 import digitalio
 
-import config
-from logger import get_logger
+from ground_station import config
+from ground_station.logger import get_logger
 
 logger = get_logger("GS.RadioInit")
 

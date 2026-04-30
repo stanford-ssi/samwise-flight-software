@@ -1,5 +1,5 @@
-from radio_initialization import initialize
-from ui import debug_listen_mode, interactive_command_loop
+from ground_station.radio_initialization import initialize
+from ground_station.ui import debug_listen_mode, interactive_command_loop
 
 
 def main():

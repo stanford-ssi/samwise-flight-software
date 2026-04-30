@@ -1,11 +1,11 @@
 import sys
 import time
 
-import config
-import radio_initialization as hardware
-from logger import get_logger
-from radio_commands import get_radio
-from state import state_manager
+from ground_station import config
+from ground_station import radio_initialization as hardware
+from ground_station.logger import get_logger
+from ground_station.radio_commands import get_radio
+from ground_station.state import state_manager
 
 # Platform detection for CircuitPython compatibility
 IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"

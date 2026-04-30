@@ -1,3 +1,9 @@
+import sys
+
+# Automatic config for changing how we write code:
+# Detect CircuitPython vs CPython
+IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+
 # Default packet constants - Must match flight software protocol implementation
 # Flight Software References:
 # - Packet Structure: src/tasks/radio/radio_task.c (packet parsing functions)

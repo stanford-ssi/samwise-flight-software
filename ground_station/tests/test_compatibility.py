@@ -11,13 +11,10 @@ Usage:
 """
 
 import builtins
+import importlib
 import importlib.util
-import os
 import sys
 import traceback
-
-# Add parent directory to path to import ground_station modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # Check if select module is available (not on all platforms)
 HAS_SELECT_MODULE = importlib.util.find_spec("select") is not None
@@ -28,7 +25,7 @@ def get_models_module():
     Import and return the models module.
     This function exists to centralize module imports for testing.
     """
-    import models
+    from ground_station import models
 
     return models
 
@@ -90,8 +87,8 @@ def test_without_pydantic():
 
     try:
         # Remove models from cache first
-        if "models" in sys.modules:
-            del sys.modules["models"]
+        for mod_name in [m for m in sys.modules if m == "ground_station.models" or m.startswith("ground_station.models.")]:
+            del sys.modules[mod_name]
 
         # Apply mock
         builtins.__import__ = mock_import
@@ -139,8 +136,8 @@ def test_without_pydantic():
         # Restore original import
         builtins.__import__ = original_import
         # Clean up
-        if "models" in sys.modules:
-            del sys.modules["models"]
+        for mod_name in [m for m in sys.modules if m == "ground_station.models" or m.startswith("ground_station.models.")]:
+            del sys.modules[mod_name]
 
 
 def test_ui_platform_detection():

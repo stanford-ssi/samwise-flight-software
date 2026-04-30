@@ -6,14 +6,9 @@ Byte formats must remain in sync with the Kaitai Struct specification:
 
 import os
 import struct
-import sys
 
 import pytest
 
-# Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-
-# Import ground_station modules as a package (hardware mocking handled in conftest.py)
 from ground_station import protocol
 from ground_station import state as state_module
 
@@ -153,9 +148,7 @@ def test_beacon_decode():
 # Run with `pytest -s` to see the printed packet dumps.
 # ---------------------------------------------------------------------------
 
-# Add ground_station to path so we can import config directly
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from ground_station import config as gs_config  # noqa: E402
+from ground_station import config as gs_config
 
 
 @pytest.mark.unit
