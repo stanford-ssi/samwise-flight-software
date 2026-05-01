@@ -1,18 +1,17 @@
 import os
 import sys
 import time
+from ground_station.config import IS_CIRCUITPYTHON
 
 # Use adafruit_logging on CircuitPython, standard logging on CPython
-_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
-
-if _IS_CIRCUITPYTHON:
+if IS_CIRCUITPYTHON:
     import adafruit_logging as logging
 else:
     import logging
 
 # Set up logging for console and system logs
 # This allows for structured logging level control (DEBUG, INFO, etc.)
-if not _IS_CIRCUITPYTHON:
+if not IS_CIRCUITPYTHON:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -20,14 +19,14 @@ if not _IS_CIRCUITPYTHON:
     )
 
 logger = logging.getLogger("GS")
-if _IS_CIRCUITPYTHON:
+if IS_CIRCUITPYTHON:
     logger.setLevel(logging.INFO)
 
 
 def get_logger(name):
     """Create a named logger, compatible with both CPython and CircuitPython."""
     lg = logging.getLogger(name)
-    if _IS_CIRCUITPYTHON:
+    if IS_CIRCUITPYTHON:
         lg.setLevel(logging.INFO)
     return lg
 
@@ -68,7 +67,7 @@ class TelemetryLogger:
         self.file_handle = None
         self.log_to_console = log_to_console
         # Disable CSV logging on CircuitPython (read-only filesystem)
-        self.log_to_csv = log_to_csv and not _IS_CIRCUITPYTHON
+        self.log_to_csv = log_to_csv and not IS_CIRCUITPYTHON
 
         if self.log_to_csv:
             self._ensure_log_dir()

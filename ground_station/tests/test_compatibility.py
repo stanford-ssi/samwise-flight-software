@@ -10,6 +10,8 @@ Usage:
     python3 test_compatibility.py
 """
 
+from ground_station.config import IS_CIRCUITPYTHON
+
 import builtins
 import importlib
 import importlib.util
@@ -148,13 +150,11 @@ def test_ui_platform_detection():
 
     try:
         # Test platform detection
-        is_circuitpython = sys.implementation.name == "circuitpython"
-
-        print(f"✓ IS_CIRCUITPYTHON: {is_circuitpython}")
+        print(f"✓ IS_CIRCUITPYTHON: {IS_CIRCUITPYTHON}")
         print(f"✓ HAS_SELECT: {HAS_SELECT_MODULE}")
 
         # On CPython, select should be available
-        if not is_circuitpython:
+        if not IS_CIRCUITPYTHON:
             assert HAS_SELECT_MODULE is True, "select should be available on CPython"
             print("✓ select module available (CPython)")
 
