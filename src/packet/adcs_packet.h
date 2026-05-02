@@ -22,6 +22,10 @@ typedef struct __attribute__((packed))
     // Quaternion Estimate
     float q0, q1, q2, q3;
 
+    // Time
+    float mjd;
+    float UTC_time;
+
     // Misc Data
     char state;
     uint32_t boot_count;

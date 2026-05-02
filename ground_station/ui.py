@@ -175,6 +175,7 @@ def show_command_menu():
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
     print("6. Send Payload Shutdown")
+    print("7. Send ADCS Command")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -239,15 +240,12 @@ def interactive_command_loop():
             # 3. Periodic status line to show we're alive
             current_time = time.monotonic()
             if current_time - last_status_time > status_interval:
-                pass
-                """
                 print(
                     f"\r[STATUS] Monitoring... Boot:{state_manager.boot_count} MsgID:{state_manager.msg_id}   ",
                     end="",
                     flush=True,
                 )
                 last_status_time = current_time
-                """
 
             time.sleep(0.01)  # Low latency
 

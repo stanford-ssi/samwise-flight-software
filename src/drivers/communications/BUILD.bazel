@@ -1,0 +1,34 @@
+package(default_visibility = ["//visibility:public"])
+
+# Communications for uart and cobs package stuffing
+cc_library(
+    name = "communications",
+    srcs = ["cobs.c", "protocol.c", "uart_communications.c"],
+    hdrs = ["cobs.h", "protocol.h", "uart_communications.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/packet:packet",
+        "//src/slate",
+        "//src/utils",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+)
+
+# Mock burn wire driver (for host tests)
+cc_library(
+    name = "communications_mock",
+    srcs = ["communications_mock.c"],
+    hdrs = ["cobs.h", "protocol.h", "uart_communication.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/drivers/logger:logger_mock",
+        "//src/error:error_mock",
+        "//src/slate",
+        "//src/test_mocks",
+    ],
+)

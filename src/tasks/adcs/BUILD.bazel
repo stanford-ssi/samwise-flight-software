@@ -8,6 +8,7 @@ cc_library(
     deps = [
         "//src/common",
         "//src/packet:adcs_packet",
+        "//src/drivers/communications",
         "//src/scheduler:state_machine",
         "//src/slate",
     ] + select({
