@@ -22,7 +22,8 @@ jobs:
       ) && (
         github.actor == 'devYaoYH' ||
         github.actor == 'carter-cochran' ||
-        github.actor == 'lc0001coll'
+        github.actor == 'lc0001coll' ||
+        github.actor == 'megargayu'
       )
 
     permissions:
