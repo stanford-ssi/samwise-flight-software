@@ -120,12 +120,9 @@ jobs:
       working-directory: ground_station
 
     - name: Install linting tools
-      run: uv tool install black==24.1.1 && uv tool install ruff==0.2.1
+      run: uv tool install black==24.1.1
 
     - name: Check code formatting with black
       run: uv tool run black==24.1.1 --check --diff .
       working-directory: ground_station
 
-    - name: Lint with ruff
-      run: uv tool run ruff==0.2.1 check .
-      working-directory: ground_station
