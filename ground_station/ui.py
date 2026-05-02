@@ -224,9 +224,10 @@ def interactive_command_loop():
                     print("Sending payload shutdown...")
                     radio.send_payload_shutdown()
                 elif cmd == "7":
-                    adcs_command = str(input("Enter adcs command: "))
+                    adcs_command = int(input("Enter adcs command: "))
+                    adcs_command_byte = bytes([adcs_command])
                     print("Sending adcs command byte")
-                    radio.send_adcs_exec(adcs_command)
+                    radio.send_adcs_exec(adcs_command_byte)
                 elif cmd == "":
                     # Pressed enter, show status and prompt
                     print(

@@ -74,7 +74,7 @@ void adcs_task_dispatch(slate_t *slate)
 }
 
 sched_task_t adcs_task = {.name = "adcs",
-                          .dispatch_period_ms = 500,
+                          .dispatch_period_ms = 2000,
                           .task_init = &adcs_task_init,
                           .task_dispatch = &adcs_task_dispatch,
 
