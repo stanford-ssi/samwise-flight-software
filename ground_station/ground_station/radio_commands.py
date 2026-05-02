@@ -147,7 +147,7 @@ class LoraRadio:
                             expected_callsign,
                         )
                         return None
-                    
+
                     logger.debug("Callsign verified: %s", beacon_data.callsign)
                 else:
                     logger.warning(

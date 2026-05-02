@@ -12,7 +12,6 @@
 #include "logger.h"
 #include "macros.h"
 #include "payload_uart.h"
-#include "radio_task.h"
 #include "rfm9x.h"
 #include "state_ids.h"
 #include "str_utils.h"

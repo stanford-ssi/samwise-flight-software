@@ -9,7 +9,6 @@
 #include "adcs_packet.h"
 #include "logger.h"
 #include "neopixel.h"
-#include "radio_task.h"
 #include "state_registry.h"
 #include "str_utils.h"
 #include <stdlib.h>

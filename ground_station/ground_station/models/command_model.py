@@ -3,6 +3,7 @@ from ground_station.models.packet_model import PacketModel
 
 # TODO: Remove this? Is this useful?
 
+
 class CommandPacket(PacketModel):
     """Packet type for sending commands to the satellite.
 

@@ -6,7 +6,6 @@ On CPython (Raspberry Pi), Pydantic validation is used if available.
 On CircuitPython (Pico/Feather), simple classes are used instead.
 """
 
-
 from ground_station.config import IS_CIRCUITPYTHON
 
 if not IS_CIRCUITPYTHON:

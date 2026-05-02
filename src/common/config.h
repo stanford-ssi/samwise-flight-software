@@ -7,6 +7,22 @@
 #define MIN_WATCHDOG_INTERVAL_MS 200
 
 /**
+ * Downlink Configuration
+ */
+#define DOWNLINK_PACKET_ID_SIZE 1
+
+// First byte of every SAMWISE -> Ground Station packet's data field. Mirrors
+// the uplink Command enum / COMMAND_MNEMONIC_SIZE convention so the ground
+// station can dispatch on packet type instead of assuming every RX is a beacon.
+typedef enum
+{
+    DOWNLINK_BEACON = 0,
+    DOWNLINK_COMMAND_RESPONSE = 1,
+    // add more downlink packet types here as needed
+} DownlinkPacketId;
+
+
+/**
  * Command task configuration
  */
 #define COMMAND_MNEMONIC_SIZE 1 // number of bytes used to identify command
