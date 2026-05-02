@@ -55,6 +55,18 @@ void protocol_message_pong(msg_t *msg)
     msg->crc8 = 0;
 }
 
+void protocol_message_command(msg_t *msg, uint8_t command)
+{
+    msg->src = 1;
+    msg->dst = 0;
+    msg->seq = 0;
+    msg->flags = 0;
+    msg->type = MSG_COMMAND;
+    msg->len = 1;
+    msg->payload = (uint8_t *)command;
+    msg->crc8 = 0;
+}
+
 void protocol_message_string(msg_t *msg, uint8_t *s)
 {
     uint8_t len = strlen((char *)s);

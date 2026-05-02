@@ -38,6 +38,8 @@ void protocol_message_ping(msg_t *msg);
 
 void protocol_message_pong(msg_t *msg);
 
+void protocol_message_command(msg_t *msg, uint8_t command);
+
 void protocol_message_string(msg_t *msg, uint8_t *s);
 
 void protocol_message_adcs(msg_t *msg, adcs_packet_t *adcs);

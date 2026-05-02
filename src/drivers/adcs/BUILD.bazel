@@ -11,6 +11,7 @@ cc_library(
         "//src/drivers/logger",
         "//src/packet:packet",
         "//src/slate",
+        "//src/drivers/communications",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
     ],

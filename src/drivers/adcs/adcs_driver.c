@@ -1,15 +1,19 @@
 /**
- * @author Niklas Vainio
- * @date 2025-07-20
+ * @author Niklas Vainio @date 2025-07-20
  *
  * This code defines the hardware-level ADCS UART interface
  */
 
 #include "hardware/uart.h"
+#include "logger.h"
 #include "pico/stdlib.h"
 #include "pins.h"
 
 #include "adcs_driver.h"
+
+#include "cobs.h"
+#include "protocol.h"
+#include "uart_communications.h"
 
 // Uart parameters
 #define ADCS_UART_BAUD (115200)
@@ -26,8 +30,8 @@
 // currently set to 500ms (faily generous)
 #define ADCS_BYTE_TIMEOUT_US (500000)
 
-static is_adcs_on = false;
-static is_adcs_telem_valid = false;
+static bool is_adcs_on = false;
+static bool is_adcs_telem_valid = false;
 
 /**
  * @brief Helper function to read up to num_bytes bytes from ADCS uart with a
@@ -173,7 +177,7 @@ bool adcs_driver_is_alive()
     }
 
     // Flush any existing data in the UART buffer
-    uart_flush();
+    flush_uart();
 
     // Send a ping to the ADCS board and expect to read back a known byte
     LOG_INFO("[ADCS] Sending health check command: %c\n", ADCS_HEALTH_CHECK);
@@ -189,3 +193,45 @@ bool adcs_driver_is_alive()
     // Return true if we received a byte, and it is the expected value
     return (num_bytes_read > 0) && (c == ADCS_HEALTH_CHECK_SUCCESS);
 }
+
+void receive_msg(msg_t *msg, uint8_t *rx_buf)
+{
+    static uint8_t raw_buf[256];
+    uint16_t num_bytes = uart_comms_get_packet(SAMWISE_ADCS_UART, raw_buf, 256);
+    cobs_decode(raw_buf, num_bytes, rx_buf);
+    protocol_message_decode(msg, num_bytes + 1, rx_buf);
+}
+
+void send_msg(msg_t *msg, uint32_t len)
+{
+    uint8_t msg_buf[len];
+    protocol_message_encode(msg, msg_buf);
+    uint8_t cobs_buf[len + 2];
+    uint32_t end = cobs_encode(msg_buf, len, cobs_buf);
+    cobs_buf[end] = 0;
+    uart_comms_tx(SAMWISE_ADCS_UART, cobs_buf, end + 1);
+}
+
+void send_ping()
+{
+    LOG_INFO("[TELEMETRY] Sending Ping");
+    msg_t ping;
+    protocol_message_ping(&ping);
+    send_msg(&ping, 8);
+}
+
+void send_pong()
+{
+    LOG_INFO("[TELEMETRY] Sending Pong");
+    msg_t pong;
+    protocol_message_pong(&pong);
+    send_msg(&pong, 8);
+}
+
+void send_command(uint8_t command)
+{
+    LOG_INFO("[TELEMETRY] Sending command [%d]", command);
+    msg_t msg;
+    protocol_message_command(&msg, command);
+    send_msg(&msg, 8);
+};

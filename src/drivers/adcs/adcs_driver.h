@@ -8,6 +8,8 @@
 
 #include "adcs_packet.h"
 
+#include "protocol.h"
+
 typedef enum
 {
     ADCS_SUCCESS = 0,
@@ -51,3 +53,14 @@ adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet);
  * @return true if ADCS is alive and responding
  */
 bool adcs_driver_is_alive();
+
+// send msg
+void receive_msg(msg_t *msg, uint8_t *rx_buf);
+
+void send_msg(msg_t *msg, uint32_t len);
+
+void send_ping();
+
+void send_pong();
+
+void send_command(uint8_t command);

@@ -19,6 +19,7 @@ cc_library(
             "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [
+            "//src/drivers/adcs",
             "//src/drivers/payload_uart",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/common/pico_util:pico_util",
