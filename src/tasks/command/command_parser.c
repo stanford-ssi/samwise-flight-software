@@ -55,10 +55,10 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             data[0] = DOWNLINK_COMMAND_RESPONSE;
 
             // Package integer value into a string after the packet-id byte.
-            int body_len = snprintf(
-                (char *)&data[DOWNLINK_PACKET_ID_SIZE],
-                sizeof(data) - DOWNLINK_PACKET_ID_SIZE,
-                "Number commands executed: %d", slate->number_commands_processed);
+            int body_len = snprintf((char *)&data[DOWNLINK_PACKET_ID_SIZE],
+                                    sizeof(data) - DOWNLINK_PACKET_ID_SIZE,
+                                    "Number commands executed: %d",
+                                    slate->number_commands_processed);
             int len = DOWNLINK_PACKET_ID_SIZE + body_len;
 
             // Create the packet
