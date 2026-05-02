@@ -28,8 +28,11 @@ jobs:
               - 'src/**'
               - 'bzl/**'
               - 'BUILD.bazel'
+              - 'README.md'
               - '.bazelrc'
               - '.github/workflows/*.yaml'
+              - '.github/workflows/*.yml'
+
 
   Build:
     needs: changes
