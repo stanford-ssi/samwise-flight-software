@@ -26,6 +26,10 @@ typedef struct __attribute__((packed))
     float mjd;
     float UTC_time;
 
+    // Power
+    float voltage;
+    float current;
+
     // Misc Data
     char state;
     uint32_t boot_count;
