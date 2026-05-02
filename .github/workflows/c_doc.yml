@@ -21,7 +21,8 @@ jobs:
         contains(github.event.comment.body, '@claude_doc')
       ) && (
         github.actor == 'devYaoYH' ||
-        github.actor == 'carter-cochran'
+        github.actor == 'carter-cochran' ||
+        github.actor == 'lc0001coll'
       )
 
     permissions:
