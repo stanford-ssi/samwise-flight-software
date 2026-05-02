@@ -33,7 +33,6 @@ jobs:
               - '.github/workflows/*.yaml'
               - '.github/workflows/*.yml'
 
-
   Build:
     needs: changes
     if: ${{ needs.changes.outputs.should_build == 'true' }}
