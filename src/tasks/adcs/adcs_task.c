@@ -53,13 +53,14 @@ static void send_pong()
 
 void adcs_task_init(slate_t *slate)
 {
+
     uart_comms_init(SAMWISE_ADCS_UART, SAMWISE_UART_TX_TO_ADCS,
                     SAMWISE_UART_RX_FROM_ADCS, 115200);
-
     // adcs_driver_init();
+    gpio_init(SAMWISE_ADCS_EN);
+    gpio_set_dir(SAMWISE_ADCS_EN, GPIO_OUT);
 
     // slate->adcs_num_failed_checks = 0;
-    //
     // adcs_driver_power_on();
 }
 
@@ -70,6 +71,10 @@ static uint8_t rx_buf[256];
 void adcs_task_dispatch(slate_t *slate)
 {
     neopixel_set_color_rgb(ADCS_TASK_COLOR);
+
+    sleep_ms(100);
+    gpio_put(SAMWISE_ADCS_EN, 1);
+    sleep_ms(100);
 
     // Check if the board is alive
     /*

@@ -21,7 +21,7 @@
 */
 uint32_t cobs_encode(const void *data, uint32_t length, uint8_t *buffer)
 {
-    ASSERT(data && buffer);
+    // ASSERT(data && buffer);
 
     uint8_t *encode = buffer;  // Encoded byte pointer
     uint8_t *codep = encode++; // Output code pointer
@@ -53,7 +53,7 @@ uint32_t cobs_encode(const void *data, uint32_t length, uint8_t *buffer)
 */
 uint32_t cobs_decode(const uint8_t *buffer, uint32_t length, void *data)
 {
-    ASSERT(buffer && data);
+    // ASSERT(buffer && data);
 
     const uint8_t *byte = buffer;      // Encoded input byte pointer
     uint8_t *decode = (uint8_t *)data; // Decoded output byte pointer

@@ -114,7 +114,7 @@ void uart_comms_init(uart_inst_t *uart_instance, uint8_t tx, uint8_t rx,
     tx_head[idx] = tx_tail[idx] = 0;
 
     int irq_num = (idx == 0) ? UART0_IRQ : UART1_IRQ;
-    LOG_INFO("uart initializing uart%d", idx);
+    // LOG_INFO("uart initializing uart%d", idx);
 
     irq_set_priority(irq_num, 0x60);
     if (idx == 0)
