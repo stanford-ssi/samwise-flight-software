@@ -286,7 +286,9 @@ def test_try_get_packet_returns_none_on_rssi_drop():
     adcs = struct.pack("<fffffBL", 0.1, 1.0, 0.0, 0.0, 0.0, 1, 1)
     callsign = b"KC3WNY"
     payload = state + stats + adcs + callsign
-    mock_rfm.receive.return_value = bytes([len(payload)]) + payload
+    mock_rfm.receive.return_value = (
+        bytes([cfg.DOWNLINK_BEACON, len(payload)]) + payload
+    )
     mock_rfm.last_rssi = -130  # below threshold
     mock_rfm.last_snr = 5
 
@@ -320,7 +322,9 @@ def test_try_get_packet_returns_beacon_data_on_success():
     adcs = struct.pack("<fffffBL", 0.5, 0.9, 0.1, 0.2, 0.3, 2, 5)
     callsign = b"KC3WNY"
     payload = state + stats + adcs + callsign
-    mock_rfm.receive.return_value = bytes([len(payload)]) + payload
+    mock_rfm.receive.return_value = (
+        bytes([cfg.DOWNLINK_BEACON, len(payload)]) + payload
+    )
     mock_rfm.last_rssi = -80
     mock_rfm.last_snr = 10
 

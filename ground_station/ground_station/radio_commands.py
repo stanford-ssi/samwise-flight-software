@@ -17,8 +17,11 @@ class LoraRadio:
     def try_get_packet(self, timeout=0.1):
         """Check for incoming packets with short timeout.
 
-        Returns BeaconData if a packet was successfully received and processed,
-        or None if no packet arrived, the packet was filtered out, or an error occurred.
+        The first byte of every downlink packet is a DownlinkPacketId
+        (see config.DOWNLINK_*). Beacons are decoded and returned as
+        BeaconData; command responses are logged inline (raw text — refactor
+        later) and return None. Returns None for no packet, filtered packets,
+        unknown packet IDs, or errors.
         """
         if self.radio is None:
             return None
@@ -58,31 +61,53 @@ class LoraRadio:
                     )
                     return None
 
-            # All received packets are from the satellite.
-            # Note: radio.node after receive() is the TO field (not FROM) of the
-            # RadioHead header — broadcast beacons (TO=0xFF) give rh_node=0xFF,
-            # NOT 0.  We therefore try beacon decode unconditionally and fall back
-            # to raw logging if it looks malformed.
+            # All received packets are from the satellite. The first byte is a
+            # DownlinkPacketId (mirror of the uplink cmd_id) — dispatch on it.
             if len(packet) < 1:
                 logger.warning("Empty packet received")
 
                 print(">>> END PACKET <<<\n")
                 return None
 
-            data_len = packet[0]
-            if len(packet) < 1 + data_len:
+            packet_id = packet[0]
+            body = packet[1:]
+
+            if packet_id == config.DOWNLINK_COMMAND_RESPONSE:
+                response_text = body.decode("utf-8", "ignore")
+                logger.info("COMMAND RESPONSE | %s", response_text)
+                print(">>> END PACKET <<<\n")
+                return None
+
+            if packet_id != config.DOWNLINK_BEACON:
+                logger.warning(
+                    "PACKET DROPPED | Unknown downlink packet ID: %d | raw: %s",
+                    packet_id,
+                    packet.hex(),
+                )
+                print(">>> END PACKET <<<\n")
+                return None
+
+            # Beacon path: body is [data_len][content...] — same shape
+            # BeaconPacket.decode has always expected.
+            if len(body) < 1:
+                logger.warning("Beacon packet missing length byte")
+                print(">>> END PACKET <<<\n")
+                return None
+
+            data_len = body[0]
+            if len(body) < 1 + data_len:
                 logger.error(
                     "BEACON DECODE ERROR | Truncated packet: "
                     "data_len=%d but only %d bytes of content available | raw: %s",
                     data_len,
-                    len(packet) - 1,
+                    len(body) - 1,
                     packet.hex(),
                 )
 
                 print(">>> END PACKET <<<\n")
                 return None
 
-            beacon_data = protocol.decode_beacon_data(packet)
+            beacon_data = protocol.decode_beacon_data(body)
             beacon_data.raw_hex = (
                 packet.hex()
                 if hasattr(packet, "hex")
