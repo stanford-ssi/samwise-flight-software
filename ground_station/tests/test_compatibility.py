@@ -89,7 +89,11 @@ def test_without_pydantic():
 
     try:
         # Remove models from cache first
-        for mod_name in [m for m in sys.modules if m == "ground_station.models" or m.startswith("ground_station.models.")]:
+        for mod_name in [
+            m
+            for m in sys.modules
+            if m == "ground_station.models" or m.startswith("ground_station.models.")
+        ]:
             del sys.modules[mod_name]
 
         # Apply mock
@@ -138,7 +142,11 @@ def test_without_pydantic():
         # Restore original import
         builtins.__import__ = original_import
         # Clean up
-        for mod_name in [m for m in sys.modules if m == "ground_station.models" or m.startswith("ground_station.models.")]:
+        for mod_name in [
+            m
+            for m in sys.modules
+            if m == "ground_station.models" or m.startswith("ground_station.models.")
+        ]:
             del sys.modules[mod_name]
 
 

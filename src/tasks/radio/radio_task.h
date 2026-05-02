@@ -12,12 +12,12 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
+#include "config.h"
 #include "macros.h"
 #include "pins.h"
 #include "slate.h"
 #include "state_machine.h"
 #include "typedefs.h"
-#include "config.h"
 
 #include "packet.h"
 #include "rfm9x.h"

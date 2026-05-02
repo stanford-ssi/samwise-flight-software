@@ -21,7 +21,6 @@ typedef enum
     // add more downlink packet types here as needed
 } DownlinkPacketId;
 
-
 /**
  * Command task configuration
  */
