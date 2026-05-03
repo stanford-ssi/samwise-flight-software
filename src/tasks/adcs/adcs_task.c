@@ -44,23 +44,29 @@ void adcs_task_dispatch(slate_t *slate)
     gpio_put(SAMWISE_ADCS_EN, 1);
     sleep_ms(100);
 
-    LOG_INFO("TX COUNT {%d}", tx_count);
+    LOG_INFO("[ADCS] TX COUNT {%d}", tx_count);
     if (uart_comms_packet_ready(SAMWISE_ADCS_UART))
     {
-        LOG_INFO("[TELEMETRY] PACKET RECEIVED {%d}", rx_count);
+        LOG_INFO("[ADCS] PACKET RECEIVED {%d}", rx_count);
         rx_count += 1;
         msg_t received;
         receive_msg(&received, rx_buf);
         switch (received.type)
         {
             case MSG_PING:
-                LOG_INFO("[TELEMETRY] Ping received");
+                LOG_INFO("[ADCS] Ping received");
                 send_pong();
                 break;
             case MSG_PONG:
-                LOG_INFO("[TELEMETRY] Pong received");
+                LOG_INFO("[ADCS] Pong received");
                 // don't send ping else we get infinite loop
+                slate->is_adcs_on = true;
                 break;
+            case MSG_ADCS_PACKET:
+                LOG_INFO("[ADCS] Attitude packet received");
+                slate->is_adcs_on = true;
+                slate->adcs_telemetry = *(adcs_packet_t *)received.payload;
+                adcs_print_telemetry(&slate->adcs_telemetry);
         } // end switch
     }
     else
@@ -74,7 +80,7 @@ void adcs_task_dispatch(slate_t *slate)
 }
 
 sched_task_t adcs_task = {.name = "adcs",
-                          .dispatch_period_ms = 2000,
+                          .dispatch_period_ms = 1000,
                           .task_init = &adcs_task_init,
                           .task_dispatch = &adcs_task_dispatch,
 

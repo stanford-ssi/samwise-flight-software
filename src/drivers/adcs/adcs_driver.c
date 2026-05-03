@@ -168,6 +168,16 @@ adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet)
     return is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
 }
 
+void adcs_print_telemetry(adcs_packet_t *adcs)
+{
+    LOG_INFO("[ADCS_TELEMETRY]");
+    LOG_INFO("Quat: [%f, %f, %f, %f]", adcs->q0, adcs->q1, adcs->q2, adcs->q3);
+    LOG_INFO("W: %f", adcs->w);
+    LOG_INFO("V: %f     I: %f", adcs->voltage, adcs->current);
+    LOG_INFO("MJD: %f", adcs->mjd);
+    LOG_INFO("UTC: %f", adcs->UTC_time);
+}
+
 bool adcs_driver_is_alive()
 {
     // Return immediately if board is off

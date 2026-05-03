@@ -47,6 +47,11 @@ adcs_result_t adcs_driver_power_off();
  */
 adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet);
 
+/*
+ * LOG DEBUG FOR TELEMETRY
+ */
+void adcs_print_telemetry(adcs_packet_t *packet);
+
 /**
  * Check if ADCS hardware is responding
  * @param slate Pointer to slate structure
