@@ -37,4 +37,4 @@ void free_slate(slate_t *slate)
 /**
  * Will be initialized at startup.
  */
-slate_t slate;
+slate_t slate = {0};
