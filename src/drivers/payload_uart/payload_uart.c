@@ -34,6 +34,7 @@
 #define SYN_RETRIES 3
 #define SYN_BYTE '$'
 #define SYN_COUNT 3
+#define MAX_SYN_SCAN_BYTES 1000
 #define START_TRIES 10
 #define START_BYTE '@'
 
@@ -110,10 +111,10 @@ static bool receive_ack(slate_t *slate)
 
 static bool receive_syn(slate_t *slate)
 {
-    // Receive multiple sync bytes
     uint8_t count = 0;
+    uint32_t bytes_scanned = 0;
 
-    while (true)
+    while (bytes_scanned < MAX_SYN_SCAN_BYTES)
     {
         uint8_t received_byte;
         uint16_t received = receive_into(slate, &received_byte, 1, 1000);
@@ -122,15 +123,15 @@ static bool receive_syn(slate_t *slate)
             return false;
 
         if (received_byte == SYN_BYTE)
-        {
             count++;
-        }
 
         if (count >= SYN_COUNT)
-        {
             return true;
-        }
+
+        bytes_scanned++;
     }
+
+    return false;
 }
 
 static bool receive_header_start(slate_t *slate)
@@ -271,15 +272,18 @@ bool uart_write_timeout(const uint8_t *packet, size_t len, uint32_t timeout_us)
 
     while (written < len)
     {
+        // Check timeout every iteration, regardless of writable status, so we
+        // cannot get stuck even if uart_is_writable spuriously stays true or
+        // uart_putc_raw blocks internally.
+        if (time_us_32() - start >= timeout_us)
+        {
+            return false; // timeout
+        }
+
         // If there’s room in the FIFO, push the next byte
         if (uart_is_writable(PAYLOAD_UART_ID))
         {
             uart_putc_raw(PAYLOAD_UART_ID, packet[written++]);
-        }
-        // Else, check if we’ve run out of time
-        else if (time_us_32() - start >= timeout_us)
-        {
-            return false; // timeout
         }
         // Otherwise, spin until either writable or timeout
     }
@@ -308,13 +312,22 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
         return PACKET_TOO_BIG;
     }
 
-    // Write sync packet and wait for ack
+    // Write sync packet and wait for ack. Use uart_write_timeout instead of
+    // uart_putc_raw so we can never block forever on a full TX FIFO.
+    uint8_t syn_buf[SYN_COUNT];
+    for (size_t k = 0; k < SYN_COUNT; k++)
+    {
+        syn_buf[k] = SYN_BYTE;
+    }
+
     bool syn_acknowledged = false;
     for (size_t i = 0; i < SYN_RETRIES; i++)
     {
-        for (size_t j = 0; j < SYN_COUNT; j++)
+        if (!uart_write_timeout(syn_buf, SYN_COUNT, WRITE_MAX_TIMEOUT))
         {
-            uart_putc_raw(PAYLOAD_UART_ID, SYN_BYTE);
+            // TX FIFO appears stuck; skip to the retry delay below.
+            safe_sleep_ms(100);
+            continue;
         }
 
         if (receive_ack(slate))
@@ -332,7 +345,11 @@ payload_write_error_code payload_uart_write_packet(slate_t *slate,
         return SYN_UNSUCCESSFUL;
     }
 
-    uart_putc_raw(PAYLOAD_UART_ID, START_BYTE);
+    uint8_t start_byte = START_BYTE;
+    if (!uart_write_timeout(&start_byte, 1, WRITE_MAX_TIMEOUT))
+    {
+        return UART_WRITE_TIMEDOUT;
+    }
 
     // Calculate the header
     packet_header_t header = compute_packet_header(packet, len, seq_num);

@@ -50,6 +50,88 @@ static inline void cs_deselect(rfm9x_t *r)
 }
 
 /*
+ * Timeout-bounded SPI write. Mirrors spi_write_blocking() but bails out if the
+ * bus stops making progress (FIFO never drains, BSY never clears) so we don't
+ * lock up the entire flight software on an SPI hang.
+ *
+ * Returns the number of bytes written, or -1 on timeout.
+ */
+static int rfm9x_spi_write_safe(spi_inst_t *spi, const uint8_t *src, size_t len)
+{
+    absolute_time_t start = get_absolute_time();
+    for (size_t i = 0; i < len; i++)
+    {
+        while (!spi_is_writable(spi))
+        {
+            if (absolute_time_diff_us(start, get_absolute_time()) >
+                RFM9X_SPI_TIMEOUT_US)
+            {
+                LOG_ERROR("RFM9X SPI write timeout (FIFO)");
+                return -1;
+            }
+            tight_loop_contents();
+        }
+        spi_get_hw(spi)->dr = (uint32_t)src[i];
+    }
+
+    // Drain RX FIFO and wait for shifting to finish, with the same timeout.
+    while (spi_is_readable(spi))
+        (void)spi_get_hw(spi)->dr;
+    while (spi_get_hw(spi)->sr & SPI_SSPSR_BSY_BITS)
+    {
+        if (absolute_time_diff_us(start, get_absolute_time()) >
+            RFM9X_SPI_TIMEOUT_US)
+        {
+            LOG_ERROR("RFM9X SPI write timeout (BSY)");
+            return -1;
+        }
+        tight_loop_contents();
+    }
+    while (spi_is_readable(spi))
+        (void)spi_get_hw(spi)->dr;
+
+    // Don't leave overrun flag set
+    spi_get_hw(spi)->icr = SPI_SSPICR_RORIC_BITS;
+
+    return (int)len;
+}
+
+/*
+ * Timeout-bounded SPI read. Mirrors spi_read_blocking() but bails out on a
+ * stuck bus.
+ *
+ * Returns the number of bytes read, or -1 on timeout.
+ */
+static int rfm9x_spi_read_safe(spi_inst_t *spi, uint8_t repeated_tx_data,
+                               uint8_t *dst, size_t len)
+{
+    absolute_time_t start = get_absolute_time();
+    size_t rx_remaining = len, tx_remaining = len;
+
+    while (rx_remaining || tx_remaining)
+    {
+        if (absolute_time_diff_us(start, get_absolute_time()) >
+            RFM9X_SPI_TIMEOUT_US)
+        {
+            LOG_ERROR("RFM9X SPI read timeout");
+            return -1;
+        }
+        if (tx_remaining && spi_is_writable(spi))
+        {
+            spi_get_hw(spi)->dr = (uint32_t)repeated_tx_data;
+            tx_remaining--;
+        }
+        if (rx_remaining && spi_is_readable(spi))
+        {
+            *dst++ = (uint8_t)spi_get_hw(spi)->dr;
+            rx_remaining--;
+        }
+    }
+
+    return (int)len;
+}
+
+/*
  * Read a buffer from a register address.
  */
 static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
@@ -62,12 +144,12 @@ static inline void rfm9x_get_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
 
     // WRITES to the radio module the value, of length 1 byte, that says that we
     // are GETTING
-    spi_write_blocking(r->spi, &value, 1);
+    rfm9x_spi_write_safe(r->spi, &value, 1);
 
     // GETS from the radio module the buffer.
     // The 0 represents the arbitrary byte that should be passed IN as part of
     // the master/slave interaction.
-    spi_read_blocking(r->spi, 0, buf, n);
+    rfm9x_spi_read_safe(r->spi, 0, buf, n);
 
     cs_deselect(r);
 }
@@ -84,10 +166,10 @@ static inline void rfm9x_put_buf(rfm9x_t *r, rfm9x_reg_t reg, uint8_t *buf,
     // data
     uint8_t value = reg | 0x80;
 
-    spi_write_blocking(r->spi, &value, 1);
+    rfm9x_spi_write_safe(r->spi, &value, 1);
 
     // Write to the radio that
-    spi_write_blocking(r->spi, buf, n);
+    rfm9x_spi_write_safe(r->spi, buf, n);
 
     cs_deselect(r);
 }
@@ -905,9 +987,14 @@ uint8_t rfm9x_rx_done(rfm9x_t *r)
 
 int rfm9x_await_rx(rfm9x_t *r)
 {
+    absolute_time_t start = get_absolute_time();
     rfm9x_listen(r);
     while (!rfm9x_rx_done(r))
     {
+        if (absolute_time_diff_us(start, get_absolute_time()) > RFM9X_RX_TIMEOUT_US) {
+            LOG_ERROR("RFM9X RX timeout - hardware may be unresponsive");
+            return 0; // Return failure
+        }
         tight_loop_contents();
     }
     return 1;

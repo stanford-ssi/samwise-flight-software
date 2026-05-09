@@ -27,6 +27,10 @@
 // currently set to 500ms (faily generous)
 #define ADCS_BYTE_TIMEOUT_US (500000)
 
+// Maximum number of bytes to drain in a single flush_uart call. Bounds the
+// loop in case a hardware fault holds the RX line in a "readable" state.
+#define ADCS_FLUSH_MAX_BYTES (256)
+
 /**
  * @brief Helper function to read up to num_bytes bytes from ADCS uart with a
  * timeout in the case of missing bytes
@@ -43,13 +47,24 @@ void flush_uart()
     if (uart_is_readable(SAMWISE_ADCS_UART))
     {
         LOG_DEBUG("ADCS UART still readable, flushing...");
-        // Flush out any extra bytes that may be in the buffer
-        while (uart_is_readable(SAMWISE_ADCS_UART))
+        // Flush out any extra bytes that may be in the buffer, but bound the
+        // total number of bytes drained so a hardware fault that pins RX low
+        // (continuously "readable") cannot starve other tasks.
+        uint16_t drained = 0;
+        while (uart_is_readable(SAMWISE_ADCS_UART) &&
+               drained < ADCS_FLUSH_MAX_BYTES)
         {
             char c = uart_getc(SAMWISE_ADCS_UART);
             printf("%02x ", c);
+            drained++;
         }
         printf("\n");
+
+        if (drained >= ADCS_FLUSH_MAX_BYTES)
+        {
+            LOG_ERROR("ADCS UART flush hit byte cap (%u) - possible RX fault",
+                      drained);
+        }
     }
 }
 

@@ -25,6 +25,13 @@
 #define RFM9X_FREQUENCY 4381 // In .1 MHz, so 438.1 MHz
 #define RFM9X_BANDWIDTH 125000
 
+// Maximum time to wait for an RX packet before giving up (microseconds).
+#define RFM9X_RX_TIMEOUT_US (5 * 1000 * 1000)
+
+// Maximum time to wait for an SPI transaction to make progress. Protects the
+// driver from hanging forever if the SPI bus latches up (e.g. radiation hit).
+#define RFM9X_SPI_TIMEOUT_US (10 * 1000) // 10 ms
+
 typedef enum
 {
     SLEEP_MODE = 0,

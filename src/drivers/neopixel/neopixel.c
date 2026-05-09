@@ -4,12 +4,31 @@
 #if !defined(PICO) || defined(PICOHAT)
 // Neopixel available on PICUBED and PICO with radio hat
 
+// Maximum time to wait for the PIO TX FIFO to drain when pushing a pixel.
+// If the state machine has stalled this prevents an infinite block.
+#define NEOPIXEL_PUT_TIMEOUT_US (10000) // 10 ms
+
 static PIO neo_pio;
 static uint neo_sm;
 
 static inline void put_pixel(uint32_t pixel_grb)
 {
-    pio_sm_put_blocking(neo_pio, neo_sm, pixel_grb << 8u);
+    uint32_t value = pixel_grb << 8u;
+    absolute_time_t start = get_absolute_time();
+
+    // Non-blocking equivalent of pio_sm_put_blocking with a timeout, so we
+    // cannot get stuck forever if the PIO state machine stalls.
+    while (pio_sm_is_tx_fifo_full(neo_pio, neo_sm))
+    {
+        if (absolute_time_diff_us(start, get_absolute_time()) >
+            NEOPIXEL_PUT_TIMEOUT_US)
+        {
+            LOG_ERROR("Neopixel PIO TX FIFO full - dropping pixel");
+            return;
+        }
+        tight_loop_contents();
+    }
+    pio_sm_put(neo_pio, neo_sm, value);
 }
 
 static inline uint32_t urgb_u32(uint8_t r, uint8_t g, uint8_t b)
