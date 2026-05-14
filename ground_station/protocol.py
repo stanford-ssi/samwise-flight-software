@@ -167,14 +167,18 @@ class AdcsTelemetryPacket(Packet):
         if len(data) < 25:
             return None
         try:
-            unpacked = struct.unpack("<fffffBL", data[:25])
+            unpacked = struct.unpack("<fffffffffBL", data[:25])
             return ADCSData(
                 angular_velocity=unpacked[0],
                 quaternion=ADCSQuaternion(
                     q0=unpacked[1], q1=unpacked[2], q2=unpacked[3], q3=unpacked[4]
                 ),
-                state=unpacked[5],
-                boot_count=unpacked[6],
+                mjd=unpacked[5],
+                UTC_time=unpacked[6],
+                voltage=unpacked[7],
+                current=unpacked[8],
+                state=unpacked[9],
+                boot_count=unpacked[10],
             )
         except (struct.error, ValueError, TypeError):
             return None

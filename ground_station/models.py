@@ -75,7 +75,18 @@ class ADCSData(_BaseModel):
         boot_count: int = 0
     else:
 
-        def __init__(self, angular_velocity=0.0, quaternion=None, state=0, boot_count=0, **kwargs):
+        def __init__(
+            self,
+            angular_velocity=0.0,
+            quaternion=None,
+            mjd=0,
+            UTC_time=0,
+            voltage=0,
+            current=0,
+            state=0,
+            boot_count=0,
+            **kwargs,
+        ):
             self.angular_velocity = angular_velocity
             self.quaternion = quaternion if quaternion else ADCSQuaternion()
             self.state = state
