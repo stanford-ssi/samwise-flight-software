@@ -301,12 +301,16 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "0000"  # panel_B_voltage   = 0 mV
     "0000"  # panel_B_current   = 0 mA
     "00"  # device_status     = 0x00
-    # ---- ADCS telemetry (25 bytes, struct <fffffBL) ----
+    # ---- ADCS telemetry (41 bytes, struct <fffffffffBL) ----
     "0000803f"  # angular_velocity  = 1.0 rad/s
     "cdcccc3d"  # q0               ≈ 0.1
     "cdcc4c3e"  # q1               ≈ 0.2
     "9a99993e"  # q2               ≈ 0.3
     "cdcccc3e"  # q3               ≈ 0.4
+    "00000000"  # mjd
+    "00000000"  # UTC_time
+    "00000000"  # voltage
+    "00000000"  # current
     "41"  # ADCS state        = 65
     "2a000000"  # ADCS boot_count   = 42
     # ---- callsign (6 bytes + null) ----

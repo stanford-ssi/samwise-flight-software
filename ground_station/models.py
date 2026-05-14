@@ -89,6 +89,10 @@ class ADCSData(_BaseModel):
         ):
             self.angular_velocity = angular_velocity
             self.quaternion = quaternion if quaternion else ADCSQuaternion()
+            self.mjd = mjd
+            self.UTC_time = UTC_time
+            self.voltage = voltage
+            self.current = current
             self.state = state
             self.boot_count = boot_count
 

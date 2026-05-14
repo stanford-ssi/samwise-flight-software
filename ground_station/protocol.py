@@ -142,13 +142,13 @@ class BeaconPacket(Packet):
 
             # 2. Decode ADCS if present (appended after stats)
             adcs_start = stats_start + 53
-            if len(payload) >= adcs_start + 25:
+            if len(payload) >= adcs_start + 41:
                 beacon_data.adcs = AdcsTelemetryPacket.decode_payload(
-                    payload[adcs_start : adcs_start + 25]
+                    payload[adcs_start : adcs_start + 41]
                 )
 
             # 3. Decode Callsign if present
-            callsign_start = adcs_start + 25
+            callsign_start = adcs_start + 41
             if len(payload) >= callsign_start + 6:
                 beacon_data.callsign = (
                     payload[callsign_start : callsign_start + 6]
@@ -164,10 +164,10 @@ class AdcsTelemetryPacket(Packet):
 
     @staticmethod
     def decode_payload(data: bytes) -> Optional[ADCSData]:
-        if len(data) < 25:
+        if len(data) < 41:
             return None
         try:
-            unpacked = struct.unpack("<fffffffffBL", data[:25])
+            unpacked = struct.unpack("<fffffffffBL", data[:41])
             return ADCSData(
                 angular_velocity=unpacked[0],
                 quaternion=ADCSQuaternion(
