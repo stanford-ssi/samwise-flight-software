@@ -21,8 +21,8 @@ cc_library(
 # Mock burn wire driver (for host tests)
 cc_library(
     name = "communications_mock",
-    srcs = ["communications_mock.c"],
-    hdrs = ["cobs.h", "protocol.h", "uart_communication.h"],
+    srcs = ["cobs.c", "protocol.c", "uart_comms_mock.c"],
+    hdrs = ["cobs.h", "protocol.h", "uart_communications.h"],
     includes = ["."],
     deps = [
         "//src/common",

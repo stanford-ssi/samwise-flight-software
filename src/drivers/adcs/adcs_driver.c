@@ -4,6 +4,7 @@
  * This code defines the hardware-level ADCS UART interface
  */
 
+#include "hardware/gpio.h"
 #include "hardware/uart.h"
 #include "logger.h"
 #include "pico/stdlib.h"

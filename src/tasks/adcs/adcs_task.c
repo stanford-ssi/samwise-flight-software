@@ -7,8 +7,10 @@
 
 #include "adcs_task.h"
 #include "adcs_driver.h"
+#include "hardware/gpio.h"
 #include "neopixel.h"
 #include "pico/stdlib.h"
+#include "pins.h"
 #include "slate.h"
 
 #include "cobs.h"

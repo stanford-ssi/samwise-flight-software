@@ -13,6 +13,7 @@ cc_library(
         "//src/slate",
         "//src/drivers/communications",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
         "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
     ],
     target_compatible_with = ["//platforms:arm_cortex_m33"],
@@ -28,12 +29,10 @@ cc_library(
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
-        "//src/drivers/communications",
+        "//src/drivers/communications:communications_mock",
         "//src/packet",
         "//src/packet:adcs_packet",
         "//src/slate",
         "//src/test_mocks",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
     ],
 )
