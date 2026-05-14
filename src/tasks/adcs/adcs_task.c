@@ -52,19 +52,25 @@ void adcs_task_dispatch(slate_t *slate)
         LOG_INFO("[ADCS] PACKET RECEIVED {%d}", rx_count);
         rx_count += 1;
         msg_t received;
-        receive_msg(&received, rx_buf);
+        uint32_t num_bytes = receive_msg(&received, rx_buf);
         switch (received.type)
         {
             case MSG_PING:
+                if (num_bytes != 8)
+                    break;
                 LOG_INFO("[ADCS] Ping received");
                 send_pong();
                 break;
             case MSG_PONG:
+                if (num_bytes != 8)
+                    break;
                 LOG_INFO("[ADCS] Pong received");
                 // don't send ping else we get infinite loop
                 slate->is_adcs_on = true;
                 break;
             case MSG_ADCS_PACKET:
+                if (num_bytes != 7 + 41)
+                    ;
                 LOG_INFO("[ADCS] Attitude packet received");
                 slate->is_adcs_on = true;
                 slate->adcs_telemetry = *(adcs_packet_t *)received.payload;

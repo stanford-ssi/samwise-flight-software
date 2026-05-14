@@ -205,12 +205,13 @@ bool adcs_driver_is_alive()
     return (num_bytes_read > 0) && (c == ADCS_HEALTH_CHECK_SUCCESS);
 }
 
-void receive_msg(msg_t *msg, uint8_t *rx_buf)
+uint32_t receive_msg(msg_t *msg, uint8_t *rx_buf)
 {
     static uint8_t raw_buf[256];
-    uint16_t num_bytes = uart_comms_get_packet(SAMWISE_ADCS_UART, raw_buf, 256);
+    uint32_t num_bytes = uart_comms_get_packet(SAMWISE_ADCS_UART, raw_buf, 256);
     cobs_decode(raw_buf, num_bytes, rx_buf);
     protocol_message_decode(msg, num_bytes + 1, rx_buf);
+    return num_bytes - 1; // minus cobs header
 }
 
 void send_msg(msg_t *msg, uint32_t len)

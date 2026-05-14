@@ -60,7 +60,7 @@ void adcs_print_telemetry(adcs_packet_t *packet);
 bool adcs_driver_is_alive();
 
 // send msg
-void receive_msg(msg_t *msg, uint8_t *rx_buf);
+uint32_t receive_msg(msg_t *msg, uint8_t *rx_buf);
 
 void send_msg(msg_t *msg, uint32_t len);
 

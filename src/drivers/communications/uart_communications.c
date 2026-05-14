@@ -62,16 +62,13 @@ static void uart_rx_isr(uint8_t idx, uart_inst_t *uart)
 {
     while (uart_is_readable(uart))
     {
-        uint16_t next = (rx_head[idx] + 1) % UART_RX_BUFFER_SIZE;
-        if (next == rx_tail[idx])
+        rx_buffer[idx][rx_head[idx]] = uart_getc(uart);
+        rx_head[idx] = (rx_head[idx] + 1) % UART_RX_BUFFER_SIZE;
+
+        // If we've lapped the tail, advance it to discard the oldest byte
+        if (rx_head[idx] == rx_tail[idx])
         {
-            // Buffer full — drop byte (better than corrupting the ring)
-            (void)uart_getc(uart);
-        }
-        else
-        {
-            rx_buffer[idx][rx_head[idx]] = uart_getc(uart);
-            rx_head[idx] = next;
+            rx_tail[idx] = (rx_tail[idx] + 1) % UART_RX_BUFFER_SIZE;
         }
     }
 }
