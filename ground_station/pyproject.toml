@@ -28,6 +28,7 @@ dependencies = [
     "circuitpython-hmac",
     "adafruit-blinka",
     "pydantic>=2.0.0",
+    "rpi-lgpio>=0.6",
 ]
 
 [project.optional-dependencies]
