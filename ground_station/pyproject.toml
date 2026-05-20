@@ -7,7 +7,7 @@ name = "samwise-ground-station"
 version = "1.0.0"
 description = "LoRA ground station for Samwise CubeSat communication"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 authors = [
     {name = "Stanford SSI", email = "ssi@lists.stanford.edu"}
 ]
@@ -17,8 +17,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Aerospace",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.13",
 ]
 
@@ -110,7 +108,7 @@ exclude_lines = [
 
 [tool.black]
 line-length = 100
-target-version = ['py38', 'py39', 'py310', 'py311']
+target-version = ['py313']
 exclude = '''
 /(
     \.git
@@ -123,6 +121,7 @@ exclude = '''
 
 [tool.ruff]
 line-length = 100
+target-version = "py313"
 exclude = [
     ".git",
     ".venv",

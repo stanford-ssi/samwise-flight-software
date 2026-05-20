@@ -1,7 +1,7 @@
-import digitalio
 import adafruit_rfm9x
 import board
 import busio
+import digitalio
 
 import config
 from logger import get_logger
