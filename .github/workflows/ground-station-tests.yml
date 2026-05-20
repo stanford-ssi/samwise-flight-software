@@ -53,14 +53,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y liblgpio-dev
+    
+    - name: Create venv
+      run: uv venv --python ${{ matrix.python-version }}
+      working-directory: ground_station
 
     - name: Install dependencies
       run: uv pip install -e ground_station/[test]
+      working-directory: ground_station
 
     - name: Run tests with pytest
-      run: |
-        cd ground_station
-        uv run --no-project python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term
+      run: uv run --no-project python -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term
+      working-directory: ground_station
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.13'
@@ -89,19 +93,22 @@ jobs:
 
     - name: Set up Python 3.13
       run: uv python install 3.13
+    
+    - name: Create venv
+      run: uv venv --python 3.13
+      working-directory: ground_station
 
     - name: Install dependencies
-      run: uv pip install -e ground_station/[test]
+      run: uv pip install -e .[test]
+      working-directory: ground_station
 
     - name: Run compatibility tests
-      run: |
-        cd ground_station
-        uv run --no-project python -m pytest tests/test_compatibility.py -v
+      run: uv run --no-project python -m pytest tests/test_compatibility.py -v
+      working-directory: ground_station
 
     - name: Run filtering tests
-      run: |
-        cd ground_station
-        uv run --no-project python -m pytest tests/test_filtering.py -v
+      run: uv run --no-project python -m pytest tests/test_filtering.py -v
+      working-directory: ground_station
 
   lint:
     needs: changes
@@ -121,15 +128,18 @@ jobs:
     - name: Set up Python 3.13
       run: uv python install 3.13
 
+    - name: Create venv
+      run: uv venv --python 3.13
+      working-directory: ground_station
+
     - name: Install linting tools
       run: uv pip install "black==24.1.1" "ruff==0.2.1"
+      working-directory: ground_station
 
     - name: Check code formatting with black
-      run: |
-        cd ground_station
-        black --check --diff .
+      run: black --check --diff .
+      working-directory: ground_station
 
     - name: Lint with ruff
-      run: |
-        cd ground_station
-        ruff check .
+      run: ruff check .
+      working-directory: ground_station
