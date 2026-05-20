@@ -123,12 +123,10 @@ def configure_lora_settings():
     print(f"  Spreading Factor: {config.config['spreading_factor']}")
     print(f"  Coding Rate: {config.config['coding_rate']}")
     print(f"  CRC: {config.config['crc']}")
-    print(
-        """
+    print("""
         WARNING: Command mode requires valid authentication settings (PSK and Boot Count).
         The system will attempt to sync Boot Count automatically from received beacons.
-        """
-    )
+        """)
 
     if get_yes_no("Modify LoRA settings?", False):
         freq_str = get_user_input("Frequency (MHz)", config.config["frequency"])
