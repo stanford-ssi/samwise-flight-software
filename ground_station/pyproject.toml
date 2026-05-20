@@ -45,8 +45,8 @@ test = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "black>=24.0.0",
-    "ruff>=0.2.0",
+    "black>=26.0.0",
+    "ruff>=0.15.0",
     "pre-commit>=3.0.0",
 ]
 

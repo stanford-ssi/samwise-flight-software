@@ -127,9 +127,9 @@ jobs:
         enable-cache: true
 
     - name: Check code formatting with black
-      run: uvx black@24.1.1 --check --diff .
+      run: uvx black@26.5.1 --check --diff .
       working-directory: ground_station
 
     - name: Lint with ruff
-      run: uvx ruff@0.2.1 check .
+      run: uvx ruff@0.15.13 check .
       working-directory: ground_station
