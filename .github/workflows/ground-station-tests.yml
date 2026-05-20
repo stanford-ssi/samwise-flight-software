@@ -52,10 +52,10 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y liblgpio-dev lgpio
+        sudo apt-get install -y liblgpio-dev
 
     - name: Install dependencies
-      run: uv pip install --system -e ground_station/[test]
+      run: uv pip install -e ground_station/[test]
 
     - name: Run tests with pytest
       run: |
@@ -91,7 +91,7 @@ jobs:
       run: uv python install 3.13
 
     - name: Install dependencies
-      run: uv pip install --system -e ground_station/[test]
+      run: uv pip install -e ground_station/[test]
 
     - name: Run compatibility tests
       run: |
@@ -122,7 +122,7 @@ jobs:
       run: uv python install 3.13
 
     - name: Install linting tools
-      run: uv pip install --system "black==24.1.1" "ruff==0.2.1"
+      run: uv pip install "black==24.1.1" "ruff==0.2.1"
 
     - name: Check code formatting with black
       run: |
