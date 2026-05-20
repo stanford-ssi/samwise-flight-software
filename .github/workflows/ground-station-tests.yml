@@ -48,18 +48,13 @@ jobs:
 
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y liblgpio-dev
     
     - name: Create venv
       run: uv venv --python ${{ matrix.python-version }}
       working-directory: ground_station
 
     - name: Install dependencies
-      run: uv pip install -e ground_station/[test]
+      run: uv pip install -e .[test]
       working-directory: ground_station
 
     - name: Run tests with pytest
@@ -125,21 +120,10 @@ jobs:
       with:
         enable-cache: true
 
-    - name: Set up Python 3.13
-      run: uv python install 3.13
-
-    - name: Create venv
-      run: uv venv --python 3.13
-      working-directory: ground_station
-
-    - name: Install linting tools
-      run: uv pip install "black==24.1.1" "ruff==0.2.1"
-      working-directory: ground_station
-
     - name: Check code formatting with black
-      run: black --check --diff .
+      run: uvx black@24.1.1 --check --diff .
       working-directory: ground_station
 
     - name: Lint with ruff
-      run: ruff check .
+      run: uvx ruff@0.2.1 check .
       working-directory: ground_station
