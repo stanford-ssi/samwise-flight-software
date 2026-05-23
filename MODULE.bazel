@@ -35,3 +35,57 @@ register_toolchains(
     "@pico-sdk//bazel/toolchain:linux-aarch64-rp2350",
     "@pico-sdk//bazel/toolchain:linux-x86_64-rp2350",
 )
+
+# External C++ libraries for the payload radio (Linux-native, not embedded)
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "sx128x_driver",
+    url = "https://github.com/YukiWorkshop/sx128x_driver/archive/refs/tags/v0.0.4.tar.gz",
+    sha256 = "2df68b8ef5c891573d26175b555700598f9f7a1ee9c20471ee1657399a31d4b7",
+    strip_prefix = "sx128x_driver-0.0.4",
+    build_file_content = """
+cc_library(
+    name = "sx128x_driver",
+    srcs = ["SX128x.cpp"],
+    hdrs = ["SX128x.hpp"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+http_archive(
+    name = "gpio_plus_plus",
+    url = "https://github.com/YukiWorkshop/GPIOPlusPlus/archive/refs/tags/v0.0.2.tar.gz",
+    sha256 = "76a033e36a2881adfe2e5c64a76c8071e6482ac7fd5c4758499f1d147d55c333",
+    strip_prefix = "GPIOPlusPlus-0.0.2",
+    build_file_content = """
+cc_library(
+    name = "GPIOPlusPlus",
+    srcs = ["GPIO++.cpp", "Utils.cpp"],
+    hdrs = ["GPIO++.hpp", "Utils.hpp"],
+    includes = ["."],
+    linkopts = ["-lpthread"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+http_archive(
+    name = "sppi",
+    url = "https://github.com/YukiWorkshop/SPPI/archive/refs/tags/v0.0.5.tar.gz",
+    sha256 = "fff0ec17ffa21b16ef038713b58a5362547332c411e677f67d791821ed2b0690",
+    strip_prefix = "SPPI-0.0.5",
+    build_file_content = """
+cc_library(
+    name = "SPPI",
+    srcs = ["SPPI.cpp"],
+    hdrs = ["SPPI.hpp"],
+    includes = ["."],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+""",
+)

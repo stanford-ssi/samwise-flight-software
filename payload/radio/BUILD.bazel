@@ -1,0 +1,37 @@
+cc_library(
+    name = "sx128x_linux_driver",
+    srcs = ["SX128x_Linux.cpp"],
+    hdrs = ["SX128x_Linux.hpp"],
+    deps = [
+        "@gpio_plus_plus//:GPIOPlusPlus",
+        "@sppi//:SPPI",
+        "@sx128x_driver//:sx128x_driver",
+    ],
+    linkopts = ["-lpthread"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "Lora_tx",
+    srcs = ["Lora_tx.cpp"],
+    deps = [":sx128x_linux_driver"],
+)
+
+cc_binary(
+    name = "Lora_rx",
+    srcs = ["Lora_rx.cpp"],
+    deps = [":sx128x_linux_driver"],
+)
+
+cc_binary(
+    name = "Lora_tx_packets",
+    srcs = ["Lora_tx_packets.cpp"],
+    deps = [":sx128x_linux_driver"],
+)
+
+cc_binary(
+    name = "Test",
+    srcs = ["Test.cpp"],
+    deps = [":sx128x_linux_driver"],
+)
