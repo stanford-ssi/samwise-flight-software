@@ -1,0 +1,13 @@
+[Unit]
+Description=RPi Payload Beacon - periodic 2400MHz telemetry transmitter
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/code/beacon.py
+Restart=always
+RestartSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

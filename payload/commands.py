@@ -333,6 +333,34 @@ def process_send_image(image_id: str, w=800, h=600, quality=100, cells_x=1, cell
         raise ValueError(f'Radio type should be 433 or 2400 (received {radio_type})')
 
 
+# Beacon control ---------------------------------------------------------------------------------
+_BEACON_SERVICE = "beacon.service"
+
+
+def beacon_start() -> str:
+    '''
+    Start the RPi beacon service (periodic 2400MHz telemetry transmissions)
+    '''
+    ret = os.system(f"sudo systemctl start {_BEACON_SERVICE}")
+    return "started" if ret == 0 else f"systemctl exited {ret}"
+
+
+def beacon_stop() -> str:
+    '''
+    Stop the RPi beacon service
+    '''
+    ret = os.system(f"sudo systemctl stop {_BEACON_SERVICE}")
+    return "stopped" if ret == 0 else f"systemctl exited {ret}"
+
+
+def beacon_status() -> str:
+    '''
+    Return the current active state of the beacon service (e.g. "active", "inactive")
+    '''
+    result = os.popen(f"systemctl is-active {_BEACON_SERVICE}").readline().strip()
+    return result
+
+
 # Dictionary mapping command names to actual commands
 NAMES_TO_COMMANDS = {
     "ping": ping,
@@ -364,5 +392,9 @@ NAMES_TO_COMMANDS = {
     "take_vid" : take_vid,
 
     "take_process_send_image" : take_process_send_image,
-    "process_send_image" : process_send_image
+    "process_send_image" : process_send_image,
+
+    "beacon_start"  : beacon_start,
+    "beacon_stop"   : beacon_stop,
+    "beacon_status" : beacon_status,
 }

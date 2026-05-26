@@ -43,6 +43,10 @@ target_link_libraries(Lora_tx sx128x_linux_driver)
 add_executable(Lora_rx Lora_rx.cpp)
 target_link_libraries(Lora_rx sx128x_linux_driver)
 
+# Build beacon file
+add_executable(Lora_beacon Lora_beacon.cpp)
+target_link_libraries(Lora_beacon sx128x_linux_driver)
+
 # Build test file
 add_executable(Test Test.cpp)
 target_link_libraries(Test sx128x_linux_driver)
