@@ -34,32 +34,37 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.11']
+        python-version: ['3.13']
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
-        cache-dependency-glob: ground_station/uv.lock
+        cache-dependency-glob: ground_station/pyproject.toml
 
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
+    
+    - name: Create venv
+      run: uv venv --python ${{ matrix.python-version }}
       working-directory: ground_station
 
     - name: Install dependencies
-      run: uv sync --group dev
+      run: uv pip install -e .[test]
       working-directory: ground_station
 
     - name: Run tests with pytest
-      run: uv run pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term
+      run: uv run --no-project python -P -m pytest tests/ -v --tb=short --cov=. --cov-report=xml --cov-report=term
       working-directory: ground_station
+      env:
+        PYTHONSAFEPATH: "1"
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.13'
       uses: codecov/codecov-action@v4
       with:
         files: ./ground_station/coverage.xml
@@ -78,26 +83,33 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
-        cache-dependency-glob: ground_station/uv.lock
+        cache-dependency-glob: ground_station/pyproject.toml
 
-    - name: Set up Python 3.11
-      run: uv python install 3.11
+    - name: Set up Python 3.13
+      run: uv python install 3.13
+    
+    - name: Create venv
+      run: uv venv --python 3.13
       working-directory: ground_station
 
     - name: Install dependencies
-      run: uv sync --group dev
+      run: uv pip install -e .[test]
       working-directory: ground_station
 
     - name: Run compatibility tests
-      run: uv run pytest tests/test_compatibility.py -v
+      run: uv run --no-project python -P -m pytest tests/test_compatibility.py -v
       working-directory: ground_station
+      env:
+        PYTHONSAFEPATH: "1"
 
     - name: Run filtering tests
-      run: uv run pytest tests/test_filtering.py -v
+      run: uv run --no-project python -P -m pytest tests/test_filtering.py -v
       working-directory: ground_station
+      env:
+        PYTHONSAFEPATH: "1"
 
   lint:
     needs: changes
@@ -110,19 +122,14 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v3
       with:
         enable-cache: true
-        cache-dependency-glob: ground_station/uv.lock
-
-    - name: Set up Python 3.11
-      run: uv python install 3.11
-      working-directory: ground_station
-
-    - name: Install linting tools
-      run: uv tool install black==24.1.1
 
     - name: Check code formatting with black
-      run: uv tool run black==24.1.1 --check --diff .
+      run: uvx black@26.5.1 --check --diff .
       working-directory: ground_station
 
+    - name: Lint with ruff
+      run: uvx ruff@0.15.13 check .
+      working-directory: ground_station

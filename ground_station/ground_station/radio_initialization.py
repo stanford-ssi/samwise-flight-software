@@ -51,12 +51,12 @@ def get_board_pins(board_type):
         }
     elif board_type == "RPI":
         return {
-            "MOSI": board.MOSI,  # Usually D23
-            "MISO": board.MISO,  # Usually D22
-            "SCK": board.SCK,  # Usually D24
-            "CS": board.CE1,  # Lifted from run_sequence.py
-            "RESET": board.D25,  # Lifted from run_sequence.py
-            "LED": board.D13,  # Built-in LED
+            "MOSI": board.MOSI,  # Usually D10
+            "MISO": board.MISO,  # Usually D9
+            "SCK": board.SCK,  # Usually D11
+            "CS": board.CE1,  # Usually D7, lifted from run_sequence.py
+            "RESET": board.D6,  # D6, lifted from run_sequence.py
+            # LED is not used on RPi (there is no built-in LED we can control)
         }
     else:
         # Default to Pico pins
@@ -95,8 +95,9 @@ def initialize():
     )
 
     # Setup LED (may already be in use by the system)
-    led = digitalio.DigitalInOut(pins["LED"])
-    led.direction = digitalio.Direction.OUTPUT
+    if "LED" in pins:
+        led = digitalio.DigitalInOut(pins["LED"])
+        led.direction = digitalio.Direction.OUTPUT
 
     # Setup Radio
     spi = busio.SPI(pins["SCK"], MOSI=pins["MOSI"], MISO=pins["MISO"])
