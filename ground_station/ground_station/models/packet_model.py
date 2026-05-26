@@ -1,5 +1,6 @@
-from . import USE_PYDANTIC, _BaseModel
 from typing import Optional
+
+from . import USE_PYDANTIC, _BaseModel
 
 
 class PacketModel(_BaseModel):

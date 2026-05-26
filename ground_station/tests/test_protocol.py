@@ -9,6 +9,7 @@ import struct
 
 import pytest
 
+from ground_station import config as gs_config
 from ground_station import protocol
 from ground_station import state as state_module
 
@@ -148,8 +149,6 @@ def test_beacon_decode():
 # Run with `pytest -s` to see the printed packet dumps.
 # ---------------------------------------------------------------------------
 
-from ground_station import config as gs_config
-
 
 @pytest.mark.unit
 @pytest.mark.protocol
@@ -221,7 +220,7 @@ def test_command_packet_manual_state_override_structure(test_state):
     print(
         f"  cmd_id={packet[header_size]} (MANUAL_STATE_OVERRIDE={gs_config.MANUAL_STATE_OVERRIDE})"
     )
-    print(f"  cmd_payload='{packet[header_size+1:footer_start].decode()}'")
+    print(f"  cmd_payload='{packet[header_size + 1 : footer_start].decode()}'")
     print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
     print(f"  boot_count={boot_count}, msg_id={msg_id}")
     print(f"HMAC    [{footer_end}:{len(packet)}] : {packet[footer_end:].hex()}")
@@ -250,7 +249,7 @@ def test_command_packet_payload_exec_structure(test_state):
     print(f"Header  : {packet[:header_size].hex()}")
     print(f"Data    : {packet[header_size:footer_start].hex()}")
     print(
-        f"  cmd_id={packet[header_size]}, payload='{packet[header_size+1:footer_start].decode()}'"
+        f"  cmd_id={packet[header_size]}, payload='{packet[header_size + 1 : footer_start].decode()}'"
     )
     print(f"Footer  : {packet[footer_start:footer_end].hex()}")
     print(f"HMAC    : {packet[footer_end:].hex()}")

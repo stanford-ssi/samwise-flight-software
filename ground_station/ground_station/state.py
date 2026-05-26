@@ -1,10 +1,9 @@
 import json
 import os
-import sys
 import time
 
-from ground_station.logger import get_logger
 from ground_station.config import IS_CIRCUITPYTHON
+from ground_station.logger import get_logger
 
 STATE_FILE = "gs_state.json"
 logger = get_logger("GS.State")

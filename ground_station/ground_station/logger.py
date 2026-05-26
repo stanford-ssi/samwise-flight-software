@@ -1,6 +1,6 @@
 import os
-import sys
 import time
+
 from ground_station.config import IS_CIRCUITPYTHON
 
 # Use adafruit_logging on CircuitPython, standard logging on CPython

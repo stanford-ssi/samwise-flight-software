@@ -1,5 +1,6 @@
-from . import USE_PYDANTIC
 from ground_station.models.packet_model import PacketModel
+
+from . import USE_PYDANTIC
 
 # TODO: Remove this? Is this useful?
 

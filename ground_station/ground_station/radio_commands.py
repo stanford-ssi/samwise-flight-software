@@ -1,5 +1,4 @@
-from ground_station import config
-from ground_station import protocol
+from ground_station import config, protocol
 from ground_station import radio_initialization as hardware
 from ground_station.logger import logger, telemetry_logger
 from ground_station.state import state_manager
@@ -117,7 +116,7 @@ class LoraRadio:
             # Validate that the decode produced a usable result
             if beacon_data.state_name in ("short_packet",):
                 logger.error(
-                    "BEACON DECODE ERROR | Packet too short to contain a state name" " | raw: %s",
+                    "BEACON DECODE ERROR | Packet too short to contain a state name | raw: %s",
                     packet.hex(),
                 )
                 print(">>> END PACKET <<<\n")
@@ -142,7 +141,7 @@ class LoraRadio:
                     actual_callsign = beacon_data.callsign.strip().upper()
                     if expected_callsign.upper() not in actual_callsign:
                         logger.warning(
-                            "PACKET DROPPED | Callsign mismatch: '%s'" " (expected '%s')",
+                            "PACKET DROPPED | Callsign mismatch: '%s' (expected '%s')",
                             beacon_data.callsign,
                             expected_callsign,
                         )

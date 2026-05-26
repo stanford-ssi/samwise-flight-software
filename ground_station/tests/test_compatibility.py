@@ -10,13 +10,13 @@ Usage:
     python3 test_compatibility.py
 """
 
-from ground_station.config import IS_CIRCUITPYTHON
-
 import builtins
 import importlib
 import importlib.util
 import sys
 import traceback
+
+from ground_station.config import IS_CIRCUITPYTHON
 
 # Check if select module is available (not on all platforms)
 HAS_SELECT_MODULE = importlib.util.find_spec("select") is not None

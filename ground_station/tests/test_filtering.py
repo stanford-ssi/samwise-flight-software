@@ -5,6 +5,8 @@ Test script for packet filtering functionality
 This demonstrates the RSSI threshold and callsign verification filters.
 """
 
+import sys
+
 from ground_station import config
 
 

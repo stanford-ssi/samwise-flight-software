@@ -23,10 +23,10 @@ class BeaconStats(_BaseModel):
         battery_current: int = Field(default=0, description="mA")
         solar_voltage: int = Field(default=0, description="mV")
         solar_current: int = Field(default=0, description="mA")
-        panel_A_voltage: int = Field(default=0, description="mV")
-        panel_A_current: int = Field(default=0, description="mA")
-        panel_B_voltage: int = Field(default=0, description="mV")
-        panel_B_current: int = Field(default=0, description="mA")
+        panel_A_voltage: int = Field(default=0, description="mV")  # noqa: N815
+        panel_A_current: int = Field(default=0, description="mA")  # noqa: N815
+        panel_B_voltage: int = Field(default=0, description="mV")  # noqa: N815
+        panel_B_current: int = Field(default=0, description="mA")  # noqa: N815
         device_status: int = 0
     else:
 
@@ -44,10 +44,10 @@ class BeaconStats(_BaseModel):
             battery_current=0,
             solar_voltage=0,
             solar_current=0,
-            panel_A_voltage=0,
-            panel_A_current=0,
-            panel_B_voltage=0,
-            panel_B_current=0,
+            panel_A_voltage=0,  # noqa: N803
+            panel_A_current=0,  # noqa: N803
+            panel_B_voltage=0,  # noqa: N803
+            panel_B_current=0,  # noqa: N803
             device_status=0,
             **kwargs,
         ):

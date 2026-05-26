@@ -1,5 +1,4 @@
 import struct
-import sys
 
 try:
     from typing import Optional
@@ -7,8 +6,7 @@ except ImportError:
     pass
 
 import ground_station.config as config
-from ground_station.models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
-from ground_station.models import PacketModel
+from ground_station.models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats, PacketModel
 from ground_station.state import state_manager
 
 # On CPython (Raspberry Pi) always use stdlib hmac/hashlib — circuitpython_hmac has a
