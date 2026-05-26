@@ -13,8 +13,12 @@
 
 #include "SX128x_Linux.hpp"
 
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 #include <vector>
 
 constexpr size_t PACKET_SIZE = 253;
