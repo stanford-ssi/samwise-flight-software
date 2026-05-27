@@ -1,11 +1,7 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "samwise-ground-station"
 version = "1.0.0"
-description = "LoRA ground station for Samwise CubeSat communication"
+description = "LoRa ground station for Samwise CubeSat communication"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
@@ -26,27 +22,18 @@ dependencies = [
     "circuitpython-hmac",
     "adafruit-blinka",
     "pydantic>=2.0.0",
-    "rpi-lgpio>=0.6; platform_machine == 'aarch64' and sys_platform == 'linux'",
-]
-
-[project.optional-dependencies]
-server = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.28.0",
 ]
-test = [
+
+[dependency-groups]
+dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "httpx>=0.27.0",
     "starlette",
-    "fastapi>=0.110.0",
-    "uvicorn[standard]>=0.28.0",
-]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "black>=26.0.0",
-    "ruff>=0.15.0",
+    "black>=24.0.0",
+    "ruff>=0.2.0",
     "pre-commit>=3.0.0",
 ]
 
@@ -55,20 +42,13 @@ Homepage = "https://github.com/stanford-ssi/samwise-flight-software"
 Repository = "https://github.com/stanford-ssi/samwise-flight-software"
 Issues = "https://github.com/stanford-ssi/samwise-flight-software/issues"
 
-[project.scripts]
-samwise-gs = "cli:entry"
-
-[tool.setuptools]
-py-modules = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "server", "state", "ui"]
-
 [tool.pytest.ini_options]
-# Test discovery
+pythonpath = ["."]
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 
-# Output
 addopts = [
     "-v",
     "--tb=short",
@@ -76,7 +56,6 @@ addopts = [
     "--disable-warnings",
 ]
 
-# Test markers
 markers = [
     "unit: Unit tests for individual components",
     "integration: Integration tests for component interactions",
@@ -89,7 +68,7 @@ markers = [
 minversion = "7.0"
 
 [tool.coverage.run]
-source = ["."]
+source = ["ground_station"]
 omit = [
     "tests/*",
     "*/tests/*",
@@ -121,7 +100,6 @@ exclude = '''
 
 [tool.ruff]
 line-length = 100
-target-version = "py313"
 exclude = [
     ".git",
     ".venv",
@@ -135,7 +113,7 @@ select = ["E", "F", "W", "I", "N"]
 ignore = ["E501"]  # Line too long
 
 [tool.ruff.lint.isort]
-known-first-party = ["cli", "code", "config", "logger", "models", "protocol", "radio_commands", "radio_initialization", "server", "state", "ui"]
+known-first-party = ["ground_station"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Unused imports in __init__ are OK
