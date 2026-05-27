@@ -133,9 +133,8 @@ def test_beacon_decode():
         beacon_packet_hex = f.read()
     beacon_packet_hex_clean = beacon_packet_hex.replace(" ", "").replace("\n", "")
     beacon_packet_bytes = bytes.fromhex(beacon_packet_hex_clean)
-    beacon_packet = bytes([len(beacon_packet_bytes)]) + beacon_packet_bytes
 
-    result = protocol.decode_beacon_data(beacon_packet)
+    result = protocol.decode_beacon_data(len(beacon_packet_bytes), beacon_packet_bytes)
 
     assert result.state_name == "mock_state beat cal!"
     assert result.stats.reboot_counter == 42
@@ -273,10 +272,11 @@ def test_command_packet_payload_exec_structure(test_state):
 # decode_beacon_data() expects exactly this layout: [data_len][content].
 
 # 96 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
+# Note that we don't pass in the ID as this is stripped by the library.
 _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "6d6f636b5f737461746500"  # state_name = "mock_state\0"
     # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
-    "00000000"  # reboot_counter    = 0
+    "00000000"  # reboot_counter    = 0_EXAMPLE_BEACON_CONTENT
     "3930000000000000"  # time_in_state_ms  = 12345
     "00000000"  # rx_bytes          = 0
     "00000000"  # rx_packets        = 0
@@ -304,9 +304,6 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     # ---- callsign (6 bytes + null) ----
     "4b4333574e5900"  # callsign          = "KC3WNY\0"
 )
-
-# Full raw bytes as returned by radio.receive() — starts with the data_len byte.
-_EXAMPLE_RAW_BEACON = bytes([len(_EXAMPLE_BEACON_CONTENT)]) + _EXAMPLE_BEACON_CONTENT
 
 
 @pytest.mark.unit
@@ -343,18 +340,15 @@ def test_decode_example_incoming_packet():
     Shows the exact bytes returned by radio.receive() and how the ground
     station decodes them through decode_beacon_data().
     """
-    raw = _EXAMPLE_RAW_BEACON
-    data_len = raw[0]
-    content = raw[1 : 1 + data_len]
+    raw = _EXAMPLE_BEACON_CONTENT
 
     print("\n=== Example Incoming Beacon Packet (satellite -> GS) ===")
     print(f"Raw bytes from radio.receive() ({len(raw)} bytes): {raw.hex()}")
-    print(f"  [0]      data_len = {data_len}")
-    print(f"  [1:{1 + data_len}]  beacon content ({data_len} bytes): {content.hex()}")
+    print(f"    data_len = {len(raw)}")
     print("  RadioHead fields (to/from/id/flags) were already stripped by the library")
 
     # decode_beacon_data() consumes the data_len byte then parses the content.
-    beacon = protocol.decode_beacon_data(raw)
+    beacon = protocol.decode_beacon_data(len(raw), raw)
 
     print("\n--- Decoded Beacon Fields ---")
     print(f"  state_name          : '{beacon.state_name}'")
@@ -381,9 +375,6 @@ def test_decode_example_incoming_packet():
         print(f"  ADCS state          : {beacon.adcs.state}")
         print(f"  ADCS boot_count     : {beacon.adcs.boot_count}")
     print(f"  callsign            : '{beacon.callsign}'")
-
-    assert data_len == len(_EXAMPLE_BEACON_CONTENT)
-    assert content == _EXAMPLE_BEACON_CONTENT
 
     assert beacon.state_name == "mock_state"
     assert beacon.stats is not None
