@@ -61,7 +61,7 @@ class LoraRadio:
                     return None
 
             # All received packets are from the satellite. The first byte is a
-            # length, and a second is DownlinkPacketId (mirror of the uplink cmd_id) 
+            # length, and a second is DownlinkPacketId (mirror of the uplink cmd_id)
             # — dispatch on it.
             if len(packet) < 2:  # Must have at least ID + length byte
                 logger.warning("Empty packet received")
@@ -72,10 +72,10 @@ class LoraRadio:
             data_len = packet[0]
             packet_id = packet[1]
             print(f"Received packet with ID {packet_id} and data length {data_len}")
-            body = packet[2:data_len]  # Extract body based on length byte
-            print(">>> RAW PACKET <<<")
-            print(packet.hex())
-            print(">>> END PACKET <<<\n")
+            body = packet[2 : data_len + 1]  # Extract body based on length byte
+            print(">>> RAW BODY <<<")
+            print(body.hex())
+            print(">>> END BODY <<<\n")
 
             if packet_id == config.DOWNLINK_COMMAND_RESPONSE:
                 response_text = body.decode("utf-8", "ignore")
@@ -92,7 +92,7 @@ class LoraRadio:
                 print(">>> END PACKET <<<\n")
                 return None
 
-            if len(packet) < data_len:
+            if len(packet) < data_len + 1:
                 logger.error(
                     "BEACON DECODE ERROR | Truncated packet: "
                     "data_len=%d but only %d bytes of content available | raw: %s",
