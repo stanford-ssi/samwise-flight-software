@@ -10,9 +10,7 @@ from ground_station.config import IS_CIRCUITPYTHON
 
 if not IS_CIRCUITPYTHON:
     try:
-        from pydantic import BaseModel
-
-        _BaseModel = BaseModel
+        from pydantic import BaseModel as _BaseModel
 
         USE_PYDANTIC = True
     except ImportError:

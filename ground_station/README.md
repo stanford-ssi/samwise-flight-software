@@ -4,7 +4,7 @@ An optimized, mission-ready LoRa communication system designed for coordinating 
 
 ## 📁 System Architecture
 
-The ground station is a Python package (`ground_station`) with a thin dispatcher that selects between a FastAPI web server (primary) and an interactive CLI loop (`code.py`, also the file CircuitPython auto-runs on boot).
+The ground station is designed with a modular, object-oriented architecture to ensure reliable data capture even during high-throughput satellite passes.
 
 ```text
 ground_station/                  # Project root (pyproject.toml, uv.lock, README, tests)
@@ -18,7 +18,6 @@ ground_station/                  # Project root (pyproject.toml, uv.lock, README
     ├── main.py                  # Dispatcher: picks server / code mode
     ├── server.py                # FastAPI server + WebSocket dashboard (primary mode)
     ├── code.py                  # Interactive CLI loop; also CircuitPython boot file
-    ├── cli.py                   # Auxiliary CLI wrapper around code.py
     ├── config.py                # Radio/protocol settings; pointers to flight SW
     ├── radio_initialization.py  # Hardware setup (Pi / Pico / Feather)
     ├── radio_commands.py        # LoraRadio class (low-level + mission commands)
@@ -71,7 +70,7 @@ uv sync                      # installs all deps into .venv
 # Default: FastAPI server on http://127.0.0.1:8000
 uv run python -m ground_station
 
-# Interactive CLI / debug listen mode
+# Interactive Code mode (command line), including debug listen mode
 uv run python -m ground_station code
 ```
 

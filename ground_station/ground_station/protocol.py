@@ -91,14 +91,13 @@ class BeaconPacket(Packet):
     """Specialized packet for satellite beacons."""
 
     @classmethod
-    def decode(cls, packet_bytes: bytes) -> BeaconData:
+    def decode(cls, data_len: int, packet_bytes: bytes) -> BeaconData:
         # Standard beacon packets from radio have a 1-byte length header prefix
         # before the state name null-terminated string.
         if len(packet_bytes) < 1:
             return BeaconData(state_name="short_packet")
 
-        data_len = packet_bytes[0]
-        payload = packet_bytes[1 : 1 + data_len]
+        payload = packet_bytes[:data_len]
 
         # Raw hex for forensic logging
         raw_hex = packet_bytes.hex()
@@ -178,8 +177,8 @@ class AdcsTelemetryPacket(Packet):
 
 
 # Backward compatibility wrappers
-def decode_beacon_data(data):
-    return BeaconPacket.decode(data)
+def decode_beacon_data(data_len, data):
+    return BeaconPacket.decode(data_len, data)
 
 
 def decode_adcs_data(data):

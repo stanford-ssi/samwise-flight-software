@@ -26,4 +26,4 @@ def main():
 
         code_main()
     else:
-        raise SystemExit(f"unknown mode: {mode!r} (expected server|cli|code)")
+        raise SystemExit(f"unknown mode: {mode!r} (expected server|code)")

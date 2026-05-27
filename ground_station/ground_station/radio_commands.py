@@ -61,15 +61,21 @@ class LoraRadio:
                     return None
 
             # All received packets are from the satellite. The first byte is a
-            # DownlinkPacketId (mirror of the uplink cmd_id) — dispatch on it.
-            if len(packet) < 1:
+            # length, and a second is DownlinkPacketId (mirror of the uplink cmd_id) 
+            # — dispatch on it.
+            if len(packet) < 2:  # Must have at least ID + length byte
                 logger.warning("Empty packet received")
 
                 print(">>> END PACKET <<<\n")
                 return None
 
-            packet_id = packet[0]
-            body = packet[1:]
+            data_len = packet[0]
+            packet_id = packet[1]
+            print(f"Received packet with ID {packet_id} and data length {data_len}")
+            body = packet[2:data_len]  # Extract body based on length byte
+            print(">>> RAW PACKET <<<")
+            print(packet.hex())
+            print(">>> END PACKET <<<\n")
 
             if packet_id == config.DOWNLINK_COMMAND_RESPONSE:
                 response_text = body.decode("utf-8", "ignore")
@@ -86,15 +92,7 @@ class LoraRadio:
                 print(">>> END PACKET <<<\n")
                 return None
 
-            # Beacon path: body is [data_len][content...] — same shape
-            # BeaconPacket.decode has always expected.
-            if len(body) < 1:
-                logger.warning("Beacon packet missing length byte")
-                print(">>> END PACKET <<<\n")
-                return None
-
-            data_len = body[0]
-            if len(body) < 1 + data_len:
+            if len(packet) < data_len:
                 logger.error(
                     "BEACON DECODE ERROR | Truncated packet: "
                     "data_len=%d but only %d bytes of content available | raw: %s",
@@ -106,7 +104,7 @@ class LoraRadio:
                 print(">>> END PACKET <<<\n")
                 return None
 
-            beacon_data = protocol.decode_beacon_data(body)
+            beacon_data = protocol.decode_beacon_data(data_len, body)
             beacon_data.raw_hex = (
                 packet.hex()
                 if hasattr(packet, "hex")
