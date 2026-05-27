@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "samwise-ground-station"
 version = "1.0.0"
@@ -22,8 +26,17 @@ dependencies = [
     "circuitpython-hmac",
     "adafruit-blinka",
     "pydantic>=2.0.0",
+    "rpi-lgpio>=0.6; platform_machine == 'aarch64' and sys_platform == 'linux'",
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.28.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.27.0",
+    "starlette",
 ]
 
 [dependency-groups]
@@ -41,6 +54,9 @@ dev = [
 Homepage = "https://github.com/stanford-ssi/samwise-flight-software"
 Repository = "https://github.com/stanford-ssi/samwise-flight-software"
 Issues = "https://github.com/stanford-ssi/samwise-flight-software/issues"
+
+[tool.setuptools.packages.find]
+include = ["ground_station*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
