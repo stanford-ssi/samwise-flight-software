@@ -62,7 +62,7 @@ cd ground_station            # the project root (where pyproject.toml lives)
 uv sync                      # installs all deps into .venv
 ```
 
-`requires-python` is `>=3.11`.
+`requires-python` is `>=3.13`.
 
 ### Run
 

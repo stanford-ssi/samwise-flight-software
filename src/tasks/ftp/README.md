@@ -140,7 +140,7 @@ _Too high:_
 * Limited by space on RAM, i.e. buffer size cannot be too large
 * The point of "cycling" is to prevent needing to send all the packets repeatedly from Ground -> SAMWISE. (See 2a above). Having a higher N could make this "harder".
     * Note that this is not really that big of an issue, as we now provide a bitfield of packets we haven't received yet (see `FTP_READY_RECEIVE` & `FTP_FILE_WRITE_SUCCESS` specifications). However, it is possible for this to be a bit finicky still (e.g. it is not that easy for ground station to quickly adapt to this bitfield, especially if it is still cycling through hundreds of disjointed packets and bitfields are changing weirdly every time SAMWISE returns `FTP_READY_RECEIVE`).
-* More susceptible to losing a lot of data already uploaded. For example, if I sent 300/400 packets, but SAMWISE suddenly restarts for whatever reason, then I have to resend all 400 packets as RAM is cleared on restart. 
+* More susceptible to losing a lot of data already uploaded. For example, if I sent 300/400 packets, but SAMWISE suddenly restarts for whatever reason, then I have to resend all 400 packets as RAM is cleared on restart.
 * RAM is also in general pretty volatile, so it is not the best idea to keep so much data in RAM (much safer to flush to MRAM).
 * Similar to above, less opportunities for "checkpoints" where you can continue from (see "resume file write" functionality in Overall Design).
 
@@ -415,7 +415,7 @@ typedef struct {
     uint16_t packet_start;             // Current cycle's start packet
     uint16_t packet_end;               // Current cycle's end packet
     uint8_t received_bitfield[32];     // 256-bit bitfield (32 bytes)
-    
+
     // Additional filesystem & FTP state info for debugging:
     uint32_t file_crc_so_far;          // CRC of the file so far as it currently sits on the MRAM, which ground station may use for verification during file transfer (using total_bytes_written). This should be 0 if nothing has been written so far (first cycle).
     uint32_t total_bytes_written;      // Total bytes written to MRAM so far

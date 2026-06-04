@@ -72,8 +72,8 @@ def test_packet_creation_structure(test_state):
     builder = protocol.LegacyPacketBuilder()
     data = b"hello"
 
-    # create_packet(dst, src, flags, seq, data)
-    packet = builder.create_packet(1, 2, 0, 0, data)
+    # create_packet(dst, src, flags, seq, data_len, data)
+    packet = builder.create_packet(1, 2, 0, 0, len(data), data)
 
     # Structure:
     # Header (5 bytes): dst, src, flags, seq, len
@@ -105,7 +105,7 @@ def test_packet_creation_structure(test_state):
 def test_beacon_decode():
     """Test beacon packet decoding matches C struct layout"""
     # Construct a fake beacon packet matching the C struct layout
-    # Format: data_len (1 byte) + debug_string (null terminated) + stats struct + callsign
+    # Format: debug_string (null terminated) + stats struct + callsign
 
     # struct beacon_stats (all little endian)
     # uint32_t reboot_counter;
@@ -154,7 +154,9 @@ def test_beacon_decode():
 def test_command_packet_no_op_structure(test_state):
     """Print and verify the byte layout of a NO_OP command packet (GS -> satellite)."""
     data = protocol.create_cmd_payload(gs_config.NO_OP)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE  # 5
     data_len = packet[4]
@@ -191,7 +193,9 @@ def test_command_packet_manual_state_override_structure(test_state):
     """Print and verify the byte layout of a MANUAL_STATE_OVERRIDE command packet."""
     state_name = "nominal"
     data = protocol.create_cmd_payload(gs_config.MANUAL_STATE_OVERRIDE, state_name)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE
     data_len = packet[4]
@@ -236,7 +240,9 @@ def test_command_packet_payload_exec_structure(test_state):
     """Print and verify the byte layout of a PAYLOAD_EXEC command packet."""
     exec_str = "run_experiment_1"
     data = protocol.create_cmd_payload(gs_config.PAYLOAD_EXEC, exec_str)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE
     data_len = packet[4]
@@ -261,22 +267,22 @@ def test_command_packet_payload_exec_structure(test_state):
 # Incoming packet decode tests
 # ---------------------------------------------------------------------------
 #
-# Wire format (after adafruit_rfm9x strips the 4-byte RadioHead header):
+# Wire format (after adafruit_rfm9x strips the 4-byte RadioHead header and our own code
+# strips the 1-byte data_len prefix):
 #
-#   [byte 0]        data_len  — number of bytes that follow (= len of beacon content)
-#   [bytes 1..]     beacon content: state_name\0 | stats (53 B) | ADCS (25 B) | callsign (7 B)
+#   [bytes 0..]     beacon content: state_name\0 | stats (53 B) | ADCS (25 B) | callsign (7 B)
 #
 # The RadioHead fields (to/from/id/flags) are NOT in these bytes — the library
 # exposes them as radio.destination / radio.node / radio.identifier / radio.flags.
 #
-# decode_beacon_data() expects exactly this layout: [data_len][content].
+# decode_beacon_data() expects exactly this layout: [content].
 
 # 96 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
 # Note that we don't pass in the ID as this is stripped by the library.
 _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "6d6f636b5f737461746500"  # state_name = "mock_state\0"
     # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
-    "00000000"  # reboot_counter    = 0_EXAMPLE_BEACON_CONTENT
+    "00000000"  # reboot_counter    = 0
     "3930000000000000"  # time_in_state_ms  = 12345
     "00000000"  # rx_bytes          = 0
     "00000000"  # rx_packets        = 0
@@ -347,7 +353,7 @@ def test_decode_example_incoming_packet():
     print(f"    data_len = {len(raw)}")
     print("  RadioHead fields (to/from/id/flags) were already stripped by the library")
 
-    # decode_beacon_data() consumes the data_len byte then parses the content.
+    # decode_beacon_data() expects exactly the content bytes (no length prefix).
     beacon = protocol.decode_beacon_data(len(raw), raw)
 
     print("\n--- Decoded Beacon Fields ---")

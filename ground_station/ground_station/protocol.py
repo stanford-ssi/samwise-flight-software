@@ -41,10 +41,10 @@ class Packet:
     """Handles the standard radio protocol envelope: Headers, Auth, and Footers."""
 
     @staticmethod
-    def create(dst, src, flags, seq, data) -> bytes:
+    def create(dst, src, flags, seq, data_len, data) -> bytes:
         """Create a full authenticated packet."""
-        if len(data) > config.PACKET_MAX_DATA_SIZE:
-            raise ValueError(f"Data too large: {len(data)} bytes")
+        if data_len > config.PACKET_MAX_DATA_SIZE:
+            raise ValueError(f"Data too large: {data_len} bytes")
 
         # Create model representing the unsaved packet
         pkt = PacketModel(
@@ -52,6 +52,7 @@ class Packet:
             src=src,
             flags=flags,
             seq=seq,
+            data_len=data_len,
             data=data,
             boot_count=state_manager.boot_count,
             msg_id=state_manager.get_next_msg_id(),
@@ -84,7 +85,7 @@ class Packet:
         data_end = config.PACKET_HEADER_SIZE + data_len
         data = packet_bytes[config.PACKET_HEADER_SIZE : data_end]
 
-        return PacketModel(dst=dst, src=src, flags=flags, seq=seq, data=data)
+        return PacketModel(dst=dst, src=src, flags=flags, seq=seq, data_len=data_len, data=data)
 
 
 class BeaconPacket(Packet):
@@ -139,9 +140,8 @@ class BeaconPacket(Packet):
             # 2. Decode ADCS if present (appended after stats)
             adcs_start = stats_start + 53
             if len(payload) >= adcs_start + 25:
-                beacon_data.adcs = AdcsTelemetryPacket.decode_payload(
-                    payload[adcs_start : adcs_start + 25]
-                )
+                adcs_bytes = payload[adcs_start : adcs_start + 25]
+                beacon_data.adcs = AdcsTelemetryPacket.decode_payload(len(adcs_bytes), adcs_bytes)
 
             # 3. Decode Callsign if present
             callsign_start = adcs_start + 25
@@ -159,8 +159,8 @@ class AdcsTelemetryPacket(Packet):
     """Specialized packet for ADCS telemetry."""
 
     @staticmethod
-    def decode_payload(data: bytes) -> Optional[ADCSData]:
-        if len(data) < 25:
+    def decode_payload(data_len: int, data: bytes) -> Optional[ADCSData]:
+        if data_len < 25:
             return None
         try:
             unpacked = struct.unpack("<fffffBL", data[:25])
@@ -181,13 +181,13 @@ def decode_beacon_data(data_len, data):
     return BeaconPacket.decode(data_len, data)
 
 
-def decode_adcs_data(data):
-    return AdcsTelemetryPacket.decode_payload(data)
+def decode_adcs_data(data_len, data):
+    return AdcsTelemetryPacket.decode_payload(data_len, data)
 
 
 class LegacyPacketBuilder:
-    def create_packet(self, dst, src, flags, seq, data):
-        return Packet.create(dst, src, flags, seq, data)
+    def create_packet(self, dst, src, flags, seq, data_len, data):
+        return Packet.create(dst, src, flags, seq, data_len, data)
 
     def unpack_packet(self, packet_bytes):
         pkt = Packet.unpack(packet_bytes)

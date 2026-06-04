@@ -81,7 +81,7 @@ black --diff .
 
 **Configuration:** See `[tool.black]` in `pyproject.toml`
 - Line length: 100 characters
-- Target: Python 3.8+
+- Target: Python 3.13+
 
 ### Linting: Ruff
 
@@ -244,7 +244,7 @@ Resolves #123
 GitHub Actions automatically runs on every push and PR:
 
 ### Checks that run:
-1. **Tests** - Full test suite across Python 3.8-3.12
+1. **Tests** - Full test suite across Python 3.13
 2. **Compatibility** - Platform-specific tests
 3. **Linting** - Black formatting + Ruff linting
 4. **Coverage** - Code coverage reporting

@@ -2,7 +2,7 @@
 [cases.test_shrink_simple]
 defines.BLOCK_COUNT = [10, 15, 20]
 defines.AFTER_BLOCK_COUNT = [5, 10, 15, 19]
-   
+
 if = "AFTER_BLOCK_COUNT <= BLOCK_COUNT"
 code = '''
 #ifdef LFS_SHRINKNONRELOCATING

@@ -72,10 +72,7 @@ class LoraRadio:
             data_len = packet[0]
             packet_id = packet[1]
             print(f"Received packet with ID {packet_id} and data length {data_len}")
-            body = packet[2 : data_len + 1]  # Extract body based on length byte
-            print(">>> RAW BODY <<<")
-            print(body.hex())
-            print(">>> END BODY <<<\n")
+            body = packet[2 : data_len + 1]
 
             if packet_id == config.DOWNLINK_COMMAND_RESPONSE:
                 response_text = body.decode("utf-8", "ignore")
@@ -97,14 +94,14 @@ class LoraRadio:
                     "BEACON DECODE ERROR | Truncated packet: "
                     "data_len=%d but only %d bytes of content available | raw: %s",
                     data_len,
-                    len(body) - 1,
+                    len(body),
                     packet.hex(),
                 )
 
                 print(">>> END PACKET <<<\n")
                 return None
 
-            beacon_data = protocol.decode_beacon_data(data_len, body)
+            beacon_data = protocol.decode_beacon_data(len(body), body)
             beacon_data.raw_hex = (
                 packet.hex()
                 if hasattr(packet, "hex")
@@ -183,6 +180,7 @@ class LoraRadio:
             src=0xFF,
             flags=0x00,
             seq=0x00,
+            data_len=len(data),
             data=data,
         )
 

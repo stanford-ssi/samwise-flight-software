@@ -15,6 +15,7 @@ class PacketModel(_BaseModel):
         src: int = 0
         flags: int = 0
         seq: int = 0
+        data_len: int = 0
         data: bytes = b""
         boot_count: Optional[int] = None
         msg_id: Optional[int] = None
@@ -27,6 +28,7 @@ class PacketModel(_BaseModel):
             src=0,
             flags=0,
             seq=0,
+            data_len=0,
             data=b"",
             boot_count=None,
             msg_id=None,
@@ -37,6 +39,7 @@ class PacketModel(_BaseModel):
             self.src = src
             self.flags = flags
             self.seq = seq
+            self.data_len = data_len
             self.data = data
             self.boot_count = boot_count
             self.msg_id = msg_id
@@ -46,7 +49,7 @@ class PacketModel(_BaseModel):
     def header_bytes(self) -> bytes:
         import struct
 
-        return struct.pack("BBBBB", self.dst, self.src, self.flags, self.seq, len(self.data))
+        return struct.pack("BBBBB", self.dst, self.src, self.flags, self.seq, self.data_len)
 
     @property
     def footer_bytes(self) -> bytes:
