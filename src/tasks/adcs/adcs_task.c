@@ -69,7 +69,7 @@ void adcs_task_dispatch(slate_t *slate)
                 slate->is_adcs_on = true;
                 break;
             case MSG_ADCS_PACKET:
-                if (num_bytes != 7 + 41)
+                if (num_bytes != 7 + sizeof(adcs_packet_t))
                     ;
                 LOG_INFO("[ADCS] Attitude packet received");
                 slate->is_adcs_on = true;

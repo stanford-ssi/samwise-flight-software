@@ -65,12 +65,40 @@ class ADCSQuaternion(_BaseModel):
         return (self.q0**2 + self.q1**2 + self.q2**2 + self.q3**2) ** 0.5
 
 
+class ADCSVector3(_BaseModel):
+    """Body-frame 3-vector (sun sensor / magnetometer measurement)"""
+
+    if USE_PYDANTIC:
+        x: float = 0.0
+        y: float = 0.0
+        z: float = 0.0
+    else:
+
+        def __init__(self, x=0.0, y=0.0, z=0.0, **kwargs):
+            self.x = x
+            self.y = y
+            self.z = z
+
+    @property
+    def magnitude(self) -> float:
+        return (self.x**2 + self.y**2 + self.z**2) ** 0.5
+
+
 class ADCSData(_BaseModel):
     """ADCS telemetry data"""
 
     if USE_PYDANTIC:
         angular_velocity: float = 0.0
         quaternion: ADCSQuaternion = Field(default_factory=ADCSQuaternion)
+        mjd: float = 0.0
+        UTC_time: float = 0.0
+        voltage: float = 0.0
+        current: float = 0.0
+        sun_body: ADCSVector3 = Field(default_factory=ADCSVector3)
+        mag_body: ADCSVector3 = Field(default_factory=ADCSVector3)
+        lon: float = 0.0
+        lat: float = 0.0
+        alt: float = 0.0
         state: int = 0
         boot_count: int = 0
     else:
@@ -83,6 +111,11 @@ class ADCSData(_BaseModel):
             UTC_time=0,
             voltage=0,
             current=0,
+            sun_body=None,
+            mag_body=None,
+            lon=0,
+            lat=0,
+            alt=0,
             state=0,
             boot_count=0,
             **kwargs,
@@ -93,6 +126,11 @@ class ADCSData(_BaseModel):
             self.UTC_time = UTC_time
             self.voltage = voltage
             self.current = current
+            self.sun_body = sun_body if sun_body else ADCSVector3()
+            self.mag_body = mag_body if mag_body else ADCSVector3()
+            self.lon = lon
+            self.lat = lat
+            self.alt = alt
             self.state = state
             self.boot_count = boot_count
 

@@ -280,7 +280,7 @@ def test_command_packet_payload_exec_structure(test_state):
 #
 # decode_beacon_data() expects exactly this layout: [data_len][content].
 
-# 96 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
+# 148 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
 _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "6d6f636b5f737461746500"  # state_name = "mock_state\0"
     # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
@@ -301,7 +301,7 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "0000"  # panel_B_voltage   = 0 mV
     "0000"  # panel_B_current   = 0 mA
     "00"  # device_status     = 0x00
-    # ---- ADCS telemetry (41 bytes, struct <fffffffffBL) ----
+    # ---- ADCS telemetry (77 bytes, struct <18fBL) ----
     "0000803f"  # angular_velocity  = 1.0 rad/s
     "cdcccc3d"  # q0               ≈ 0.1
     "cdcc4c3e"  # q1               ≈ 0.2
@@ -311,6 +311,15 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "00000000"  # UTC_time
     "00000000"  # voltage
     "00000000"  # current
+    "0000003f"  # sun_body_x        ≈ 0.5
+    "9a99193f"  # sun_body_y       ≈ 0.6
+    "3333333f"  # sun_body_z       ≈ 0.7
+    "cdcc4c3f"  # mag_body_x       ≈ 0.8
+    "6666663f"  # mag_body_y       ≈ 0.9
+    "0000803f"  # mag_body_z        = 1.0
+    "cdcc8c3f"  # lon              ≈ 1.1
+    "9a99993f"  # lat              ≈ 1.2
+    "6666a63f"  # alt              ≈ 1.3
     "41"  # ADCS state        = 65
     "2a000000"  # ADCS boot_count   = 42
     # ---- callsign (6 bytes + null) ----
@@ -407,6 +416,15 @@ def test_decode_example_incoming_packet():
     assert abs(beacon.adcs.quaternion.q1 - 0.2) < 1e-5
     assert abs(beacon.adcs.quaternion.q2 - 0.3) < 1e-5
     assert abs(beacon.adcs.quaternion.q3 - 0.4) < 1e-5
+    assert abs(beacon.adcs.sun_body.x - 0.5) < 1e-5
+    assert abs(beacon.adcs.sun_body.y - 0.6) < 1e-5
+    assert abs(beacon.adcs.sun_body.z - 0.7) < 1e-5
+    assert abs(beacon.adcs.mag_body.x - 0.8) < 1e-5
+    assert abs(beacon.adcs.mag_body.y - 0.9) < 1e-5
+    assert abs(beacon.adcs.mag_body.z - 1.0) < 1e-5
+    assert abs(beacon.adcs.lon - 1.1) < 1e-5
+    assert abs(beacon.adcs.lat - 1.2) < 1e-5
+    assert abs(beacon.adcs.alt - 1.3) < 1e-5
     assert beacon.adcs.state == 65
     assert beacon.adcs.boot_count == 42
     assert beacon.callsign == "KC3WNY"
