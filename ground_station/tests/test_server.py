@@ -5,23 +5,14 @@ Uses starlette's TestClient (ships with FastAPI) for sync HTTP and WebSocket tes
 The radio hardware is fully mocked via MagicMock — no physical hardware required.
 """
 
-import os
-import sys
 from unittest.mock import MagicMock
 
 import pytest
+from starlette.testclient import TestClient
 
-# Hardware mocking is handled in conftest.py, but we also need to guard server imports
-# from triggering radio_initialization at module load time.
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if parent_dir not in sys.path:
-    sys.path.append(parent_dir)
-
-from starlette.testclient import TestClient  # noqa: E402
-
-from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats  # noqa: E402
-from radio_commands import LoraRadio  # noqa: E402
-from server import create_app  # noqa: E402
+from ground_station.models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
+from ground_station.radio_commands import LoraRadio
+from ground_station.server import create_app
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -282,7 +273,7 @@ def test_try_get_packet_returns_none_when_radio_is_none():
 @pytest.mark.server
 def test_try_get_packet_returns_none_on_rssi_drop():
     """try_get_packet() returns None when RSSI filter drops the packet."""
-    import config as cfg
+    from ground_station import config as cfg
 
     mock_rfm = MagicMock()
     # Build a valid-looking raw beacon packet
@@ -295,7 +286,8 @@ def test_try_get_packet_returns_none_on_rssi_drop():
     adcs = struct.pack("<fffffBL", 0.1, 1.0, 0.0, 0.0, 0.0, 1, 1)
     callsign = b"KC3WNY"
     payload = state + stats + adcs + callsign
-    mock_rfm.receive.return_value = bytes([len(payload)]) + payload
+    # Note we have to include cfg.DOWNLINK_BEACON
+    mock_rfm.receive.return_value = bytes([len(payload) + 1, cfg.DOWNLINK_BEACON]) + payload
     mock_rfm.last_rssi = -130  # below threshold
     mock_rfm.last_snr = 5
 
@@ -319,7 +311,7 @@ def test_try_get_packet_returns_beacon_data_on_success():
     """try_get_packet() returns a BeaconData instance on a valid packet."""
     import struct
 
-    import config as cfg
+    from ground_station import config as cfg
 
     mock_rfm = MagicMock()
     state = b"nominal\x00"
@@ -329,7 +321,8 @@ def test_try_get_packet_returns_beacon_data_on_success():
     adcs = struct.pack("<fffffBL", 0.5, 0.9, 0.1, 0.2, 0.3, 2, 5)
     callsign = b"KC3WNY"
     payload = state + stats + adcs + callsign
-    mock_rfm.receive.return_value = bytes([len(payload)]) + payload
+    # Note we have to include cfg.DOWNLINK_BEACON
+    mock_rfm.receive.return_value = bytes([len(payload) + 1, cfg.DOWNLINK_BEACON]) + payload
     mock_rfm.last_rssi = -80
     mock_rfm.last_snr = 10
 

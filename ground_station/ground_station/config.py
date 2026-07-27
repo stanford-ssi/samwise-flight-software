@@ -1,3 +1,9 @@
+import sys
+
+# Automatic config for changing how we write code:
+# Detect CircuitPython vs CPython
+IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+
 # Default packet constants - Must match flight software protocol implementation
 # Flight Software References:
 # - Packet Structure: src/tasks/radio/radio_task.c (packet parsing functions)
@@ -33,6 +39,11 @@ PAYLOAD_TURN_ON = 2  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_ON
 PAYLOAD_TURN_OFF = 3  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_OFF
 MANUAL_STATE_OVERRIDE = 4  # src/tasks/command/command_parser.h:CMD_MANUAL_STATE_OVERRIDE
 PAYLOAD_SHUTDOWN = 5  # src/tasks/command/command_parser.h:CMD_PAYLOAD_SHUTDOWN
+
+# Downlink packet IDs - first byte of every SAMWISE -> Ground Station packet's
+# data field. Must match src/tasks/radio/radio_task.h:DownlinkPacketId.
+DOWNLINK_BEACON = 0
+DOWNLINK_COMMAND_RESPONSE = 1
 
 # Packet filtering configuration
 # These filters help reject noisy packets not from the satellite

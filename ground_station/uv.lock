@@ -766,29 +766,29 @@ dependencies = [
     { name = "adafruit-circuitpython-hashlib" },
     { name = "adafruit-circuitpython-rfm9x" },
     { name = "circuitpython-hmac" },
+    { name = "fastapi" },
     { name = "pydantic" },
-    { name = "rpi-lgpio" },
+    { name = "rpi-lgpio", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.optional-dependencies]
-dev = [
-    { name = "black" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-server = [
-    { name = "fastapi" },
-    { name = "uvicorn", extra = ["standard"] },
-]
 test = [
-    { name = "fastapi" },
     { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "starlette" },
-    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "httpx" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "starlette" },
 ]
 
 [package.metadata]
@@ -796,24 +796,28 @@ requires-dist = [
     { name = "adafruit-blinka" },
     { name = "adafruit-circuitpython-hashlib" },
     { name = "adafruit-circuitpython-rfm9x" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=24.0.0" },
     { name = "circuitpython-hmac" },
-    { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.110.0" },
-    { name = "fastapi", marker = "extra == 'test'", specifier = ">=0.110.0" },
+    { name = "fastapi", specifier = ">=0.110.0" },
     { name = "httpx", marker = "extra == 'test'", specifier = ">=0.27.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.0.0" },
-    { name = "rpi-lgpio", specifier = ">=0.6" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.2.0" },
+    { name = "rpi-lgpio", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=0.6" },
     { name = "starlette", marker = "extra == 'test'" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.28.0" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'test'", specifier = ">=0.28.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.28.0" },
 ]
-provides-extras = ["server", "test", "dev"]
+provides-extras = ["test"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=24.0.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pre-commit", specifier = ">=3.0.0" },
+    { name = "pytest", specifier = ">=7.0.0" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "ruff", specifier = ">=0.2.0" },
+    { name = "starlette" },
+]
 
 [[package]]
 name = "starlette"

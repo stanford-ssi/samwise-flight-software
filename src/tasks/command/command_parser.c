@@ -50,10 +50,15 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("Retrieving number of commands executed...");
             uint8_t data[PACKET_DATA_SIZE];
 
-            // Package interger value into a string
-            int len =
-                snprintf(data, sizeof(data), "Number commands executed: %d",
-                         slate->number_commands_processed);
+            // Tag this downlink as a command response (first byte of data).
+            data[0] = DOWNLINK_COMMAND_RESPONSE;
+
+            // Package integer value into a string after the packet-id byte.
+            int body_len = snprintf((char *)&data[DOWNLINK_PACKET_ID_SIZE],
+                                    sizeof(data) - DOWNLINK_PACKET_ID_SIZE,
+                                    "Number commands executed: %d",
+                                    slate->number_commands_processed);
+            int len = DOWNLINK_PACKET_ID_SIZE + body_len;
 
             // Create the packet
             packet_t pkt;

@@ -4,6 +4,11 @@ meta:
   encoding: UTF-8
 
 seq:
+  # Downlink packet ID (DownlinkPacketId enum, src/common/config.h and ground_station/ground_station/config.py).
+  # 0 = BEACON, 1 = COMMAND_RESPONSE. This schema covers BEACON only.
+  - id: packet_id
+    type: u1
+
   # State name (null-terminated string)
   - id: name
     type: strz

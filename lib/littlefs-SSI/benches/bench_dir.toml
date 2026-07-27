@@ -266,5 +266,3 @@ code = '''
 
     lfs_unmount(&lfs) => 0;
 '''
-
-

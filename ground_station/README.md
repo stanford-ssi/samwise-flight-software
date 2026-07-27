@@ -1,46 +1,46 @@
 # Samwise Ground Station
 
-An optimized, mission-ready LoRA communication system designed for coordinating with the Samwise Cubesat. Optimized for high-performance monitoring on Raspberry Pi or CircuitPython microcontrollers.
+An optimized, mission-ready LoRa communication system designed for coordinating with the Samwise CubeSat. Targets Raspberry Pi (CPython) for permanent stations and CircuitPython microcontrollers (Pico 2 / Feather M4) for portable use.
 
 ## 📁 System Architecture
 
 The ground station is designed with a modular, object-oriented architecture to ensure reliable data capture even during high-throughput satellite passes.
 
 ```text
-ground_station/              # Python package (imported as 'gs')
-├── code.py                  # Main entry point (the firmware/script you run)
-├── requirements.txt         # Python dependencies (Pydantic for RPi, optional on CircuitPython)
-├── __init__.py              # Module initialization exposing main APIs
-├── config.py                # Radio/protocol settings with flight software code pointers
-├── radio_initialization.py  # Platform-agnostic hardware setup (Pi/Pico/Feather)
-├── radio_commands.py        # OOP LoraRadio class with high-level mission commands
-├── protocol.py              # Packet architecture: Base Packet class with inheritance
-├── ui.py                    # Non-blocking Interactive UI and Debug Listen modes
-├── state.py                 # Optimized persistent state manager (low file I/O)
-├── models.py                # Data models: Packet, BeaconPacket, AdcsTelemetryPacket
-│                            # (Pydantic on RPi, simple classes on CircuitPython)
-├── logger.py                # Mission telemetry logger (CSV + structured console)
-├── logs/                    # Persistent telemetry CSV archives (Auto-generated)
-├── lib/                     # CircuitPython libraries (.mpy files)
-│   ├── adafruit_rfm9x.mpy
-│   ├── adafruit_hashlib/
-│   └── circuitpython_hmac.mpy
-└── tests/                   # Unit tests for protocol and decoding logic
+ground_station/                  # Project root (pyproject.toml, uv.lock, README, tests)
+├── pyproject.toml
+├── uv.lock
+├── tests/                       # pytest suite (mocks hardware via conftest.py)
+├── lib/                         # CircuitPython .mpy libraries (deployed to device)
+└── ground_station/              # The package itself
+    ├── __init__.py
+    ├── __main__.py              # `python -m ground_station` enters here
+    ├── main.py                  # Dispatcher: picks server / code mode
+    ├── server.py                # FastAPI server + WebSocket dashboard (primary mode)
+    ├── code.py                  # Interactive CLI loop; also CircuitPython boot file
+    ├── config.py                # Radio/protocol settings; pointers to flight SW
+    ├── radio_initialization.py  # Hardware setup (Pi / Pico / Feather)
+    ├── radio_commands.py        # LoraRadio class (low-level + mission commands)
+    ├── protocol.py              # Packet encoding/decoding, HMAC auth
+    ├── ui.py                    # Non-blocking interactive UI + debug listen
+    ├── state.py                 # Persistent state manager (batched I/O)
+    ├── logger.py                # Structured console + telemetry CSV logger
+    ├── static/                  # Dashboard HTML/JS served by FastAPI
+    └── models/                  # Data models (Pydantic on CPython, plain classes on CircuitPython)
+        ├── __init__.py
+        ├── adcs_model.py
+        ├── beacon_model.py
+        ├── packet_model.py
+        └── command_model.py
 ```
 
-### Key Architectural Improvements:
+### Architectural notes
 
-#### Object-Oriented Radio Interface
-The **`LoraRadio`** class in `radio_commands.py` provides a clean OOP wrapper around the low-level RFM9x hardware, encapsulating both hardware access and high-level mission commands.
-
-#### Packet Inheritance Hierarchy
-The **`Packet`** base class in `models.py` handles radio-level protocol (authentication, parsing), while specialized classes like **`BeaconPacket`** and **`AdcsTelemetryPacket`** understand their specific data formats.
-
-#### Optimized State Management
-The **`StateManager`** in `state.py` minimizes file I/O for high-throughput scenarios (file transfer protocol requires tens of thousands of packets), using batched writes and atomic file operations.
-
-#### Flight Software Integration
-All configuration in **`config.py`** includes code pointers to corresponding flight software implementations, ensuring ground station and satellite stay synchronized.
+- **Single entry, multiple modes.** `python -m ground_station` runs `main.py`, which dispatches to `server.run()` by default. Override at runtime with `python -m ground_station code` for the interactive loop, or change `DEFAULT_MODE` in `ground_station/main.py`.
+- **Object-oriented radio.** `LoraRadio` in `radio_commands.py` wraps the RFM9x with mission-level commands.
+- **State manager.** `state.py` batches writes to avoid stalling the radio polling loop during high-throughput passes (file transfer can be tens of thousands of packets).
+- **Cross-platform models.** `models/__init__.py` detects CPython vs CircuitPython and switches between Pydantic and a minimal `_BaseModel`.
+- **Flight-software pointers.** `config.py` references the corresponding flight-software files for every shared constant so the two sides stay in sync.
 
 ### Why we split the software this way:
 *   **Separation of Concerns**: Decouples radio hardware (`radio_initialization.py`) from orbital protocol (`protocol.py`) and operator interface (`ui.py`).
@@ -51,32 +51,40 @@ All configuration in **`config.py`** includes code pointers to corresponding fli
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Raspberry Pi / CPython)
 
-### 1. Main Entrypoint
-The **`code.py`** file is the system's entrypoint. It initializes the hardware, loads the latest mission state, and launches the operator menu.
+The project uses [uv](https://github.com/astral-sh/uv) for environment + dependency management.
 
-### 2. Running on Raspberry Pi (Recommended)
-Perfect for fixed ground stations.
+### Install
 
-**Installation:**
 ```bash
-# Install in editable mode (recommended for development)
-pip3 install -e .
-
-# Or install normally
-pip3 install .
-
-# For development with testing tools
-pip3 install -e .[dev]
+cd ground_station            # the project root (where pyproject.toml lives)
+uv sync                      # installs all deps into .venv
 ```
 
-**Run:**
+`requires-python` is `>=3.13`.
+
+### Run
+
 ```bash
-python3 code.py
+# Default: FastAPI server on http://127.0.0.1:8000
+uv run python -m ground_station
+
+# Interactive Code mode (command line), including debug listen mode
+uv run python -m ground_station code
 ```
 
-**Verify Blinka**: Ensure the Adafruit Blinka library is configured for your Pi's hardware pins.
+The dashboard is at <http://localhost:8000>.
+
+### Tests
+
+```bash
+uv run pytest
+```
+
+Hardware modules (`board`, `busio`, `digitalio`, `adafruit_rfm9x`) are mocked in `tests/conftest.py`, so the suite runs anywhere.
+
+---
 
 **TROUBLESHOOTING STEP**: If you get an error like 'GPIO Busy':
 

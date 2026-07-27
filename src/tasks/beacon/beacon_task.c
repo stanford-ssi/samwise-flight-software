@@ -47,8 +47,8 @@ typedef struct
     uint8_t device_status; // 0 for off, 1 for on
 } __attribute__((__packed__)) beacon_stats;
 
-_Static_assert(sizeof(beacon_stats) + MAX_STR_LENGTH + 1 +
-                       sizeof(adcs_packet_t) + CALLSIGN_LENGTH <=
+_Static_assert(DOWNLINK_PACKET_ID_SIZE + sizeof(beacon_stats) + MAX_STR_LENGTH +
+                       1 + sizeof(adcs_packet_t) + CALLSIGN_LENGTH <=
                    MAX_DATA_SIZE,
                "beacon packet too large");
 
@@ -142,8 +142,11 @@ void beacon_task_dispatch(slate_t *slate)
     pkt.flags = 0;
     pkt.seq = 0;
 
-    // Commit into serialized byte array
-    pkt.len = serialize_slate(slate, pkt.data);
+    // Tag this downlink as a beacon (first byte of data, mirrors uplink
+    // cmd_id).
+    pkt.data[0] = DOWNLINK_BEACON;
+    pkt.len = DOWNLINK_PACKET_ID_SIZE +
+              serialize_slate(slate, pkt.data + DOWNLINK_PACKET_ID_SIZE);
 
     LOG_INFO("[beacon_task] Boot count: %d", slate->reboot_counter);
 

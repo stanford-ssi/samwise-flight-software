@@ -5,14 +5,9 @@ Test script for packet filtering functionality
 This demonstrates the RSSI threshold and callsign verification filters.
 """
 
-import os
 import sys
 
-# Add parent directory to path to import ground_station modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-# Import configuration values
-import config
+from ground_station import config
 
 
 def test_rssi_filter():

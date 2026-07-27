@@ -6,14 +6,10 @@ Byte formats must remain in sync with the Kaitai Struct specification:
 
 import os
 import struct
-import sys
 
 import pytest
 
-# Add project root to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-
-# Import ground_station modules as a package (hardware mocking handled in conftest.py)
+from ground_station import config as gs_config
 from ground_station import protocol
 from ground_station import state as state_module
 
@@ -76,8 +72,8 @@ def test_packet_creation_structure(test_state):
     builder = protocol.LegacyPacketBuilder()
     data = b"hello"
 
-    # create_packet(dst, src, flags, seq, data)
-    packet = builder.create_packet(1, 2, 0, 0, data)
+    # create_packet(dst, src, flags, seq, data_len, data)
+    packet = builder.create_packet(1, 2, 0, 0, len(data), data)
 
     # Structure:
     # Header (5 bytes): dst, src, flags, seq, len
@@ -109,7 +105,7 @@ def test_packet_creation_structure(test_state):
 def test_beacon_decode():
     """Test beacon packet decoding matches C struct layout"""
     # Construct a fake beacon packet matching the C struct layout
-    # Format: data_len (1 byte) + debug_string (null terminated) + stats struct + callsign
+    # Format: debug_string (null terminated) + stats struct + callsign
 
     # struct beacon_stats (all little endian)
     # uint32_t reboot_counter;
@@ -137,9 +133,8 @@ def test_beacon_decode():
         beacon_packet_hex = f.read()
     beacon_packet_hex_clean = beacon_packet_hex.replace(" ", "").replace("\n", "")
     beacon_packet_bytes = bytes.fromhex(beacon_packet_hex_clean)
-    beacon_packet = bytes([len(beacon_packet_bytes)]) + beacon_packet_bytes
 
-    result = protocol.decode_beacon_data(beacon_packet)
+    result = protocol.decode_beacon_data(len(beacon_packet_bytes), beacon_packet_bytes)
 
     assert result.state_name == "mock_state beat cal!"
     assert result.stats.reboot_counter == 42
@@ -153,17 +148,15 @@ def test_beacon_decode():
 # Run with `pytest -s` to see the printed packet dumps.
 # ---------------------------------------------------------------------------
 
-# Add ground_station to path so we can import config directly
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from ground_station import config as gs_config  # noqa: E402
-
 
 @pytest.mark.unit
 @pytest.mark.protocol
 def test_command_packet_no_op_structure(test_state):
     """Print and verify the byte layout of a NO_OP command packet (GS -> satellite)."""
     data = protocol.create_cmd_payload(gs_config.NO_OP)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE  # 5
     data_len = packet[4]
@@ -200,7 +193,9 @@ def test_command_packet_manual_state_override_structure(test_state):
     """Print and verify the byte layout of a MANUAL_STATE_OVERRIDE command packet."""
     state_name = "nominal"
     data = protocol.create_cmd_payload(gs_config.MANUAL_STATE_OVERRIDE, state_name)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE
     data_len = packet[4]
@@ -228,7 +223,7 @@ def test_command_packet_manual_state_override_structure(test_state):
     print(
         f"  cmd_id={packet[header_size]} (MANUAL_STATE_OVERRIDE={gs_config.MANUAL_STATE_OVERRIDE})"
     )
-    print(f"  cmd_payload='{packet[header_size+1:footer_start].decode()}'")
+    print(f"  cmd_payload='{packet[header_size + 1 : footer_start].decode()}'")
     print(f"Footer  [{footer_start}:{footer_end}]   : {packet[footer_start:footer_end].hex()}")
     print(f"  boot_count={boot_count}, msg_id={msg_id}")
     print(f"HMAC    [{footer_end}:{len(packet)}] : {packet[footer_end:].hex()}")
@@ -245,7 +240,9 @@ def test_command_packet_payload_exec_structure(test_state):
     """Print and verify the byte layout of a PAYLOAD_EXEC command packet."""
     exec_str = "run_experiment_1"
     data = protocol.create_cmd_payload(gs_config.PAYLOAD_EXEC, exec_str)
-    packet = protocol.Packet.create(dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data=data)
+    packet = protocol.Packet.create(
+        dst=0xFF, src=0xFF, flags=0x00, seq=0x00, data_len=len(data), data=data
+    )
 
     header_size = gs_config.PACKET_HEADER_SIZE
     data_len = packet[4]
@@ -257,7 +254,7 @@ def test_command_packet_payload_exec_structure(test_state):
     print(f"Header  : {packet[:header_size].hex()}")
     print(f"Data    : {packet[header_size:footer_start].hex()}")
     print(
-        f"  cmd_id={packet[header_size]}, payload='{packet[header_size+1:footer_start].decode()}'"
+        f"  cmd_id={packet[header_size]}, payload='{packet[header_size + 1 : footer_start].decode()}'"
     )
     print(f"Footer  : {packet[footer_start:footer_end].hex()}")
     print(f"HMAC    : {packet[footer_end:].hex()}")
@@ -270,17 +267,18 @@ def test_command_packet_payload_exec_structure(test_state):
 # Incoming packet decode tests
 # ---------------------------------------------------------------------------
 #
-# Wire format (after adafruit_rfm9x strips the 4-byte RadioHead header):
+# Wire format (after adafruit_rfm9x strips the 4-byte RadioHead header and our own code
+# strips the 1-byte data_len prefix):
 #
-#   [byte 0]        data_len  — number of bytes that follow (= len of beacon content)
-#   [bytes 1..]     beacon content: state_name\0 | stats (53 B) | ADCS (25 B) | callsign (7 B)
+#   [bytes 0..]     beacon content: state_name\0 | stats (53 B) | ADCS (25 B) | callsign (7 B)
 #
 # The RadioHead fields (to/from/id/flags) are NOT in these bytes — the library
 # exposes them as radio.destination / radio.node / radio.identifier / radio.flags.
 #
-# decode_beacon_data() expects exactly this layout: [data_len][content].
+# decode_beacon_data() expects exactly this layout: [content].
 
 # 96 bytes of beacon content (state_name + stats + ADCS + callsign, no length prefix).
+# Note that we don't pass in the ID as this is stripped by the library.
 _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "6d6f636b5f737461746500"  # state_name = "mock_state\0"
     # ---- beacon stats (53 bytes, struct <LQ6L8HB) ----
@@ -312,9 +310,6 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     # ---- callsign (6 bytes + null) ----
     "4b4333574e5900"  # callsign          = "KC3WNY\0"
 )
-
-# Full raw bytes as returned by radio.receive() — starts with the data_len byte.
-_EXAMPLE_RAW_BEACON = bytes([len(_EXAMPLE_BEACON_CONTENT)]) + _EXAMPLE_BEACON_CONTENT
 
 
 @pytest.mark.unit
@@ -351,18 +346,15 @@ def test_decode_example_incoming_packet():
     Shows the exact bytes returned by radio.receive() and how the ground
     station decodes them through decode_beacon_data().
     """
-    raw = _EXAMPLE_RAW_BEACON
-    data_len = raw[0]
-    content = raw[1 : 1 + data_len]
+    raw = _EXAMPLE_BEACON_CONTENT
 
     print("\n=== Example Incoming Beacon Packet (satellite -> GS) ===")
     print(f"Raw bytes from radio.receive() ({len(raw)} bytes): {raw.hex()}")
-    print(f"  [0]      data_len = {data_len}")
-    print(f"  [1:{1 + data_len}]  beacon content ({data_len} bytes): {content.hex()}")
+    print(f"    data_len = {len(raw)}")
     print("  RadioHead fields (to/from/id/flags) were already stripped by the library")
 
-    # decode_beacon_data() consumes the data_len byte then parses the content.
-    beacon = protocol.decode_beacon_data(raw)
+    # decode_beacon_data() expects exactly the content bytes (no length prefix).
+    beacon = protocol.decode_beacon_data(len(raw), raw)
 
     print("\n--- Decoded Beacon Fields ---")
     print(f"  state_name          : '{beacon.state_name}'")
@@ -389,9 +381,6 @@ def test_decode_example_incoming_packet():
         print(f"  ADCS state          : {beacon.adcs.state}")
         print(f"  ADCS boot_count     : {beacon.adcs.boot_count}")
     print(f"  callsign            : '{beacon.callsign}'")
-
-    assert data_len == len(_EXAMPLE_BEACON_CONTENT)
-    assert content == _EXAMPLE_BEACON_CONTENT
 
     assert beacon.state_name == "mock_state"
     assert beacon.stats is not None

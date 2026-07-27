@@ -48,7 +48,7 @@ jobs:
 
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
-    
+
     - name: Create venv
       run: uv venv --python ${{ matrix.python-version }}
       working-directory: ground_station
@@ -90,7 +90,7 @@ jobs:
 
     - name: Set up Python 3.13
       run: uv python install 3.13
-    
+
     - name: Create venv
       run: uv venv --python 3.13
       working-directory: ground_station
@@ -127,9 +127,9 @@ jobs:
         enable-cache: true
 
     - name: Check code formatting with black
-      run: uvx black@26.5.1 --check --diff .
+      run: uvx --python 3.13 black@26.5.1 --check --diff .
       working-directory: ground_station
 
     - name: Lint with ruff
-      run: uvx ruff@0.15.13 check .
+      run: uvx --python 3.13 ruff@0.15.13 check .
       working-directory: ground_station

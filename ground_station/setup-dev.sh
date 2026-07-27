@@ -13,21 +13,17 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
-# Check Python version
-echo "📋 Checking Python version..."
-python_version=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
-required_version="3.8"
-
-if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
-    echo "❌ Error: Python $required_version or higher is required. Found: $python_version"
+# Check for uv
+if ! command -v uv &> /dev/null; then
+    echo "❌ Error: uv is not installed. Install it from https://github.com/astral-sh/uv"
     exit 1
 fi
-echo "✅ Python $python_version detected"
+echo "✅ uv detected: $(uv --version)"
 echo ""
 
-# Install development dependencies
-echo "📦 Installing development dependencies..."
-python -m pip install -e .[dev]
+# Install all dependencies (including dev group)
+echo "📦 Installing dependencies..."
+uv sync
 echo "✅ Dependencies installed"
 echo ""
 
@@ -36,13 +32,13 @@ cd ..
 
 # Install pre-commit hooks
 echo "🔧 Installing pre-commit hooks..."
-pre-commit install
+uv run --project ground_station pre-commit install
 echo "✅ Pre-commit hooks installed"
 echo ""
 
 # Run pre-commit on all files to verify setup
 echo "🧪 Running pre-commit checks on all files..."
-pre-commit run --all-files || echo "⚠️  Some checks failed - this is normal for first run"
+uv run --project ground_station pre-commit run --all-files || echo "⚠️  Some checks failed - this is normal for first run"
 echo ""
 
 cd ground_station
@@ -56,9 +52,9 @@ echo "  • ruff (linter)"
 echo "  • pre-commit (git hooks)"
 echo ""
 echo "🎯 Next steps:"
-echo "  • Run tests: pytest"
-echo "  • Format code: black ."
-echo "  • Lint code: ruff check ."
-echo "  • Check hooks: pre-commit run --all-files"
+echo "  • Run tests: uv run pytest"
+echo "  • Format code: uvx --python 3.13 black@26.5.1 ."
+echo "  • Lint code: uvx --python 3.13 ruff@0.15.13 check ."
+echo "  • Check hooks: uv run pre-commit run --all-files"
 echo ""
 echo "💡 Pre-commit hooks will now run automatically before each commit!"

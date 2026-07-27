@@ -633,7 +633,7 @@ code = '''
     lfs_dir_read(&lfs, &dir, &info) => 0;
     lfs_dir_close(&lfs, &dir) => 0;
     lfs_unmount(&lfs) => 0;
-    
+
     // final remove
     lfs_mount(&lfs, cfg) => 0;
     lfs_remove(&lfs, "hotpotato") => LFS_ERR_NOTEMPTY;
@@ -1117,4 +1117,3 @@ code = '''
     lfs_dir_close(&lfs, &dir) => 0;
     lfs_unmount(&lfs) => 0;
 '''
-

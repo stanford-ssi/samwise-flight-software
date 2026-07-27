@@ -440,7 +440,7 @@ class Bd:
                 Block.__or__,
                 self.blocks[start:stop],
                 Block()))
-            
+
         self.size = size
         self.count = count
         self.width = width

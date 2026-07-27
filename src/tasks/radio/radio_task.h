@@ -12,6 +12,7 @@
 #include "pico/stdlib.h"
 #include "pico/util/queue.h"
 
+#include "config.h"
 #include "macros.h"
 #include "pins.h"
 #include "slate.h"
