@@ -78,6 +78,14 @@ python3 code.py
 
 **Verify Blinka**: Ensure the Adafruit Blinka library is configured for your Pi's hardware pins.
 
+**TROUBLESHOOTING STEP**: If you get an error like 'GPIO Busy':
+
+1. Run `sudo raspi-config` and enable "SPI" (`Interface` -> `SPI` -> `Yes` (enable))
+2. Change `/boot/firmware/config.txt` with the following:
+    * Make sure `dtparam=spi=on`
+    * Add AT THE END (underneath `[all]`): `dtoverlay=spi0-1cs`.
+3. `sudo reboot` and it should work.
+
 ### 3. Running on CircuitPython Microcontrollers (Pico 2 / Feather M4)
 Perfect for portable/field ground stations.
 
