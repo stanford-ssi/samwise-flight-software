@@ -11,6 +11,7 @@
 #if defined(BRINGUP) || defined(PICO)
 #include "hardware_test_task.h"
 #endif
+#include "ftp_task.h"
 #include "payload_task.h"
 #include "print_task.h"
 #include "radio_task.h"

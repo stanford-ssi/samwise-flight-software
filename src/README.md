@@ -32,7 +32,7 @@ bazel-bin/samwise.uf2
 ### Running tests
 
 ```bash
-source run_tests.sh
+bazel test //...
 ```
 
 Tests run on the host platform with mocked hardware drivers. See `bzl/defs.bzl` for the `samwise_test()` macro that handles mock substitution automatically.
