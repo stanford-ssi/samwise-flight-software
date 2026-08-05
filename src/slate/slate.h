@@ -149,6 +149,12 @@ typedef struct samwise_slate
     */
     absolute_time_t payload_most_recent_ping_time;
 
+    /*
+     * OTA
+     */
+    bool ota_requested;
+    FILESYS_BUFFERED_FNAME_STR_T ota_target_fname;
+
 } slate_t;
 
 // We will put a maximum size of ~16 KB on the slate for now, in lieu of any

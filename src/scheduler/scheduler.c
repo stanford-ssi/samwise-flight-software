@@ -14,6 +14,7 @@
 #include "burn_wire_reset_state.h"
 #include "burn_wire_state.h"
 #include "init_state.h"
+#include "ota_state.h"
 #include "running_state.h"
 #ifdef BRINGUP
 #include "bringup_state.h"
@@ -32,6 +33,7 @@ void sched_init(slate_t *slate)
     state_registry_register(STATE_RUNNING, &running_state);
     state_registry_register(STATE_BURN_WIRE, &burn_wire_state);
     state_registry_register(STATE_BURN_WIRE_RESET, &burn_wire_reset_state);
+    state_registry_register(STATE_OTA, &ota_state);
 #ifdef BRINGUP
     state_registry_register(STATE_BRINGUP, &bringup_state);
 #endif

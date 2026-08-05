@@ -119,3 +119,4 @@ CHANGELOG.tmp
 *.swo
 *~
 .#*
+pico-sdk

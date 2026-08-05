@@ -21,7 +21,8 @@ typedef enum
     PAYLOAD_EXEC,
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
-    MANUAL_STATE_OVERRIDE
+    MANUAL_STATE_OVERRIDE,
+    OTA_CMD
     // add more commands here as needed
 } Command;
 
@@ -45,5 +46,12 @@ typedef struct
     uint16_t seq_num;     // Sequence number for command execution
     Command command_type; // Command type
 } PAYLOAD_COMMAND_DATA;
+
+// data[0]   = OTA_CMD mnemonic (consumed by dispatch_command before this)
+// data[1-3] = null-terminated 2-char filename (FILESYS_BUFFERED_FNAME_STR_T)
+typedef struct
+{
+    FILESYS_BUFFERED_FNAME_STR_T fname;
+} OTA_COMMAND_DATA;
 
 void dispatch_command(slate_t *slate, packet_t *packet);

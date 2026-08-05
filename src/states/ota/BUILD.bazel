@@ -1,0 +1,24 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "ota_state",
+    srcs = ["ota_state.c"],
+    hdrs = ["ota_state.h"],
+    includes = ["."],
+    deps = [
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+        "//src/scheduler:state_ids",
+        "//src/tasks/ota:ota_task",
+        "//src/tasks/radio:radio_task",
+        "//src/tasks/watchdog:watchdog_task",
+    ] + select({
+        "//bzl:test_mode": [
+            "//src/test_mocks:pico_stdlib_mock",
+        ],
+        "//conditions:default": [
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+        ],
+    }),
+)
