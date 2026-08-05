@@ -2,6 +2,7 @@
 
 #include "filesys.h"
 #include "logger.h"
+#include "mram.h"
 #include "packet.h"
 #include "pico/bootrom.h"
 #include "rfm9x.h"
@@ -140,7 +141,7 @@ void ota_task_dispatch(slate_t *slate)
     {
         watchdog_feed(&slate->watchdog);
         ints = save_and_disable_interrupts();
-        flash_range_erase(b_partition_offset + erased, FLASH_SECTOR_SIZE);
+        mram_clear(b_partition_offset + erased, FLASH_SECTOR_SIZE);
         restore_interrupts(ints);
     }
 
@@ -171,8 +172,8 @@ void ota_task_dispatch(slate_t *slate)
         }
 
         ints = save_and_disable_interrupts();
-        flash_range_program(b_partition_offset + bytes_written, page_buf,
-                            FLASH_PAGE_SIZE);
+        mram_write(b_partition_offset + bytes_written, page_buf,
+                   FLASH_PAGE_SIZE);
         restore_interrupts(ints);
 
         bytes_written += bytes_read;
