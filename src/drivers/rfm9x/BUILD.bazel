@@ -6,16 +6,16 @@ cc_library(
     srcs = ["rfm9x.c"],
     hdrs = ["rfm9x.h"],
     includes = ["."],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
     deps = [
         "//src/common",
         "//src/drivers/logger",
         "//src/packet",
         "//src/utils",
-        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
         "@pico-sdk//src/rp2_common/hardware_resets:hardware_resets",
+        "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
     ],
-    target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
 # Header-only target for type definitions (used by slate in test builds)
@@ -28,13 +28,14 @@ cc_library(
         "//src/packet",
     ] + select({
         "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
             "//src/test_mocks:hardware_spi_mock",
         ],
         "//conditions:default": [
             "//src/drivers/logger",
-            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-            "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
             "@pico-sdk//src/rp2_common/hardware_resets:hardware_resets",
+            "@pico-sdk//src/rp2_common/hardware_spi:hardware_spi",
+            "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
         ],
     }),
 )
@@ -47,6 +48,7 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
+        "//src/drivers/logger:logger_mock",
         "//src/packet",
         "//src/test_mocks:hardware_spi_mock",
     ],

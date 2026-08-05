@@ -46,5 +46,11 @@ void rfm9x_set_rx_irq(rfm9x_t *r, void (*callback)(void))
 void rfm9x_format_packet(packet_t *pkt, uint8_t dst, uint8_t src, uint8_t flags,
                          uint8_t seq, uint8_t len, uint8_t *data)
 {
-    // TODO: Implement packet formatting for test verification
+    pkt->dst = dst;
+    pkt->src = src;
+    pkt->flags = flags;
+    pkt->seq = seq;
+    pkt->len = len;
+    ASSERT(len <= PACKET_DATA_SIZE);
+    memcpy(pkt->data, data, len);
 }

@@ -30,12 +30,12 @@ git submodule update --init --recursive
 
 > Historically, see [the onboarding doc](docs/ONBOARDING.md) for development environment setup (pre-bazel).
 
+## Testing
+Running tests can be done with `source run_tests.sh`. See `TESTING.md` for more information.
+
 
 ## Building
-To build the code in this repo, run `bazel build :samwise --config=picubed-debug`.
-
-You can use the pre-provided scripts, `source build_tests.sh` and `source build_debug.sh`, to run automatically.
-**NOTE**: These automatically delete the `build_tests` and `build` directories respectively before running, so run with caution!
+To build the code in this repo, run `bazel build :samwise --config=picubed-debug`, or any other config option.
 
 The following configuration options are available:
 * `pico`: pico exectuable

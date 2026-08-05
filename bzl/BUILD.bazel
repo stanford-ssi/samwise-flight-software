@@ -2,44 +2,56 @@
 
 Defines config_setting targets used in select() blocks throughout the build
 to conditionally include hardware drivers vs mock implementations.
+
+The build profile is exposed as a Starlark `string_flag` (`:profile`) rather
+than `--define`, so Starlark transitions (see //bzl:firmware_for_test.bzl)
+can switch profiles when a host-config test pulls in a firmware artifact.
 """
 
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+
 package(default_visibility = ["//visibility:public"])
+
+# The active build profile. Set per-config in .bazelrc via --//bzl:profile=…
+string_flag(
+    name = "profile",
+    build_setting_default = "host",
+)
 
 # Test mode: use mock implementations instead of real hardware drivers
 config_setting(
     name = "test_mode",
-    define_values = {"profile": "tests"},
+    flag_values = {":profile": "tests"},
 )
 
 # Raspberry Pi Pico development profile
 config_setting(
     name = "pico_profile",
-    define_values = {"profile": "pico"},
+    flag_values = {":profile": "pico"},
 )
 
 # Raspberry Pi Pico + Radio Hat profile
 config_setting(
     name = "pico_hat_profile",
-    define_values = {"profile": "pico-hat"},
+    flag_values = {":profile": "pico-hat"},
 )
 
 # PiCubed debug profile
 config_setting(
     name = "picubed_debug_profile",
-    define_values = {"profile": "picubed-debug"},
+    flag_values = {":profile": "picubed-debug"},
 )
 
 # PiCubed flight profile
 config_setting(
     name = "picubed_flight_profile",
-    define_values = {"profile": "picubed-flight"},
+    flag_values = {":profile": "picubed-flight"},
 )
 
 # PiCubed bringup profile
 config_setting(
     name = "picubed_bringup_profile",
-    define_values = {"profile": "picubed-bringup"},
+    flag_values = {":profile": "picubed-bringup"},
 )
 
 # OTA blink variant (for testing A/B partition switching)

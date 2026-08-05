@@ -58,6 +58,7 @@ Use alongside the UF2 aspect:
     attrs = {
         "from_rules": attr.string(
             default = _SUPPORTED_BINARY_TYPES,
+            values = [_SUPPORTED_BINARY_TYPES, "*"],
             doc = "Comma-separated list of rule kinds to apply the bin aspect to",
         ),
         "_cc_toolchain": attr.label(

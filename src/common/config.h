@@ -14,8 +14,25 @@
 /**
  * FTP Configuration
  */
+// Time to wait between dispatches when idle
+#define FTP_IDLE_DISPATCH_MS 1000
+
+// Time to wait between dispatches when active
+#define FTP_ACTIVE_DISPATCH_MS 100
+
+// Interval between periodic FTP_STATUS_REPORT packets during file transfer
+#define FTP_STATUS_REPORT_INTERVAL_MS 5000
+
 // The number of packets to require before moving on to the next n packets
-#define FTP_NUM_PACKETS_PER_CYCLE 5
+#define FTP_NUM_PACKETS_PER_CYCLE 256
+
+// Number of bytes needed to store the packet tracker bitfield
+#define FTP_PACKET_TRACKER_SIZE                                                \
+    ((FTP_NUM_PACKETS_PER_CYCLE + __CHAR_BIT__ - 1) / __CHAR_BIT__)
+
+// Packet tracker is a byte array used as a bitfield.
+// A bit being set means the corresponding packet in this cycle was received.
+typedef uint8_t FTP_PACKET_TRACKER_T[FTP_PACKET_TRACKER_SIZE];
 
 // Automatically calculated size of maximum data payload in bytes per packet
 #define FTP_DATA_PAYLOAD_SIZE                                                  \
@@ -24,6 +41,12 @@
 
 // Type used to represent packet sequence IDs
 typedef uint16_t FTP_PACKET_SEQUENCE_T;
+
+// Maximum length of a file, as determined by the number of bytes for sequence
+// id and the maximum data payload size
+#define FTP_MAX_FILE_LEN                                                       \
+    (1ULL << (sizeof(FTP_PACKET_SEQUENCE_T) * __CHAR_BIT__)) *                 \
+        FTP_DATA_PAYLOAD_SIZE
 
 /**
  * Filesystem configuration
@@ -41,11 +64,17 @@ typedef uint16_t FILESYS_BUFFERED_FNAME_T;
 
 // Size of buffer used for filesystem writes
 #define FILESYS_BUFFER_SIZE (FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE)
+
+_Static_assert(
+    FILESYS_BUFFER_SIZE >= FTP_DATA_PAYLOAD_SIZE * FTP_NUM_PACKETS_PER_CYCLE,
+    "FILESYS_BUFFER_SIZE must be at least as large as the maximum "
+    "data payload size for the number of packets per cycle for FTP support");
+
 typedef uint16_t
     FILESYS_BUFFER_SIZE_T; // Must be able to hold FILESYS_BUFFER_SIZE
 
 _Static_assert(
-    FILESYS_BUFFER_SIZE <= (1 << (sizeof(FILESYS_BUFFER_SIZE_T) * CHAR_BIT)),
+    FILESYS_BUFFER_SIZE <= (1ULL << (sizeof(FILESYS_BUFFER_SIZE_T) * CHAR_BIT)),
     "FILESYS_BUFFER_SIZE_T must be able to hold FILESYS_BUFFER_SIZE");
 
 _Static_assert(
@@ -59,7 +88,7 @@ typedef uint16_t FILESYS_READ_BUFFER_SIZE_T; // Must be able to hold
                                              // FILESYS_READ_BUFFER_SIZE
 
 _Static_assert(FILESYS_READ_BUFFER_SIZE <=
-                   (1 << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * CHAR_BIT)),
+                   (1ULL << (sizeof(FILESYS_READ_BUFFER_SIZE_T) * CHAR_BIT)),
                "FILESYS_READ_BUFFER_SIZE_T must be able to hold "
                "FILESYS_READ_BUFFER_SIZE");
 
@@ -71,6 +100,11 @@ typedef char FILESYS_BUFFERED_FNAME_STR_T[sizeof(FILESYS_BUFFERED_FNAME_T) + 1];
 
 // Number of bytes to use for storing the length of a file
 typedef uint32_t FILESYS_BUFFERED_FILE_LEN_T;
+
+_Static_assert(FTP_MAX_FILE_LEN <=
+                   (1ULL << (sizeof(FILESYS_BUFFERED_FILE_LEN_T) * CHAR_BIT)),
+               "FTP_MAX_FILE_LEN exceeds maximum representable file length in "
+               "FILESYS_BUFFERED_FILE_LEN_T");
 
 // Number of bytes to use for storing the CRC of a file
 typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;

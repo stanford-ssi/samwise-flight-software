@@ -16,6 +16,7 @@ hardware_integration_test_suite(
     tests = {
         "mram_test": "//src/filesys/test:mram_test_hw_lib",
         "filesys_test": "//src/filesys/test:filesys_test_hw_lib",
+        "ftp_test": "//src/tasks/ftp/test:ftp_test_hw_lib",
     },
 )
 
@@ -26,8 +27,8 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/common",
-        "//src/slate",
         "//src/scheduler:state_machine",
+        "//src/slate",
     ] + select({
         "//bzl:test_mode": [],
         "//conditions:default": [

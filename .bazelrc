@@ -24,7 +24,7 @@ build --disk_cache=~/.cache/bazel
 # ============================================================================
 
 # Raspberry Pi Pico Development Profile (RP2040)
-build:pico --define=profile=pico
+build:pico --//bzl:profile=pico
 build:pico --platforms=//platforms:arm_cortex_m33_platform
 build:pico --define=PICO_BOARD=samwise_pico
 build:pico --define=PICO_PLATFORM=rp2350
@@ -40,7 +40,7 @@ build:pico --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:bin_a
 build:pico --output_groups=+pico_uf2_files,+pico_bin_files
 
 # Raspberry Pi Pico + Radio Hat Profile (Pico with UHF radio attached)
-build:pico-hat --define=profile=pico-hat
+build:pico-hat --//bzl:profile=pico-hat
 build:pico-hat --platforms=//platforms:arm_cortex_m33_platform
 build:pico-hat --define=PICO_BOARD=samwise_pico
 build:pico-hat --define=PICO_PLATFORM=rp2350
@@ -51,7 +51,7 @@ build:pico-hat --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect
 build:pico-hat --output_groups=+pico_uf2_files
 
 # PiCubed Debug Profile (RP2350 with debug features)
-build:picubed-debug --define=profile=picubed-debug
+build:picubed-debug --//bzl:profile=picubed-debug
 build:picubed-debug --platforms=//platforms:arm_cortex_m33_platform
 build:picubed-debug --define=PICO_BOARD=samwise_picubed
 build:picubed-debug --define=PICO_PLATFORM=rp2350
@@ -65,7 +65,7 @@ build:picubed-debug --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//
 build:picubed-debug --output_groups=+pico_uf2_files,+pico_bin_files
 
 # PiCubed Flight Profile (RP2350 optimized for flight)
-build:picubed-flight --define=profile=picubed-flight
+build:picubed-flight --//bzl:profile=picubed-flight
 build:picubed-flight --platforms=//platforms:arm_cortex_m33_platform
 build:picubed-flight --define=PICO_BOARD=samwise_picubed
 build:picubed-flight --define=PICO_PLATFORM=rp2350
@@ -78,7 +78,7 @@ build:picubed-flight --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,/
 build:picubed-flight --output_groups=+pico_uf2_files,+pico_bin_files
 
 # PiCubed Bringup Profile (RP2350 for board bring-up testing)
-build:picubed-bringup --define=profile=picubed-bringup
+build:picubed-bringup --//bzl:profile=picubed-bringup
 build:picubed-bringup --platforms=//platforms:arm_cortex_m33_platform
 build:picubed-bringup --define=PICO_BOARD=samwise_picubed
 build:picubed-bringup --define=PICO_PLATFORM=rp2350
@@ -102,7 +102,7 @@ build:ota-blink --aspects=@pico-sdk//tools:uf2_aspect.bzl%pico_uf2_aspect,//bzl:
 build:ota-blink --output_groups=+pico_uf2_files,+pico_bin_files
 
 # Tests Profile (Host platform with mocked hardware)
-build:tests --define=profile=tests
+build:tests --//bzl:profile=tests
 # Note: Don't specify --platforms for tests, let Bazel use default host toolchain
 build:tests --define=TEST=1
 build:tests --copt=-DTEST=1
