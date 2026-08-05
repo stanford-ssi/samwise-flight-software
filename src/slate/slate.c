@@ -28,6 +28,11 @@ void free_slate(slate_t *slate)
         queue_free(&slate->tx_queue);
         queue_free(&slate->rx_queue);
         queue_free(&slate->rpi_uart_queue);
+
+        queue_free(&slate->ftp_format_filesystem_data);
+        queue_free(&slate->ftp_start_file_write_data);
+        queue_free(&slate->ftp_write_to_file_data);
+        queue_free(&slate->ftp_cancel_file_write_data);
     }
 
     free(slate->filesys_buffer);

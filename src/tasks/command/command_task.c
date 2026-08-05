@@ -25,6 +25,9 @@ void command_task_init(slate_t *slate)
     queue_init(&slate->payload_command_data, sizeof(PAYLOAD_COMMAND_DATA),
                PAYLOAD_DATA_CAPACITY);
 
+    queue_init(&slate->ftp_format_filesystem_data, sizeof(uint8_t),
+               FTP_DATA_CAPACITY);
+
     queue_init(&slate->ftp_start_file_write_data,
                sizeof(FTP_START_FILE_WRITE_DATA), FTP_DATA_CAPACITY);
 

@@ -42,6 +42,13 @@
      _enc_off += sizeof(x))
 
 /**
+ * Encodes a boolean value as a uint8_t (1 for true, 0 for false).
+ * Use this for safety over BUFFER_ENCODE_ARG(bool_var) which may use 
+ * more than one byte!!
+ */
+#define BUFFER_ENCODE_BOOL(x) BUFFER_ENCODE_ARG((uint8_t)(x ? 1 : 0))
+
+/**
  * Encodes a raw byte array of known size (e.g. uint8_t[], tracker bitfields).
  */
 #define BUFFER_ENCODE_RAW(size, arr)                                           \

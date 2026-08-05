@@ -498,14 +498,16 @@ inline static void send_ftp_status_report(slate_t *slate)
 
     uint8_t status_report_data[PACKET_DATA_SIZE];
     size_t len = buffer_encode_data(
-        status_report_data, BUFFER_ENCODE_ARG(slate->ftp_start_cycle_packet_id),
+        status_report_data,
+        // Data:
+        BUFFER_ENCODE_ARG(slate->ftp_start_cycle_packet_id),
         BUFFER_ENCODE_ARG(ftp_get_last_packet(slate)),
         BUFFER_ENCODE_RAW(FTP_PACKET_TRACKER_SIZE,
                           slate->ftp_packets_received_tracker),
         BUFFER_ENCODE_ARG(file_crc_so_far),
         BUFFER_ENCODE_ARG(total_bytes_written),
-        BUFFER_ENCODE_ARG((slate->filesys_buffer != NULL) ? 1 : 0),
-        BUFFER_ENCODE_ARG(slate->filesys_is_writing_file ? 1 : 0));
+        BUFFER_ENCODE_BOOL(slate->filesys_buffer != NULL),
+        BUFFER_ENCODE_BOOL(slate->filesys_is_writing_file));
 
     ftp_send_result_packet_custom_file(
         slate, slate->filesys_buffered_fname_str,

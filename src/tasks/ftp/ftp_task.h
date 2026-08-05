@@ -163,6 +163,9 @@ enum ftp_result
      *     Total_Bytes_Written (FILESYS_BUFFERED_FILE_LEN_T) - Total bytes
      * written to MRAM so far.
      *
+     *     Filesys_Buffer_Malloced (uint8_t) - 1 if the filesystem buffer is
+     * allocated, 0 otherwise.
+     *
      *     Filesys_Is_Writing_File (uint8_t) - 1 if a file write is in
      * progress, 0 otherwise.
      */
