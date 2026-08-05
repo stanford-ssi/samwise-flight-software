@@ -1,9 +1,9 @@
-import logging
 import sys
 import time
 
 import config
 import radio_initialization as hardware
+from logger import get_logger
 from radio_commands import get_radio
 from state import state_manager
 
@@ -21,7 +21,7 @@ if not IS_CIRCUITPYTHON:
 else:
     HAS_SELECT = False
 
-logger = logging.getLogger("GS.UI")
+logger = get_logger("GS.UI")
 
 
 def check_stdin_ready():
@@ -123,12 +123,10 @@ def configure_lora_settings():
     print(f"  Spreading Factor: {config.config['spreading_factor']}")
     print(f"  Coding Rate: {config.config['coding_rate']}")
     print(f"  CRC: {config.config['crc']}")
-    print(
-        """
+    print("""
         WARNING: Command mode requires valid authentication settings (PSK and Boot Count).
         The system will attempt to sync Boot Count automatically from received beacons.
-        """
-    )
+        """)
 
     if get_yes_no("Modify LoRA settings?", False):
         freq_str = get_user_input("Frequency (MHz)", config.config["frequency"])

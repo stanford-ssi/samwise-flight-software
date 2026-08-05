@@ -5,10 +5,12 @@ cc_library(
     srcs = [
         "filesys.c",
         "lfs_mram_wrapper.c",
+        "lfs_gen_flash_wrapper.c"
     ],
     hdrs = [
         "filesys.h",
         "lfs_mram_wrapper.h",
+        "lfs_gen_flash_wrapper.h"
     ],
     includes = ["."],
     deps = [
@@ -27,6 +29,8 @@ cc_library(
             "//src/drivers/logger",
             "//src/drivers/mram",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
+            "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync",
         ],
     }),
 )

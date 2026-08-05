@@ -97,8 +97,15 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
 // attribute IDs in the range [0, 255].
 #define FILESYS_CRC_ATTR 0
 
-// TODO: What is our average file size?
-// This is currently set to 1KB blocks, which is approx. what we buffer
-// in RAM during FTP.
-#define FILESYS_BLOCK_SIZE 1024
-#define FILESYS_BLOCK_COUNT 512 // 512KB MRAM total
+// MRAM: 256-byte blocks are fine (erase is a no-op).
+// Flash (hardware): block_size MUST be >= 4096 to match flash_range_erase
+//                   sector alignment on RP2350.
+// Tests use the mock flash backend which has no alignment constraints,
+// so 256-byte blocks are kept for test compatibility.
+#if defined(MRAM) || defined(TEST)
+#define FILESYS_BLOCK_SIZE 256
+#define FILESYS_BLOCK_COUNT 2048 // 512KB
+#else
+#define FILESYS_BLOCK_SIZE 4096
+#define FILESYS_BLOCK_COUNT 768 // 3MB flash (starting at 1MB offset)
+#endif

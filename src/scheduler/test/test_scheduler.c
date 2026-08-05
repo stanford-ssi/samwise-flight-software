@@ -207,7 +207,12 @@ void test_all_tasks_different_periods()
     log_viz_event("test_start", NULL, "all_tasks_different_periods");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state = &test_state_1;
@@ -234,6 +239,7 @@ void test_all_tasks_different_periods()
 
     log_viz_event("test_pass", NULL, "all_tasks_different_periods");
     LOG_DEBUG("✓ Test 1 passed");
+    free_slate(&test_slate);
 }
 
 /**
@@ -245,7 +251,12 @@ void test_fast_tasks_only()
     log_viz_event("test_start", NULL, "fast_tasks_only");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state = &test_state_2;
@@ -270,6 +281,7 @@ void test_fast_tasks_only()
 
     log_viz_event("test_pass", NULL, "fast_tasks_only");
     LOG_DEBUG("✓ Test 2 passed");
+    free_slate(&test_slate);
 }
 
 /**
@@ -281,7 +293,12 @@ void test_slow_tasks_only()
     log_viz_event("test_start", NULL, "slow_tasks_only");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state = &test_state_3;
@@ -306,6 +323,7 @@ void test_slow_tasks_only()
 
     log_viz_event("test_pass", NULL, "slow_tasks_only");
     LOG_DEBUG("✓ Test 3 passed");
+    free_slate(&test_slate);
 }
 
 /**
@@ -317,7 +335,12 @@ void test_task_period_accuracy()
     log_viz_event("test_start", NULL, "task_period_accuracy");
 
     mock_time_us = 0;
-    memset(&test_slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(&test_slate) != 0)
+    {
+        log_viz_event("test_fail", NULL, "slate_init_failed");
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
     reset_task_stats();
 
     test_slate.current_state = &test_state_1;
@@ -353,13 +376,14 @@ void test_task_period_accuracy()
 
     log_viz_event("test_pass", NULL, "task_period_accuracy");
     LOG_DEBUG("✓ Test 4 passed");
+    free_slate(&test_slate);
 }
 
 int main()
 {
     LOG_DEBUG("=== Scheduler Tests (Custom Tasks) ===");
 
-    viz_log_open("scheduler_test_viz.json");
+    viz_log_open_log_dir("scheduler_test_viz.json");
 
     mock_time_us = 0;
 

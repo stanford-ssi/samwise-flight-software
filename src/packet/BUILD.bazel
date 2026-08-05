@@ -33,7 +33,9 @@ cc_library(
         "//src/common",
         "//lib/tinycrypt",
     ] + select({
-        "//bzl:test_mode": [],
+        "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+        ],
         "//conditions:default": [
             "//src/drivers/logger",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",

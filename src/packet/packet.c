@@ -6,9 +6,7 @@
  */
 
 #include "packet.h"
-#ifndef TEST
 #include "logger.h"
-#endif
 
 #include <tinycrypt/hmac.h>
 #include <tinycrypt/sha256.h>

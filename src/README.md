@@ -22,6 +22,9 @@ bazel build --config=picubed-bringup //:samwise
 
 # Pico development build (RP2040)
 bazel build --config=pico //:samwise
+
+# Pico development build for pico-hats (RP2040)
+bazel build --config=pico-hat //:samwise
 ```
 
 The `.uf2` file is automatically generated alongside the ELF binary for all on-device profiles. Find it at:

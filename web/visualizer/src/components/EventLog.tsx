@@ -45,6 +45,13 @@ export const EventLog: React.FC<EventLogProps> = ({ events, selectedTasks }) => 
         return '#06b6d4';
       case 'dispatch_cycle_end':
         return '#14b8a6';
+      case 'state_enter':
+        return '#22c55e';
+      case 'state_exit':
+        return '#f97316';
+      case 'fsm_start':
+      case 'fsm_end':
+        return '#6366f1';
       default:
         return '#6b7280';
     }

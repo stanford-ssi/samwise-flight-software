@@ -1,10 +1,13 @@
 import json
-import logging
 import os
+import sys
 import time
 
+from logger import get_logger
+
 STATE_FILE = "gs_state.json"
-logger = logging.getLogger("GS.State")
+_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+logger = get_logger("GS.State")
 
 
 class StateManager:
@@ -30,7 +33,9 @@ class StateManager:
         self.load()
 
     def load(self):
-        """Load state from persistence file"""
+        """Load state from persistence file (skipped on CircuitPython)."""
+        if _IS_CIRCUITPYTHON:
+            return
         try:
             # Check if file exists first to avoid exception spam
             try:
@@ -58,6 +63,8 @@ class StateManager:
         # Skip save if:
         # 1. Not forced AND not enough time passed AND no changes made
         # 2. For high-throughput scenarios, we only save periodically or on force
+        if _IS_CIRCUITPYTHON:
+            return
         if not force and (now - self.last_save_time < self.SAVE_INTERVAL_SEC or not self.dirty):
             return
 

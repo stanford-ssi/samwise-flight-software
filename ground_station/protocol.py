@@ -1,19 +1,26 @@
 import struct
-from typing import Optional
+import sys
 
 try:
-    from adafruit_hashlib import sha256
+    from typing import Optional
 except ImportError:
-    from hashlib import sha256
-try:
-    import circuitpython_hmac as hmac
-except ImportError:
-    import hmac
+    pass
 
 import config
 from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
 from models import Packet as ModelPacket
 from state import state_manager
+
+# On CPython (Raspberry Pi) always use stdlib hmac/hashlib — circuitpython_hmac has a
+# name-mangling bug (_HMAC__translate) that causes NameError on Python 3.
+# On CircuitPython, stdlib hmac is unavailable so we fall back to the CircuitPython libs.
+_IS_CIRCUITPYTHON = sys.implementation.name == "circuitpython"
+if _IS_CIRCUITPYTHON:
+    import circuitpython_hmac as hmac
+    from adafruit_hashlib import sha256
+else:
+    import hmac
+    from hashlib import sha256
 
 
 def create_cmd_payload(cmd_id, cmd_payload=""):
@@ -62,46 +69,23 @@ class Packet:
 
     @staticmethod
     def unpack(packet_bytes: bytes) -> ModelPacket:
-        """Unpack raw bytes into a Packet model and verify auth."""
+        """Unpack raw bytes from an incoming packet into a Packet model.
+
+        Note: HMAC is NOT verified here. Incoming packets from the satellite
+        are not HMAC-signed. HMAC is only computed and appended by the ground
+        station to outgoing command packets, so the satellite can verify them.
+        """
         if len(packet_bytes) < config.PACKET_HEADER_SIZE:
             raise ValueError("Packet too short")
 
-        # 1. Unpack Header
+        # Unpack Header: dst, src, flags, seq, data_len
         dst, src, flags, seq, data_len = struct.unpack(
             "BBBBB", packet_bytes[: config.PACKET_HEADER_SIZE]
         )
 
-        # 2. Extract components
+        # Extract data field using length from header
         data_end = config.PACKET_HEADER_SIZE + data_len
-        # Footer is 8 bytes (boot_count + msg_id) before the HMAC (32 bytes)
-        footer_start = len(packet_bytes) - config.PACKET_HMAC_SIZE - 8
-
         data = packet_bytes[config.PACKET_HEADER_SIZE : data_end]
-
-        # 3. Authenticate
-        if config.config["auth_enabled"]:
-            received_hmac = packet_bytes[-config.PACKET_HMAC_SIZE :]
-            payload_for_verification = packet_bytes[: -config.PACKET_HMAC_SIZE]
-
-            h = hmac.new(
-                config.config["packet_hmac_psk"], msg=payload_for_verification, digestmod=sha256
-            )
-            if not safe_compare_digest(h.digest(), received_hmac):
-                print(f"[Packet] HMAC verification failed for packet from node {src}")
-
-            # 4. Unpack Footer
-            boot_count, msg_id = struct.unpack("<II", packet_bytes[footer_start : footer_start + 8])
-
-            return ModelPacket(
-                dst=dst,
-                src=src,
-                flags=flags,
-                seq=seq,
-                data=data,
-                boot_count=boot_count,
-                msg_id=msg_id,
-                hmac_digest=received_hmac,
-            )
 
         return ModelPacket(dst=dst, src=src, flags=flags, seq=seq, data=data)
 

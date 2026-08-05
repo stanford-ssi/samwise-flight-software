@@ -36,3 +36,19 @@ samwise_test(
         ":beacon_task",
     ],
 )
+
+# Fails if the checked-in beacon_packet.hex diverges from what beacon_test produces.
+# This catches beacon format drift between C and the ground station decoder.
+# Fix with: ./scripts/update_beacon_test_data.sh
+sh_test(
+    name = "beacon_hex_freshness_test",
+    srcs = ["test/check_beacon_hex_freshness.sh"],
+    args = [
+        "$(location :beacon_test)",
+        "$(location //ground_station/tests/test_data:beacon_packet.hex)",
+    ],
+    data = [
+        ":beacon_test",
+        "//ground_station/tests/test_data:beacon_packet.hex",
+    ],
+)
