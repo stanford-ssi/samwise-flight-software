@@ -1,13 +1,14 @@
 import React from 'react';
-import { LogEvent, TaskInfo } from '../types';
+import { LogEvent, TaskInfo, StateSpan } from '../types';
 
 interface TimelineProps {
   events: LogEvent[];
   tasks: TaskInfo[];
   selectedTasks: Set<string>;
+  stateSpans?: StateSpan[];
 }
 
-export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks }) => {
+export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks, stateSpans }) => {
   // Build task execution spans (task_start to task_end pairs)
   const taskExecutions: Map<string, Array<{start: number, end: number}>> = new Map();
   const taskInits: Map<string, number> = new Map();
@@ -76,6 +77,58 @@ export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks
     return markers;
   };
 
+  // Render state background bands behind the task timeline
+  const renderStateBands = () => {
+    if (!stateSpans || stateSpans.length === 0) return null;
+
+    return stateSpans.map((span, idx) => {
+      const endTime = span.exit_time_ms ?? maxTime;
+      const x = leftMargin + (span.enter_time_ms / maxTime) * timelineWidth;
+      const w = Math.max(((endTime - span.enter_time_ms) / maxTime) * timelineWidth, 1);
+      const totalHeight = (tasks.length + 1) * rowHeight;
+
+      return (
+        <g key={`state-band-${idx}`}>
+          {/* Background band */}
+          <rect
+            x={x}
+            y={0}
+            width={w}
+            height={totalHeight}
+            fill={span.color}
+            opacity={0.06}
+          />
+          {/* Transition line */}
+          {span.enter_time_ms > 0 && (
+            <line
+              x1={x}
+              y1={0}
+              x2={x}
+              y2={totalHeight}
+              stroke={span.color}
+              strokeWidth="1.5"
+              strokeDasharray="4,3"
+              opacity={0.5}
+            />
+          )}
+          {/* State label at top */}
+          {w > 30 && (
+            <text
+              x={x + 5}
+              y={14}
+              fontSize="10"
+              fontWeight="bold"
+              fill={span.color}
+              opacity={0.8}
+            >
+              {span.name}
+            </text>
+          )}
+        </g>
+      );
+    });
+  };
+
   return (
     <div style={{ padding: '20px', overflowX: 'auto' }}>
       <h2>Task Execution Timeline</h2>
@@ -83,6 +136,9 @@ export const Timeline: React.FC<TimelineProps> = ({ events, tasks, selectedTasks
         width={timelineWidth + leftMargin + 50}
         height={(tasks.length + 2) * rowHeight + 30}
       >
+        {/* State background bands (behind everything) */}
+        {renderStateBands()}
+
         {/* Time markers */}
         {renderTimeMarkers()}
 

@@ -25,6 +25,13 @@ cc_library(
     hdrs = ["hardware_test_task.h"],
     includes = ["."],
     deps = [
-        ":hardware_test_lib",
-    ],
+        "//src/common",
+        "//src/slate",
+        "//src/scheduler:state_machine",
+    ] + select({
+        "//bzl:test_mode": [],
+        "//conditions:default": [
+            ":hardware_test_lib",
+        ],
+    }),
 )

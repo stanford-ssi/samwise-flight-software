@@ -11,6 +11,7 @@
 #include "logger.h"
 #include "state_registry.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /**
  * Statically allocate the slate.
@@ -34,7 +35,11 @@ sched_state_t mock_state = {
 void mock_slate(slate_t *slate)
 {
     // Reset slate to empty first
-    memset(slate, 0, sizeof(slate_t));
+    if (clear_and_init_slate(slate) != 0)
+    {
+        LOG_ERROR("Failed to initialize slate for test! Aborting test.");
+        return;
+    }
 
     // Register mock state so state_registry_get can find it
     state_registry_register(STATE_INIT, &mock_state);
@@ -51,30 +56,64 @@ void mock_slate(slate_t *slate)
         .state = 'A',
         .boot_count = 42,
     };
+    slate->reboot_counter = 42;
+    slate->battery_voltage = 4000;
 }
 
 void test_beacon_serialize()
 {
     printf("Starting beacon serialization test\n");
     mock_slate(&slate);
+
     size_t len = serialize_slate(&slate, tmp_data);
     printf("Serialized length: %zu\n", len);
-    printf("Serialized data (hex): ");
+    printf("Serialized data (hex):\n");
     for (size_t i = 0; i < len; i++)
     {
         printf("%02x ", tmp_data[i]);
+        if (i % 10 == 9)
+            printf("\n");
     }
-    ASSERT(strcmp((char *)tmp_data, "mock_state") == 0);
+    ASSERT(strcmp((char *)tmp_data, "mock_state beat cal!") == 0);
     printf("\n");
+
+    // Write hex artifact to TEST_UNDECLARED_OUTPUTS_DIR if set by Bazel
+    const char *outputs_dir = getenv("TEST_UNDECLARED_OUTPUTS_DIR");
+    if (outputs_dir)
+    {
+        char path[512];
+        snprintf(path, sizeof(path), "%s/beacon_packet.hex", outputs_dir);
+        FILE *f = fopen(path, "w");
+        if (f)
+        {
+            for (size_t i = 0; i < len; i++)
+            {
+                if (i % 10 == 9 || i == len - 1)
+                {
+                    fprintf(f, "%02x\n", tmp_data[i]);
+                }
+                else
+                {
+                    fprintf(f, "%02x ", tmp_data[i]);
+                }
+            }
+            fclose(f);
+        }
+    }
+
+    free_slate(&slate);
 }
 
 void test_beacon_dispatch_without_error()
 {
     printf("Starting beacon dispatch test\n");
     mock_slate(&slate);
+
     beacon_task_init(&slate);
     beacon_task_dispatch(&slate);
     printf("Beacon dispatch completed without error\n");
+
+    free_slate(&slate);
 }
 
 int main()

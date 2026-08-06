@@ -18,6 +18,8 @@
 #define MAX_STR_LENGTH 64
 #define CALLSIGN "KC3WNY"
 #define CALLSIGN_LENGTH (sizeof(CALLSIGN))
+#define CALL_TO_ACTION " beat cal!"
+#define CALL_TO_ACTION_LENGTH (sizeof(CALL_TO_ACTION))
 
 typedef struct
 {
@@ -77,11 +79,21 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
     // Get current state from registry
     sched_state_t *current_state = state_registry_get(slate->current_state_id);
     const char *state_name = current_state ? current_state->name : "UNKNOWN";
+    uint16_t data_offset = 0;
 
     LOG_INFO("State name: %s", state_name);
     // Copy null-terminated name to buffer (up to MAX_STR_LENGTH - 1)
     size_t name_len = strnlen(state_name, MAX_STR_LENGTH);
     strcpy_trunc((char *)data, state_name, MAX_STR_LENGTH);
+
+    // No +1 here so we will overwrite the null terminator with the call to
+    // action
+    data_offset += name_len;
+
+    // Write 'beat cal' into beacon!
+    strcpy_trunc((char *)(data + data_offset), CALL_TO_ACTION,
+                 MAX_STR_LENGTH - name_len);
+    data_offset += CALL_TO_ACTION_LENGTH;
 
     beacon_stats stats = {.reboot_counter = slate->reboot_counter,
                           .time = slate->time_in_current_state_ms,
@@ -101,19 +113,18 @@ size_t serialize_slate(slate_t *slate, uint8_t *data)
                           .panel_B_current = slate->panel_B_current,
                           .device_status = get_device_status(slate)};
 
-    // 1 Extra byte: 1 for \0 terminator
-    memcpy(data + name_len + 1, &stats, sizeof(beacon_stats));
+    memcpy(data + data_offset, &stats, sizeof(beacon_stats));
+    data_offset += sizeof(beacon_stats);
 
     // Copy adcs packet - device status will indicate if this is invalid
-    memcpy(data + name_len + 1 + sizeof(beacon_stats), &slate->adcs_telemetry,
-           sizeof(adcs_packet_t));
+    memcpy(data + data_offset, &slate->adcs_telemetry, sizeof(adcs_packet_t));
+    data_offset += sizeof(adcs_packet_t);
 
     // Add callsign at the end of the packet
-    memcpy(data + name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t),
-           CALLSIGN, CALLSIGN_LENGTH);
+    memcpy(data + data_offset, CALLSIGN, CALLSIGN_LENGTH);
+    data_offset += CALLSIGN_LENGTH;
 
-    return name_len + 1 + sizeof(beacon_stats) + sizeof(adcs_packet_t) +
-           CALLSIGN_LENGTH;
+    return data_offset;
 }
 
 void beacon_task_init(slate_t *slate)
@@ -149,7 +160,7 @@ void beacon_task_dispatch(slate_t *slate)
 }
 
 sched_task_t beacon_task = {.name = "beacon",
-                            .dispatch_period_ms = 500,
+                            .dispatch_period_ms = 5000,
                             .task_init = &beacon_task_init,
                             .task_dispatch = &beacon_task_dispatch,
                             /* Set to an actual value on init */

@@ -27,7 +27,7 @@ echo ""
 
 # Install development dependencies
 echo "📦 Installing development dependencies..."
-pip3 install -e .[dev]
+python -m pip install -e .[dev]
 echo "✅ Dependencies installed"
 echo ""
 
