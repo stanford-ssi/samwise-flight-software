@@ -13,7 +13,14 @@ cc_library(
         "//src/packet",
     ] + select({
         "//bzl:test_mode": [
+            "//src/drivers/logger:logger_mock",
+            "//src/drivers/rfm9x:rfm9x_mock",
+            "//src/drivers/watchdog:watchdog_mock",
+            "//src/test_mocks:hardware_flash_mock",
+            "//src/test_mocks:hardware_sync_mock",
+            "//src/test_mocks:pico_bootrom_mock",
             "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [
             "//src/drivers/logger",

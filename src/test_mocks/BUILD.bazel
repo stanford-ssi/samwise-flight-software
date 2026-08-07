@@ -98,6 +98,14 @@ cc_library(
     deps = [":pico_stdlib_mock"],
 )
 
+# Pico bootrom mock (partition table, boot info, reboot -- used by OTA tests)
+cc_library(
+    name = "pico_bootrom_mock",
+    srcs = ["pico/bootrom.c"],
+    hdrs = ["pico/bootrom.h"],
+    includes = ["."],
+)
+
 # Complete test mocks library (aggregates all Pico SDK hardware mocks)
 cc_library(
     name = "test_mocks",
@@ -110,6 +118,7 @@ cc_library(
         ":hardware_spi_mock",
         ":hardware_sync_mock",
         ":hardware_uart_mock",
+        ":pico_bootrom_mock",
         ":pico_stdlib_mock",
         ":pico_time_mock",
         ":pico_unique_id_mock",
