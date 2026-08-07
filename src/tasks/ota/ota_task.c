@@ -30,10 +30,44 @@ void ota_task_dispatch(slate_t *slate)
 {
     LOG_INFO("[ota_task] Starting OTA for file: %s", slate->ota_target_fname);
 
-    // --- 1. Open file from filesystem ---
-    // Feed watchdog before the CRC verification read inside
-    // filesys_open_file_read, which reads the entire file once before
-    // returning.
+    // --- 1. Check which partition we are running from ---
+    watchdog_feed(&slate->watchdog);
+
+    boot_info_t boot_info;
+    if (!rom_get_boot_info(&boot_info))
+    {
+        LOG_ERROR("[ota_task] Failed to get boot info");
+        send_radio_msg(slate, "OTA ERR: boot info read failed");
+        slate->ota_requested = false;
+        return;
+    }
+
+    // boot_word = 0xttppbbdd (MSB→LSB): tbyb[31:24] | partition[23:16] |
+    // boot_type[15:8] | diagnostic[7:0]. We want the partition byte.
+    int current_partition = (int8_t)((boot_info.boot_word >> 16) & 0xFF);
+    LOG_INFO("[ota_task] Currently booted partition: %d", current_partition);
+
+    // rom_get_b_partition returns the B index for a given A partition.
+    // A negative return means we passed it a B partition index — i.e. we are
+    // currently running from partition B.
+    int b_partition_index = rom_get_b_partition((uint)current_partition);
+    if (b_partition_index < 0)
+    {
+        // Running from B. Reboot to A; ground must resend the OTA command.
+        LOG_INFO("[ota_task] On partition B — rebooting to A");
+        send_radio_msg(slate, "OTA: on B, rebooting to A, resend command");
+        slate->ota_requested = false;
+        rom_reboot(BOOT_TYPE_NORMAL, 200, 0, 0);
+        LOG_ERROR("[ota_task] Reboot failed");
+        return;
+    }
+
+    LOG_INFO("[ota_task] On partition A, writing to partition B (index %d)",
+             b_partition_index);
+
+    // --- 2. Open firmware file from filesystem ---
+    // Feed watchdog before filesys_open_file_read, which reads the entire
+    // file once for CRC verification before returning.
     watchdog_feed(&slate->watchdog);
 
     lfs_file_t file;
@@ -54,7 +88,7 @@ void ota_task_dispatch(slate_t *slate)
     FILESYS_BUFFERED_FILE_LEN_T file_size = info.file_size;
     LOG_INFO("[ota_task] File size: %u bytes", file_size);
 
-    // --- 2. Find partition B offset from bootrom partition table ---
+    // --- 3. Get partition B size from the bootrom partition table ---
     uint32_t pt_buffer[128];
     uint32_t pt_flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
     int pt_result = rom_get_partition_table_info(
@@ -69,44 +103,16 @@ void ota_task_dispatch(slate_t *slate)
         return;
     }
 
-    // Use rom_get_boot_info to get the actual booted partition index.
-    // The ota_mvp code used (sys_info_buf[1] & 0xF00) which reads the boot_type
-    // byte instead of the partition byte — boot_info_t.partition is bits
-    // [23:16].
-    boot_info_t boot_info;
-    if (!rom_get_boot_info(&boot_info))
-    {
-        LOG_ERROR("[ota_task] Failed to get boot info");
-        send_radio_msg(slate, "OTA ERR: boot info read failed");
-        filesys_close_file_read(slate, &file, &lfs_err);
-        slate->ota_requested = false;
-        return;
-    }
-
-    // boot_info_t.boot_word layout (packed):
-    // [diagnostic|boot_type|partition|tbyb] partition is byte 2, bits [23:16]
-    int current_partition = (int8_t)((boot_info.boot_word >> 16) & 0xFF);
-    LOG_INFO("[ota_task] Currently booted partition: %d", current_partition);
-
-    // rom_get_b_partition only accepts an A partition index.
-    // If we're already on B, use the current partition directly.
-    // TODO: this might be a source of error -- need to inspect docs + source
-    // code to see if this is accurate.
-    int b_partition_index = rom_get_b_partition((uint)current_partition);
-    if (b_partition_index < 0)
-    {
-        // Current partition has no B partner — we're already on B.
-        LOG_INFO("[ota_task] Already on partition B (%d), targeting self",
-                 current_partition);
-        b_partition_index = current_partition;
-    }
-
     LOG_INFO("[ota_task] Target partition B index: %d", b_partition_index);
 
-    // Partition table entries start at word 4, 2 words each.
-    // Word 0 layout (from picobin.h): permissions[31:26] | last_sector[25:13] |
-    // first_sector[12:0] Both sector fields are 4KB-sector indices; last_sector
-    // is inclusive.
+    // Partition table buffer layout (PT_INFO_PT_INFO = 3 words, then
+    // PT_INFO_PARTITION_LOCATION_AND_FLAGS = 2 words per partition):
+    //   buf[0]       = flags actually filled
+    //   buf[1..3]    = PT_INFO (partition_count, unpartitioned location/flags)
+    //   buf[4 + n*2] = permissions_and_location for partition n
+    //   buf[5 + n*2] = permissions_and_flags for partition n
+    // permissions_and_location bit layout (picobin.h):
+    //   first_sector = bits [12:0], last_sector = bits [25:13] (inclusive)
     uint32_t perms_and_loc = pt_buffer[4 + b_partition_index * 2];
     uint32_t b_first_sector = (perms_and_loc & 0x1FFFu);
     uint32_t b_last_sector = (perms_and_loc >> 13) & 0x1FFFu;
@@ -125,28 +131,8 @@ void ota_task_dispatch(slate_t *slate)
         return;
     }
 
-    // --- 3. Erase partition B ---
-    uint32_t erase_size =
-        ((file_size + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE) *
-        FLASH_SECTOR_SIZE;
-
-    LOG_INFO("[ota_task] Erasing %u bytes at offset 0x%08x", erase_size,
-             b_partition_offset);
-
-    // Erase one sector at a time so we can feed the watchdog between each.
-    // A single flash_range_erase over a large binary can take 6+ seconds
-    // (128 sectors × ~50ms), exceeding the 5-second watchdog period.
-    uint32_t ints;
-    for (uint32_t erased = 0; erased < erase_size; erased += FLASH_SECTOR_SIZE)
-    {
-        watchdog_feed(&slate->watchdog);
-        ints = save_and_disable_interrupts();
-        mram_clear(b_partition_offset + erased, FLASH_SECTOR_SIZE);
-        restore_interrupts(ints);
-    }
-
     // --- 4. Program partition B in 256-byte pages from filesystem ---
-    // Interrupts are restored coming out of the erase loop.
+    uint32_t ints;
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint32_t bytes_written = 0;
 
@@ -182,7 +168,7 @@ void ota_task_dispatch(slate_t *slate)
     filesys_close_file_read(slate, &file, &lfs_err);
     LOG_INFO("[ota_task] Flash write complete (%u bytes)", bytes_written);
 
-    // --- 5. Notify ground and reboot into partition B ---
+    // --- 5. Notify ground and reboot into partition B (TBYB) ---
     send_radio_msg(slate, "OTA OK: rebooting");
 
     slate->ota_requested = false;
