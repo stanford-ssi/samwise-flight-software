@@ -199,6 +199,24 @@ class LoraRadio:
         """Send manual state override command"""
         self.send_command(config.MANUAL_STATE_OVERRIDE, state_name)
 
+    def send_ota_command(self, fname):
+        """Trigger an OTA update from an image already in the satellite's
+        filesystem.
+
+        Destructive: on success the satellite erases a flash partition and
+        reboots into the newly written image. `fname` must name a file that
+        already exists onboard, and is limited to 2 characters to match
+        FILESYS_BUFFERED_FNAME_STR_T (char[3]) in src/common/config.h.
+        """
+        if not fname:
+            raise ValueError("OTA command requires a filename")
+        if len(fname) > 2:
+            raise ValueError(
+                f"OTA filename {fname!r} too long: flight software supports "
+                "2-character filenames (FILESYS_BUFFERED_FNAME_STR_T)"
+            )
+        self.send_command(config.OTA_CMD, fname)
+
 
 # Singleton management handled during initialization
 radio = None
