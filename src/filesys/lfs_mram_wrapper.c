@@ -1,9 +1,11 @@
 #include "lfs_mram_wrapper.h"
+#include "config.h"
 
 int lfs_mram_wrap_read(const struct lfs_config *c, lfs_block_t block,
                        lfs_off_t off, void *buffer, lfs_size_t size)
 {
-    mram_read(block * c->block_size + off, buffer, size);
+    mram_read(block * c->block_size + off + FILESYS_MRAM_BASE_OFFSET, buffer,
+              size);
 
     return LFS_ERR_OK;
 }
@@ -11,7 +13,8 @@ int lfs_mram_wrap_read(const struct lfs_config *c, lfs_block_t block,
 int lfs_mram_wrap_prog(const struct lfs_config *c, lfs_block_t block,
                        lfs_off_t off, const void *buffer, lfs_size_t size)
 {
-    if (!mram_write(block * c->block_size + off, buffer, size))
+    if (!mram_write(block * c->block_size + off + FILESYS_MRAM_BASE_OFFSET,
+                    buffer, size))
         return LFS_ERR_IO;
 
     return LFS_ERR_OK;

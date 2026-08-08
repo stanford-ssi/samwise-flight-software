@@ -12,7 +12,7 @@
     {
       "name": "Program_A",
       "id": 0,
-      "size": "256K",
+      "size": "152K",
       "families": ["rp2350-arm-s"],
       "permissions": {
         "secure": "rw",
@@ -23,7 +23,7 @@
     {
       "name": "Program_B",
       "id": 1,
-      "size": "256K",
+      "size": "152K",
       "families": ["rp2350-arm-s"],
       "permissions": {
         "secure": "rw",
@@ -35,7 +35,7 @@
     {
       "name": "Shared_Data",
       "id": 2,
-      "size": "15860K",
+      "size": "196K",
       "families": ["data"],
       "permissions": {
         "secure": "rw",

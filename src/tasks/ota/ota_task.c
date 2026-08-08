@@ -57,8 +57,9 @@ void ota_task_dispatch(slate_t *slate)
         LOG_INFO("[ota_task] On partition B — rebooting to A");
         send_radio_msg(slate, "OTA: on B, rebooting to A, resend command");
         slate->ota_requested = false;
-        rom_reboot(BOOT_TYPE_NORMAL, 200, 0, 0);
-        LOG_ERROR("[ota_task] Reboot failed");
+        int ret = rom_reboot(BOOT_TYPE_NORMAL, 200, 0, 0);
+        if (ret != BOOTROM_OK)
+            LOG_ERROR("[ota_task] Reboot failed: %d", ret);
         return;
     }
 
@@ -175,11 +176,11 @@ void ota_task_dispatch(slate_t *slate)
 
     int ret = rom_reboot(BOOT_TYPE_FLASH_UPDATE, 200,
                          XIP_BASE + b_partition_offset, 0);
-    // rom_reboot should not return on success — if we get here it failed
-    LOG_ERROR("[ota_task] rom_reboot failed: %d", ret);
-    send_radio_msg(slate, "OTA ERR: rom_reboot failed");
-    // ota_requested is already false so the state machine returns to RUNNING,
-    // where radio_task will drain the error message on the next tick
+    if (ret != BOOTROM_OK)
+    {
+        LOG_ERROR("[ota_task] rom_reboot failed: %d", ret);
+        send_radio_msg(slate, "OTA ERR: rom_reboot failed");
+    }
     return;
 }
 
