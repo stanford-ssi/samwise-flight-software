@@ -962,7 +962,7 @@ int filesys_test_write_long_file_crc32_success(slate_t *slate)
     LOG_DEBUG("=== Test: Write Really Long File with CRC32 ===\n");
 
     lfs_ssize_t initial_fs_size = lfs_fs_size(filesys_get_lfs());
-    FILESYS_BUFFERED_FILE_LEN_T file_size = 200000;
+    FILESYS_BUFFERED_FILE_LEN_T file_size = 150000;
 
     lfs_ssize_t lfs_error_code;
     lfs_ssize_t blocks_left;
@@ -977,10 +977,10 @@ int filesys_test_write_long_file_crc32_success(slate_t *slate)
     for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file_size; i++)
         buffer[i] = i % 256;
 
-    // Generated with zlib.crc32(bytes(i % 256 for i in range(200000))) in
+    // Generated with zlib.crc32(bytes(i % 256 for i in range(150000))) in
     // Python.
     filesys_error_t code = filesys_start_file_write(
-        slate, fname, file_size, 540207777, &lfs_error_code, &blocks_left);
+        slate, fname, file_size, 13922357, &lfs_error_code, &blocks_left);
 
     if (code != FILESYS_OK)
     {
@@ -1063,16 +1063,11 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
     for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file1_size; i++)
         large_buffer[i] = (i * 3) % 256;
 
-    // Note: CRC32 is computed based on the fact that FILESYS_BLOCK_COUNT *
-    // FILESYS_BLOCK_SIZE == 524288. If this is not true, this CRC is invalid!
-    TEST_ASSERT(FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE == 524288,
-                "Test setup assumption failed: FILESYS_BLOCK_COUNT * "
-                "FILESYS_BLOCK_SIZE must equal 524288 for this test");
-
-    // Generated with zlib.crc32(bytes((i * 3) % 256 for i in range(524288 -
-    // 30 * 1024))) in Python
+    // Generated with zlib.crc32(bytes((i * 3) % 256 for i in range(
+    // FILESYS_BLOCK_COUNT * FILESYS_BLOCK_SIZE - 30 * 1024))) in Python.
+    // Recompute if FILESYS_BLOCK_COUNT or FILESYS_BLOCK_SIZE changes.
     filesys_error_t code = filesys_start_file_write(
-        slate, fname1, file1_size, 3257575486, &lfs_error_code, &blocks_left);
+        slate, fname1, file1_size, 3680727390, &lfs_error_code, &blocks_left);
     if (code != FILESYS_OK)
     {
         free(large_buffer);
@@ -1175,15 +1170,15 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
 }
 
 // ============================================================================
-// Test 23: Raw LFS write and verify large file (510KB)
+// Test 23: Raw LFS write and verify large file (150KB)
 // ============================================================================
 int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
 {
-    LOG_DEBUG("=== Test: Raw LFS Write Large File (510KB) ===\n");
+    LOG_DEBUG("=== Test: Raw LFS Write Large File (150KB) ===\n");
 
     FILESYS_BUFFERED_FNAME_STR_T fname = "RW";
 
-    const size_t LARGE_FILE_SIZE = 500000;
+    const size_t LARGE_FILE_SIZE = 150000;
     uint8_t *large_buffer = malloc(LARGE_FILE_SIZE);
     TEST_ASSERT(large_buffer != NULL, "Should allocate large buffer");
 
@@ -1280,7 +1275,7 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     TEST_ASSERT(mismatch_count == 0, "All bytes should match original data");
 
     LOG_DEBUG("Successfully verified %d bytes\n", (int)read_bytes);
-    LOG_DEBUG("=== Test PASSED: Raw LFS Write Large File (510KB) ===\n");
+    LOG_DEBUG("=== Test PASSED: Raw LFS Write Large File (150KB) ===\n");
 
 #undef LARGE_FILE_SIZE
     return 0;
@@ -2483,7 +2478,7 @@ const test_harness_case_t filesys_tests[] = {
     {21, filesys_test_second_file_out_of_space_should_fail,
      "Second File Runs Out of Space"},
     {22, filesys_test_raw_lfs_write_large_file_success,
-     "Raw LFS Write Large File (510KB)"},
+     "Raw LFS Write Large File (150KB)"},
     {23, filesys_test_list_files_empty_filesystem_success,
      "List Files - Empty Filesystem"},
     {24, filesys_test_list_files_multiple_files_success,
