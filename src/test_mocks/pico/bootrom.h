@@ -30,6 +30,11 @@
 #define BOOT_TYPE_RAM_IMAGE 3
 #define BOOT_TYPE_FLASH_UPDATE 4
 
+// --- TBYB / update flags (boot_info_t::tbyb_and_update_info) ---
+// Set when the current partition was booted in Try-Before-You-Buy mode and
+// has not yet been explicitly bought.
+#define BOOT_TBYB_AND_UPDATE_FLAG_BUY_PENDING 0x1
+
 // --- Partition table query flags (bootrom_constants.h) ---
 #define PT_INFO_PT_INFO 0x0001
 #define PT_INFO_PARTITION_LOCATION_AND_FLAGS 0x0010
@@ -94,15 +99,23 @@ int rom_get_b_partition(unsigned int pi_a);
  */
 int rom_reboot(uint32_t flags, uint32_t delay_ms, uint32_t p0, uint32_t p1);
 
+/*
+ * Clears BOOT_TBYB_AND_UPDATE_FLAG_BUY_PENDING for the current partition,
+ * permanently committing it. SAMWISE never calls this — it relies on watchdog
+ * feeds to keep the TBYB timer alive indefinitely — but the mock provides it
+ * for completeness and future tests.
+ */
+int rom_explicit_buy(uint8_t *buffer, uint32_t buffer_size);
+
 // --- Test control ---
 
 #define BOOTROM_MOCK_MAX_PARTITIONS 8
 
 /*
  * Resets to a partition table matching the real board (ota_mvp/pt.json):
- *   partition 0 "A"  sectors 2..65    (0x02000, 256 KB)
- *   partition 1 "B"  sectors 66..129  (0x42000, 256 KB)
- *   partition 2 data sectors 130..4095
+ *   partition 0 "A"  sectors 2..39   (0x02000, 152 KB)
+ *   partition 1 "B"  sectors 40..77  (0x28000, 152 KB)
+ *   partition 2 data sectors 78..126 (0x4E000, 196 KB)
  * with 0 linked to 1 as its B partner, and currently booted from partition 0.
  * Call this at the start of every test.
  */
@@ -124,6 +137,24 @@ void bootrom_mock_set_current_partition(int8_t partition);
 void bootrom_mock_fail_partition_table_info(int error_code);
 void bootrom_mock_fail_boot_info(bool fail);
 void bootrom_mock_fail_reboot(int error_code);
+void bootrom_mock_fail_explicit_buy(int error_code);
+
+/*
+ * Advances mock state as if the last BOOT_TYPE_FLASH_UPDATE reboot actually
+ * happened: finds the partition whose first sector matches the offset in
+ * bootrom_mock_last_reboot_p0, makes it the current partition, and sets
+ * BOOT_TBYB_AND_UPDATE_FLAG_BUY_PENDING in boot_info. Intended to be called
+ * in tests after asserting that rom_reboot was called, to simulate the
+ * satellite now running on the new partition in TBYB mode.
+ */
+void bootrom_mock_simulate_boot(void);
+
+/*
+ * Simulates TBYB timer expiry (e.g. watchdog reset without a feed): rolls
+ * back to partition 0 (A) and clears BUY_PENDING. Intended to be called in
+ * tests that verify the satellite recovers correctly after a failed OTA boot.
+ */
+void bootrom_mock_simulate_rollback(void);
 
 // --- Observation ---
 
@@ -132,3 +163,5 @@ extern uint32_t bootrom_mock_last_reboot_flags;
 extern uint32_t bootrom_mock_last_reboot_delay_ms;
 extern uint32_t bootrom_mock_last_reboot_p0;
 extern uint32_t bootrom_mock_last_reboot_p1;
+extern bool bootrom_mock_buy_pending;
+extern int bootrom_mock_explicit_buy_count;
