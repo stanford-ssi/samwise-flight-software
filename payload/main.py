@@ -35,8 +35,11 @@ except Exception as e:
     print(f"Logger setup failed: {e}")
 
 log = logging.getLogger(__name__)
-log.propagate = False
-log.addHandler(logging.StreamHandler(sys.stdout))
+
+# If setup_logger failed, the root logger has no handlers - fall back to
+# stdout-only logging so messages are not silently dropped
+if not logging.getLogger().handlers:
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # Main code entry point
 log.info(f"Pi running, boot number {boot_count}...")
