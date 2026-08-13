@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shutdown_listen_task.h"
 #include "state_machine.h"
 #include "typedefs.h"
 #include "watchdog_task.h"

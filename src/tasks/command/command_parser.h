@@ -22,7 +22,8 @@ typedef enum
     PAYLOAD_TURN_ON,
     PAYLOAD_TURN_OFF,
     MANUAL_STATE_OVERRIDE,
-    SHUTDOWN
+    SHUTDOWN,
+    REACTIVATE
 } Command;
 
 // Packet configuration

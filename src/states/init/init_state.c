@@ -1,10 +1,22 @@
 #include "init_state.h"
 #include "device_status.h"
+#include "flash.h"
 #include "logger.h"
 #include "neopixel.h"
+#include "slate.h"
 
 state_id_t init_get_next_state(slate_t *slate)
 {
+    // If shutdown was active before a reboot, re-enter shutdown immediately.
+    // This keeps the communication blackout persistent across reboots and
+    // skips normal init / burn wire, which must not run again.
+    if (get_shutdown_active())
+    {
+        LOG_INFO("Persistent shutdown flag set. Re-entering shutdown state.");
+        slate->shutdown_triggered = true;
+        return STATE_SHUTDOWN;
+    }
+
 #ifdef BRINGUP
     return STATE_BRINGUP;
 #elif defined(PICO)

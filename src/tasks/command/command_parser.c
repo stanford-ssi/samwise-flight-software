@@ -9,6 +9,7 @@
  */
 
 #include "command_parser.h"
+#include "flash.h"
 #include "logger.h"
 #include "macros.h"
 #include "payload_uart.h"
@@ -98,9 +99,20 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             if (slate->shutdown_cmd_counter >= 3)
             {
                 slate->shutdown_triggered = true;
-                LOG_ERROR("SHUTDOWN TRIGGERED - permanently disabling "
-                          "communications");
+                // Persist so shutdown survives reboots (FCC communication
+                // blackout). Cleared only on ground reactivation or the
+                // fallback timeout in the shutdown state.
+                set_shutdown_active();
+                LOG_ERROR("SHUTDOWN TRIGGERED - disabling communications");
             }
+            break;
+        }
+        case REACTIVATE:
+        {
+            // Reactivation is only honored while in the shutdown state, where
+            // it is handled by shutdown_listen_task. During normal operation
+            // there is nothing to reactivate, so this is a no-op.
+            LOG_INFO("REACTIVATE command received outside shutdown; ignoring");
             break;
         }
         /* Toggle Commands */
