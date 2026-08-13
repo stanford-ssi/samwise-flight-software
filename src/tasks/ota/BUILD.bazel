@@ -1,33 +1,30 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "filesys",
-    srcs = [
-        "filesys.c",
-        "lfs_mram_wrapper.c",
-        "lfs_gen_flash_wrapper.c"
-    ],
-    hdrs = [
-        "filesys.h",
-        "lfs_mram_wrapper.h",
-        "lfs_gen_flash_wrapper.h"
-    ],
+    name = "ota_task",
+    srcs = ["ota_task.c"],
+    hdrs = ["ota_task.h"],
     includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
-        "//src/utils",
         "//src/scheduler:state_machine",
-        "//lib/littlefs-SSI:littlefs",
+        "//src/filesys",
+        "//src/packet",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",
-            "//src/drivers/mram:mram_mock",
+            "//src/drivers/rfm9x:rfm9x_mock",
+            "//src/drivers/watchdog:watchdog_mock",
+            "//src/test_mocks:hardware_flash_mock",
+            "//src/test_mocks:hardware_sync_mock",
+            "//src/test_mocks:pico_bootrom_mock",
             "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [
             "//src/drivers/logger",
-            "//src/drivers/mram",
+            "//src/drivers/rfm9x",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
             "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync",

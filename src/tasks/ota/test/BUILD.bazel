@@ -1,0 +1,16 @@
+load("//bzl:defs.bzl", "samwise_test")
+
+package(default_visibility = ["//visibility:public"])
+
+samwise_test(
+    name = "ota_test",
+    srcs = [
+        "ota_test.c",
+        "ota_test.h",
+    ],
+    deps = [
+        "//src/tasks/ota:ota_task",
+        "//src/filesys",
+        "//src/common",
+    ],
+)

@@ -103,9 +103,23 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
 // Tests use the mock flash backend which has no alignment constraints,
 // so 256-byte blocks are kept for test compatibility.
 #if defined(MRAM) || defined(TEST)
+#define FILESYS_MRAM_BASE_OFFSET                                               \
+    ((8 + 152 + 152) * 1024) // 312KiB: 8KiB Partition Table + 152KiB Program A
+                             // + 152KiB Program B
 #define FILESYS_BLOCK_SIZE 256
-#define FILESYS_BLOCK_COUNT 2048 // 512KB
+#define FILESYS_BLOCK_COUNT                                                    \
+    784 // Only have 196KiB for filesystem on MRAM; 784 * 256 = 200704 bytes =
+        // 196KiB
+// Partitioning Table: 8KiB for Partition Table, 152KiB for Program A, 152KiB
+// for Program B, 196KiB for Shared Data (filesys)
+
+// Index of the Shared_Data partition in ota_mvp/pt.json. The two constants
+// above duplicate the layout declared there, so filesys_initialize() checks
+// them against the real partition table at boot and refuses to mount if they
+// have drifted -- see filesys_validate_mram_layout().
+#define FILESYS_MRAM_PARTITION_INDEX 2
 #else
+#define FILESYS_MRAM_BASE_OFFSET 0 // No offset needed for non-MRAM flash builds
 #define FILESYS_BLOCK_SIZE 4096
 #define FILESYS_BLOCK_COUNT 768 // 3MB flash (starting at 1MB offset)
 #endif

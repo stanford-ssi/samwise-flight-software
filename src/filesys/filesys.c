@@ -7,6 +7,10 @@
 #include "filesys.h"
 #include <string.h>
 
+#ifdef MRAM
+#include "pico/bootrom.h"
+#endif
+
 static lfs_t lfs;
 static bool lfs_mounted = false;
 
@@ -68,6 +72,73 @@ static void filesys_file_close(lfs_file_t *file, lfs_ssize_t *lfs_error_code)
     }
 }
 
+#ifdef MRAM
+/*
+ * Check the compile-time filesystem geometry against the real partition table.
+ *
+ * FILESYS_MRAM_BASE_OFFSET and FILESYS_BLOCK_COUNT restate a layout that is
+ * actually defined in ota_mvp/pt.json. The partition table is flashed
+ * separately from the firmware, so the two can drift -- pairing a new binary
+ * with an old table, or vice versa. Left unchecked that drift is silent and
+ * lands filesystem writes inside Program A or Program B.
+ *
+ * Verifying here turns that into a refusal to mount.
+ */
+static filesys_error_t filesys_validate_mram_layout(void)
+{
+    uint32_t pt_buffer[128];
+    uint32_t pt_flags = PT_INFO_PT_INFO | PT_INFO_PARTITION_LOCATION_AND_FLAGS;
+    int pt_result = rom_get_partition_table_info(
+        pt_buffer, sizeof(pt_buffer) / sizeof(uint32_t), pt_flags);
+
+    if (pt_result < 0)
+    {
+        LOG_ERROR("[filesys] Failed to read partition table: %d", pt_result);
+        return FILESYS_ERR_MOUNT;
+    }
+
+    uint32_t num_partitions = pt_buffer[1] & 0xFu;
+    if (FILESYS_MRAM_PARTITION_INDEX >= num_partitions)
+    {
+        LOG_ERROR("[filesys] Partition %d missing (table has %u)",
+                  FILESYS_MRAM_PARTITION_INDEX, num_partitions);
+        return FILESYS_ERR_MOUNT;
+    }
+
+    // Entries start at word 4, two words each. permissions_and_location packs
+    // first_sector in bits [12:0] and last_sector (inclusive) in bits [25:13],
+    // both as 4 KiB sector indices.
+    uint32_t perms_and_loc = pt_buffer[4 + FILESYS_MRAM_PARTITION_INDEX * 2];
+    uint32_t first_sector = perms_and_loc & 0x1FFFu;
+    uint32_t last_sector = (perms_and_loc >> 13) & 0x1FFFu;
+    uint32_t actual_base = first_sector * 4096u;
+    uint32_t actual_size = (last_sector - first_sector + 1u) * 4096u;
+
+    if (actual_base != (uint32_t)FILESYS_MRAM_BASE_OFFSET)
+    {
+        LOG_ERROR("[filesys] Base offset 0x%08x does not match partition %d "
+                  "at 0x%08x",
+                  (uint32_t)FILESYS_MRAM_BASE_OFFSET,
+                  FILESYS_MRAM_PARTITION_INDEX, actual_base);
+        return FILESYS_ERR_MOUNT;
+    }
+
+    uint32_t configured_size =
+        (uint32_t)FILESYS_BLOCK_SIZE * FILESYS_BLOCK_COUNT;
+    if (configured_size > actual_size)
+    {
+        LOG_ERROR("[filesys] Configured size %u B exceeds partition %d (%u B)",
+                  configured_size, FILESYS_MRAM_PARTITION_INDEX, actual_size);
+        return FILESYS_ERR_MOUNT;
+    }
+
+    lfs_mram_mark_layout_validated();
+    LOG_INFO("[filesys] Layout validated: base 0x%08x, %u of %u B used",
+             actual_base, configured_size, actual_size);
+    return FILESYS_OK;
+}
+#endif
+
 filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
 {
     *lfs_error_code = LFS_ERR_OK;
@@ -75,6 +146,12 @@ filesys_error_t filesys_initialize(slate_t *slate, lfs_ssize_t *lfs_error_code)
     // mount the filesystem
 #ifdef MRAM
     mram_init();
+
+    filesys_error_t layout_err = filesys_validate_mram_layout();
+    if (layout_err != FILESYS_OK)
+    {
+        return layout_err;
+    }
 #endif
     int err = lfs_mount(&lfs, &filesys_lfs_cfg);
 
@@ -106,6 +183,14 @@ filesys_error_t filesys_reformat_initialize(slate_t *slate,
 
 #ifdef MRAM
     mram_init();
+
+    // Must validate before formatting: lfs_format writes across the whole
+    // configured region, so a stale offset would erase firmware here.
+    filesys_error_t layout_err = filesys_validate_mram_layout();
+    if (layout_err != FILESYS_OK)
+    {
+        return layout_err;
+    }
 #endif
     if (lfs_mounted)
     {

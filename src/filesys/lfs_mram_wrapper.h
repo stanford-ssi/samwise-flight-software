@@ -16,6 +16,18 @@
 #include "lfs.h"
 #include "mram.h"
 
+#include <stdbool.h>
+
+/*
+ * Records that the compile-time FILESYS_MRAM_BASE_OFFSET / FILESYS_BLOCK_COUNT
+ * have been checked against the bootrom partition table. Reads and writes are
+ * refused until this is called, so a stale offset cannot silently land on the
+ * firmware partitions. Called by filesys_initialize().
+ */
+void lfs_mram_mark_layout_validated(void);
+
+bool lfs_mram_layout_is_validated(void);
+
 // Read a region in a block. Negative error codes are propagated
 // to the user.
 int lfs_mram_wrap_read(const struct lfs_config *c, lfs_block_t block,

@@ -115,6 +115,32 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             break;
         }
 
+        case OTA_CMD:
+        {
+            OTA_COMMAND_DATA ota_cmd;
+            strncpy(ota_cmd.fname, command_payload,
+                    sizeof(FILESYS_BUFFERED_FNAME_STR_T));
+            ota_cmd.fname[sizeof(FILESYS_BUFFERED_FNAME_STR_T) - 1] = '\0';
+
+            LOG_INFO("OTA command received for file: %s", ota_cmd.fname);
+
+            // Send ACK back to ground
+            uint8_t ack_data[PACKET_DATA_SIZE];
+            int ack_len = snprintf(ack_data, sizeof(ack_data), "OTA queued: %s",
+                                   ota_cmd.fname);
+            packet_t ack_pkt;
+            rfm9x_format_packet(&ack_pkt, 0, 0, 0, 0, ack_len, &ack_data[0]);
+            if (!queue_try_add(&slate->tx_queue, &ack_pkt))
+            {
+                LOG_ERROR("OTA ACK failed to enqueue");
+            }
+
+            strncpy(slate->ota_target_fname, ota_cmd.fname,
+                    sizeof(FILESYS_BUFFERED_FNAME_STR_T));
+            slate->ota_requested = true;
+            break;
+        }
+
         default:
             LOG_ERROR("Unknown command ID: %i", command_id);
             break;
