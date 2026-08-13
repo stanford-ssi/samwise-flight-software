@@ -31,6 +31,7 @@ cc_library(
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
             "@pico-sdk//src/rp2_common/hardware_flash:hardware_flash",
             "@pico-sdk//src/rp2_common/hardware_sync:hardware_sync",
+            "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
         ],
     }),
 )

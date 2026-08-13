@@ -112,6 +112,12 @@ typedef uint32_t FILESYS_BUFFERED_FILE_CRC_T;
         // 196KiB
 // Partitioning Table: 8KiB for Partition Table, 152KiB for Program A, 152KiB
 // for Program B, 196KiB for Shared Data (filesys)
+
+// Index of the Shared_Data partition in ota_mvp/pt.json. The two constants
+// above duplicate the layout declared there, so filesys_initialize() checks
+// them against the real partition table at boot and refuses to mount if they
+// have drifted -- see filesys_validate_mram_layout().
+#define FILESYS_MRAM_PARTITION_INDEX 2
 #else
 #define FILESYS_MRAM_BASE_OFFSET 0 // No offset needed for non-MRAM flash builds
 #define FILESYS_BLOCK_SIZE 4096
