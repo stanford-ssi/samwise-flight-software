@@ -70,7 +70,8 @@ void adcs_task_dispatch(slate_t *slate)
                 break;
             case MSG_ADCS_PACKET:
                 if (num_bytes != 7 + sizeof(adcs_packet_t))
-                    ;
+                    LOG_INFO("[ADCS] Packet dropped, invalid size");
+                ;
                 LOG_INFO("[ADCS] Attitude packet received");
                 slate->is_adcs_on = true;
                 slate->adcs_telemetry = *(adcs_packet_t *)received.payload;

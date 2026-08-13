@@ -91,22 +91,6 @@ adcs_result_t adcs_driver_init()
 
     flush_uart();
 
-    // Initialize uart for sending commands/receiving telemetry
-    // uart_init(SAMWISE_ADCS_UART, ADCS_UART_BAUD);
-    // gpio_init(SAMWISE_UART_TX_TO_ADCS);
-    // gpio_init(SAMWISE_UART_RX_FROM_ADCS);
-    // gpio_set_function(
-    //     SAMWISE_UART_TX_TO_ADCS,
-    //     UART_FUNCSEL_NUM(SAMWISE_ADCS_UART, SAMWISE_UART_TX_TO_ADCS));
-    // gpio_set_function(
-    //     SAMWISE_UART_RX_FROM_ADCS,
-    //     UART_FUNCSEL_NUM(SAMWISE_ADCS_UART, SAMWISE_UART_RX_FROM_ADCS));
-    //
-    // // Set data format
-    // uart_set_format(SAMWISE_ADCS_UART, ADCS_UART_DATA_BITS,
-    // ADCS_UART_STOP_BITS,
-    //                 ADCS_UART_PARITY);
-    //
     return ADCS_SUCCESS;
 }
 

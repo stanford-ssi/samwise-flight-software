@@ -35,7 +35,7 @@ sched_state_t running_state = {
     .name = "running",
     .id = STATE_RUNNING,
     .num_tasks = 6,
-    .task_list = {/*&print_task,*/ &watchdog_task, &beacon_task,
-                  &telemetry_task, &adcs_task, &radio_task, &command_task},
+    .task_list = {&print_task, &watchdog_task, &beacon_task, &telemetry_task,
+                  &adcs_task, &radio_task, &command_task},
     .get_next_state = &running_get_next_state};
 #endif

@@ -56,8 +56,6 @@ uint16_t uart_comms_get_packet(uart_inst_t *uart_instance, uint8_t *buffer,
 
 /**
  * UART interrupt handler callback
- *
- * @param uart_instance UART peripheral instance number
  */
 void uart0_irq_handler(void);
 void uart1_irq_handler(void);
