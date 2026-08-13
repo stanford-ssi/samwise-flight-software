@@ -1,5 +1,5 @@
 /**
- * @author Lundeen Cahilly
+ * @author Lundeen Cahilly, Joziah Uribe-Lopez
  * @date 2025-08-18
  *
  * This file contains functions for interfacing with MR25H40MDF
