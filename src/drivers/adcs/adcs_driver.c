@@ -1,16 +1,20 @@
 /**
- * @author Niklas Vainio
- * @date 2025-07-20
+ * @author Niklas Vainio @date 2025-07-20
  *
  * This code defines the hardware-level ADCS UART interface
  */
 
+#include "hardware/gpio.h"
 #include "hardware/uart.h"
+#include "logger.h"
 #include "pico/stdlib.h"
 #include "pins.h"
-#include "slate.h"
 
 #include "adcs_driver.h"
+
+#include "cobs.h"
+#include "protocol.h"
+#include "uart_communications.h"
 
 // Uart parameters
 #define ADCS_UART_BAUD (115200)
@@ -27,6 +31,9 @@
 // currently set to 500ms (faily generous)
 #define ADCS_BYTE_TIMEOUT_US (500000)
 
+static bool is_adcs_on = false;
+static bool is_adcs_telem_valid = false;
+
 /**
  * @brief Helper function to read up to num_bytes bytes from ADCS uart with a
  * timeout in the case of missing bytes
@@ -42,7 +49,7 @@ void flush_uart()
 {
     if (uart_is_readable(SAMWISE_ADCS_UART))
     {
-        LOG_DEBUG("ADCS UART still readable, flushing...");
+        // LOG_DEBUG("ADCS UART still readable, flushing...");
         // Flush out any extra bytes that may be in the buffer
         while (uart_is_readable(SAMWISE_ADCS_UART))
         {
@@ -73,61 +80,43 @@ static uint32_t adcs_driver_read_uart_with_timeout(char *buf,
     return num_bytes;
 }
 
-adcs_result_t adcs_driver_init(slate_t *slate)
+adcs_result_t adcs_driver_init()
 {
-    if (!slate)
-    {
-        return ADCS_ERROR_INVALID_PARAM;
-    }
-
     // Initialize power pins
     gpio_init(SAMWISE_ADCS_EN);
     gpio_set_dir(SAMWISE_ADCS_EN, GPIO_OUT);
 
     // Power on the board by default
-    adcs_driver_power_on(slate);
+    adcs_driver_power_on();
 
-    // Initialize uart for sending commands/receiving telemetry
-    uart_init(SAMWISE_ADCS_UART, ADCS_UART_BAUD);
-    gpio_init(SAMWISE_UART_TX_TO_ADCS);
-    gpio_init(SAMWISE_UART_RX_FROM_ADCS);
-    gpio_set_function(
-        SAMWISE_UART_TX_TO_ADCS,
-        UART_FUNCSEL_NUM(SAMWISE_ADCS_UART, SAMWISE_UART_TX_TO_ADCS));
-    gpio_set_function(
-        SAMWISE_UART_RX_FROM_ADCS,
-        UART_FUNCSEL_NUM(SAMWISE_ADCS_UART, SAMWISE_UART_RX_FROM_ADCS));
-
-    // Set data format
-    uart_set_format(SAMWISE_ADCS_UART, ADCS_UART_DATA_BITS, ADCS_UART_STOP_BITS,
-                    ADCS_UART_PARITY);
+    flush_uart();
 
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_power_on(slate_t *slate)
+adcs_result_t adcs_driver_power_on()
 {
     // Set power enable high to turn on the board and allow time to settle
-    slate->is_adcs_on = true;
+    is_adcs_on = true;
     gpio_put(SAMWISE_ADCS_EN, 1);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_power_off(slate_t *slate)
+adcs_result_t adcs_driver_power_off()
 {
     // Set power enable low to turn on the board and allow time to settle
-    slate->is_adcs_on = false;
+    is_adcs_on = false;
     gpio_put(SAMWISE_ADCS_EN, 0);
     sleep_ms(10);
 
     return ADCS_SUCCESS;
 }
 
-adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
+adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet)
 {
-    if (!slate || !packet)
+    if (!packet)
     {
         return ADCS_ERROR_INVALID_PARAM;
     }
@@ -142,7 +131,7 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
     uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
         (char *)packet, sizeof(adcs_packet_t), ADCS_BYTE_TIMEOUT_US);
 
-    slate->is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
+    is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
 
     LOG_INFO("[ADCS] state: %02x", packet->state);
     LOG_INFO("[ADCS] boot_count: %u", packet->boot_count);
@@ -152,7 +141,7 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
         LOG_INFO("[ADCS] packet[%d]: %02x", i, ((char *)packet)[i]);
     }
 
-    if (!slate->is_adcs_telem_valid)
+    if (!is_adcs_telem_valid)
     {
         LOG_ERROR("[ADCS] Failed to read full telemetry packet, "
                   "expected %zu bytes, got %u bytes",
@@ -161,18 +150,23 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
     }
 
     // Return true if we received all expected bytes
-    return slate->is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
+    return is_adcs_telem_valid ? ADCS_SUCCESS : ADCS_ERROR_UART_FAILED;
 }
 
-bool adcs_driver_is_alive(slate_t *slate)
+void adcs_print_telemetry(adcs_packet_t *adcs)
 {
-    if (!slate)
-    {
-        return ADCS_ERROR_INVALID_PARAM;
-    }
+    LOG_INFO("[ADCS_TELEMETRY]");
+    LOG_INFO("Quat: [%f, %f, %f, %f]", adcs->q0, adcs->q1, adcs->q2, adcs->q3);
+    LOG_INFO("W: %f", adcs->w);
+    LOG_INFO("V: %f     I: %f", adcs->voltage, adcs->current);
+    LOG_INFO("MJD: %f", adcs->mjd);
+    LOG_INFO("UTC: %f", adcs->UTC_time);
+}
 
+bool adcs_driver_is_alive()
+{
     // Return immediately if board is off
-    if (!slate->is_adcs_on)
+    if (is_adcs_on)
     {
         return false;
     }
@@ -194,3 +188,46 @@ bool adcs_driver_is_alive(slate_t *slate)
     // Return true if we received a byte, and it is the expected value
     return (num_bytes_read > 0) && (c == ADCS_HEALTH_CHECK_SUCCESS);
 }
+
+uint32_t receive_msg(msg_t *msg, uint8_t *rx_buf)
+{
+    static uint8_t raw_buf[256];
+    uint32_t num_bytes = uart_comms_get_packet(SAMWISE_ADCS_UART, raw_buf, 256);
+    cobs_decode(raw_buf, num_bytes, rx_buf);
+    protocol_message_decode(msg, num_bytes + 1, rx_buf);
+    return num_bytes - 1; // minus cobs header
+}
+
+void send_msg(msg_t *msg, uint32_t len)
+{
+    uint8_t msg_buf[len];
+    protocol_message_encode(msg, msg_buf);
+    uint8_t cobs_buf[len + 2];
+    uint32_t end = cobs_encode(msg_buf, len, cobs_buf);
+    cobs_buf[end] = 0;
+    uart_comms_tx(SAMWISE_ADCS_UART, cobs_buf, end + 1);
+}
+
+void send_ping()
+{
+    LOG_INFO("[TELEMETRY] Sending Ping");
+    msg_t ping;
+    protocol_message_ping(&ping);
+    send_msg(&ping, 8);
+}
+
+void send_pong()
+{
+    LOG_INFO("[TELEMETRY] Sending Pong");
+    msg_t pong;
+    protocol_message_pong(&pong);
+    send_msg(&pong, 8);
+}
+
+void send_command(uint8_t command)
+{
+    LOG_INFO("[TELEMETRY] Sending command [%d]", command);
+    msg_t msg;
+    protocol_message_command(&msg, command);
+    send_msg(&msg, 8);
+};

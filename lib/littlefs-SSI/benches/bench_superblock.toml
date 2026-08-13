@@ -53,4 +53,3 @@ code = '''
     lfs_format(&lfs, cfg) => 0;
     BENCH_STOP();
 '''
-
