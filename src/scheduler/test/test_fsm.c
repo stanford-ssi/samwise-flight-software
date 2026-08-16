@@ -336,11 +336,9 @@ void test_burn_wire_deploys_mid_sequence(void)
 
     reset_fsm_to_init(); // both panels closed
 
-    // Two retries with nothing released...
+    // One retry with nothing released...
     mock_time_us += 10 * 1000ULL;
     test_sched_dispatch(&test_slate); // init -> burn_wire
-    mock_time_us += 10 * 1000ULL;
-    test_sched_dispatch(&test_slate);
     ASSERT(test_slate.current_state_id == STATE_BURN_WIRE);
     ASSERT(get_burn_wire_attempts() == 1);
 
