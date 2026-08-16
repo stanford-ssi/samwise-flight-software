@@ -1,5 +1,6 @@
 #include "diagnostics_task.h"
 #include "adm1176.h"
+#include "config.h"
 #include "macros.h"
 #ifdef BRINGUP
 
@@ -68,6 +69,7 @@ void diagnostics_task_dispatch(slate_t *slate)
     // 60 . . . . . . . . . . . . . . . .
     // 70 . . . . . . . . . . . . . . . .
     // E.g. if addresses 0x12 and 0x34 were acknowledged.
+#if SAMWISE_MPPT_ENABLED
     LOG_INFO("I2C Bus Scan %d", I2C_NUM(SAMWISE_MPPT_I2C));
     LOG_INFO("\n0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 
@@ -97,6 +99,7 @@ void diagnostics_task_dispatch(slate_t *slate)
         printf(ret < 0 ? "." : "@");
         printf(addr % 16 == 15 ? "\n" : "  ");
     }
+#endif
     LOG_INFO("I2C Bus Scan %d", I2C_NUM(SAMWISE_POWER_MONITOR_I2C));
     LOG_INFO("\n0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 

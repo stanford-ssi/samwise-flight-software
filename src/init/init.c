@@ -11,6 +11,7 @@
 #include "init.h"
 
 #include "burn_wire.h"
+#include "config.h"
 
 /**
  * Initialize all gpio pins to their default states.
@@ -20,9 +21,11 @@
 static bool init_gpio_pins()
 {
 #ifndef PICO
+#if SAMWISE_MPPT_ENABLED
     i2c_init(SAMWISE_MPPT_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_MPPT_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SAMWISE_MPPT_SCL_PIN, GPIO_FUNC_I2C);
+#endif
 
     i2c_init(SAMWISE_POWER_MONITOR_I2C, 100 * 1000);
     gpio_set_function(SAMWISE_POWER_MONITOR_SDA_PIN, GPIO_FUNC_I2C);

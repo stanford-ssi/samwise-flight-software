@@ -3,9 +3,11 @@
 
 // Add power monitor instance
 static adm1176_t power_monitor;
+#if SAMWISE_MPPT_ENABLED
 // Add MPPT instances for both panels
 static mppt_t panel_A_mppt;
 static mppt_t panel_B_mppt;
+#endif
 
 void telemetry_task_init(slate_t *slate)
 {
@@ -22,15 +24,17 @@ void telemetry_task_init(slate_t *slate)
         // involve trying to read a known register. For a simple scan, we just
         // see if we get an ACK. The SDK functions return PICO_ERROR_GENERIC if
         // no device responds.
+        int ret;
+#if SAMWISE_MPPT_ENABLED
         LOG_INFO("Scanning MPPT_I2C address 0x%02X\n", addr);
-        int ret =
-            i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
-                                    make_timeout_time_ms(I2C_TIMEOUT_MS));
+        ret = i2c_read_blocking_until(SAMWISE_MPPT_I2C, addr, &rxdata, 1, false,
+                                      make_timeout_time_ms(I2C_TIMEOUT_MS));
         if (ret >= 0)
         { // If ret is not an error code (i.e., ACK received)
             LOG_INFO("MPPT Device found at 0x%02X\n", addr);
             found_device = true;
         }
+#endif
         LOG_INFO("Scanning POWER_I2C address 0x%02X\n", addr);
         ret = i2c_read_blocking_until(SAMWISE_POWER_MONITOR_I2C, addr, &rxdata,
                                       1, false,
@@ -50,6 +54,7 @@ void telemetry_task_init(slate_t *slate)
     power_monitor = adm1176_mk(SAMWISE_POWER_MONITOR_I2C, ADM1176_I2C_ADDR,
                                ADM1176_DEFAULT_SENSE_RESISTOR);
 
+#if SAMWISE_MPPT_ENABLED
     // Initialize MPPT for Panel A
     panel_A_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_A);
     mppt_init(&panel_A_mppt);
@@ -57,13 +62,16 @@ void telemetry_task_init(slate_t *slate)
     // Initialize MPPT for Panel B
     panel_B_mppt = mppt_mk(SAMWISE_MPPT_I2C, LT8491_I2C_ADDR_PANEL_B);
     mppt_init(&panel_B_mppt);
+#endif
 #else
     // Initialize mocked PICO power monitor
     power_monitor = adm1176_mk_mock();
 
+#if SAMWISE_MPPT_ENABLED
     // Initialize mocked PICO MPPTs
     panel_A_mppt = mppt_mk_mock();
     panel_B_mppt = mppt_mk_mock();
+#endif
 #endif
 }
 
@@ -80,6 +88,7 @@ void telemetry_task_dispatch(slate_t *slate)
     slate->battery_voltage = (uint16_t)(voltage * 1000); // Convert to mV
     slate->battery_current = (uint16_t)(current * 1000); // Convert to mA
 
+#if SAMWISE_MPPT_ENABLED
     // Read telemetry data from Panel A MPPT
     uint16_t panel_A_vin_voltage = mppt_get_vin_voltage(&panel_A_mppt);
     uint16_t panel_A_voltage = mppt_get_voltage(&panel_A_mppt);
@@ -93,6 +102,14 @@ void telemetry_task_dispatch(slate_t *slate)
     uint16_t panel_B_current = mppt_get_current(&panel_B_mppt);
     uint16_t panel_B_battery_voltage = mppt_get_battery_voltage(&panel_B_mppt);
     uint16_t panel_B_battery_current = mppt_get_battery_current(&panel_B_mppt);
+#else
+    // MPPT boards are disconnected, so report zeros rather than stale values.
+    // The slate/beacon fields are kept so the downlink layout is unchanged.
+    uint16_t panel_A_voltage = 0;
+    uint16_t panel_A_current = 0;
+    uint16_t panel_B_voltage = 0;
+    uint16_t panel_B_current = 0;
+#endif
 
     bool solar_charge = is_fixed_solar_charging();
     bool solar_fault = is_fixed_solar_faulty();
