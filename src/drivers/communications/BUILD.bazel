@@ -1,37 +1,33 @@
 package(default_visibility = ["//visibility:public"])
 
-# Real ADCS driver (for embedded targets)
+# Communications for uart and cobs package stuffing
 cc_library(
-    name = "adcs",
-    srcs = ["adcs_driver.c"],
-    hdrs = ["adcs_driver.h"],
+    name = "communications",
+    srcs = ["cobs.c", "protocol.c", "uart_communications.c"],
+    hdrs = ["cobs.h", "protocol.h", "uart_communications.h"],
     includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger",
         "//src/packet:packet",
         "//src/slate",
-        "//src/drivers/communications",
+        "//src/utils",
         "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
-        "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
         "@pico-sdk//src/rp2_common/hardware_uart:hardware_uart",
     ],
     target_compatible_with = ["//platforms:arm_cortex_m33"],
 )
 
-# Mock ADCS driver (for host tests)
-# Stubs in driver_stubs.c
+# Mock burn wire driver (for host tests)
 cc_library(
-    name = "adcs_mock",
-    srcs = ["adcs_driver_mock.c"],
-    hdrs = ["adcs_driver.h"],
+    name = "communications_mock",
+    srcs = ["cobs.c", "protocol.c", "uart_comms_mock.c"],
+    hdrs = ["cobs.h", "protocol.h", "uart_communications.h"],
     includes = ["."],
     deps = [
         "//src/common",
         "//src/drivers/logger:logger_mock",
-        "//src/drivers/communications:communications_mock",
-        "//src/packet",
-        "//src/packet:adcs_packet",
+        "//src/error:error_mock",
         "//src/slate",
         "//src/test_mocks",
     ],

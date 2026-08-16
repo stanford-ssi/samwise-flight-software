@@ -508,7 +508,7 @@ def table(Result, results, diff_results=None, *,
                             for w, x in zip(widths[1:], line[1:-1])),
                         line[-1]),
                         end='')
-                print() 
+                print()
 
                 # recurse?
                 if name in table and depth_ > 1:

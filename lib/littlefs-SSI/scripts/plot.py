@@ -787,7 +787,7 @@ class Grid:
                 self.yweights = new_yweights
                 self.map = other_map | {(x+len(other.xweights), y): s
                     for (x, y), s in self_map.items()}
-                    
+
 
     def scale(self, width, height):
         self.xweights = [s*width for s in self.xweights]
@@ -810,7 +810,7 @@ class Grid:
 
         grid.scale(width, height)
         return grid
-    
+
 
 def main(csv_paths, *,
         by=None,

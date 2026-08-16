@@ -79,6 +79,47 @@ seq:
   - id: adcs_q3
     type: f4
 
+  - id: adcs_mjd
+    type: f4
+
+  - id: adcs_utc_time
+    type: f4
+
+  - id: adcs_voltage
+    type: f4
+
+  - id: adcs_current
+    type: f4
+
+  # Body-frame sensor measurements (for independent TRIAD attitude validation)
+  - id: adcs_sun_body_x
+    type: f4
+
+  - id: adcs_sun_body_y
+    type: f4
+
+  - id: adcs_sun_body_z
+    type: f4
+
+  - id: adcs_mag_body_x
+    type: f4
+
+  - id: adcs_mag_body_y
+    type: f4
+
+  - id: adcs_mag_body_z
+    type: f4
+
+  # Satellite geodetic position
+  - id: adcs_lon
+    type: f4
+
+  - id: adcs_lat
+    type: f4
+
+  - id: adcs_alt
+    type: f4
+
   - id: adcs_state
     type: s1
 

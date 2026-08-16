@@ -33,6 +33,8 @@ PAYLOAD_TURN_ON = 2  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_ON
 PAYLOAD_TURN_OFF = 3  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_OFF
 MANUAL_STATE_OVERRIDE = 4  # src/tasks/command/command_parser.h:CMD_MANUAL_STATE_OVERRIDE
 PAYLOAD_SHUTDOWN = 5  # src/tasks/command/command_parser.h:CMD_PAYLOAD_SHUTDOWN
+ADCS_EXEC = 6
+ADCS_PACKET = 7
 
 # Packet filtering configuration
 # These filters help reject noisy packets not from the satellite
