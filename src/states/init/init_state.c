@@ -11,8 +11,6 @@ state_id_t init_get_next_state(slate_t *slate)
     return STATE_RUNNING;
 #else
     // Check if RBF pin is detected
-    // TODO: Uncomment for updated model
-    return STATE_RUNNING;
     if (is_rbf_pin_detected())
     {
         // If RBF pin is detected, block and stay in init state
