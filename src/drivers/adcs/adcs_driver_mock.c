@@ -40,6 +40,7 @@ bool adcs_driver_is_alive()
 uint32_t receive_msg(msg_t *msg, uint8_t *rx_buf)
 {
     LOG_INFO("ADCS MOCK");
+    return 0;
 }
 
 void send_msg(msg_t *msg, uint32_t len)

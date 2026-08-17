@@ -121,6 +121,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             LOG_INFO("RECEIVED ADCS EXEC COMMAND");
             LOG_INFO("//////////////////////////");
             send_command(command_payload[0]);
+            break;
         }
 
         default:

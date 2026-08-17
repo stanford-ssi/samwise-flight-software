@@ -55,7 +55,7 @@ void protocol_message_pong(msg_t *msg)
     msg->crc8 = 0;
 }
 
-void protocol_message_command(msg_t *msg, uint8_t command)
+void protocol_message_command(msg_t *msg, const uint8_t *command)
 {
     msg->src = 1;
     msg->dst = 0;
@@ -63,13 +63,13 @@ void protocol_message_command(msg_t *msg, uint8_t command)
     msg->flags = 0;
     msg->type = MSG_COMMAND;
     msg->len = 1;
-    msg->payload = (uint8_t *)command;
+    msg->payload = command;
     msg->crc8 = 0;
 }
 
-void protocol_message_string(msg_t *msg, uint8_t *s)
+void protocol_message_string(msg_t *msg, const uint8_t *s)
 {
-    uint8_t len = strlen((char *)s);
+    uint8_t len = strlen((const char *)s);
     msg->src = 1;
     msg->dst = 0;
     msg->seq = 0;
@@ -80,7 +80,7 @@ void protocol_message_string(msg_t *msg, uint8_t *s)
     msg->crc8 = 0;
 }
 
-void protocol_message_adcs(msg_t *msg, adcs_packet_t *adcs)
+void protocol_message_adcs(msg_t *msg, const adcs_packet_t *adcs)
 {
     uint8_t len = sizeof(adcs_packet_t);
     msg->src = 1;
@@ -89,7 +89,7 @@ void protocol_message_adcs(msg_t *msg, adcs_packet_t *adcs)
     msg->flags = 0;
     msg->type = MSG_ADCS_PACKET;
     msg->len = len;
-    msg->payload = (uint8_t *)adcs;
+    msg->payload = (const uint8_t *)adcs;
     msg->crc8 = 0;
 }
 

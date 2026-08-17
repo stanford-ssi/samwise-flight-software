@@ -1217,7 +1217,8 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
         return -1;
     }
 
-    TEST_ASSERT(written == LARGE_FILE_SIZE, "Should write entire buffer");
+    TEST_ASSERT(written == (lfs_ssize_t)LARGE_FILE_SIZE,
+                "Should write entire buffer");
 
     // Close file
     err = lfs_file_close(filesys_get_lfs(), &lfs_file);
@@ -1257,7 +1258,8 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
         return -1;
     }
 
-    TEST_ASSERT(read_bytes == LARGE_FILE_SIZE, "Should read entire file");
+    TEST_ASSERT(read_bytes == (lfs_ssize_t)LARGE_FILE_SIZE,
+                "Should read entire file");
 
     err = lfs_file_close(filesys_get_lfs(), &lfs_file);
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");

@@ -228,6 +228,6 @@ void send_command(uint8_t command)
 {
     LOG_INFO("[TELEMETRY] Sending command [%d]", command);
     msg_t msg;
-    protocol_message_command(&msg, command);
+    protocol_message_command(&msg, &command);
     send_msg(&msg, 8);
 };

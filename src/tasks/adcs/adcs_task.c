@@ -74,7 +74,8 @@ void adcs_task_dispatch(slate_t *slate)
                 ;
                 LOG_INFO("[ADCS] Attitude packet received");
                 slate->is_adcs_on = true;
-                slate->adcs_telemetry = *(adcs_packet_t *)received.payload;
+                slate->adcs_telemetry =
+                    *(const adcs_packet_t *)received.payload;
                 adcs_print_telemetry(&slate->adcs_telemetry);
         } // end switch
     }
