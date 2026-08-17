@@ -19,11 +19,9 @@ void watchdog_task_dispatch(slate_t *slate)
     neopixel_set_color_rgb(0, 0, 0);
 }
 
-sched_task_t watchdog_task = {
-    .name = "watchdog",
-    .dispatch_period_ms =
-        100, // Ethan said to feed watchdog every 20ish seconds
-    .task_init = &watchdog_task_init,
-    .task_dispatch = &watchdog_task_dispatch,
+sched_task_t watchdog_task = {.name = "watchdog",
+                              .dispatch_period_ms = 100,
+                              .task_init = &watchdog_task_init,
+                              .task_dispatch = &watchdog_task_dispatch,
 
-    .next_dispatch = 0};
+                              .next_dispatch = 0};
