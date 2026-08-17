@@ -9,6 +9,7 @@
  */
 
 #include "command_parser.h"
+#include "adcs_driver.h"
 #include "logger.h"
 #include "macros.h"
 #include "payload_uart.h"
@@ -113,6 +114,13 @@ void dispatch_command(slate_t *slate, packet_t *packet)
                           command_payload);
             }
             break;
+        }
+        case ADCS_EXEC:
+        {
+            LOG_INFO("//////////////////////////");
+            LOG_INFO("RECEIVED ADCS EXEC COMMAND");
+            LOG_INFO("//////////////////////////");
+            send_command(command_payload[0]);
         }
 
         default:

@@ -173,6 +173,7 @@ def show_command_menu():
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
     print("6. Send Payload Shutdown")
+    print("7. Send ADCS Command")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -220,6 +221,11 @@ def interactive_command_loop():
                 elif cmd == "6":
                     print("Sending payload shutdown...")
                     radio.send_payload_shutdown()
+                elif cmd == "7":
+                    adcs_command = int(input("Enter adcs command: "))
+                    adcs_command_byte = bytes([adcs_command])
+                    print("Sending adcs command byte")
+                    radio.send_adcs_exec(adcs_command_byte)
                 elif cmd == "":
                     # Pressed enter, show status and prompt
                     print(

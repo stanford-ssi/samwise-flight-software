@@ -151,7 +151,7 @@ def main(command, *,
                 ring = LinesIO(lines)
 
             try:
-                # run the command under a pseudoterminal 
+                # run the command under a pseudoterminal
                 mpty, spty = pty.openpty()
 
                 # forward terminal size

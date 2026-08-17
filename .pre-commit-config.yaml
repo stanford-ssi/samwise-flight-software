@@ -1,6 +1,6 @@
 # Pre-commit hooks configuration
 # See https://pre-commit.com for more information
-
+#
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

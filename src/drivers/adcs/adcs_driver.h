@@ -7,7 +7,8 @@
 #pragma once
 
 #include "adcs_packet.h"
-#include "slate.h"
+
+#include "protocol.h"
 
 typedef enum
 {
@@ -22,21 +23,21 @@ typedef enum
  * @param slate Pointer to slate structure
  * @return ADCS_SUCCESS on success, error code otherwise
  */
-adcs_result_t adcs_driver_init(slate_t *slate);
+adcs_result_t adcs_driver_init();
 
 /**
  * Power on the ADCS board
  * @param slate Pointer to slate structure
  * @return ADCS_SUCCESS on success, error code otherwise
  */
-adcs_result_t adcs_driver_power_on(slate_t *slate);
+adcs_result_t adcs_driver_power_on();
 
 /**
  * Power off the ADCS board
  * @param slate Pointer to slate structure
  * @return ADCS_SUCCESS on success, error code otherwise
  */
-adcs_result_t adcs_driver_power_off(slate_t *slate);
+adcs_result_t adcs_driver_power_off();
 
 /**
  * Get the latest ADCS telemetry packet
@@ -44,11 +45,27 @@ adcs_result_t adcs_driver_power_off(slate_t *slate);
  * @param packet Pointer to store the telemetry packet
  * @return ADCS_SUCCESS if telemetry retrieved successfully
  */
-adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet);
+adcs_result_t adcs_driver_get_telemetry(adcs_packet_t *packet);
+
+/*
+ * LOG DEBUG FOR TELEMETRY
+ */
+void adcs_print_telemetry(adcs_packet_t *packet);
 
 /**
  * Check if ADCS hardware is responding
  * @param slate Pointer to slate structure
  * @return true if ADCS is alive and responding
  */
-bool adcs_driver_is_alive(slate_t *slate);
+bool adcs_driver_is_alive();
+
+// send msg
+uint32_t receive_msg(msg_t *msg, uint8_t *rx_buf);
+
+void send_msg(msg_t *msg, uint32_t len);
+
+void send_ping();
+
+void send_pong();
+
+void send_command(uint8_t command);

@@ -6,6 +6,9 @@
 // Mock GPIO functions
 typedef unsigned int uint;
 
+#define GPIO_OUT (1)
+#define GPIO_IN (0)
+
 enum gpio_function
 {
     GPIO_FUNC_XIP = 0,

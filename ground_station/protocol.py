@@ -7,7 +7,7 @@ except ImportError:
     pass
 
 import config
-from models import ADCSData, ADCSQuaternion, BeaconData, BeaconStats
+from models import ADCSData, ADCSQuaternion, ADCSVector3, BeaconData, BeaconStats
 from models import Packet as ModelPacket
 from state import state_manager
 
@@ -21,6 +21,11 @@ if _IS_CIRCUITPYTHON:
 else:
     import hmac
     from hashlib import sha256
+
+
+# Layout of adcs_packet_t (src/packet/adcs_packet.h). Keep in sync!
+ADCS_PACKET_FORMAT = "<18fBL"
+ADCS_PACKET_SIZE = struct.calcsize(ADCS_PACKET_FORMAT)  # 77 bytes
 
 
 def create_cmd_payload(cmd_id, cmd_payload=""):
@@ -142,13 +147,13 @@ class BeaconPacket(Packet):
 
             # 2. Decode ADCS if present (appended after stats)
             adcs_start = stats_start + 53
-            if len(payload) >= adcs_start + 25:
+            if len(payload) >= adcs_start + ADCS_PACKET_SIZE:
                 beacon_data.adcs = AdcsTelemetryPacket.decode_payload(
-                    payload[adcs_start : adcs_start + 25]
+                    payload[adcs_start : adcs_start + ADCS_PACKET_SIZE]
                 )
 
             # 3. Decode Callsign if present
-            callsign_start = adcs_start + 25
+            callsign_start = adcs_start + ADCS_PACKET_SIZE
             if len(payload) >= callsign_start + 6:
                 beacon_data.callsign = (
                     payload[callsign_start : callsign_start + 6]
@@ -164,17 +169,26 @@ class AdcsTelemetryPacket(Packet):
 
     @staticmethod
     def decode_payload(data: bytes) -> Optional[ADCSData]:
-        if len(data) < 25:
+        if len(data) < ADCS_PACKET_SIZE:
             return None
         try:
-            unpacked = struct.unpack("<fffffBL", data[:25])
+            unpacked = struct.unpack(ADCS_PACKET_FORMAT, data[:ADCS_PACKET_SIZE])
             return ADCSData(
                 angular_velocity=unpacked[0],
                 quaternion=ADCSQuaternion(
                     q0=unpacked[1], q1=unpacked[2], q2=unpacked[3], q3=unpacked[4]
                 ),
-                state=unpacked[5],
-                boot_count=unpacked[6],
+                mjd=unpacked[5],
+                UTC_time=unpacked[6],
+                voltage=unpacked[7],
+                current=unpacked[8],
+                sun_body=ADCSVector3(x=unpacked[9], y=unpacked[10], z=unpacked[11]),
+                mag_body=ADCSVector3(x=unpacked[12], y=unpacked[13], z=unpacked[14]),
+                lon=unpacked[15],
+                lat=unpacked[16],
+                alt=unpacked[17],
+                state=unpacked[18],
+                boot_count=unpacked[19],
             )
         except (struct.error, ValueError, TypeError):
             return None

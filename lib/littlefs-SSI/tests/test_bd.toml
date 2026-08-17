@@ -2,7 +2,7 @@
 # sure the underlying block device is working.
 #
 # Note we use 251, a prime, in places to avoid aliasing powers of 2.
-# 
+#
 
 [cases.test_bd_one_block]
 defines.READ = ['READ_SIZE', 'BLOCK_SIZE']
@@ -242,7 +242,3 @@ code = '''
         block = nblock;
     }
 '''
-
-
-
-
