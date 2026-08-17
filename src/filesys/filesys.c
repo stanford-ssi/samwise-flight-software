@@ -172,9 +172,9 @@ filesys_error_t filesys_start_file_write(slate_t *slate,
         filesys_lfs_cfg.block_size;
 
     *blocks_left_after_write =
-        filesys_lfs_cfg.block_count - fs_size - num_blocks_needed;
+        (lfs_ssize_t)filesys_lfs_cfg.block_count - fs_size - num_blocks_needed;
 
-    if (fs_size + num_blocks_needed > filesys_lfs_cfg.block_count)
+    if (fs_size + num_blocks_needed > (lfs_ssize_t)filesys_lfs_cfg.block_count)
     {
         LOG_ERROR(
             "[filesys] Not enough space in filesystem to start file write. "

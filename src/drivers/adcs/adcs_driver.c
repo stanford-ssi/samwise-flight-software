@@ -53,11 +53,11 @@ void flush_uart()
     }
 }
 
-static uint32_t adcs_driver_read_uart_with_timeout(char *buf,
+static uint32_t adcs_driver_read_uart_with_timeout(uint8_t *buf,
                                                    uint32_t num_bytes,
                                                    uint32_t timeout_us)
 {
-    printf("Attempting to read %u bytes from ADCS UART", num_bytes);
+    printf("Attempting to read %lu bytes from ADCS UART", num_bytes);
     for (uint32_t i = 0; i < num_bytes; i++)
     {
         if (uart_is_readable_within_us(SAMWISE_ADCS_UART, timeout_us))
@@ -140,16 +140,16 @@ adcs_result_t adcs_driver_get_telemetry(slate_t *slate, adcs_packet_t *packet)
     uart_putc_raw(SAMWISE_ADCS_UART, ADCS_SEND_TELEM);
 
     uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
-        (char *)packet, sizeof(adcs_packet_t), ADCS_BYTE_TIMEOUT_US);
+        (uint8_t *)packet, sizeof(adcs_packet_t), ADCS_BYTE_TIMEOUT_US);
 
     slate->is_adcs_telem_valid = (num_bytes_read == sizeof(adcs_packet_t));
 
     LOG_INFO("[ADCS] state: %02x", packet->state);
-    LOG_INFO("[ADCS] boot_count: %u", packet->boot_count);
+    LOG_INFO("[ADCS] boot_count: %lu", packet->boot_count);
 
-    for (int i = 0; i < sizeof(adcs_packet_t); ++i)
+    for (size_t i = 0; i < sizeof(adcs_packet_t); ++i)
     {
-        LOG_INFO("[ADCS] packet[%d]: %02x", i, ((char *)packet)[i]);
+        LOG_INFO("[ADCS] packet[%zu]: %02x", i, ((uint8_t *)packet)[i]);
     }
 
     if (!slate->is_adcs_telem_valid)
@@ -184,11 +184,11 @@ bool adcs_driver_is_alive(slate_t *slate)
     LOG_INFO("[ADCS] Sending health check command: %c\n", ADCS_HEALTH_CHECK);
     uart_putc_raw(SAMWISE_ADCS_UART, ADCS_HEALTH_CHECK);
 
-    char c;
-    uint32_t num_bytes_read = adcs_driver_read_uart_with_timeout(
-        &c, sizeof(char), ADCS_BYTE_TIMEOUT_US);
+    uint8_t c;
+    uint32_t num_bytes_read =
+        adcs_driver_read_uart_with_timeout(&c, sizeof(c), ADCS_BYTE_TIMEOUT_US);
 
-    LOG_INFO("[ADCS] Received %u bytes: %02x (%c) %s\n", num_bytes_read, c, c,
+    LOG_INFO("[ADCS] Received %lu bytes: %02x (%c) %s\n", num_bytes_read, c, c,
              c == ADCS_HEALTH_CHECK_SUCCESS ? "HEALTHY" : "FAILED");
 
     // Return true if we received a byte, and it is the expected value

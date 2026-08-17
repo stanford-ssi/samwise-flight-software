@@ -1132,7 +1132,8 @@ int filesys_test_second_file_out_of_space_should_fail(slate_t *slate)
     lfs_ssize_t read_bytes =
         lfs_file_read(filesys_get_lfs(), &file, read_buffer, file1_size);
     LOG_DEBUG("Read back %d bytes from first file\n", read_bytes);
-    TEST_ASSERT(read_bytes == file1_size, "Should read back full first file");
+    TEST_ASSERT(read_bytes == (lfs_ssize_t)file1_size,
+                "Should read back full first file");
 
     int mismatch_count = 0;
     for (FILESYS_BUFFERED_FILE_LEN_T i = 0; i < file1_size; i++)
@@ -1188,7 +1189,7 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     TEST_ASSERT(large_buffer != NULL, "Should allocate large buffer");
 
     // Fill with test pattern
-    for (int i = 0; i < LARGE_FILE_SIZE; i++)
+    for (size_t i = 0; i < LARGE_FILE_SIZE; i++)
         large_buffer[i] = i % 256;
 
     // Open file for writing using LFS directly
@@ -1262,13 +1263,13 @@ int filesys_test_raw_lfs_write_large_file_success(slate_t *slate)
     TEST_ASSERT(err == 0, "lfs_file_close should succeed after read");
 
     int mismatch_count = 0;
-    for (int i = 0; i < LARGE_FILE_SIZE; i++)
+    for (size_t i = 0; i < LARGE_FILE_SIZE; i++)
     {
         if (read_buffer[i] != (uint8_t)(i % 256))
         {
             if (mismatch_count < 10)
             {
-                LOG_ERROR("Data mismatch at byte %d: expected %u, got %u\n", i,
+                LOG_ERROR("Data mismatch at byte %zu: expected %u, got %u\n", i,
                           (uint8_t)(i % 256), read_buffer[i]);
             }
             mismatch_count++;

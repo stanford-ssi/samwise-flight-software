@@ -24,7 +24,7 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     slate->number_commands_processed++;
 
     Command command_id = (Command)packet->data[0];
-    char *command_payload = packet->data + COMMAND_MNEMONIC_SIZE;
+    char *command_payload = (char *)packet->data + COMMAND_MNEMONIC_SIZE;
     uint8_t command_payload_data_size =
         PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
@@ -51,9 +51,9 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             uint8_t data[PACKET_DATA_SIZE];
 
             // Package interger value into a string
-            int len =
-                snprintf(data, sizeof(data), "Number commands executed: %d",
-                         slate->number_commands_processed);
+            int len = snprintf((char *)data, sizeof(data),
+                               "Number commands executed: %d",
+                               slate->number_commands_processed);
 
             // Create the packet
             packet_t pkt;

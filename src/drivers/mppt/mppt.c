@@ -110,7 +110,6 @@ void mppt_init(mppt_t *device)
     {
         uint8_t write_buf[3];
         uint8_t read_cmd;
-        uint8_t read_buf_word[2];
         uint16_t read_value_check;
 
         // LT8491 writes: RegAddr, LSB, MSB (if it's a single transaction for
@@ -133,9 +132,8 @@ void mppt_init(mppt_t *device)
         read_value_check =
             mppt_send_instruction_and_read_2_byte(device, read_cmd);
 
-        LOG_INFO("%s : Set 0x%04X, Read 0x%04X (LSB:0x%02X MSB:0x%02X)\n",
-                 CFG[i].name, CFG[i].value, read_value_check, read_buf_word[0],
-                 read_buf_word[1]);
+        LOG_INFO("%s : Set 0x%04X, Read 0x%04X\n", CFG[i].name, CFG[i].value,
+                 read_value_check);
     }
     LOG_INFO("LT8491 configuration complete.\n");
 
