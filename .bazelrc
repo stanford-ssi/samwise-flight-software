@@ -159,23 +159,26 @@ build:size --copt=-Os
 build:size --copt=-DNDEBUG
 
 # ============================================================================
-# Warning Audit
+# Warnings — on by default, fatal for code we own
 # ============================================================================
 
-# Layers onto any profile:
-#   bazel build :samwise --config=pico --config=warnings
-#
-# Filtering is a DENY-list, so a new top-level source directory is covered
-# automatically. '^//' already drops every external repo (their labels start
-# with '@'); the negative lookahead drops vendored deps inside the main repo.
-# To silence another directory, add it: ^//(?!lib/|third_party/)
-build:warnings --copt=-Wall
-build:warnings --copt=-Wextra
-build:warnings --output_filter=^//(?!lib/)
+build --per_file_copt=^src/@-Wall,-Wextra,-Werror
 
-# Compile external headers as -isystem. Without this, warnings raised *inside*
-# pico-sdk headers are attributed to our targets and slip past the filter above.
-build:warnings --features=external_include_paths
+# Compile external headers as -isystem, so warnings raised *inside* pico-sdk
+# headers don't fail our compiles — the translation unit is ours, so -Werror
+# would otherwise apply to them.
+build --features=external_include_paths
+
+# Disable warnings for unused things in our codebase, which don't necessarily
+# indicate a problem.
+build --per_file_copt=^src/@-Wno-error=unused-parameter       # 112 (mostly mocks)
+build --per_file_copt=^src/@-Wno-error=unused-variable        # 5
+build --per_file_copt=^src/@-Wno-error=unused-const-variable  # 5
+build --per_file_copt=^src/@-Wno-error=unused-function        # 1
+
+# Drop the demotions above, so all warnings are fatal
+#   bazelisk build :samwise --config=picubed-debug --config=strict
+build:strict --per_file_copt=^src/@-Werror
 
 # ============================================================================
 # User-specific overrides (gitignored)
