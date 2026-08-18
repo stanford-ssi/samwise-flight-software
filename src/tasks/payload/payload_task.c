@@ -8,6 +8,7 @@
 #include "neopixel.h"
 #include "safe_sleep.h"
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_RECEIVED_LEN 1024
 #define SEQUENCE_NUMBER_DUMMY 999
@@ -32,13 +33,14 @@ void payload_task_init(slate_t *slate)
     // NOTE: Turning on payload is handled by command_parser
 }
 
-bool send_payload_exec(slate_t *slate, char msg[], uint16_t seq_num)
+bool send_payload_exec(slate_t *slate, char msg[], size_t msg_len,
+                       uint16_t seq_num)
 {
     LOG_INFO("Executing Payload Command: %s", msg);
     // First attempt to execute the command but do not throw it away
     // yet.
-    payload_write_error_code exec_successful =
-        payload_uart_write_packet(slate, msg, sizeof(msg), seq_num);
+    payload_write_error_code exec_successful = payload_uart_write_packet(
+        slate, (const uint8_t *)msg, msg_len, seq_num);
 
     switch (exec_successful)
     {
@@ -53,21 +55,22 @@ bool send_payload_exec(slate_t *slate, char msg[], uint16_t seq_num)
             return true;
         default:
             LOG_DEBUG("Unknown error code: %d", exec_successful);
+            return false;
     }
 }
 
 bool ping_command(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
-    bool write_success =
-        send_payload_exec(slate, packet, SEQUENCE_NUMBER_DUMMY);
+    bool write_success = send_payload_exec(slate, packet, sizeof(packet) - 1,
+                                           SEQUENCE_NUMBER_DUMMY);
     if (!write_success)
     {
         LOG_INFO("Writing packet to payload was not successful!");
         return false;
     }
 
-    char received[MAX_RECEIVED_LEN];
+    uint8_t received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
     if (received_len == 0)
     {
@@ -125,8 +128,12 @@ bool try_execute_payload_command(slate_t *slate)
         PAYLOAD_COMMAND_DATA payload_command;
         if (queue_try_peek(&slate->payload_command_data, &payload_command))
         {
+            // serialized_command is a NUL-terminated string written by
+            // strcpy_trunc, so the wire length is its strlen, not the
+            // capacity of the fixed-size field.
             bool writeSuccess =
                 send_payload_exec(slate, payload_command.serialized_command,
+                                  strlen(payload_command.serialized_command),
                                   payload_command.seq_num);
             // removeFromQueue is true if we succesfully sent the packet to the
             // payload
@@ -167,12 +174,12 @@ bool try_execute_payload_command(slate_t *slate)
 void beacon_down_command_test(slate_t *slate)
 {
     char packet[] = "[\"send_file_2400\", [\"home/pi/code/main.py\"], {}]";
-    int len = sizeof(packet) - 1;
-    payload_uart_write_packet(slate, packet, len, 999);
+    uint16_t len = sizeof(packet) - 1;
+    payload_uart_write_packet(slate, (const uint8_t *)packet, len, 999);
 
     safe_sleep_ms(1000);
 
-    char received[MAX_RECEIVED_LEN];
+    uint8_t received[MAX_RECEIVED_LEN];
     uint16_t received_len = payload_uart_read_packet(slate, received);
 
     if (received_len == 0)
@@ -247,10 +254,10 @@ void payload_uart_write_off_test(slate_t *slate)
 {
     // NOTE: Mostly visual, run without RPi harness connected onto RPi
     char packet[] = "[\"ping\", [], {}]";
-    int len = sizeof(packet) - 1;
+    uint16_t len = sizeof(packet) - 1;
 
     payload_write_error_code res =
-        payload_uart_write_packet(slate, packet, len, 999);
+        payload_uart_write_packet(slate, (const uint8_t *)packet, len, 999);
 
     LOG_INFO("This should print, means it exited properly...");
 
@@ -267,10 +274,10 @@ void payload_uart_write_off_test(slate_t *slate)
 void payload_uart_write_on_test(slate_t *slate)
 {
     char packet[] = "[\"ping\", [], {}]";
-    int len = sizeof(packet) - 1;
+    uint16_t len = sizeof(packet) - 1;
 
     payload_write_error_code res =
-        payload_uart_write_packet(slate, packet, len, 999);
+        payload_uart_write_packet(slate, (const uint8_t *)packet, len, 999);
 
     LOG_INFO("This should print, means it exited properly...");
 

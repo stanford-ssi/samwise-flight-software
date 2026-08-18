@@ -22,7 +22,7 @@ void test_encode_packet_basic()
                   .hmac = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x11, 0x22, 0x33}};
     uint8_t buf[PACKET_SIZE] = {0};
 
-    printf("Data Length: %u\n", sizeof(p.data));
+    printf("Data Length: %zu\n", sizeof(p.data));
 
     // Act.
     size_t encoded_size = encode_packet(&p, buf, sizeof(buf), true);

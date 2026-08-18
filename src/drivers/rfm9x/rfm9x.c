@@ -827,16 +827,16 @@ void rfm9x_set_tx_irq(rfm9x_t *r, rfm9x_rx_irq irq)
 void rfm9x_print_parameters(rfm9x_t *r)
 {
     printf("RFM9X Radio Parameters:\n");
-    printf("  Frequency: %d Hz\n", rfm9x_get_frequency(r));
+    printf("  Frequency: %lu Hz\n", rfm9x_get_frequency(r));
     printf("  Spreading Factor: %d\n", rfm9x_get_spreading_factor(r));
-    printf("  Bandwidth: %d Hz\n", rfm9x_get_bandwidth(r));
+    printf("  Bandwidth: %lu Hz\n", rfm9x_get_bandwidth(r));
     printf("  Coding Rate: %d\n", rfm9x_get_coding_rate(r));
     printf("  Preamble Length: %d\n", rfm9x_get_preamble_length(r));
     printf("  TX Power: %d dBm\n", rfm9x_get_tx_power(r));
     printf("  LNA Boost: %d\n", rfm9x_get_lna_boost(r));
     printf("  CRC Enabled: %s\n", rfm9x_is_crc_enabled(r) ? "Yes" : "No");
     printf("  PA Ramp: %d\n", rfm9x_get_pa_ramp(r));
-    printf("  Version: %d\n", rfm9x_version(r));
+    printf("  Version: %lu\n", rfm9x_version(r));
     printf("  Mode: %s\n", rfm9x_get_lora(r) ? "LoRa" : "FSK");
 }
 

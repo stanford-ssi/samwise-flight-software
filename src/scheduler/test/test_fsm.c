@@ -367,7 +367,7 @@ int main(void)
 {
     LOG_DEBUG("=== FSM Integration Test (profile: %s) ===", get_profile_name());
 
-    char *profile_name = get_profile_name();
+    const char *profile_name = get_profile_name();
     char basename[8 + strlen(profile_name) +
                   6]; // "fsm_viz_" + profile_name + ".json\0"
     snprintf(basename, sizeof(basename), "fsm_viz_%s.json", profile_name);

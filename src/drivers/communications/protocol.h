@@ -27,7 +27,9 @@ typedef struct protocol_msg
     uint8_t flags;
     uint8_t type;
     uint8_t len;
-    uint8_t *payload;
+    // Borrowed, read-only: points at caller-owned memory that must outlive
+    // every use of this msg_t (including protocol_message_encode).
+    const uint8_t *payload;
     uint8_t crc8;
 } msg_t;
 
@@ -38,11 +40,11 @@ void protocol_message_ping(msg_t *msg);
 
 void protocol_message_pong(msg_t *msg);
 
-void protocol_message_command(msg_t *msg, uint8_t command);
+void protocol_message_command(msg_t *msg, const uint8_t *command);
 
-void protocol_message_string(msg_t *msg, uint8_t *s);
+void protocol_message_string(msg_t *msg, const uint8_t *s);
 
-void protocol_message_adcs(msg_t *msg, adcs_packet_t *adcs);
+void protocol_message_adcs(msg_t *msg, const adcs_packet_t *adcs);
 
 /*
  * Takes a message and formats it into a buffer
