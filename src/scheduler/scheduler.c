@@ -128,7 +128,7 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    state_id_t next_state_id;
+    state_id_t next_state_id = current_state_info->get_next_state(slate);
     if (slate->manual_override_state_id != STATE_NONE)
     {
         // Never allow manual override into shutdown
@@ -145,10 +145,6 @@ void sched_dispatch(slate_t *slate)
             next_state_id = slate->manual_override_state_id;
             slate->manual_override_state_id = STATE_NONE;
         }
-    }
-    else
-    {
-        next_state_id = current_state_info->get_next_state(slate);
     }
 
     if (next_state_id != slate->current_state_id)
