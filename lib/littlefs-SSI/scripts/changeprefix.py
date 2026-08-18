@@ -99,7 +99,7 @@ def main(from_prefix, to_prefix, paths=[], *,
         else:
             print('no paths?', file=sys.stderr)
             sys.exit(1)
-        
+
     for from_path in paths:
         # rename filename?
         if output:

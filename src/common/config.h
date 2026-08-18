@@ -7,6 +7,16 @@
 #define MIN_WATCHDOG_INTERVAL_MS 200
 
 /**
+ * MPPT (LT8491) configuration
+ *
+ * The LT8491 MPPT boards are disconnected in hardware, so all MPPT I2C traffic
+ * is compiled out. With nothing on the bus to ACK, every transaction blocks for
+ * the full I2C_TIMEOUT_MS, which costs ~2s per telemetry dispatch against a
+ * 1000ms dispatch period. Set to 1 to re-enable if the boards come back.
+ */
+#define SAMWISE_MPPT_ENABLED 0
+
+/**
  * Command task configuration
  */
 #define COMMAND_MNEMONIC_SIZE 1 // number of bytes used to identify command

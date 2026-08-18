@@ -31,9 +31,11 @@ NO_OP = 0  # src/tasks/command/command_parser.h:CMD_NO_OP
 PAYLOAD_EXEC = 1  # src/tasks/command/command_parser.h:CMD_PAYLOAD_EXEC
 PAYLOAD_TURN_ON = 2  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_ON
 PAYLOAD_TURN_OFF = 3  # src/tasks/command/command_parser.h:CMD_PAYLOAD_TURN_OFF
-MANUAL_STATE_OVERRIDE = 4  # src/tasks/command/command_parser.h:CMD_MANUAL_STATE_OVERRIDE
-COMMS_SHUTDOWN = 5  # src/tasks/command/command_parser.h:SHUTDOWN
-REACTIVATE = 6  # src/tasks/command/command_parser.h:REACTIVATE
+MANUAL_STATE_OVERRIDE = 4  # src/tasks/command/command_parser.h:MANUAL_STATE_OVERRIDE
+ADCS_EXEC = 5  # src/tasks/command/command_parser.h:ADCS_EXEC
+ADCS_PACKET = 6  # src/tasks/command/command_parser.h:ADCS_PACKET
+COMMS_SHUTDOWN = 7  # src/tasks/command/command_parser.h:SHUTDOWN
+REACTIVATE = 8  # src/tasks/command/command_parser.h:REACTIVATE
 # Reactivation requires 3 consecutive REACTIVATE commands (ground authorization)
 # to leave the shutdown / communication-blackout state.
 # TODO: add PAYLOAD_SHUTDOWN once flight software supports a separate payload shutdown

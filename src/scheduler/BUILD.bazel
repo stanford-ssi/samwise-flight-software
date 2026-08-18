@@ -114,6 +114,8 @@ load("//bzl:defs.bzl", "samwise_test")
 
 # Common deps for all FSM tests
 _FSM_TEST_DEPS = [
+    "//src/drivers/device_status:device_status_mock",
+    "//src/drivers/flash:flash_mock",
     "//src/states/init:init_state",
     "//src/states/running:running_state",
     "//src/states/bringup:bringup_state",

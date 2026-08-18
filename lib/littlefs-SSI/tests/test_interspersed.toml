@@ -1,7 +1,7 @@
 
 [cases.test_interspersed_files]
 defines.SIZE = [10, 100]
-defines.FILES = [4, 10, 26] 
+defines.FILES = [4, 10, 26]
 code = '''
     lfs_t lfs;
     lfs_file_t files[FILES];
@@ -62,7 +62,7 @@ code = '''
     for (int j = 0; j < FILES; j++) {
         lfs_file_close(&lfs, &files[j]);
     }
-    
+
     lfs_unmount(&lfs) => 0;
 '''
 
@@ -123,7 +123,7 @@ code = '''
         assert(buffer[0] == '~');
     }
     lfs_file_close(&lfs, &file);
-    
+
     lfs_unmount(&lfs) => 0;
 '''
 
@@ -187,13 +187,13 @@ code = '''
     }
     lfs_file_close(&lfs, &files[0]);
     lfs_file_close(&lfs, &files[1]);
-    
+
     lfs_unmount(&lfs) => 0;
 '''
 
 [cases.test_interspersed_reentrant_files]
 defines.SIZE = [10, 100]
-defines.FILES = [4, 10, 26] 
+defines.FILES = [4, 10, 26]
 reentrant = true
 defines.POWERLOSS_BEHAVIOR = [
     'LFS_EMUBD_POWERLOSS_NOOP',
@@ -269,6 +269,6 @@ code = '''
     for (int j = 0; j < FILES; j++) {
         lfs_file_close(&lfs, &files[j]);
     }
-    
+
     lfs_unmount(&lfs) => 0;
 '''

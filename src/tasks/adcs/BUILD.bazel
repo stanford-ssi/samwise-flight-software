@@ -15,11 +15,13 @@ cc_library(
             "//src/drivers/adcs:adcs_mock",
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:hardware_gpio_mock",
         ],
         "//conditions:default": [
             "//src/drivers/adcs",
             "//src/drivers/neopixel",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/rp2_common/hardware_gpio:hardware_gpio",
         ],
     }),
 )

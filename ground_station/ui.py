@@ -172,7 +172,9 @@ def show_command_menu():
     print("3. Send Payload Turn On")
     print("4. Send Payload Turn Off")
     print("5. Send Manual State Override")
-    print("6. Send Comms Shutdown")
+    print("6. Send ADCS Command")
+    print("7. Send Comms Shutdown")
+    print("8. Send Reactivate")
     print("r. Check for received packets")
     print("q. Quit")
     print("h. Show this help")
@@ -218,12 +220,20 @@ def interactive_command_loop():
                     state_name = str(input("Enter state name: ") or "running_state")
                     radio.send_manual_state_override(state_name)
                 elif cmd == "6":
+                    adcs_command = int(input("Enter adcs command: "))
+                    adcs_command_byte = bytes([adcs_command])
+                    print("Sending adcs command byte")
+                    radio.send_adcs_exec(adcs_command_byte)
+                elif cmd == "7":
                     print("Sending comms shutdown...")
                     radio.send_comms_shutdown()
+                elif cmd == "8":
+                    print("Sending reactivate...")
+                    radio.send_reactivate()
                 elif cmd == "":
                     # Pressed enter, show status and prompt
                     print(
-                        f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-6, q, h): ",
+                        f"\n[BOOT:{state_manager.boot_count} MSG:{state_manager.msg_id}] Command (1-8, q, h): ",
                         end="",
                         flush=True,
                     )

@@ -14,12 +14,14 @@ cc_library(
         "//src/scheduler:state_ids",
     ] + select({
         "//bzl:test_mode": [
+            "//src/drivers/adcs:adcs_mock",
             "//src/drivers/payload_uart:payload_uart_mock",
             "//src/drivers/flash:flash_mock",
             "//src/test_mocks:pico_stdlib_mock",
             "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [
+            "//src/drivers/adcs",
             "//src/drivers/payload_uart",
             "//src/drivers/flash",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
@@ -42,6 +44,7 @@ cc_library(
         "//src/tasks/command:command_parser",
     ] + select({
         "//bzl:test_mode": [
+            "//src/drivers/adcs:adcs_mock",
             "//src/drivers/neopixel:neopixel_mock",
             "//src/test_mocks:pico_stdlib_mock",
             "//src/test_mocks:pico_util_mock",
