@@ -159,6 +159,34 @@ build:size --copt=-Os
 build:size --copt=-DNDEBUG
 
 # ============================================================================
+# Warnings — on by default, fatal for code we own
+# ============================================================================
+
+build --per_file_copt=^src/@-Wall,-Wextra,-Werror
+
+# Compile external headers as -isystem, so warnings raised *inside* pico-sdk
+# headers don't fail our compiles — the translation unit is ours, so -Werror
+# would otherwise apply to them.
+build --features=external_include_paths
+
+# Disable warnings for unused things in our codebase, which don't necessarily
+# indicate a problem.
+build --per_file_copt=^src/@-Wno-error=unused-parameter       # 112 (mostly mocks)
+build --per_file_copt=^src/@-Wno-error=unused-variable        # 5
+build --per_file_copt=^src/@-Wno-error=unused-const-variable  # 5
+build --per_file_copt=^src/@-Wno-error=unused-function        # 1
+
+# Re-promote the demotions above, so every warning is fatal. Use this to check
+# whether a category has reached zero before deleting its line:
+#   bazelisk build :samwise --config=picubed-debug --config=strict
+build:strict --per_file_copt=^src/@-Werror=unused-parameter
+build:strict --per_file_copt=^src/@-Werror=unused-variable
+build:strict --per_file_copt=^src/@-Werror=unused-const-variable
+build:strict --per_file_copt=^src/@-Werror=unused-function
+
+build:audit --per_file_copt=^src/@-Wno-error
+
+# ============================================================================
 # User-specific overrides (gitignored)
 # ============================================================================
 

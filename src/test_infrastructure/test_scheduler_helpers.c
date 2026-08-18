@@ -73,8 +73,11 @@ int viz_log_open_log_dir(const char *basename)
     // available so Bazel preserves the JSON after the test run.
     const char *out_dir = getenv("TEST_UNDECLARED_OUTPUTS_DIR");
 
-    // Replace hyphens with underscores for valid filenames
-    for (char *p = basename; *p; p++)
+    // Replace hyphens with underscores for valid filenames. Done on a copy:
+    // the parameter is const, and callers may pass a string literal.
+    char safe_name[strlen(basename) + 1];
+    strcpy(safe_name, basename);
+    for (char *p = safe_name; *p; p++)
     {
         if (*p == '-')
             *p = '_';
@@ -82,12 +85,12 @@ int viz_log_open_log_dir(const char *basename)
 
     if (out_dir != NULL)
     {
-        char filename[strlen(out_dir) + 1 + strlen(basename) + 1];
-        snprintf(filename, sizeof(filename), "%s/%s", out_dir, basename);
+        char filename[strlen(out_dir) + 1 + strlen(safe_name) + 1];
+        snprintf(filename, sizeof(filename), "%s/%s", out_dir, safe_name);
         return viz_log_open_raw(filename);
     }
 
-    return viz_log_open_raw(basename);
+    return viz_log_open_raw(safe_name);
 }
 
 void viz_log_close(void)

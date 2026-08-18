@@ -196,7 +196,8 @@ void payload_turn_off(slate_t *slate)
     }
 
     char packet[] = "[\"shutdown\",  [], {\"immediate\"}]";
-    payload_uart_write_packet(slate, packet, (sizeof(packet) - 1), 0);
+    payload_uart_write_packet(slate, (const uint8_t *)packet,
+                              (sizeof(packet) - 1), 0);
 
     // NOTE: This does not actually turn off the payload, this just ensures it
     // doesn't turn on again when it is turned off.

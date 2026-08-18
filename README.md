@@ -45,6 +45,56 @@ The following configuration options are available:
 * `picubed-bringup`: picubed executable, for bringing up the board
 (these can be configured in `.bazelrc`)
 
+### Warnings
+
+Warnings are on by default for every profile, and **a warning in our own code
+fails the build**. However, warnings only in our own code will fail, and warnings outside (like in libraries) won't.
+
+We however exempt `unused-parameter`, `unused-variable`, `unused-const-variable`, and
+`unused-function`. They still print, they just don't fail.
+
+If trying to inspect warnings, it's recommended to pass `-k` into bazel/bazelisk so you can see the full stack without immediately crashing.
+
+#### Seeing the whole backlog
+
+`--config=audit` demotes `-Werror` back to plain warnings, so the build
+succeeds and prints everything at once:
+
+```
+bazelisk build :samwise --config=picubed-debug --config=audit
+```
+
+**NEVER use an audit build as the real one to get around fixing warnings!!**
+
+**Warnings only print for compiles that actually run.** A fully cached build
+reports nothing at all, which looks deceptively clean. Force a rebuild of our
+sources with `bazel clean`
+
+```
+bazelisk clean --expunge
+bazelisk build :samwise --config=picubed-debug --config=audit
+```
+
+Note that counts differ per profile — `tests` is much noisier than the firmware
+profiles because most `unused-parameter` hits are in mocks, and
+`picubed-flight` compiles out the bringup paths. Neither is a superset of the
+other, so check both.
+
+#### Burning down a category
+
+`--config=strict` re-promotes the four exempted categories, so you can check
+whether one has reached zero before deleting its line from `.bazelrc`:
+
+```
+bazelisk build //src/... --config=tests --config=strict
+```
+
+To work through a single category, promote just that one:
+
+```
+bazelisk build //src/... --config=tests --per_file_copt="^src/@-Werror=unused-variable"
+```
+
 ### Build Archives
 The **C Build** github action automatically builds RP2350 archives on pushes to pull requests into main.
 

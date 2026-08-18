@@ -31,7 +31,7 @@ void watchdog_feed(struct watchdog *wd)
         watchdog_init(wd);
     }
     uint64_t delta =
-        absolute_time_diff_us(get_absolute_time(), wd->last_transition);
+        absolute_time_diff_us(wd->last_transition, get_absolute_time());
 
     // Watchdog transitions as follows:
     // - Initially, the pin is low (set = false)

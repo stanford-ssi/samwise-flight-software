@@ -17,6 +17,8 @@
 #include "protocol.h"
 #include "uart_communications.h"
 
+#include <string.h>
+
 #define ADCS_MAX_FAILED_CHECKS_BEFORE_REBOOT (5)
 
 void adcs_task_init(slate_t *slate)
@@ -70,12 +72,18 @@ void adcs_task_dispatch(slate_t *slate)
                 break;
             case MSG_ADCS_PACKET:
                 if (num_bytes != 7 + sizeof(adcs_packet_t))
+                {
                     LOG_INFO("[ADCS] Packet dropped, invalid size");
-                ;
+                    break;
+                }
                 LOG_INFO("[ADCS] Attitude packet received");
                 slate->is_adcs_on = true;
-                slate->adcs_telemetry = *(adcs_packet_t *)received.payload;
+                // payload points into rx_buf at a byte offset, so it carries no
+                // alignment guarantee for adcs_packet_t.
+                memcpy(&slate->adcs_telemetry, received.payload,
+                       sizeof(adcs_packet_t));
                 adcs_print_telemetry(&slate->adcs_telemetry);
+                break;
         } // end switch
     }
     else
