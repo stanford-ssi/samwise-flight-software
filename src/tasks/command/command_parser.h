@@ -23,7 +23,9 @@ typedef enum
     PAYLOAD_TURN_OFF,
     MANUAL_STATE_OVERRIDE,
     ADCS_EXEC,
-    ADCS_PACKET
+    ADCS_PACKET,
+    SHUTDOWN,
+    REACTIVATE
     // add more commands here as needed
 } Command;
 

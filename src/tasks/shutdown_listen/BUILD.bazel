@@ -1,29 +1,33 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "init_state",
-    srcs = ["init_state.c"],
-    hdrs = ["init_state.h"],
+    name = "shutdown_listen_task",
+    srcs = ["shutdown_listen_task.c"],
+    hdrs = ["shutdown_listen_task.h"],
     includes = ["."],
     deps = [
         "//src/common",
         "//src/slate",
         "//src/scheduler:state_machine",
-        "//src/scheduler:state_ids",
+        "//src/packet",
+        "//src/tasks/command:command_parser",
+        "//src/tasks/radio:radio_task",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/flash:flash_mock",
+            "//src/drivers/rfm9x:rfm9x_mock",
             "//src/drivers/logger:logger_mock",
             "//src/drivers/neopixel:neopixel_mock",
-            "//src/drivers/device_status:device_status_mock",
             "//src/test_mocks:pico_stdlib_mock",
+            "//src/test_mocks:pico_util_mock",
         ],
         "//conditions:default": [
             "//src/drivers/flash",
+            "//src/drivers/rfm9x",
             "//src/drivers/logger",
             "//src/drivers/neopixel",
-            "//src/drivers/device_status",
             "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+            "@pico-sdk//src/common/pico_util:pico_util",
         ],
     }),
 )

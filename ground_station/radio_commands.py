@@ -191,9 +191,18 @@ class LoraRadio:
         """Send payload turn off command"""
         self.send_command(config.PAYLOAD_TURN_OFF)
 
-    def send_payload_shutdown(self):
-        """Send payload shutdown command"""
-        self.send_command(config.PAYLOAD_SHUTDOWN)
+    def send_comms_shutdown(self):
+        """Send comms shutdown command — stops satellite communications"""
+        self.send_command(config.COMMS_SHUTDOWN)
+
+    def send_reactivate(self):
+        """Send reactivate command — leaves the shutdown/blackout state.
+
+        Requires 3 consecutive REACTIVATE commands to take effect (ground
+        authorization)."""
+        self.send_command(config.REACTIVATE)
+
+    # TODO: implement send_payload_shutdown() once a dedicated PAYLOAD_SHUTDOWN command is added to flight software
 
     def send_manual_state_override(self, state_name):
         """Send manual state override command"""

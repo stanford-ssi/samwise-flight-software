@@ -153,7 +153,7 @@ When selecting an LED color for your task:
 - ~~Pink: (255, 20, 147)~~
 - Turquoise: (64, 224, 208)
 - Gold: (255, 215, 0)
-- Indigo: (75, 0, 130)
+- ~~Indigo: (75, 0, 130)~~
 
 ## Task Guidelines
 
