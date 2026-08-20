@@ -35,3 +35,22 @@ cc_library(
         ],
     }),
 )
+
+# Headers only. Lets a target (e.g. the OTA hardware test) compile against the
+# filesystem API while supplying its own implementation, without linking the
+# real littlefs-backed one.
+cc_library(
+    name = "filesys_hdrs",
+    hdrs = [
+        "filesys.h",
+        "lfs_gen_flash_wrapper.h",
+        "lfs_mram_wrapper.h",
+    ],
+    includes = ["."],
+    deps = [
+        "//lib/littlefs-SSI:littlefs",
+        "//src/common",
+        "//src/drivers/mram",
+        "//src/slate",
+    ],
+)

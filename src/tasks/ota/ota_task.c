@@ -2,7 +2,7 @@
 
 #include "filesys.h"
 #include "logger.h"
-#include "mram.h"
+#include "ota_device.h"
 #include "packet.h"
 #include "pico/bootrom.h"
 #include "rfm9x.h"
@@ -132,8 +132,33 @@ void ota_task_dispatch(slate_t *slate)
         return;
     }
 
-    // --- 4. Program partition B in 256-byte pages from filesystem ---
     uint32_t ints;
+
+    // --- 4. Erase partition B, if the boot device requires it ---
+    // MRAM is written in place and skips this entirely. NOR flash must be
+    // erased first, one sector at a time so the watchdog can be fed between
+    // each -- a single erase across a whole partition takes several seconds
+    // and would otherwise trip it.
+    if (ota_dev_needs_erase())
+    {
+        uint32_t erase_size =
+            ((file_size + FLASH_SECTOR_SIZE - 1) / FLASH_SECTOR_SIZE) *
+            FLASH_SECTOR_SIZE;
+
+        LOG_INFO("[ota_task] Erasing %u bytes at offset 0x%08x on %s",
+                 erase_size, b_partition_offset, ota_dev_name());
+
+        for (uint32_t erased = 0; erased < erase_size;
+             erased += FLASH_SECTOR_SIZE)
+        {
+            watchdog_feed(&slate->watchdog);
+            ints = save_and_disable_interrupts();
+            ota_dev_erase_sector(b_partition_offset + erased);
+            restore_interrupts(ints);
+        }
+    }
+
+    // --- 5. Program partition B in 256-byte pages from filesystem ---
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint32_t bytes_written = 0;
 
@@ -159,9 +184,19 @@ void ota_task_dispatch(slate_t *slate)
         }
 
         ints = save_and_disable_interrupts();
-        mram_write(b_partition_offset + bytes_written, page_buf,
-                   FLASH_PAGE_SIZE);
+        bool write_ok = ota_dev_write_page(b_partition_offset + bytes_written,
+                                           page_buf, FLASH_PAGE_SIZE);
         restore_interrupts(ints);
+
+        if (!write_ok)
+        {
+            LOG_ERROR("[ota_task] %s write failed at offset %u",
+                      ota_dev_name(), bytes_written);
+            send_radio_msg(slate, "OTA ERR: device write failed");
+            filesys_close_file_read(slate, &file, &lfs_err);
+            slate->ota_requested = false;
+            return;
+        }
 
         bytes_written += bytes_read;
     }

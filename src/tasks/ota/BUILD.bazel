@@ -1,9 +1,20 @@
 package(default_visibility = ["//visibility:public"])
 
+# Exported so the OTA hardware test can compile the real task against its own
+# filesystem stubs instead of linking the littlefs-backed implementation.
+exports_files([
+    "ota_device.h",
+    "ota_task.c",
+    "ota_task.h",
+])
+
 cc_library(
     name = "ota_task",
     srcs = ["ota_task.c"],
-    hdrs = ["ota_task.h"],
+    hdrs = [
+        "ota_device.h",
+        "ota_task.h",
+    ],
     includes = ["."],
     deps = [
         "//src/common",
