@@ -155,8 +155,46 @@ inside the partition map in memory, independent of the host PC.
 | Metric | Evaluation Rule |
 |--------|----------------|
 | **Boot Priority Parameter** | The Bootrom scans the integer fields assigned to each partition entry. The slot holding the highest numerical priority value that is not flagged as `bad_image` is selected for execution. |
-| **Image Generation / Ping-Pong Loops** | Every time an update is deployed, the update utility increments the `boot_priority` integer of the target slot. The Bootrom naturally selects this higher integer at next boot, allowing safe alternation back and forth between slots over generations. |
+| **Image Generation / Ping-Pong Loops** | Every time an update is deployed, the update utility increments the `boot_priority` integer of the target slot. The Bootrom naturally selects this higher integer at next boot, allowing safe alternation back and forth between slots over generations. **Note: this is a Bootrom capability that SAMWISE deliberately does not use — see "SAMWISE Does Not Ping-Pong" below.** |
 | **Application Invalidation** | If a slot fails its probation checks, the Bootrom updates its flag to `bad_image` and lowers its priority. On the secondary pass, it selects the next highest valid partition entry in the pool. |
+
+### SAMWISE Does Not Ping-Pong [CORRECTION]
+
+The ping-pong scheme in the table above describes what the Bootrom *supports*, not what
+SAMWISE *does*. Our OTA design is deliberately different:
+
+> **Partition A is a permanent golden image. Partition B is the only slot ever written.**
+
+`ota_task.c` enforces this. If an OTA is requested while the satellite is running from B, it
+refuses to flash and reboots back to A instead:
+
+```c
+// Running from B. Reboot to A; ground must resend the OTA command.
+rom_reboot(BOOT_TYPE_NORMAL, 200, 0, 0);
+```
+
+So A is never written by any code path, and every update overwrites B.
+
+**Why we chose this over ping-pong.** With alternation, a sequence of bad updates can
+eventually land in both slots and leave no known-good image. With a golden image, an
+application-layer bug — however severe — cannot corrupt A, because nothing in the firmware
+can write to it. A is always there to fall back on.
+
+**What it costs.**
+
+- **A can never be patched.** Whatever ships at launch is permanent for the mission. A bug in
+  A is unfixable in orbit.
+- **Updates pass through old code.** Running v2 on B and want v3? The satellite reboots into A
+  (v1) first, then writes B from there.
+- **Two ground passes when running from B.** The first OTA command only triggers the reboot;
+  ground must resend it once A is running. This is worth removing: `rom_reboot`'s two
+  parameters survive the reboot and reappear in `boot_info.reboot_params[]`, so B could pass a
+  magic value plus the target filename and A could resume the OTA automatically on boot.
+
+Anyone reading the ping-pong row above and assuming both slots get updated will have the wrong
+model of how SAMWISE OTA behaves.
+
+---
 
 ### TBYB Interaction with Boot Priority [ADDITION]
 
