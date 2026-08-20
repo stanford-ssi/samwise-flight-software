@@ -48,7 +48,8 @@ filesys_error_t filesys_open_file_read(slate_t *slate, lfs_file_t *file,
 }
 
 filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
-                                  void *buffer, FILESYS_BUFFERED_FILE_LEN_T size,
+                                  void *buffer,
+                                  FILESYS_BUFFERED_FILE_LEN_T size,
                                   FILESYS_BUFFERED_FILE_LEN_T *bytes_read,
                                   lfs_ssize_t *lfs_error_code)
 {
