@@ -1,0 +1,130 @@
+package(default_visibility = ["//visibility:public"])
+
+# OTA hardware test. See main.c for the expected blink sequence.
+#
+# Build variant B first, generate its image header, then build variant A:
+#
+#   bazel build //ota_hw_test:variant_b --config=ota-blink
+#   xxd -i -n image_b_bin bazel-bin/ota_hw_test/variant_b.bin \
+#       > ota_hw_test/image_b.h
+#   bazel build //ota_hw_test:variant_a --config=pico
+#
+# Then load A into partition 0 and let it run:
+#   picotool load bazel-bin/ota_hw_test/variant_a.uf2 -p 0
+
+# ---------------------------------------------------------------- variant B
+# The "new" firmware. --config=ota-blink supplies PICO_CRT0_IMAGE_TYPE_TBYB=1,
+# so the bootrom arms its rollback watchdog when this image boots.
+cc_binary(
+    name = "variant_b_elf",
+    srcs = ["main.c"],
+    copts = [
+        "-include",
+        "samwise_picubed.h",
+        "-Iboards",
+    ],
+    local_defines = [
+        "HW_TEST_VARIANT_B",
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+    ],
+    linkopts = [
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    deps = [
+        "//boards:samwise_picubed",
+        "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
+        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+)
+
+genrule(
+    name = "variant_b_bin",
+    srcs = [":variant_b_elf"],
+    outs = ["variant_b.bin"],
+    cmd = "arm-none-eabi-objcopy -O binary $(location :variant_b_elf) $@",
+    message = "Extracting raw binary for OTA payload (variant B)...",
+)
+
+genrule(
+    name = "variant_b_uf2",
+    srcs = [":variant_b_elf"],
+    outs = ["variant_b.uf2"],
+    cmd = "picotool uf2 convert $(location :variant_b_elf) -t elf $@ --family rp2350-arm-s",
+    message = "Packaging variant B into UF2...",
+)
+
+filegroup(
+    name = "variant_b",
+    srcs = [
+        ":variant_b_bin",
+        ":variant_b_elf",
+        ":variant_b_uf2",
+    ],
+)
+
+# ---------------------------------------------------------------- variant A
+# The "known safe" firmware. Links the real flight OTA task and filesystem.
+cc_binary(
+    name = "variant_a_elf",
+    srcs = [
+        "//src/tasks/ota:ota_device.h",
+        "//src/tasks/ota:ota_task.c",  # the real flight OTA task, compiled here
+        "//src/tasks/ota:ota_task.h",
+        "filesys_stub.c",              # RAM-backed stand-in, see file header
+        "image_b.h",
+        "main.c",
+    ],
+    copts = [
+        "-include",
+        "samwise_picubed.h",
+        "-Iboards",
+        "-Iota_hw_test",
+        "-Isrc/tasks/ota",
+    ],
+    local_defines = [
+        "PICO_STDIO_USB_DEFAULT=1",
+        "PICO_STDIO_UART_DEFAULT=0",
+    ],
+    linkopts = [
+        "-Wl,--gc-sections",
+        "-Wl,--build-id=none",
+    ],
+    target_compatible_with = ["//platforms:arm_cortex_m33"],
+    deps = [
+        "//boards:samwise_picubed",
+        "//src/common",
+        "//src/drivers/logger",
+        "//src/drivers/rfm9x",
+        "//src/drivers/watchdog",
+        "//src/filesys:filesys_hdrs",
+        "//src/packet",
+        "//src/scheduler:state_machine",
+        "//src/slate",
+        "//src/utils",
+        "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
+        "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",
+        "@pico-sdk//src/rp2_common/pico_stdio_usb:pico_stdio_usb",
+        "@pico-sdk//src/rp2_common/pico_stdlib:pico_stdlib",
+    ],
+)
+
+genrule(
+    name = "variant_a_uf2",
+    srcs = [":variant_a_elf"],
+    outs = ["variant_a.uf2"],
+    cmd = "picotool uf2 convert $(location :variant_a_elf) -t elf $@ --family rp2350-arm-s",
+    message = "Packaging variant A into UF2...",
+)
+
+filegroup(
+    name = "variant_a",
+    srcs = [
+        ":variant_a_elf",
+        ":variant_a_uf2",
+    ],
+)
