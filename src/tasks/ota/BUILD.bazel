@@ -22,6 +22,7 @@ cc_library(
         "//src/scheduler:state_machine",
         "//src/filesys",
         "//src/packet",
+        "//src/utils",
     ] + select({
         "//bzl:test_mode": [
             "//src/drivers/logger:logger_mock",

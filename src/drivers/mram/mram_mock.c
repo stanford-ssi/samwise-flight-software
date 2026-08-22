@@ -7,6 +7,19 @@
 #define MOCK_MRAM_SIZE (1024 * 512)
 
 static uint8_t mock_mram[MOCK_MRAM_SIZE];
+
+/*
+ * When set, mram_write() reports success but stores corrupted data. Models a
+ * device that accepts a write yet does not hold it -- the failure mode the OTA
+ * task's post-write verification exists to catch, and which cannot be
+ * reproduced by making mram_write return false.
+ */
+static bool corrupt_writes = false;
+
+void mram_mock_set_corrupt_writes(bool enable)
+{
+    corrupt_writes = enable;
+}
 static bool write_enabled = false;
 
 void mram_init(void)
@@ -93,5 +106,11 @@ bool mram_write(uint32_t address, const uint8_t *data, size_t length)
 
     write_enabled = true;
     memcpy(&mock_mram[address], data, length);
+
+    if (corrupt_writes && length > 0)
+    {
+        mock_mram[address] ^= 0xFF; // silently wrong, but "successful"
+    }
+
     return true;
 }

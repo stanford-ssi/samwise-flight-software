@@ -17,6 +17,9 @@
 
 #include "ota_test.h"
 
+// Mock-only hook, defined in src/drivers/mram/mram_mock.c
+extern void mram_mock_set_corrupt_writes(bool enable);
+
 #include "config.h"
 #include "filesys.h"
 #include "hardware/flash.h"
@@ -392,6 +395,40 @@ int ota_test_tbyb_full_cycle(slate_t *slate)
     return 0;
 }
 
+
+// ============================================================================
+// Test 10: Write silently corrupted — verification must refuse to reboot
+// ============================================================================
+// Models a device that accepts a write but does not hold it: mram_write
+// returns true, yet the stored bytes are wrong. Neither the return value nor
+// the source CRC catches this, so the post-write readback is the only thing
+// that can. Getting this wrong means rebooting into a corrupt image.
+int ota_test_verify_catches_corrupt_write(slate_t *slate)
+{
+    uint8_t fw[FLASH_PAGE_SIZE];
+    memset(fw, 0xAA, sizeof(fw));
+
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+        return -1;
+
+    strncpy(slate->ota_target_fname, ota_fw_fname,
+            sizeof(slate->ota_target_fname));
+    slate->ota_requested = true;
+
+    mram_mock_set_corrupt_writes(true);
+    ota_task_dispatch(slate);
+    mram_mock_set_corrupt_writes(false);
+
+    TEST_ASSERT(bootrom_mock_reboot_count == 0,
+                "Must NOT reboot into an image that failed verification "
+                "(reboot_count=%d)",
+                bootrom_mock_reboot_count);
+    TEST_ASSERT(!slate->ota_requested,
+                "ota_requested should be cleared after a failed verify");
+
+    return 0;
+}
+
 // ============================================================================
 // Test table
 // ============================================================================
@@ -414,6 +451,8 @@ const test_harness_case_t ota_tests[] = {
      "TBYB: simulate_rollback returns to partition A, clears BUY_PENDING"},
     {8, ota_test_tbyb_full_cycle,
      "TBYB: full cycle — OTA to B, rollback to A, OTA to B again"},
+    {9, ota_test_verify_catches_corrupt_write,
+     "Verify: corrupt write is detected and does not reboot"},
 };
 
 const size_t ota_tests_len = sizeof(ota_tests) / sizeof(ota_tests[0]);

@@ -1,5 +1,6 @@
 #include "ota_task.h"
 
+#include "crc32.h"
 #include "filesys.h"
 #include "logger.h"
 #include "ota_device.h"
@@ -162,6 +163,10 @@ void ota_task_dispatch(slate_t *slate)
     uint8_t page_buf[FLASH_PAGE_SIZE];
     uint32_t bytes_written = 0;
 
+    // Running CRC over the bytes handed to the device, so step 6 can confirm
+    // the device actually holds them. Not inverted until the comparison.
+    unsigned int src_crc = 0xFFFFFFFFu;
+
     while (bytes_written < file_size)
     {
         memset(page_buf, 0xFF, FLASH_PAGE_SIZE);
@@ -198,13 +203,70 @@ void ota_task_dispatch(slate_t *slate)
             return;
         }
 
+        src_crc = crc32_continue(page_buf, bytes_read, src_crc);
         bytes_written += bytes_read;
     }
 
     filesys_close_file_read(slate, &file, &lfs_err);
     LOG_INFO("[ota_task] Flash write complete (%u bytes)", bytes_written);
 
-    // --- 5. Notify ground and reboot into partition B (TBYB) ---
+    /*
+     * --- 6. Verify partition B holds what we just wrote ---
+     *
+     * Neither device reports a bad write reliably: flash_range_program returns
+     * void, and programming un-erased NOR flash silently yields garbage. The
+     * source file was CRC-checked when it was opened, so re-reading the target
+     * and comparing tells us the bytes actually landed.
+     *
+     * Catching it here means the satellite stays on A and can report the
+     * failure on this same pass, rather than rebooting into a broken image and
+     * waiting for its TBYB probation to lapse.
+     */
+    unsigned int dst_crc = 0xFFFFFFFFu;
+    uint32_t verified = 0;
+
+    while (verified < file_size)
+    {
+        uint32_t chunk = file_size - verified;
+        if (chunk > FLASH_PAGE_SIZE)
+        {
+            chunk = FLASH_PAGE_SIZE;
+        }
+
+        watchdog_feed(&slate->watchdog);
+
+        ints = save_and_disable_interrupts();
+        bool read_ok =
+            ota_dev_read_page(b_partition_offset + verified, page_buf, chunk);
+        restore_interrupts(ints);
+
+        if (!read_ok)
+        {
+            LOG_ERROR("[ota_task] %s readback failed at offset %u",
+                      ota_dev_name(), verified);
+            send_radio_msg(slate, "OTA ERR: verify read failed");
+            slate->ota_requested = false;
+            return;
+        }
+
+        dst_crc = crc32_continue(page_buf, chunk, dst_crc);
+        verified += chunk;
+    }
+
+    if (dst_crc != src_crc)
+    {
+        // Do not reboot: partition A is still good, so stay on it.
+        LOG_ERROR("[ota_task] Verify failed: wrote 0x%08x, read back 0x%08x",
+                  ~src_crc, ~dst_crc);
+        send_radio_msg(slate, "OTA ERR: verify failed, staying on A");
+        slate->ota_requested = false;
+        return;
+    }
+
+    LOG_INFO("[ota_task] Verified %u bytes in partition B (crc 0x%08x)",
+             verified, ~dst_crc);
+
+    // --- 7. Notify ground and reboot into partition B (TBYB) ---
     send_radio_msg(slate, "OTA OK: rebooting");
 
     slate->ota_requested = false;

@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hardware/flash.h" // FLASH_PAGE_SIZE / FLASH_SECTOR_SIZE
 
@@ -47,6 +48,20 @@ static inline bool ota_dev_write_page(uint32_t offset, const uint8_t *data,
                                       size_t len)
 {
     return mram_write(offset, data, len);
+}
+
+/*
+ * Read back from the target partition, to verify what was written.
+ *
+ * Deliberately does not go through XIP: the RP2350 remaps the XIP window to
+ * the *running* partition, so an address inside the target partition is out of
+ * bounds from here and faults. mram_read issues a direct QMI command and is
+ * unaffected by the remapping.
+ */
+static inline bool ota_dev_read_page(uint32_t offset, uint8_t *data, size_t len)
+{
+    mram_read(offset, data, len);
+    return true;
 }
 
 static inline const char *ota_dev_name(void)
@@ -75,6 +90,36 @@ static inline bool ota_dev_write_page(uint32_t offset, const uint8_t *data,
 {
     flash_range_program(offset, data, len);
     return true; // flash_range_program cannot report failure
+}
+
+/*
+ * Read back from the target partition, to verify what was written.
+ *
+ * This cannot use XIP. The RP2350 remaps the XIP window to the *running*
+ * partition, so XIP_BASE + <target offset> is out of bounds and faults. Issue
+ * a plain 03h READ over the flash's SPI instead, which takes an absolute
+ * device address and is unaffected by the remapping.
+ */
+static inline bool ota_dev_read_page(uint32_t offset, uint8_t *data, size_t len)
+{
+    if (len > FLASH_PAGE_SIZE)
+    {
+        return false;
+    }
+
+    // 1 command byte + 3 address bytes, then len bytes clocked out.
+    uint8_t tx[4 + FLASH_PAGE_SIZE];
+    uint8_t rx[4 + FLASH_PAGE_SIZE];
+
+    tx[0] = 0x03; // READ
+    tx[1] = (uint8_t)((offset >> 16) & 0xFF);
+    tx[2] = (uint8_t)((offset >> 8) & 0xFF);
+    tx[3] = (uint8_t)(offset & 0xFF);
+    memset(&tx[4], 0, len);
+
+    flash_do_cmd(tx, rx, 4 + len);
+    memcpy(data, &rx[4], len);
+    return true;
 }
 
 static inline const char *ota_dev_name(void)
