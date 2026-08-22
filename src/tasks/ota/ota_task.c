@@ -47,9 +47,11 @@ static uint8_t ota_header_buf[OTA_HEADER_SCAN_BYTES];
  */
 static bool ota_image_has_tbyb(uint32_t partition_offset, uint32_t image_size)
 {
-    uint32_t to_scan = image_size < OTA_HEADER_SCAN_BYTES
-                           ? image_size
-                           : OTA_HEADER_SCAN_BYTES;
+    uint32_t to_scan = OTA_HEADER_SCAN_BYTES;
+    if (image_size < to_scan)
+    {
+        to_scan = image_size;
+    }
 
     for (uint32_t off = 0; off < to_scan; off += FLASH_PAGE_SIZE)
     {
@@ -289,8 +291,8 @@ void ota_task_dispatch(slate_t *slate)
 
         if (!write_ok)
         {
-            LOG_ERROR("[ota_task] %s write failed at offset %u",
-                      ota_dev_name(), bytes_written);
+            LOG_ERROR("[ota_task] %s write failed at offset %u", ota_dev_name(),
+                      bytes_written);
             send_radio_msg(slate, "OTA ERR: device write failed");
             filesys_close_file_read(slate, &file, &lfs_err);
             slate->ota_requested = false;

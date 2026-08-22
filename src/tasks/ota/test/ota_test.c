@@ -61,9 +61,11 @@ static void fill_fw_image(uint8_t *buf, uint32_t len, bool tbyb)
 {
     memset(buf, 0xAA, len);
 
-    uint32_t marker = 0xffffded3u;              // PICOBIN_BLOCK_MARKER_START
-    uint32_t flags = tbyb ? 0x9021u : 0x1021u;  // IMAGE_TYPE flags
-    uint32_t item = 0x42u | (1u << 8) | (flags << 16); // type, 1 word, flags
+    // PICOBIN_BLOCK_MARKER_START, then an IMAGE_TYPE item: type in the low
+    // byte, size 1 word, flags in the top half.
+    uint32_t marker = 0xffffded3u;
+    uint32_t flags = tbyb ? 0x9021u : 0x1021u;
+    uint32_t item = 0x42u | (1u << 8) | (flags << 16);
 
     memcpy(&buf[0], &marker, sizeof(marker));
     memcpy(&buf[4], &item, sizeof(item));
@@ -423,7 +425,6 @@ int ota_test_tbyb_full_cycle(slate_t *slate)
     return 0;
 }
 
-
 // ============================================================================
 // Test 10: Write silently corrupted — verification must refuse to reboot
 // ============================================================================
@@ -457,7 +458,6 @@ int ota_test_verify_catches_corrupt_write(slate_t *slate)
 
     return 0;
 }
-
 
 // ============================================================================
 // Test 11: Image lacks the TBYB flag — must refuse to boot it
