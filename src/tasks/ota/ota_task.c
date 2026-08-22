@@ -6,6 +6,7 @@
 #include "ota_device.h"
 #include "packet.h"
 #include "pico/bootrom.h"
+#include "radio_task.h"
 #include "rfm9x.h"
 
 #include "hardware/flash.h"
@@ -119,8 +120,46 @@ static void send_radio_msg(slate_t *slate, const char *msg)
     }
 }
 
+/*
+ * Marker handed from partition B to partition A across a reboot, so an OTA
+ * requested while running on B resumes by itself.
+ *
+ * B cannot perform the update (A is the golden image and is never written), so
+ * it reboots to A. Without this, ground had to notice and resend the command -
+ * a second contact pass. rom_reboot's two parameters survive the reboot and
+ * reappear in boot_info.reboot_params[], which is enough to carry the request:
+ * a magic value plus the 2-character filename.
+ */
+#define OTA_RESUME_MAGIC 0x07AC0DE5u
+
+// Delay before the reboot, so the queued "OTA OK" packet finishes going out.
+#define OTA_REBOOT_DELAY_MS 1000
+
 void ota_task_init(slate_t *slate)
 {
+    boot_info_t boot_info;
+    if (!rom_get_boot_info(&boot_info))
+    {
+        return;
+    }
+
+    if (boot_info.reboot_params[0] != OTA_RESUME_MAGIC)
+    {
+        return;
+    }
+
+    /*
+     * Worst case if these params are stale from some unrelated reboot: we try
+     * to OTA a file that does not exist and report "file not found". Harmless.
+     */
+    slate->ota_target_fname[0] = (char)(boot_info.reboot_params[1] & 0xFF);
+    slate->ota_target_fname[1] =
+        (char)((boot_info.reboot_params[1] >> 8) & 0xFF);
+    slate->ota_target_fname[2] = '\0';
+    slate->ota_requested = true;
+
+    LOG_INFO("[ota_task] Resuming OTA for '%s' handed over from partition B",
+             slate->ota_target_fname);
 }
 
 void ota_task_dispatch(slate_t *slate)
@@ -150,11 +189,22 @@ void ota_task_dispatch(slate_t *slate)
     int b_partition_index = rom_get_b_partition((uint)current_partition);
     if (b_partition_index < 0)
     {
-        // Running from B. Reboot to A; ground must resend the OTA command.
-        LOG_INFO("[ota_task] On partition B — rebooting to A");
-        send_radio_msg(slate, "OTA: on B, rebooting to A, resend command");
+        /*
+         * Running from B, which cannot update itself: A is the golden image
+         * and is never written, so the update has to be driven from A. Reboot
+         * there and carry the request in the reboot parameters, so A picks it
+         * up in ota_task_init() without ground having to resend.
+         */
+        LOG_INFO("[ota_task] On partition B — rebooting to A to continue");
+        send_radio_msg(slate, "OTA: on B, rebooting to A to continue");
+
+        uint32_t fname_packed =
+            (uint32_t)(uint8_t)slate->ota_target_fname[0] |
+            ((uint32_t)(uint8_t)slate->ota_target_fname[1] << 8);
+
         slate->ota_requested = false;
-        int ret = rom_reboot(BOOT_TYPE_NORMAL, 200, 0, 0);
+        int ret =
+            rom_reboot(BOOT_TYPE_NORMAL, 200, OTA_RESUME_MAGIC, fname_packed);
         if (ret != BOOTROM_OK)
             LOG_ERROR("[ota_task] Reboot failed: %d", ret);
         return;
@@ -270,18 +320,37 @@ void ota_task_dispatch(slate_t *slate)
         // Feed watchdog and read next page from MRAM (interrupts must be on)
         watchdog_feed(&slate->watchdog);
 
-        FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
-        filesys_error_t read_err = filesys_read_data(
-            slate, &file, page_buf, FLASH_PAGE_SIZE, &bytes_read, &lfs_err);
-
-        if (read_err != FILESYS_OK || bytes_read == 0)
+        /*
+         * Fill a whole page before writing. The device can only take
+         * page-sized writes, so advancing by a short read would make the next
+         * write overlap the previous one - harmless on MRAM, but on NOR flash
+         * that is a re-program without an erase, which corrupts.
+         */
+        uint32_t want = file_size - bytes_written;
+        if (want > FLASH_PAGE_SIZE)
         {
-            LOG_ERROR("[ota_task] Read failed at offset %u (err=%d lfs=%d)",
-                      bytes_written, read_err, lfs_err);
-            send_radio_msg(slate, "OTA ERR: filesystem read failed");
-            filesys_close_file_read(slate, &file, &lfs_err);
-            slate->ota_requested = false;
-            return;
+            want = FLASH_PAGE_SIZE;
+        }
+
+        uint32_t page_filled = 0;
+        while (page_filled < want)
+        {
+            FILESYS_BUFFERED_FILE_LEN_T bytes_read = 0;
+            filesys_error_t read_err =
+                filesys_read_data(slate, &file, &page_buf[page_filled],
+                                  want - page_filled, &bytes_read, &lfs_err);
+
+            if (read_err != FILESYS_OK || bytes_read == 0)
+            {
+                LOG_ERROR("[ota_task] Read failed at offset %u (err=%d lfs=%d)",
+                          bytes_written + page_filled, read_err, lfs_err);
+                send_radio_msg(slate, "OTA ERR: filesystem read failed");
+                filesys_close_file_read(slate, &file, &lfs_err);
+                slate->ota_requested = false;
+                return;
+            }
+
+            page_filled += bytes_read;
         }
 
         ints = save_and_disable_interrupts();
@@ -299,8 +368,8 @@ void ota_task_dispatch(slate_t *slate)
             return;
         }
 
-        src_crc = crc32_continue(page_buf, bytes_read, src_crc);
-        bytes_written += bytes_read;
+        src_crc = crc32_continue(page_buf, page_filled, src_crc);
+        bytes_written += page_filled;
     }
 
     filesys_close_file_read(slate, &file, &lfs_err);
@@ -385,9 +454,19 @@ void ota_task_dispatch(slate_t *slate)
     // --- 8. Notify ground and reboot into partition B (TBYB) ---
     send_radio_msg(slate, "OTA OK: rebooting");
 
+    /*
+     * Queueing is not enough here. radio_task drains tx_queue on a scheduler
+     * tick, and it runs *before* ota_task in this state, so the next tick
+     * never arrives - we reboot first. The success message was therefore never
+     * transmitted, leaving ground unable to tell a completed OTA from a dead
+     * radio. Kick the transmit chain directly, and give it time to finish
+     * before the reboot.
+     */
+    radio_task_dispatch(slate);
+
     slate->ota_requested = false;
 
-    int ret = rom_reboot(BOOT_TYPE_FLASH_UPDATE, 200,
+    int ret = rom_reboot(BOOT_TYPE_FLASH_UPDATE, OTA_REBOOT_DELAY_MS,
                          XIP_BASE + b_partition_offset, 0);
     if (ret != BOOTROM_OK)
     {

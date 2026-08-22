@@ -105,6 +105,7 @@ cc_binary(
         "//src/packet",
         "//src/scheduler:state_machine",
         "//src/slate",
+        "//src/tasks/radio:radio_task",
         "//src/utils",
         "@pico-sdk//src/rp2_common/pico_bootrom:pico_bootrom",
         "@pico-sdk//src/rp2_common/pico_crt0/rp2350:default_linker_script",

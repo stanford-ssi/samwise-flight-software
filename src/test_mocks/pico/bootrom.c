@@ -209,6 +209,11 @@ bool rom_get_boot_info(boot_info_t *info)
     info->partition = s_current_partition;
     info->tbyb_and_update_info =
         bootrom_mock_buy_pending ? BOOT_TBYB_AND_UPDATE_FLAG_BUY_PENDING : 0;
+
+    // The parameters passed to rom_reboot survive the reboot and reappear
+    // here, which is how partition B hands an OTA request over to A.
+    info->reboot_params[0] = bootrom_mock_last_reboot_p0;
+    info->reboot_params[1] = bootrom_mock_last_reboot_p1;
     return true;
 }
 

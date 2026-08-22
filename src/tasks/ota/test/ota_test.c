@@ -493,6 +493,43 @@ int ota_test_rejects_non_tbyb_image(slate_t *slate)
 }
 
 // ============================================================================
+// Test 12: An OTA requested on B is handed to A and resumes by itself
+// ============================================================================
+// B cannot update itself - A is the golden image and is never written - so it
+// reboots to A. Previously that lost the request and ground had to resend on a
+// later pass. The request now rides across in rom_reboot's parameters and is
+// picked up by ota_task_init().
+int ota_test_resume_handover_from_b(slate_t *slate)
+{
+    // Pretend we are running from partition B and an OTA was commanded.
+    bootrom_mock_set_current_partition(1);
+    strncpy(slate->ota_target_fname, ota_fw_fname,
+            sizeof(slate->ota_target_fname));
+    slate->ota_requested = true;
+
+    ota_task_dispatch(slate);
+
+    TEST_ASSERT(bootrom_mock_reboot_count == 1, "Expected a reboot to A");
+    TEST_ASSERT(bootrom_mock_last_reboot_flags == (uint32_t)BOOT_TYPE_NORMAL,
+                "Handover reboot should be BOOT_TYPE_NORMAL");
+    TEST_ASSERT(!slate->ota_requested,
+                "ota_requested should be cleared before the reboot");
+
+    // Now we are partition A, booting with those reboot parameters present.
+    bootrom_mock_set_current_partition(0);
+    ota_task_init(slate);
+
+    TEST_ASSERT(slate->ota_requested,
+                "A should have picked up the handed-over OTA request");
+    TEST_ASSERT(strncmp(slate->ota_target_fname, ota_fw_fname,
+                        sizeof(slate->ota_target_fname)) == 0,
+                "Filename should survive the handover, got '%s'",
+                slate->ota_target_fname);
+
+    return 0;
+}
+
+// ============================================================================
 // Test table
 // ============================================================================
 
@@ -518,6 +555,8 @@ const test_harness_case_t ota_tests[] = {
      "Verify: corrupt write is detected and does not reboot"},
     {10, ota_test_rejects_non_tbyb_image,
      "TBYB: image without the TBYB flag is refused"},
+    {11, ota_test_resume_handover_from_b,
+     "Resume: OTA requested on B is handed to A and resumes"},
 };
 
 const size_t ota_tests_len = sizeof(ota_tests) / sizeof(ota_tests[0]);
