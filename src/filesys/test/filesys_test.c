@@ -2441,6 +2441,151 @@ int filesys_test_probe_max_file_capacity(void)
     return 0;
 }
 
+// ============================================================================
+// Test 41: Delete file - happy path
+// ============================================================================
+int filesys_test_delete_file_success(slate_t *slate)
+{
+    LOG_DEBUG("=== Test: Delete File ===\n");
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "DA";
+
+    filesys_error_t code = filesys_start_file_write(
+        slate, fname, sizeof(filesys_test_example_file_4_buf),
+        filesys_test_example_file_4_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_write_data_to_buffer(slate, filesys_test_example_file_4_buf,
+                                        sizeof(filesys_test_example_file_4_buf),
+                                        0, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_data_to_buffer should succeed");
+
+    code = filesys_write_buffer_to_mram(
+        slate, sizeof(filesys_test_example_file_4_buf), &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+    code = filesys_complete_file_write(slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "complete_file_write should succeed");
+
+    code = filesys_delete_file(slate, fname, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "delete_file should succeed, got %d", code);
+
+    // It should no longer be openable.
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(slate, &file, fname, &info, &lfs_error_code);
+    TEST_ASSERT(code != FILESYS_OK, "deleted file should not open");
+
+    LOG_DEBUG("=== Test PASSED: Delete File ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 42: Delete file - file does not exist
+// ============================================================================
+int filesys_test_delete_file_missing(slate_t *slate)
+{
+    LOG_DEBUG("=== Test: Delete Missing File ===\n");
+
+    lfs_ssize_t lfs_error_code;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "ZZ";
+
+    filesys_error_t code = filesys_delete_file(slate, fname, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_ERR_DELETE_FILE,
+                "deleting a missing file should report FILESYS_ERR_DELETE_FILE,"
+                " got %d",
+                code);
+    TEST_ASSERT(lfs_error_code != LFS_ERR_OK,
+                "lfs_error_code should carry the underlying error");
+
+    LOG_DEBUG("=== Test PASSED: Delete Missing File ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 43: Delete file - refuses while that file is being written
+// ============================================================================
+// Deleting mid-write would leave the buffered write state pointing at a file
+// that no longer exists. filesys_cancel_file_write() is the correct call for
+// that case.
+int filesys_test_delete_file_while_writing(slate_t *slate)
+{
+    LOG_DEBUG("=== Test: Delete File While Writing ===\n");
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T fname = "DW";
+
+    filesys_error_t code = filesys_start_file_write(
+        slate, fname, sizeof(filesys_test_example_file_4_buf),
+        filesys_test_example_file_4_crc, &lfs_error_code, &blocks_left);
+    TEST_ASSERT(code == FILESYS_OK, "start_file_write should succeed");
+
+    code = filesys_delete_file(slate, fname, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_ERR_FILE_ALREADY_WRITING,
+                "deleting the in-progress file should be refused, got %d",
+                code);
+
+    // The write should still be usable afterwards.
+    code = filesys_cancel_file_write(slate, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK,
+                "cancel_file_write should still work after a refused delete");
+
+    LOG_DEBUG("=== Test PASSED: Delete File While Writing ===\n");
+    return 0;
+}
+
+// ============================================================================
+// Test 44: Delete file - leaves other files untouched
+// ============================================================================
+int filesys_test_delete_file_leaves_others(slate_t *slate)
+{
+    LOG_DEBUG("=== Test: Delete Leaves Others ===\n");
+
+    lfs_ssize_t lfs_error_code;
+    lfs_ssize_t blocks_left;
+    FILESYS_BUFFERED_FNAME_STR_T keep = "K1";
+    FILESYS_BUFFERED_FNAME_STR_T drop = "D1";
+
+    FILESYS_BUFFERED_FNAME_STR_T names[2];
+    strncpy(names[0], keep, sizeof(names[0]));
+    strncpy(names[1], drop, sizeof(names[1]));
+
+    for (int i = 0; i < 2; i++)
+    {
+        filesys_error_t c = filesys_start_file_write(
+            slate, names[i], sizeof(filesys_test_example_file_4_buf),
+            filesys_test_example_file_4_crc, &lfs_error_code, &blocks_left);
+        TEST_ASSERT(c == FILESYS_OK, "start_file_write should succeed");
+
+        c = filesys_write_data_to_buffer(
+            slate, filesys_test_example_file_4_buf,
+            sizeof(filesys_test_example_file_4_buf), 0, &lfs_error_code);
+        TEST_ASSERT(c == FILESYS_OK, "write_data_to_buffer should succeed");
+
+        c = filesys_write_buffer_to_mram(
+            slate, sizeof(filesys_test_example_file_4_buf), &lfs_error_code);
+        TEST_ASSERT(c == FILESYS_OK, "write_buffer_to_mram should succeed");
+
+        c = filesys_complete_file_write(slate, &lfs_error_code);
+        TEST_ASSERT(c == FILESYS_OK, "complete_file_write should succeed");
+    }
+
+    filesys_error_t code = filesys_delete_file(slate, drop, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "delete_file should succeed");
+
+    lfs_file_t file;
+    filesys_file_info_t info;
+    code = filesys_open_file_read(slate, &file, keep, &info, &lfs_error_code);
+    TEST_ASSERT(code == FILESYS_OK, "the other file should still be readable");
+    filesys_close_file_read(slate, &file, &lfs_error_code);
+
+    LOG_DEBUG("=== Test PASSED: Delete Leaves Others ===\n");
+    return 0;
+}
+
 const test_harness_case_t filesys_tests[] = {
     {0, filesys_test_write_readback_success, "Write and Readback"},
     {1, filesys_test_initialize_reformat_success, "Initialize and Reformat"},
@@ -2504,6 +2649,10 @@ const test_harness_case_t filesys_tests[] = {
     {37, filesys_test_close_file_read_success, "Close File Read"},
     {38, filesys_test_read_full_workflow_success, "Read Full Workflow"},
     {39, filesys_test_read_multi_chunk_file_success, "Read Multi-Chunk File"},
+    {40, filesys_test_delete_file_success, "Delete File"},
+    {41, filesys_test_delete_file_missing, "Delete File - Missing"},
+    {42, filesys_test_delete_file_while_writing, "Delete File - While Writing"},
+    {43, filesys_test_delete_file_leaves_others, "Delete File - Leaves Others"},
 };
 
 const size_t filesys_tests_len =
