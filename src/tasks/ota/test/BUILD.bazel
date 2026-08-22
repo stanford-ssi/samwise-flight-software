@@ -11,6 +11,7 @@ samwise_test(
     deps = [
         "//src/tasks/ota:ota_task",
         "//src/filesys",
+        "//src/utils",
         "//src/common",
     ],
 )

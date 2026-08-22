@@ -11,6 +11,100 @@
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 
+/*
+ * Constants from the pico-sdk picobin format
+ * (src/common/boot_picobin_headers/include/boot/picobin.h).
+ */
+#define PICOBIN_BLOCK_MARKER_START 0xffffded3u
+#define PICOBIN_BLOCK_ITEM_1BS_IMAGE_TYPE 0x42u
+#define PICOBIN_IMAGE_TYPE_EXE_TBYB_BITS 0x8000u
+
+// The start block lives early in the image; a max-size IMAGE_DEF block is
+// 0x180 bytes, and the SDK emits the marker within the first few hundred.
+#define OTA_HEADER_SCAN_BYTES 1024u
+
+// Static rather than on the stack: the OTA task is not reentrant, and this
+// runs in the scheduler's context.
+static uint8_t ota_header_buf[OTA_HEADER_SCAN_BYTES];
+
+/*
+ * Report whether the image at partition_offset carries the Try-Before-You-Buy
+ * flag.
+ *
+ * This is the assumption the whole OTA safety model rests on. SAMWISE never
+ * calls rom_explicit_buy, so a TBYB image stays on probation indefinitely and
+ * the bootrom reverts to partition A if it ever stops petting the watchdog.
+ * An image *without* the flag is committed the moment it boots: if it hangs,
+ * nothing brings the satellite back.
+ *
+ * Parses the picobin start block: locate PICOBIN_BLOCK_MARKER_START on a word
+ * boundary, then walk the items looking for IMAGE_TYPE and test bit 0x8000.
+ * Item headers encode the type in the low byte; bit 7 of the type selects a
+ * 2-byte size field rather than 1-byte. Sizes are in words.
+ *
+ * Returns false if the flag is absent OR the header cannot be parsed -- an
+ * unparseable image is not one to reboot into either.
+ */
+static bool ota_image_has_tbyb(uint32_t partition_offset, uint32_t image_size)
+{
+    uint32_t to_scan = image_size < OTA_HEADER_SCAN_BYTES
+                           ? image_size
+                           : OTA_HEADER_SCAN_BYTES;
+
+    for (uint32_t off = 0; off < to_scan; off += FLASH_PAGE_SIZE)
+    {
+        uint32_t chunk = to_scan - off;
+        if (chunk > FLASH_PAGE_SIZE)
+        {
+            chunk = FLASH_PAGE_SIZE;
+        }
+        if (!ota_dev_read_page(partition_offset + off, &ota_header_buf[off],
+                               chunk))
+        {
+            LOG_ERROR("[ota_task] TBYB check: readback failed at %u", off);
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i + 4 <= to_scan; i += 4)
+    {
+        uint32_t word;
+        memcpy(&word, &ota_header_buf[i], sizeof(word));
+        if (word != PICOBIN_BLOCK_MARKER_START)
+        {
+            continue;
+        }
+
+        // Walk the items following the marker.
+        uint32_t p = i + 4;
+        for (int item = 0; item < 16 && p + 4 <= to_scan; item++)
+        {
+            uint32_t hdr;
+            memcpy(&hdr, &ota_header_buf[p], sizeof(hdr));
+
+            uint32_t type = hdr & 0xFFu;
+            uint32_t size_words =
+                (type & 0x80u) ? ((hdr >> 8) & 0xFFFFu) : ((hdr >> 8) & 0xFFu);
+
+            if (type == PICOBIN_BLOCK_ITEM_1BS_IMAGE_TYPE)
+            {
+                uint32_t flags = (hdr >> 16) & 0xFFFFu;
+                LOG_INFO("[ota_task] Image type flags: 0x%04x", flags);
+                return (flags & PICOBIN_IMAGE_TYPE_EXE_TBYB_BITS) != 0;
+            }
+
+            if (size_words == 0)
+            {
+                break; // malformed; avoid looping forever
+            }
+            p += size_words * 4;
+        }
+    }
+
+    LOG_ERROR("[ota_task] TBYB check: no picobin IMAGE_TYPE item found");
+    return false;
+}
+
 static void send_radio_msg(slate_t *slate, const char *msg)
 {
     uint8_t data[PACKET_DATA_SIZE];
@@ -266,7 +360,27 @@ void ota_task_dispatch(slate_t *slate)
     LOG_INFO("[ota_task] Verified %u bytes in partition B (crc 0x%08x)",
              verified, ~dst_crc);
 
-    // --- 7. Notify ground and reboot into partition B (TBYB) ---
+    /*
+     * --- 7. Refuse to boot an image that is not marked Try-Before-You-Buy ---
+     *
+     * Rollback is what makes OTA survivable, and it only happens for images
+     * built with PICO_CRT0_IMAGE_TYPE_TBYB=1. Without the flag the bootrom
+     * commits to the image permanently on first boot; if it then hangs, there
+     * is nothing to bring the satellite back to partition A.
+     *
+     * Partition A is untouched at this point, so refusing here costs nothing
+     * but a resend.
+     */
+    watchdog_feed(&slate->watchdog);
+    if (!ota_image_has_tbyb(b_partition_offset, file_size))
+    {
+        LOG_ERROR("[ota_task] Image is not TBYB; refusing to boot it");
+        send_radio_msg(slate, "OTA ERR: image not TBYB, staying on A");
+        slate->ota_requested = false;
+        return;
+    }
+
+    // --- 8. Notify ground and reboot into partition B (TBYB) ---
     send_radio_msg(slate, "OTA OK: rebooting");
 
     slate->ota_requested = false;

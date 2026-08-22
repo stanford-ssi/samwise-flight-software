@@ -21,6 +21,7 @@
 extern void mram_mock_set_corrupt_writes(bool enable);
 
 #include "config.h"
+#include "crc32.h"
 #include "filesys.h"
 #include "hardware/flash.h"
 #include "mram.h"
@@ -46,6 +47,28 @@ static const char ota_fw_fname[] = "FW";
 
 // Write `size` bytes of `data` with the given `crc` into the filesystem under
 // `ota_fw_fname`. Returns 0 on success or -1 on any filesystem error.
+
+/*
+ * Build a minimal but structurally valid image: 0xAA filler with a picobin
+ * start block at offset 0 carrying an IMAGE_TYPE item.
+ *
+ * ota_task now parses this to decide whether an image is Try-Before-You-Buy,
+ * so fixtures have to look like real images rather than arbitrary bytes.
+ * The flag values were read out of real builds: --config=ota-blink produces
+ * 0x9021, a normal build produces 0x1021, differing only in bit 0x8000.
+ */
+static void fill_fw_image(uint8_t *buf, uint32_t len, bool tbyb)
+{
+    memset(buf, 0xAA, len);
+
+    uint32_t marker = 0xffffded3u;              // PICOBIN_BLOCK_MARKER_START
+    uint32_t flags = tbyb ? 0x9021u : 0x1021u;  // IMAGE_TYPE flags
+    uint32_t item = 0x42u | (1u << 8) | (flags << 16); // type, 1 word, flags
+
+    memcpy(&buf[0], &marker, sizeof(marker));
+    memcpy(&buf[4], &item, sizeof(item));
+}
+
 static int write_firmware_to_fs(slate_t *slate, const uint8_t *data,
                                 uint32_t size, uint32_t crc)
 {
@@ -110,9 +133,10 @@ int ota_test_success(slate_t *slate)
 {
     // Write one flash page (256 bytes of 0xAA) as the firmware file
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
 
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     strncpy(slate->ota_target_fname, ota_fw_fname,
@@ -265,8 +289,9 @@ int ota_test_partition_table_failure(slate_t *slate)
 {
     // Write valid firmware so the dispatch gets past filesys_open_file_read
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     bootrom_mock_fail_partition_table_info(BOOTROM_ERROR_NOT_FOUND);
@@ -290,8 +315,9 @@ int ota_test_partition_table_failure(slate_t *slate)
 int ota_test_tbyb_state_after_ota(slate_t *slate)
 {
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     strncpy(slate->ota_target_fname, ota_fw_fname,
@@ -322,8 +348,9 @@ int ota_test_tbyb_state_after_ota(slate_t *slate)
 int ota_test_tbyb_rollback_to_a(slate_t *slate)
 {
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     strncpy(slate->ota_target_fname, ota_fw_fname,
@@ -355,8 +382,9 @@ int ota_test_tbyb_rollback_to_a(slate_t *slate)
 int ota_test_tbyb_full_cycle(slate_t *slate)
 {
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     // --- First OTA: A -> flash B -> boot B in TBYB ---
@@ -406,9 +434,10 @@ int ota_test_tbyb_full_cycle(slate_t *slate)
 int ota_test_verify_catches_corrupt_write(slate_t *slate)
 {
     uint8_t fw[FLASH_PAGE_SIZE];
-    memset(fw, 0xAA, sizeof(fw));
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
 
-    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE, ota_fw_page_crc) != 0)
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
         return -1;
 
     strncpy(slate->ota_target_fname, ota_fw_fname,
@@ -425,6 +454,40 @@ int ota_test_verify_catches_corrupt_write(slate_t *slate)
                 bootrom_mock_reboot_count);
     TEST_ASSERT(!slate->ota_requested,
                 "ota_requested should be cleared after a failed verify");
+
+    return 0;
+}
+
+
+// ============================================================================
+// Test 11: Image lacks the TBYB flag — must refuse to boot it
+// ============================================================================
+// Rollback only happens for images built with PICO_CRT0_IMAGE_TYPE_TBYB=1.
+// Without it the bootrom commits to the image on first boot, so if it hangs
+// there is nothing to bring the satellite back to partition A. The image here
+// is byte-identical to the happy-path fixture except for bit 0x8000 in the
+// picobin IMAGE_TYPE flags -- the same single bit that differs between a real
+// --config=ota-blink build and a normal one.
+int ota_test_rejects_non_tbyb_image(slate_t *slate)
+{
+    uint8_t fw[FLASH_PAGE_SIZE];
+    fill_fw_image(fw, FLASH_PAGE_SIZE, false); // no TBYB flag
+
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
+        return -1;
+
+    strncpy(slate->ota_target_fname, ota_fw_fname,
+            sizeof(slate->ota_target_fname));
+    slate->ota_requested = true;
+
+    ota_task_dispatch(slate);
+
+    TEST_ASSERT(bootrom_mock_reboot_count == 0,
+                "Must NOT boot an image without TBYB (reboot_count=%d)",
+                bootrom_mock_reboot_count);
+    TEST_ASSERT(!slate->ota_requested,
+                "ota_requested should be cleared after refusing");
 
     return 0;
 }
@@ -453,6 +516,8 @@ const test_harness_case_t ota_tests[] = {
      "TBYB: full cycle — OTA to B, rollback to A, OTA to B again"},
     {9, ota_test_verify_catches_corrupt_write,
      "Verify: corrupt write is detected and does not reboot"},
+    {10, ota_test_rejects_non_tbyb_image,
+     "TBYB: image without the TBYB flag is refused"},
 };
 
 const size_t ota_tests_len = sizeof(ota_tests) / sizeof(ota_tests[0]);
