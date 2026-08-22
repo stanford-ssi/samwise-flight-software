@@ -73,6 +73,18 @@ filesys_error_t filesys_read_data(slate_t *slate, lfs_file_t *file,
     return FILESYS_OK;
 }
 
+filesys_error_t filesys_delete_file(slate_t *slate,
+                                    FILESYS_BUFFERED_FNAME_STR_T fname,
+                                    lfs_ssize_t *lfs_error_code)
+{
+    // Nothing to delete: the image is a byte array, not a file.
+    (void)slate;
+    (void)fname;
+    if (lfs_error_code)
+        *lfs_error_code = 0;
+    return FILESYS_OK;
+}
+
 filesys_error_t filesys_close_file_read(slate_t *slate, lfs_file_t *file,
                                         lfs_ssize_t *lfs_error_code)
 {

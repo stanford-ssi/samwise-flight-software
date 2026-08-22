@@ -260,6 +260,24 @@ void filesys_clear_buffer(slate_t *slate);
  *         FILESYS_ERR_DELETE_FILE if there was an error deleting the file,
  *         FILESYS_OK on success.
  */
+/**
+ * Deletes a file from the filesystem.
+ *
+ * Refuses if the named file is currently being written; use
+ * filesys_cancel_file_write() for that case instead.
+ *
+ * @param slate Pointer to the slate structure.
+ * @param fname Name of the file to delete.
+ * @param lfs_error_code Pointer to store error code in case of failure.
+ * LFS_ERR_OK if there is no relevant LFS error.
+ * @return FILESYS_ERR_FILE_ALREADY_WRITING if the file is being written,
+ *         FILESYS_ERR_DELETE_FILE if the delete failed,
+ *         FILESYS_OK on success.
+ */
+filesys_error_t filesys_delete_file(slate_t *slate,
+                                    FILESYS_BUFFERED_FNAME_STR_T fname,
+                                    lfs_ssize_t *lfs_error_code);
+
 filesys_error_t filesys_cancel_file_write(slate_t *slate,
                                           lfs_ssize_t *lfs_error_code);
 

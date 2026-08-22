@@ -607,6 +607,35 @@ void filesys_clear_buffer(slate_t *slate)
         slate->filesys_buffer[i] = 0; // Clear buffer contents
 }
 
+filesys_error_t filesys_delete_file(slate_t *slate,
+                                    FILESYS_BUFFERED_FNAME_STR_T fname,
+                                    lfs_ssize_t *lfs_error_code)
+{
+    *lfs_error_code = LFS_ERR_OK;
+
+    // Deleting a file mid-write would leave the buffered write state pointing
+    // at something that no longer exists.
+    if (slate->filesys_is_writing_file &&
+        strncmp(slate->filesys_buffered_fname_str, fname,
+                sizeof(FILESYS_BUFFERED_FNAME_STR_T)) == 0)
+    {
+        LOG_ERROR("[filesys] Cannot delete %s; it is currently being written",
+                  fname);
+        return FILESYS_ERR_FILE_ALREADY_WRITING;
+    }
+
+    int err = lfs_remove(&lfs, fname);
+    if (err < 0)
+    {
+        *lfs_error_code = err;
+        LOG_ERROR("[filesys] Failed to delete file %s: %d", fname, err);
+        return FILESYS_ERR_DELETE_FILE;
+    }
+
+    LOG_INFO("[filesys] Deleted file: %s", fname);
+    return FILESYS_OK;
+}
+
 filesys_error_t filesys_cancel_file_write(slate_t *slate,
                                           lfs_ssize_t *lfs_error_code)
 {

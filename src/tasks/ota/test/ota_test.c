@@ -403,6 +403,15 @@ int ota_test_tbyb_full_cycle(slate_t *slate)
     bootrom_mock_simulate_boot();     // satellite now on B, BUY_PENDING
     bootrom_mock_simulate_rollback(); // watchdog fires, rolls back to A
 
+    /*
+     * A successful OTA releases the staged image, so a second attempt needs
+     * the file uploaded again -- which is what ground would do after seeing a
+     * rollback, since the image that failed probation needs replacing anyway.
+     */
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
+        return -1;
+
     boot_info_t info;
     TEST_ASSERT(rom_get_boot_info(&info),
                 "Should get boot info after rollback");
@@ -530,6 +539,45 @@ int ota_test_resume_handover_from_b(slate_t *slate)
 }
 
 // ============================================================================
+// Test 13: A successful OTA releases the staged image
+// ============================================================================
+// The data partition is only 196 KiB, so a firmware-sized file left behind
+// crowds out telemetry and FTP. If partition B later fails its probation the
+// image has to be replaced anyway, so keeping it would not save a re-upload.
+int ota_test_deletes_staged_image(slate_t *slate)
+{
+    uint8_t fw[FLASH_PAGE_SIZE];
+    fill_fw_image(fw, FLASH_PAGE_SIZE, true);
+
+    if (write_firmware_to_fs(slate, fw, FLASH_PAGE_SIZE,
+                             crc32(fw, FLASH_PAGE_SIZE)) != 0)
+        return -1;
+
+    strncpy(slate->ota_target_fname, ota_fw_fname,
+            sizeof(slate->ota_target_fname));
+    slate->ota_requested = true;
+
+    ota_task_dispatch(slate);
+
+    TEST_ASSERT(bootrom_mock_reboot_count == 1,
+                "OTA should have succeeded and rebooted");
+
+    // The staged file should be gone: opening it must now fail.
+    lfs_file_t file;
+    filesys_file_info_t info;
+    lfs_ssize_t lfs_err = 0;
+    FILESYS_BUFFERED_FNAME_STR_T fname;
+    strncpy(fname, ota_fw_fname, sizeof(fname));
+
+    filesys_error_t err =
+        filesys_open_file_read(slate, &file, fname, &info, &lfs_err);
+    TEST_ASSERT(err != FILESYS_OK,
+                "Staged image should have been deleted after a successful OTA");
+
+    return 0;
+}
+
+// ============================================================================
 // Test table
 // ============================================================================
 
@@ -557,6 +605,8 @@ const test_harness_case_t ota_tests[] = {
      "TBYB: image without the TBYB flag is refused"},
     {11, ota_test_resume_handover_from_b,
      "Resume: OTA requested on B is handed to A and resumes"},
+    {12, ota_test_deletes_staged_image,
+     "Cleanup: staged image is deleted after a successful OTA"},
 };
 
 const size_t ota_tests_len = sizeof(ota_tests) / sizeof(ota_tests[0]);

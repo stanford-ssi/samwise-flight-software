@@ -451,7 +451,26 @@ void ota_task_dispatch(slate_t *slate)
         return;
     }
 
-    // --- 8. Notify ground and reboot into partition B (TBYB) ---
+    /*
+     * --- 8. Release the staged image ---
+     *
+     * It has been applied and verified, and the data partition is only 196 KiB
+     * - leaving a firmware-sized file there crowds out telemetry and FTP. If B
+     * later fails its probation the image has to be replaced anyway, so
+     * keeping it would not save a re-upload.
+     *
+     * A failure here is not fatal: the image is already in partition B.
+     */
+    lfs_ssize_t del_err = LFS_ERR_OK;
+    if (filesys_delete_file(slate, slate->ota_target_fname, &del_err) !=
+        FILESYS_OK)
+    {
+        LOG_ERROR("[ota_task] Could not delete staged image %s (lfs=%d); "
+                  "continuing",
+                  slate->ota_target_fname, del_err);
+    }
+
+    // --- 9. Notify ground and reboot into partition B (TBYB) ---
     send_radio_msg(slate, "OTA OK: rebooting");
 
     /*
