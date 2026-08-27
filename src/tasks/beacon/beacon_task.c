@@ -16,7 +16,7 @@
 
 #define MAX_DATA_SIZE 252
 #define MAX_STR_LENGTH 64
-#define CALLSIGN "KC3WNY"
+#define CALLSIGN "TEMPCS"
 #define CALLSIGN_LENGTH (sizeof(CALLSIGN))
 #define CALL_TO_ACTION " beat cal!"
 #define CALL_TO_ACTION_LENGTH (sizeof(CALL_TO_ACTION))

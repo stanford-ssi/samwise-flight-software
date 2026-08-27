@@ -319,17 +319,17 @@ PACKET DROPPED | RSSI too low: -125 dBm < -120 dBm threshold
 
 #### **2. Callsign Verification**
 Verifies that beacons contain the expected amateur radio callsign suffix
-(**KC3WNY**) assigned to Samwise.
+(**TEMPCS**) assigned to Samwise.
 
 ```python
 # In config.py
-EXPECTED_CALLSIGN = "KC3WNY"   # FCC-assigned callsign for Samwise
+EXPECTED_CALLSIGN = "TEMPCS"   # FCC-assigned callsign for Samwise
 ENABLE_CALLSIGN_FILTER = True  # Enable/disable callsign verification
 ```
 
 **When a packet is dropped:**
 ```
-PACKET DROPPED | Callsign mismatch: 'AB1CDE' (expected 'KC3WNY')
+PACKET DROPPED | Callsign mismatch: 'AB1CDE' (expected 'TEMPCS')
 ```
 
 **Use Cases:**

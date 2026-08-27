@@ -55,7 +55,7 @@ def _make_beacon(state_name="test_state") -> BeaconData:
         state=1,
         boot_count=3,
     )
-    return BeaconData(state_name=state_name, stats=stats, adcs=adcs, callsign="KC3WNY")
+    return BeaconData(state_name=state_name, stats=stats, adcs=adcs, callsign="TEMPCS")
 
 
 # ---------------------------------------------------------------------------
@@ -293,7 +293,7 @@ def test_try_get_packet_returns_none_on_rssi_drop():
         "<LQ6L8HB", 1, 1000, 0, 0, 0, 0, 0, 0, 3700, 50, 5000, 100, 3300, 30, 3300, 30, 0
     )
     adcs = struct.pack("<fffffBL", 0.1, 1.0, 0.0, 0.0, 0.0, 1, 1)
-    callsign = b"KC3WNY"
+    callsign = b"TEMPCS"
     payload = state + stats + adcs + callsign
     mock_rfm.receive.return_value = bytes([len(payload)]) + payload
     mock_rfm.last_rssi = -130  # below threshold
@@ -327,7 +327,7 @@ def test_try_get_packet_returns_beacon_data_on_success():
         "<LQ6L8HB", 5, 9000, 0, 0, 0, 0, 0, 0, 3800, 60, 5100, 110, 3300, 25, 3300, 25, 0x43
     )
     adcs = struct.pack("<fffffBL", 0.5, 0.9, 0.1, 0.2, 0.3, 2, 5)
-    callsign = b"KC3WNY"
+    callsign = b"TEMPCS"
     payload = state + stats + adcs + callsign
     mock_rfm.receive.return_value = bytes([len(payload)]) + payload
     mock_rfm.last_rssi = -80

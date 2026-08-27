@@ -9,8 +9,14 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${REPO_ROOT}/ground_station/tests/test_data/beacon_packet.hex"
 TESTLOGS_HEX="${REPO_ROOT}/bazel-testlogs/src/tasks/beacon/beacon_test/test.outputs/beacon_packet.hex"
 
+if command -v bazelisk >/dev/null 2>&1; then
+    BAZEL=bazelisk
+else
+    BAZEL=bazel
+fi
+
 echo "Running beacon test..."
-bazel test //src/tasks/beacon:beacon_test --test_output=errors
+"$BAZEL" test //src/tasks/beacon:beacon_test --test_output=errors
 
 if [[ ! -f "$TESTLOGS_HEX" ]]; then
     echo "ERROR: beacon_packet.hex not found at ${TESTLOGS_HEX}"
