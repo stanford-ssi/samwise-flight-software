@@ -323,7 +323,7 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "41"  # ADCS state        = 65
     "2a000000"  # ADCS boot_count   = 42
     # ---- callsign (6 bytes + null) ----
-    "4b4333574e5900"  # callsign          = "TEMPCS\0"
+    "54454d50435300"  # callsign          = "TEMPCS\0"
 )
 
 # Full raw bytes as returned by radio.receive() — starts with the data_len byte.
