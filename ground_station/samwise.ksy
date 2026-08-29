@@ -126,7 +126,7 @@ seq:
   - id: adcs_boot_count
     type: u4
 
-  # Callsign (KC3WNY)
+  # Callsign (TEMPCS)
   - id: callsign
     type: strz
     encoding: UTF-8

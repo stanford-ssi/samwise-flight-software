@@ -39,7 +39,9 @@ ADCS_PACKET = 7
 # Packet filtering configuration
 # These filters help reject noisy packets not from the satellite
 RSSI_THRESHOLD = -120  # Minimum signal strength in dBm (packets below this are dropped)
-EXPECTED_CALLSIGN = "KC3WNY"  # Expected amateur radio callsign suffix (FCC license for Samwise)
+EXPECTED_CALLSIGN = (
+    "TEMPCS"  # Placeholder for expected amateur radio callsign suffix (FCC license for Samwise)
+)
 ENABLE_RSSI_FILTER = True  # Enable/disable RSSI-based filtering
 ENABLE_CALLSIGN_FILTER = True  # Enable/disable callsign verification
 

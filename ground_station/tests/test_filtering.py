@@ -65,7 +65,7 @@ def test_callsign_filter():
     print("=" * 60)
 
     # Get expected callsign from config
-    expected_callsign = config.config.get("expected_callsign", "KC3WNY")
+    expected_callsign = config.config.get("expected_callsign", "TEMPCS")
     print(f"Using expected callsign from config: {expected_callsign}\n")
 
     # Simulated callsign values
@@ -112,7 +112,7 @@ def test_combined_filters():
 
     # Get values from config
     rssi_threshold = config.config.get("rssi_threshold", -120)
-    expected_callsign = config.config.get("expected_callsign", "KC3WNY")
+    expected_callsign = config.config.get("expected_callsign", "TEMPCS")
     print(f"Using RSSI threshold: {rssi_threshold} dBm")
     print(f"Using expected callsign: {expected_callsign}\n")
 
