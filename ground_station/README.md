@@ -323,7 +323,7 @@ Verifies that beacons contain the expected amateur radio callsign suffix
 
 ```python
 # In config.py
-EXPECTED_CALLSIGN = "TEMPCS"   # FCC-assigned callsign for Samwise
+EXPECTED_CALLSIGN = "TEMPCS"   # Placeholder for FCC-assigned callsign for Samwise
 ENABLE_CALLSIGN_FILTER = True  # Enable/disable callsign verification
 ```
 
