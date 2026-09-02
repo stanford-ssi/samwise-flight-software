@@ -23,7 +23,11 @@ class LoraRadio:
         if self.radio is None:
             return None
 
-        packet = self.radio.receive(timeout=timeout)
+        try:
+            packet = self.radio.receive(timeout=timeout)
+        except OSError as e:
+            logger.warning("Radio receive error (ignored): %s", e)
+            return None
         if packet is not None:
             try:
                 # Get RadioHead header fields
