@@ -61,9 +61,25 @@ class SerialCommandHandlerPayload():
             successful = False
 
         #Â Send result packet
-        self.packet_handler.write_packet(
-            json.dumps([successful, result]).encode()
-        )
+        try:
+            response = json.dumps([successful, result]).encode()
+        except (TypeError, ValueError):
+            # Result is not JSON-serializable (TypeError, e.g. bytes from
+            # eval_python) or contains a circular reference (ValueError)
+            # - send its repr instead of crashing without replying
+            response = json.dumps([successful, repr(result)]).encode()
+
+        try:
+            self.packet_handler.write_packet(response)
+        except Exception as error:
+            # e.g. response exceeds the maximum packet size - try a short
+            # error reply so the flight computer is not left waiting.
+            # If the serial link itself is down, this second write raises
+            # too, and the main loop's exception handlers deal with it.
+            log.error(f"Failed to send response for {command_name} - {type(error).__name__}: {error}")
+            self.packet_handler.write_packet(
+                json.dumps([False, f"Failed to send response - {type(error).__name__}: {error}"]).encode()
+            )
 
 
     def receive_and_dispatch_command(self):

@@ -1,5 +1,5 @@
-Description=Runs the main code on strtup
-
+[Unit]
+Description=Runs the main code on startup
 After=multi-user.target
 
 [Service]
