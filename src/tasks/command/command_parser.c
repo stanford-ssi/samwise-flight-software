@@ -10,6 +10,7 @@
 
 #include "command_parser.h"
 #include "adcs_driver.h"
+#include "flash.h"
 #include "logger.h"
 #include "macros.h"
 #include "payload_uart.h"
@@ -29,6 +30,12 @@ void dispatch_command(slate_t *slate, packet_t *packet)
     uint8_t command_payload_data_size =
         PACKET_DATA_SIZE - COMMAND_MNEMONIC_SIZE;
     LOG_INFO("Command ID Received: %i", command_id);
+
+    // Any non-SHUTDOWN command resets the consecutive counter
+    if (command_id != SHUTDOWN)
+    {
+        slate->shutdown_cmd_counter = 0;
+    }
 
     switch (command_id)
     {
@@ -85,8 +92,31 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             payload_turn_off(slate);
             break;
         }
+        case SHUTDOWN:
+        {
+            slate->shutdown_cmd_counter++;
+            LOG_INFO("SHUTDOWN command received (%d/3)",
+                     slate->shutdown_cmd_counter);
+            if (slate->shutdown_cmd_counter >= 3)
+            {
+                slate->shutdown_triggered = true;
+                // Persist so shutdown survives reboots (FCC communication
+                // blackout). Cleared only on ground reactivation or the
+                // fallback timeout in the shutdown state.
+                set_shutdown_active();
+                LOG_ERROR("SHUTDOWN TRIGGERED - disabling communications");
+            }
+            break;
+        }
+        case REACTIVATE:
+        {
+            // Reactivation is only honored while in the shutdown state, where
+            // it is handled by shutdown_listen_task. During normal operation
+            // there is nothing to reactivate, so this is a no-op.
+            LOG_INFO("REACTIVATE command received outside shutdown; ignoring");
+            break;
+        }
         /* Toggle Commands */
-        // TODO: Add more device commands here as needed
         case MANUAL_STATE_OVERRIDE:
         {
             LOG_INFO("Manual state override command received: %s",
@@ -107,6 +137,8 @@ void dispatch_command(slate_t *slate, packet_t *packet)
             {
                 slate->manual_override_state_id = STATE_BURN_WIRE_RESET;
             }
+            // NOTE: shutdown_state intentionally NOT listed here.
+            // Shutdown can only be reached via 3 consecutive SHUTDOWN commands.
             else
             {
                 slate->manual_override_state_id = STATE_NONE;

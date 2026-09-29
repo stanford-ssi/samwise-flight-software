@@ -15,6 +15,7 @@
 #include "burn_wire_state.h"
 #include "init_state.h"
 #include "running_state.h"
+#include "shutdown_state.h"
 #ifdef BRINGUP
 #include "bringup_state.h"
 #endif
@@ -32,6 +33,7 @@ void sched_init(slate_t *slate)
     state_registry_register(STATE_RUNNING, &running_state);
     state_registry_register(STATE_BURN_WIRE, &burn_wire_state);
     state_registry_register(STATE_BURN_WIRE_RESET, &burn_wire_reset_state);
+    state_registry_register(STATE_SHUTDOWN, &shutdown_state);
 #ifdef BRINGUP
     state_registry_register(STATE_BRINGUP, &bringup_state);
 #endif
@@ -126,18 +128,23 @@ void sched_dispatch(slate_t *slate)
     /*
      * Transition to the next state, if required.
      */
-    state_id_t next_state_id;
+    state_id_t next_state_id = current_state_info->get_next_state(slate);
     if (slate->manual_override_state_id != STATE_NONE)
     {
-        sched_state_t *override =
-            state_registry_get(slate->manual_override_state_id);
-        LOG_INFO("sched: Manual state override to %s", override->name);
-        next_state_id = slate->manual_override_state_id;
-        slate->manual_override_state_id = STATE_NONE;
-    }
-    else
-    {
-        next_state_id = current_state_info->get_next_state(slate);
+        // Never allow manual override into shutdown
+        if (slate->manual_override_state_id == STATE_SHUTDOWN)
+        {
+            LOG_ERROR("sched: Manual override to shutdown_state BLOCKED");
+            slate->manual_override_state_id = STATE_NONE;
+        }
+        else
+        {
+            sched_state_t *override =
+                state_registry_get(slate->manual_override_state_id);
+            LOG_INFO("sched: Manual state override to %s", override->name);
+            next_state_id = slate->manual_override_state_id;
+            slate->manual_override_state_id = STATE_NONE;
+        }
     }
 
     if (next_state_id != slate->current_state_id)

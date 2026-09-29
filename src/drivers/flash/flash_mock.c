@@ -40,3 +40,18 @@ void reset_burn_wire_attempts()
 {
     mock_data.burn_wire_attempts = 0;
 }
+
+void set_shutdown_active()
+{
+    mock_data.shutdown_active = 1;
+}
+
+void clear_shutdown_active()
+{
+    mock_data.shutdown_active = 0;
+}
+
+uint32_t get_shutdown_active()
+{
+    return mock_data.shutdown_active;
+}

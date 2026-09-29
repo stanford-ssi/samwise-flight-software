@@ -22,6 +22,9 @@ typedef struct
     uint32_t marker;             // Marker to verify initialization
     uint32_t reboot_counter;     // Actual counter
     uint32_t burn_wire_attempts; // Number of burn wire attempts
+    uint32_t shutdown_active;    // Nonzero if the satellite is in shutdown
+                                 // (communication blackout). Persisted so that
+                                 // shutdown survives reboots.
 } persistent_data_t;
 
 /**
@@ -36,3 +39,20 @@ uint32_t get_reboot_counter();
 void increment_burn_wire_attempts();
 uint32_t get_burn_wire_attempts();
 void reset_burn_wire_attempts();
+
+/**
+ * @brief Persistently mark the satellite as in shutdown (communication
+ * blackout). Survives reboots.
+ */
+void set_shutdown_active();
+
+/**
+ * @brief Persistently clear the shutdown marker (reactivation).
+ */
+void clear_shutdown_active();
+
+/**
+ * @brief Get the persisted shutdown state.
+ * @return Nonzero if shutdown is active.
+ */
+uint32_t get_shutdown_active();

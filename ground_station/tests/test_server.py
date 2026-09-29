@@ -179,8 +179,8 @@ def test_command_payload_off_queued(client):
 
 @pytest.mark.unit
 @pytest.mark.server
-def test_command_payload_shutdown_queued(client):
-    r = client.post("/command", json={"type": "payload-shutdown"})
+def test_command_comms_shutdown_queued(client):
+    r = client.post("/command", json={"type": "comms-shutdown"})
     assert r.status_code == 200
 
 

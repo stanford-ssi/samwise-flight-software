@@ -49,6 +49,7 @@ persistent_data_t *init_persistent_data()
         data.marker = INIT_MARKER;
         data.reboot_counter = 0;
         data.burn_wire_attempts = 0;
+        data.shutdown_active = 0;
     }
     else
     {
@@ -88,6 +89,30 @@ uint32_t get_burn_wire_attempts()
 {
     const persistent_data_t *flash_data = read_persistent_data();
     return flash_data->burn_wire_attempts;
+}
+
+void set_shutdown_active()
+{
+    static persistent_data_t data;
+    const persistent_data_t *flash_data = read_persistent_data();
+    data = *flash_data;
+    data.shutdown_active = 1;
+    write_persistent_data(&data);
+}
+
+void clear_shutdown_active()
+{
+    static persistent_data_t data;
+    const persistent_data_t *flash_data = read_persistent_data();
+    data = *flash_data;
+    data.shutdown_active = 0;
+    write_persistent_data(&data);
+}
+
+uint32_t get_shutdown_active()
+{
+    const persistent_data_t *flash_data = read_persistent_data();
+    return flash_data->shutdown_active;
 }
 
 void reset_burn_wire_attempts()

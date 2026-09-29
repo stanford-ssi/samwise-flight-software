@@ -256,7 +256,7 @@ def create_app(radio_override: Optional[LoraRadio] = None) -> FastAPI:
         """Queue a command by type.
 
         Supported types: payload-exec, payload-on, payload-off,
-                         state-override, payload-shutdown
+                         state-override, comms-shutdown
 
         Types that require an argument (arg field):
             payload-exec   — the command string to execute
@@ -283,8 +283,8 @@ def create_app(radio_override: Optional[LoraRadio] = None) -> FastAPI:
             arg = req.arg
             tx_queue.put_nowait(lambda: radio.send_manual_state_override(arg))
 
-        elif cmd_type == "payload-shutdown":
-            tx_queue.put_nowait(radio.send_payload_shutdown)
+        elif cmd_type == "comms-shutdown":
+            tx_queue.put_nowait(radio.send_comms_shutdown)
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown command type: '{req.type}'")
