@@ -144,7 +144,7 @@ def test_beacon_decode():
     assert result.state_name == "mock_state beat cal!"
     assert result.stats.reboot_counter == 42
     assert result.stats.battery_voltage == 4000
-    assert result.callsign == "KC3WNY"
+    assert result.callsign == "TEMPCS"
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +323,7 @@ _EXAMPLE_BEACON_CONTENT = bytes.fromhex(
     "41"  # ADCS state        = 65
     "2a000000"  # ADCS boot_count   = 42
     # ---- callsign (6 bytes + null) ----
-    "4b4333574e5900"  # callsign          = "KC3WNY\0"
+    "54454d50435300"  # callsign          = "TEMPCS\0"
 )
 
 # Full raw bytes as returned by radio.receive() — starts with the data_len byte.
@@ -427,7 +427,7 @@ def test_decode_example_incoming_packet():
     assert abs(beacon.adcs.alt - 1.3) < 1e-5
     assert beacon.adcs.state == 65
     assert beacon.adcs.boot_count == 42
-    assert beacon.callsign == "KC3WNY"
+    assert beacon.callsign == "TEMPCS"
 
 
 if __name__ == "__main__":

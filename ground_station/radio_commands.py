@@ -100,7 +100,7 @@ class LoraRadio:
                         else:
                             # FILTER 2: Callsign verification
                             if config.config.get("enable_callsign_filter", False):
-                                expected_callsign = config.config.get("expected_callsign", "KC3WNY")
+                                expected_callsign = config.config.get("expected_callsign", "TEMPCS")
                                 if beacon_data.callsign:
                                     actual_callsign = beacon_data.callsign.strip().upper()
                                     if expected_callsign.upper() not in actual_callsign:
