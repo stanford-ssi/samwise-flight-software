@@ -30,6 +30,8 @@ git submodule update --init --recursive
 
 > Historically, see [the onboarding doc](docs/ONBOARDING.md) for development environment setup (pre-bazel).
 
+New to git? Work through [the git guide](docs/GIT_GUIDE.md) first. It ends with you opening your first PR.
+
 
 ## Building
 To build the code in this repo, run `bazel build :samwise --config=picubed-debug`.
