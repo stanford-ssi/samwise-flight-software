@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "diagnostics_task",
-    srcs = ["diagnostics_task.c"],
+    srcs = ["diagnostics_task.cpp"],
     hdrs = ["diagnostics_task.h"],
     includes = ["."],
     deps = [

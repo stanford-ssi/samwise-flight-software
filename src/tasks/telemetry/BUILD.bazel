@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "telemetry_task",
-    srcs = ["telemetry_task.c"],
+    srcs = ["telemetry_task.cpp"],
     hdrs = ["telemetry_task.h"],
     includes = ["."],
     deps = [

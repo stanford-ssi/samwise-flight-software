@@ -3,7 +3,7 @@ package(default_visibility = ["//visibility:public"])
 # Real device status driver (for embedded targets)
 cc_library(
     name = "device_status",
-    srcs = ["device_status.c"],
+    srcs = ["device_status.cpp"],
     hdrs = ["device_status.h"],
     includes = ["."],
     deps = [
