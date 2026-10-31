@@ -160,10 +160,11 @@ void telemetry_task_dispatch(slate_t *slate)
  
     neopixel_set_color_rgb(0, 0, 0);
 }
- 
+
 // NOTE: C++ requires designated initializers to appear in the same order as
 // the fields are declared in sched_task_t (C++20, or a GCC extension before
-// that). The order below must match the struct definition.
+// that). The order below must match the struct definition in 
+// src/scheduler/state_machine.h.
 sched_task_t telemetry_task = {.name = "telemetry",
                                .dispatch_period_ms = 1000,
                                /* Set to an actual value on init */
